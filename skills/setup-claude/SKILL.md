@@ -38,16 +38,41 @@ For each accepted template, instantiate it with detected values and a correct
 `paths:` glob — see `templates-reference.md` for the per-template mapping. Optionally
 install convention hooks into the project's own `.claude/` (also per the reference).
 
-## 6. graphify (conditional) + monorepo
-Only if the `graphify` CLI is present: run `graphify install --platform claude` so
-graphify installs **its own** maintained skill (don't vendor one), and copy
+## 6. graphify (conditional) — treat the graph as local build cache
+Only if the `graphify` CLI is present: run `graphify install --platform claude`
+(graphify installs its **own** maintained skill — don't vendor one) and copy
 `deepen-architecture` from `${CLAUDE_PLUGIN_ROOT}/templates/skills/` into
-`.claude/skills/`. **Monorepo:** `graphify .` at the root doesn't handle workspaces
-well — instead build **one graph per workspace** (`graphify <each app/package dir>`),
-then optionally a merged root via `graphify merge-graphs` for cross-workspace
-questions. Record in CLAUDE.md which graph covers which area so agents query the
-right one. If graphify is absent, skip silently — the active skills degrade to plain
-read/grep.
+`.claude/skills/`.
+
+**Gitignore the churn; commit the labels.** The graph splits into two artifacts with
+opposite economics: **structure** (`graph.json`/`GRAPH_REPORT.md`/`graph.html`) is
+large, churny, and cheap to rebuild from code (AST, no LLM); **community labels**
+(`.graphify_labels.json`) are small, stable, **LLM-produced** — the expensive part,
+and what makes the graph queryable for Claude (you query "the auth community", not
+"Community 7"). Committing the churny files from parallel worktrees is a
+merge-conflict factory; gitignoring the *labels* would force re-paying LLM cost (or
+navigating unlabeled) on every checkout. So split them:
+
+- **Commit `.graphify_labels.json`; gitignore the rest** of `graphify-out/`:
+  ```
+  **/graphify-out/*
+  !**/graphify-out/.graphify_labels.json
+  ```
+- **Per-workspace graphs** (a single root `graphify .` handles workspaces poorly):
+  `graphify <each app/package dir>` → `<ws>/graphify-out/`. The first build runs the
+  full LLM pass to seed labels (committed).
+- **Rebuild locally** (SessionStart step, auto-discovering workspaces by a present
+  `graphify-out/`): `graphify update <ws>` rebuilds structure with **no LLM** and
+  **re-attaches the committed labels** — every fresh checkout/worktree is labeled at
+  zero LLM cost; only genuinely-new communities show as placeholders. No
+  post-commit/post-merge/merge-driver (the fragile machinery: husky's relative
+  `core.hooksPath` doesn't fire in worktrees, `graphify update` never commits,
+  union-merging JSON corrupts silently).
+- **Naming new communities = single writer:** `integrator`/CI runs `graphify label
+  --missing-only` after integration on main and commits the updated
+  `.graphify_labels.json`. Worktrees never write it in parallel → no conflicts.
+
+If graphify is absent, skip silently — the active skills degrade to plain read/grep.
 
 ## 7. Write stack-facts + canonical loop into CLAUDE.md
 Record the detected commands/paths (so skills/agents use real values, not

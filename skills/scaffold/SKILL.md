@@ -27,6 +27,13 @@ the initial commit using the repo's own git identity and signing. Do not re-impl
 here — this skill only resolves *what* to run; the agent owns *running it safely*.
 
 ## 3. Report
-Relay the scaffolder's one-line result (generator + commit SHA). Note that installing
-dependencies, building, and starting a dev server are separate follow-up steps, outside
-scaffolding.
+Relay the scaffolder's one-line result (generator + commit SHA).
+
+## 4. Chain into project setup
+After a successful scaffold, **hand off to the `setup-claude` skill** to wire the new
+project's `.claude/` — rules adapted to the just-scaffolded stack, graphify, and a
+`CLAUDE.md` with the canonical loop. `setup-claude` reads `package.json` to detect the
+stack, so it runs immediately after scaffolding (deps install / build / dev server are
+separate follow-ups). For a **monorepo**, scaffold each app first, then run
+`setup-claude` once at the root — it discovers all workspaces and is idempotent, so
+re-running is safe.

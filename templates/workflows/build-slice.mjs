@@ -1,18 +1,15 @@
 // ─────────────────────────────────────────────────────────────────────────
-// ISOLATION & SAFETY CONTRACT: this workflow is tree-agnostic — it builds in the CURRENT
-// working tree and commits each confirmed slice to the CURRENT branch. It creates no
-// isolation of its own; the caller (the /argo:build-feature skill) MUST invoke it on a
-// DEDICATED FEATURE BRANCH with a CLEAN working tree. Under that contract the retry
-// cleanup (git reset --hard HEAD + a scoped clean) only ever discards the current rejected
-// attempt — confirmed slices are already committed, and a clean-at-start tree means the
-// clean removes only this run's debris. Do NOT run it on a dirty tree or the default branch.
+// ISOLATION: this workflow is tree-agnostic — it builds in the CURRENT working tree and
+// commits each confirmed slice to the CURRENT branch. It creates no isolation of its own;
+// the caller (the /argo:build-feature skill) runs it inside a dedicated git WORKTREE.
+// Verified: the workflow's spawned subagents inherit the session's worktree cwd, so all
+// building, the retry cleanup (git reset --hard HEAD + scoped clean), and per-slice commits
+// happen inside that worktree on its branch — never the user's main checkout, and
+// concurrent builds in separate worktrees can't collide on the git index.
 //
 // Stages share ONE tree by necessity (Verify runs the builder's code; Confirm reads its
-// diff; Land commits it), so never set per-agent worktree isolation. True worktree
-// isolation for concurrent runs is the caller's concern and is currently UNVERIFIED — the
-// Workflow engine can't pin a spawned subagent's cwd, so it would depend on subagents
-// inheriting the session cwd; confirm empirically before relying on it (a wrong cwd + the
-// retry reset is destructive). See /argo:build-feature.
+// diff; Land commits it), so never set per-agent worktree isolation — the per-run worktree
+// (one level up, owned by build-feature) is the isolation unit.
 //
 // graphify single-writer rule: Land stages ONLY slice source/tests, never graph artifacts;
 // the integrator refreshes the graph on the default branch post-merge.
@@ -29,7 +26,7 @@ export const meta = {
   description:
     'Build a planned feature, slice by slice, test-first — then verify each slice deterministically and adversarially confirm the tests are honest before committing. Seeds from a plan doc; maintains a durable progress doc.',
   whenToUse:
-    'After a plan doc exists (e.g. from argo:planner), to build it slice-by-slice with verify + adversarial-confirm gating. Run via /argo:build-feature, which isolates it on a dedicated feature branch (commits land there, not on the default branch).',
+    'After a plan doc exists (e.g. from argo:planner), to build it slice-by-slice with verify + adversarial-confirm gating. Run via /argo:build-feature, which isolates it in its own git worktree (per-slice commits land on the worktree branch, never the main checkout).',
   phases: [
     { title: 'Slice', detail: 'adapt the plan into an ordered, machine-readable slice list' },
     { title: 'Build', detail: 'builder implements one slice test-first' },

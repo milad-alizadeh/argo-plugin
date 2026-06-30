@@ -53,6 +53,15 @@ get. **Defeat build-cache false-greens:** if the project uses a caching task run
 / `--force`) — a cached pass can mask tests that never ran (observed in dogfooding). Don't
 overwrite a workflow the user has edited: switch to diff/ask mode (per §1).
 
+**Wire the trust gate (§7, only if the trust-gate hook is installed):** `build-slice`
+chains `${CLAUDE_PLUGIN_ROOT}/hooks/trust-gate.mjs` onto Verify for slices marked
+`requiresLaunch` (those that ship launchable app/UI behaviour). Export
+`ARGO_TRUST_GATE=<abs path to trust-gate.mjs>` in the build environment (or pass
+`trustGateCmd` as a workflow arg) so those slices go RED unless a launch evidence receipt
+(`.argo/launch-receipt.json`) proves the app was launched **and** exercised. Pure
+logic/library/config slices set `requiresLaunch:false` and are unaffected — the gate never
+blocks a slice that isn't shipping launchable behaviour.
+
 ## 7. graphify (conditional) — treat the graph as local build cache
 Only if the `graphify` CLI is present: run `graphify install --platform claude`
 (graphify installs its **own** maintained skill — don't vendor one) and copy

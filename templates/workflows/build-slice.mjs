@@ -41,6 +41,8 @@ export const meta = {
 // ── Inputs ────────────────────────────────────────────────────────────────
 // args.planPath     — path to the phase plan doc that seeds the slices (required)
 // args.verifyCmd    — the deterministic verify command (default: the repo's own)
+// args.trustGateCmd — §7 gate chained onto Verify for requiresLaunch slices (default pipes a
+//                     Stop-hook payload into $ARGO_TRUST_GATE; setup-claude sets the real path)
 // args.progressPath — where to write the live progress doc (default: alongside the plan)
 // args may arrive as an object, a JSON-encoded string (harness-dependent), or a bare plan path.
 let opts = args
@@ -52,6 +54,14 @@ if (!planPath) throw new Error('build-slice: pass { planPath } (path to the phas
 // NOTE: this bun default is a PLACEHOLDER. /argo:setup-claude rewrites it to the project's
 // real detected commands on install; on a non-bun project the placeholder fails every slice.
 const verifyCmd = opts?.verifyCmd ?? 'bun run typecheck && bun run lint && bun run test'
+// §7 trust-gate chain: for slices marked requiresLaunch, Verify becomes
+// `${verifyCmd} && ${trustGateCmd}` so it goes RED without launch evidence. The default
+// pipes a Stop-hook payload (carrying $PWD) into the gate; /argo:setup-claude rewrites
+// $ARGO_TRUST_GATE to the installed plugin hook path. Mirrors plugin/lib/gatedVerify.mjs
+// (the tested source of truth — workflow scripts can't import local modules).
+const trustGateCmd =
+  opts?.trustGateCmd ?? `printf '{"cwd":"%s"}' "$PWD" | node "\${ARGO_TRUST_GATE:?set ARGO_TRUST_GATE to trust-gate.mjs}"`
+const gatedVerify = (base, requiresLaunch) => (requiresLaunch ? `${base} && ${trustGateCmd}` : base)
 const progressPath =
   opts?.progressPath ?? (planPath.endsWith('.md') ? planPath.slice(0, -3) : planPath) + '-progress.md'
 const MAX_ATTEMPTS = opts?.maxAttempts ?? 3
@@ -76,6 +86,13 @@ const SLICES = {
             items: { type: 'string' },
           },
           dependsOn: { type: 'array', items: { type: 'string' }, description: 'ids of prerequisite slices' },
+          requiresLaunch: {
+            type: 'boolean',
+            description:
+              'true ONLY if this slice ships app/UI behaviour a user launches and exercises — such slices are ' +
+              'gated by the trust gate (§8.2): Verify goes RED unless a launch evidence receipt proves the app ' +
+              'was launched AND exercised. Pure logic / library / config slices are false (the default).',
+          },
         },
       },
     },
@@ -244,16 +261,19 @@ for (const slice of slices) {
     )
 
     // Verify — the gate. An agent is the only option (no raw-shell primitive), but `passed` is
-    // bound to the real exit code, not the model's judgement, and output is verbatim.
+    // bound to the real exit code, not the model's judgement, and output is verbatim. For
+    // launch-requiring slices the trust gate (§8.2) is chained on, so Verify goes RED unless a
+    // launch evidence receipt proves the app was launched AND exercised.
+    const sliceVerify = gatedVerify(verifyCmd, slice.requiresLaunch === true)
     phase('Verify')
     const verify = await agent(
-      `Run EXACTLY this command from the repo root and nothing else:\n\n    ${verifyCmd}\n\n` +
+      `Run EXACTLY this command from the repo root and nothing else:\n\n    ${sliceVerify}\n\n` +
         `Report the actual exit code, set passed = (exitCode === 0), and include the literal trailing output ` +
         `(failures verbatim — do NOT paraphrase or summarise). Do NOT edit any file or run any other command.`,
       { label: `verify:${slice.id}#${attempt}`, phase: 'Verify', schema: VERIFY },
     )
     if (!verify || !verify.passed) {
-      lastReasons = [`verify command exited ${verify?.exitCode ?? '?'}:\n${verify?.output ?? '(verify step skipped or returned nothing)'}`]
+      lastReasons = [`verify command (${sliceVerify}) exited ${verify?.exitCode ?? '?'}:\n${verify?.output ?? '(verify step skipped or returned nothing)'}`]
       log(`slice ${slice.id}: verify RED (attempt ${attempt}, exit ${verify?.exitCode ?? '?'})`)
       continue
     }
@@ -263,7 +283,7 @@ for (const slice of slices) {
     // the builder, before commit), so the prompt stays lean.
     phase('Confirm')
     const verdict = await agent(
-      `Slice "${slice.id}" passed \`${verifyCmd}\`. Its tests were proven RED before implementation ` +
+      `Slice "${slice.id}" passed \`${sliceVerify}\`. Its tests were proven RED before implementation ` +
         `(red command: \`${red.testCommand}\`). Without re-running anything, inspect the working-tree diff ` +
         `(git diff / git diff --staged) and judge ONLY whether its tests are honest. confirmed=true ONLY if the ` +
         `tests drive the feature through its REAL interface (not vacuous stubs), every required matrix row ` +

@@ -1,7 +1,7 @@
 ---
 name: scaffolder
 description: Greenfield project creator — runs the canonical generator for a stack in an empty directory and makes the initial commit. Use to scaffold a brand-new project from its canonical generator and produce a clean, committed starting point.
-model: claude-sonnet-4-6
+model: sonnet
 tools: Read, Write, Bash
 ---
 

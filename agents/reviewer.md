@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: Opinionated, grounded code reviewer — judges a diff/branch/PR for merge-blocking correctness, security, and meaningful test coverage, then leads with a verdict and findings ordered by severity with file:line references. Reviews only changed lines, not pre-existing issues.
-model: claude-sonnet-4-6
+model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
 

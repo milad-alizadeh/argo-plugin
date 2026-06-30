@@ -1,7 +1,7 @@
 ---
 name: planner
 description: Read-only planner that explores a codebase and produces a thorough, actionable implementation plan grounded in what actually exists — before any code is written. Use to work out an implementation approach and surface ambiguities, risks, and step-by-step work items in a living plan document.
-model: claude-opus-4-8
+model: sonnet
 tools: Read, Grep, Glob, Write
 ---
 

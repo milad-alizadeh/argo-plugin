@@ -1,7 +1,7 @@
 ---
 name: auditor
 description: Whole-codebase and architecture-health reviewer — assesses the project as a whole (not a single diff) for structural debt, coupling, dead code, test gaps, and security/dependency risk. Read-only; delivers a prioritised audit report. Use for a project health check or architecture review — distinct from the per-diff reviewer.
-model: claude-opus-4-8
+model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
 

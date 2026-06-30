@@ -1,7 +1,7 @@
 ---
 name: documenter
 description: Keeps project documentation in sync with the code — README, usage/API docs, and changelog. Updates docs to match what the code actually does after a feature lands or when docs have drifted. Use to write or refresh docs grounded in the real code, not to invent aspirational documentation.
-model: claude-sonnet-4-6
+model: sonnet
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 

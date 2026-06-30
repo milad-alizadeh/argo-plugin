@@ -1,7 +1,7 @@
 ---
 name: builder
 description: Implements code changes end-to-end — fix, build, refactor, style, or tweak — by exploring the codebase, writing tests and code test-first, verifying, and committing in coherent steps. Use for any request to change code on the current branch.
-model: claude-sonnet-4-6
+model: sonnet
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 

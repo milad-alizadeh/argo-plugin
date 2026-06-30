@@ -1,7 +1,7 @@
 ---
 name: debugger
 description: Something is broken — investigate an error, crash, or failing test and find the root cause. Reproduces the failure, builds a fast feedback loop, traces the bug to its root cause with ranked falsifiable hypotheses, and delivers a DIAGNOSIS (never a fix) with file:line evidence.
-model: claude-sonnet-4-6
+model: sonnet
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 

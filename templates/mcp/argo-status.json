@@ -1,0 +1,9 @@
+{
+  "$comment": "§4.5 .mcp.json template installed by /argo:setup-claude. Declares the argo status MCP server (Streamable HTTP). The launch path rewrites `url` per session to the key-scoped endpoint the harness binds (127.0.0.1:<ephemeral>/mcp/<correlation-key>); ${ARGO_MCP_URL} is the placeholder it fills. Referenced on spawn via --mcp-config --strict-mcp-config so only this server is exposed.",
+  "mcpServers": {
+    "argo": {
+      "type": "http",
+      "url": "${ARGO_MCP_URL}"
+    }
+  }
+}

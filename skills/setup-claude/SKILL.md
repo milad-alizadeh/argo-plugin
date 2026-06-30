@@ -38,7 +38,19 @@ For each accepted template, instantiate it with detected values and a correct
 `paths:` glob — see `templates-reference.md` for the per-template mapping. Optionally
 install convention hooks into the project's own `.claude/` (also per the reference).
 
-## 6. graphify (conditional) — treat the graph as local build cache
+## 6. Install workflows
+Copy `${CLAUDE_PLUGIN_ROOT}/templates/workflows/*` into the project's
+`.claude/workflows/` (create it if absent) — these are the orchestration scripts the
+Workflow tool runs (plugins can't auto-load workflows, so they're installed here, like
+the rules). `build-slice` is the automated build stage invoked by `/argo:build-feature`;
+it expects the argo agents (`argo:builder`/`argo:reviewer`), also installed by this pack.
+
+**Instantiate, don't ship raw:** `build-slice`'s `verifyCmd` default is a bun placeholder.
+Replace it with the project's **detected** typecheck/lint/test commands (from §2) so it
+doesn't fail every slice on a non-bun project — same adapt-on-install treatment the rules
+get. Don't overwrite a workflow the user has edited: switch to diff/ask mode (per §1).
+
+## 7. graphify (conditional) — treat the graph as local build cache
 Only if the `graphify` CLI is present: run `graphify install --platform claude`
 (graphify installs its **own** maintained skill — don't vendor one) and copy
 `deepen-architecture` from `${CLAUDE_PLUGIN_ROOT}/templates/skills/` into
@@ -71,11 +83,12 @@ commit the graph.
 
 If graphify is absent, skip silently — the active skills degrade to plain read/grep.
 
-## 7. Write stack-facts + canonical loop into CLAUDE.md
+## 8. Write stack-facts + canonical loop into CLAUDE.md
 Record the detected commands/paths (so skills/agents use real values, not
-placeholders) and the canonical loop: **scaffold → grill → plan → test-first build →
-review → debug → handoff.**
+placeholders) and the canonical loop: **scaffold → grill → plan → test-first build
+(interactive) or /argo:build-feature (automated, worktree-isolated) → review → debug →
+handoff.**
 
-## 8. Report + one-step revert
+## 9. Report + one-step revert
 List exactly what was written where, and how to re-run or revert. Be idempotent;
 every file this skill writes must be removable in one step.

@@ -35,7 +35,7 @@ learn; partial work should survive an interruption. Revisions update it in place
 confirm success). If you give time estimates, calibrate to agentic speed (a human's
 "days" is often an agent's "hours").
 
-**OUTPUT.** Write the plan to `.argo/plans/<short-name>.md` (or a provided deliverable
+**OUTPUT.** Write the plan to `.claude/plans/<short-name>.md` (or a provided deliverable
 path); create the dir if needed. **Don't overwrite an existing plan** unless asked —
 update in place or version it. When done, summarise the three most important
 decisions or risks inline.

@@ -1,7 +1,9 @@
-# argo graphify — committed: graph.json (embedded labels), GRAPH_REPORT.md,
-# .graphify_labels.json. Ignored: bulk viz + caches (regenerable, not read by agents).
-# setup-claude appends these to the project's .gitignore. Globs cover monorepo
-# (per-workspace graphify-out/) and single-app (root graphify-out/) alike.
-**/graphify-out/graph.html
-**/graphify-out/cache/
-**/graphify-out/.graphify_analysis.json
+# argo graphify — commit ONLY the 3 durable artifacts; ignore everything else in
+# graphify-out (bulk viz, caches, manifests, metadata). graph.json carries the
+# embedded community labels Claude reads. Globs cover monorepo (per-workspace
+# graphify-out/) and single-app (root graphify-out/) alike.
+# setup-claude appends this to the project's .gitignore.
+**/graphify-out/*
+!**/graphify-out/graph.json
+!**/graphify-out/GRAPH_REPORT.md
+!**/graphify-out/.graphify_labels.json

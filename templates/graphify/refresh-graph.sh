@@ -17,7 +17,11 @@ cd "$(git rev-parse --show-toplevel)"
 
 # Discover workspaces = dirs containing a graphify-out/ (skip node_modules/.git).
 # Fall back to the repo root for a single-app project not yet seeded.
-mapfile -t WORKSPACES < <(
+# (portable: no `mapfile` — macOS ships bash 3.2)
+WORKSPACES=()
+while IFS= read -r ws_dir; do
+  [ -n "$ws_dir" ] && WORKSPACES+=("$ws_dir")
+done < <(
   find . \( -name node_modules -o -name .git \) -prune -o -type d -name graphify-out -print 2>/dev/null \
     | sed 's:/graphify-out$::' | sort -u
 )
@@ -25,8 +29,13 @@ mapfile -t WORKSPACES < <(
 
 for ws in "${WORKSPACES[@]}"; do
   echo "==> graphify refresh: $ws"
-  PYTHONHASHSEED=0 graphify update "$ws" --force
-  graphify label "$ws" --missing-only --backend=claude-cli || echo "  (labeling degraded to placeholders)"
+  # cd into the workspace so graphify's CWD-relative writes (manifest etc.) stay
+  # inside <ws>/graphify-out/ and don't litter a stray graphify-out/ at the repo root.
+  (
+    cd "$ws"
+    PYTHONHASHSEED=0 graphify update . --force
+    graphify label . --missing-only --backend=claude-cli || echo "  (labeling degraded to placeholders)"
+  )
 done
 
 # Stage only the durable artifacts (graph.json carries the embedded labels Claude

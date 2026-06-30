@@ -29,7 +29,8 @@ export const meta = {
     'After a plan doc exists (e.g. from argo:planner), to build it slice-by-slice with verify + adversarial-confirm gating. Run via /argo:build-feature, which isolates it in its own git worktree (per-slice commits land on the worktree branch, never the main checkout).',
   phases: [
     { title: 'Slice', detail: 'adapt the plan into an ordered, machine-readable slice list' },
-    { title: 'Build', detail: 'builder implements one slice test-first' },
+    { title: 'Red', detail: 'write the failing test FIRST; prove it fails for the right reason' },
+    { title: 'Green', detail: 'implement the minimal real code to turn the red tests green' },
     { title: 'Verify', detail: 'gate: run the verify command, pass/fail from the real exit code' },
     { title: 'Confirm', detail: 'reviewer adversarially judges the tests honest + matrix covered' },
     { title: 'Land', detail: 'commit the confirmed slice' },
@@ -41,14 +42,19 @@ export const meta = {
 // args.planPath     — path to the phase plan doc that seeds the slices (required)
 // args.verifyCmd    — the deterministic verify command (default: the repo's own)
 // args.progressPath — where to write the live progress doc (default: alongside the plan)
-const planPath = typeof args === 'string' ? args : args?.planPath
+// args may arrive as an object, a JSON-encoded string (harness-dependent), or a bare plan path.
+let opts = args
+if (typeof opts === 'string') {
+  try { opts = JSON.parse(opts) } catch { opts = { planPath: opts } }
+}
+const planPath = typeof opts === 'string' ? opts : opts?.planPath
 if (!planPath) throw new Error('build-slice: pass { planPath } (path to the phase plan doc) as args')
 // NOTE: this bun default is a PLACEHOLDER. /argo:setup-claude rewrites it to the project's
 // real detected commands on install; on a non-bun project the placeholder fails every slice.
-const verifyCmd = args?.verifyCmd ?? 'bun run typecheck && bun run lint && bun run test'
+const verifyCmd = opts?.verifyCmd ?? 'bun run typecheck && bun run lint && bun run test'
 const progressPath =
-  args?.progressPath ?? (planPath.endsWith('.md') ? planPath.slice(0, -3) : planPath) + '-progress.md'
-const MAX_ATTEMPTS = args?.maxAttempts ?? 3
+  opts?.progressPath ?? (planPath.endsWith('.md') ? planPath.slice(0, -3) : planPath) + '-progress.md'
+const MAX_ATTEMPTS = opts?.maxAttempts ?? 3
 
 // ── Schemas ───────────────────────────────────────────────────────────────
 const SLICES = {
@@ -97,6 +103,21 @@ const LANDED = {
   type: 'object',
   required: ['sha'],
   properties: { sha: { type: 'string', description: 'the commit SHA' } },
+}
+// Red-proof: the test must exist and fail for the RIGHT reason BEFORE any implementation —
+// makes test-first verifiable, not merely asserted.
+const RED = {
+  type: 'object',
+  required: ['testCommand', 'failingOutput', 'failedForRightReason'],
+  properties: {
+    testCommand: { type: 'string', description: "exact command that runs THIS slice's new tests" },
+    failingOutput: { type: 'string', description: 'verbatim failing output proving the tests are RED' },
+    failedForRightReason: {
+      type: 'boolean',
+      description: 'true iff they fail because the behaviour/module under test is missing/incorrect — NOT because the test file itself is malformed',
+    },
+    notes: { type: 'string' },
+  },
 }
 
 // ── Progress doc (durable oversight artifact) ───────────────────────────────
@@ -171,36 +192,55 @@ for (const slice of slices) {
     row.attempts = attempt
 
     // On retry, discard the rejected attempt's debris so this attempt starts from the last
-    // committed state — otherwise Build stacks on dead code and the diff-based Confirm misreads
+    // committed state — otherwise it stacks on dead code and the diff-based Confirm misreads
     // a cumulative diff. (-e protects the untracked progress doc; gitignored files are untouched.)
     if (attempt > 1) {
-      phase('Build')
+      phase('Red')
       await agent(
         `Reset the working tree to the last commit so a retry starts clean. Run EXACTLY, from the repo root:\n\n` +
           `    git reset --hard HEAD && git clean -fd -e '*-progress.md'\n\n` +
           `Then report "reset". Do not edit anything, do not run any other command.`,
-        { label: `reset:${slice.id}#${attempt}`, phase: 'Build', model: 'haiku', effort: 'low' },
+        { label: `reset:${slice.id}#${attempt}`, phase: 'Red', model: 'haiku', effort: 'low' },
       )
     }
 
-    // Build — test-first. Inside the workflow the builder runs ONLY focused slice tests for its
-    // red→green loop and defers the authoritative full suite to Verify. This is a deliberate
-    // trade: it avoids re-running a slow (e.g. e2e) suite on every inner iteration, at the cost
-    // of catching cross-slice integration breakage at the gate (one retry) rather than in-loop.
-    // Nothing commits until Verify+Confirm pass, so the deferral never lands broken work.
-    phase('Build')
-    await agent(
-      `Implement this vertical slice test-first (red→green→refactor):\n` +
+    // RED — write the failing test(s) FIRST and prove they fail for the right reason. NO
+    // implementation. This makes test-first VERIFIABLE: a slice cannot reach Green/Land without a
+    // captured red proof — defending against "wrote the impl, backfilled a passing test".
+    phase('Red')
+    const red = await agent(
+      `RED step of strict test-first — write ONLY the test(s), NO implementation:\n` +
         `  id: ${slice.id}\n  goal: ${slice.goal}\n  acceptance: ${slice.acceptance}\n` +
-        `  edge-case matrix (each row needs a test through the real interface): ${slice.matrix.join('; ')}\n\n` +
+        `  edge-case matrix (each row needs a test through the REAL interface, per rules/testing.md): ${slice.matrix.join('; ')}\n\n` +
         (attempt > 1
-          ? `Your prior attempt was REJECTED and its changes were discarded. Start fresh and address exactly:\n- ${lastReasons.join('\n- ')}\n\n`
+          ? `Your prior attempt was REJECTED and discarded. Start fresh; address these rejection reasons:\n- ${lastReasons.join('\n- ')}\n\n`
           : '') +
-        `You are running INSIDE the build-slice workflow: run only FOCUSED tests for THIS slice during your ` +
-        `red→green loop (the workflow owns the authoritative full verify next), and do NOT commit (the workflow ` +
-        `commits after the slice is confirmed). When you run standalone, your normal full-suite + commit ` +
-        `discipline applies — this deferral is workflow-scoped only.`,
-      { agentType: 'argo:builder', label: `build:${slice.id}#${attempt}`, phase: 'Build' },
+        `Write tests that exercise the feature through its real interface and cover every applicable matrix row. Then ` +
+        `RUN them and capture the output. They MUST FAIL — and fail because the behaviour/module under test is missing ` +
+        `or incorrect, NOT because the test file itself is malformed (a typo/syntax error in the test). Do NOT write or ` +
+        `modify any implementation code. Do NOT commit. Report the exact test command, the verbatim failing output, and ` +
+        `whether they failed for the right reason.`,
+      { agentType: 'argo:builder', label: `red:${slice.id}#${attempt}`, phase: 'Red', schema: RED },
+    )
+    if (!red || !red.failedForRightReason) {
+      lastReasons = [`RED not proven (strict test-first failed): ${red?.notes ?? red?.failingOutput ?? '(no red proof produced)'}`]
+      log(`slice ${slice.id}: RED not proven (attempt ${attempt})`)
+      continue
+    }
+    log(`slice ${slice.id}: RED proven (attempt ${attempt}) via \`${red.testCommand}\``)
+
+    // GREEN — implement the minimal real code to turn the now-existing red tests green, then
+    // refactor. Focused tests only in-loop; the authoritative full suite is the Verify gate next.
+    phase('Green')
+    await agent(
+      `GREEN step: make the failing tests from the RED step pass by implementing this slice.\n` +
+        `  slice: ${slice.id} — ${slice.goal}\n  the tests already exist (command: ${red.testCommand}) and currently fail:\n` +
+        `${red.failingOutput}\n\n` +
+        `Implement the minimal REAL code to turn them green, then refactor. You may correct a test ONLY if it is ` +
+        `genuinely wrong (e.g. asserts on an implementation detail) — say so explicitly; do NOT weaken or delete tests ` +
+        `to force green. Run only the FOCUSED tests for this slice during your loop (the workflow owns the ` +
+        `authoritative full verify next). Do NOT commit (the workflow commits after the slice is confirmed).`,
+      { agentType: 'argo:builder', label: `green:${slice.id}#${attempt}`, phase: 'Green' },
     )
 
     // Verify — the gate. An agent is the only option (no raw-shell primitive), but `passed` is
@@ -223,11 +263,13 @@ for (const slice of slices) {
     // the builder, before commit), so the prompt stays lean.
     phase('Confirm')
     const verdict = await agent(
-      `Slice "${slice.id}" passed \`${verifyCmd}\`. Without re-running anything, inspect the working-tree diff ` +
+      `Slice "${slice.id}" passed \`${verifyCmd}\`. Its tests were proven RED before implementation ` +
+        `(red command: \`${red.testCommand}\`). Without re-running anything, inspect the working-tree diff ` +
         `(git diff / git diff --staged) and judge ONLY whether its tests are honest. confirmed=true ONLY if the ` +
         `tests drive the feature through its REAL interface (not vacuous stubs), every required matrix row ` +
-        `(${slice.matrix.join('; ')}) has a real test, and the acceptance ("${slice.acceptance}") is actually ` +
-        `asserted. Be adversarial — catch green-but-broken. Otherwise confirmed=false with specific reasons.`,
+        `(${slice.matrix.join('; ')}) has a real test, the acceptance ("${slice.acceptance}") is actually asserted, ` +
+        `and the tests were NOT weakened/gutted between red and green to force a pass. Be adversarial — catch ` +
+        `green-but-broken. Otherwise confirmed=false with specific reasons.`,
       { agentType: 'argo:reviewer', label: `confirm:${slice.id}#${attempt}`, phase: 'Confirm', schema: VERDICT },
     )
     if (verdict?.confirmed) confirmed = true
@@ -260,7 +302,7 @@ for (const slice of slices) {
   confirmedCount++
   row.status = 'done'
   row.result = `\`${sha.slice(0, 10)}\``
-  results.push({ id: slice.id, status: 'DONE', attempts: attempt, sha })
+  results.push({ id: slice.id, status: 'DONE', attempts: attempt, sha, redProven: true })
   await publishProgress(rows, `${confirmedCount}/${slices.length} slices confirmed.`)
 }
 

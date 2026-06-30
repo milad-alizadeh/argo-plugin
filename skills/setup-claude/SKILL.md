@@ -48,7 +48,10 @@ it expects the argo agents (`argo:builder`/`argo:reviewer`), also installed by t
 **Instantiate, don't ship raw:** `build-slice`'s `verifyCmd` default is a bun placeholder.
 Replace it with the project's **detected** typecheck/lint/test commands (from §2) so it
 doesn't fail every slice on a non-bun project — same adapt-on-install treatment the rules
-get. Don't overwrite a workflow the user has edited: switch to diff/ask mode (per §1).
+get. **Defeat build-cache false-greens:** if the project uses a caching task runner
+(turbo/nx/bazel), the instantiated `verifyCmd` MUST force execution (e.g. `TURBO_FORCE=true`
+/ `--force`) — a cached pass can mask tests that never ran (observed in dogfooding). Don't
+overwrite a workflow the user has edited: switch to diff/ask mode (per §1).
 
 ## 7. graphify (conditional) — treat the graph as local build cache
 Only if the `graphify` CLI is present: run `graphify install --platform claude`

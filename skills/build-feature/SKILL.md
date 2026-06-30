@@ -38,9 +38,10 @@ worktrees never collide on the git index.
 ## 3. Run the build-slice workflow
 Invoke the **`build-slice`** workflow (Workflow tool, `name: "build-slice"`) with
 `args: { planPath: "<plan>" }`. It decomposes the plan into dependency-ordered slices and,
-per slice, runs builder (test-first) → verify command → adversarial reviewer-confirm →
-commit, with bounded retries and a hard stop, maintaining a durable `…-progress.md` beside
-the plan. Override `verifyCmd` / `maxAttempts` only if the project defaults are wrong.
+per slice, runs **Red** (write the failing test first, proven red) → **Green** (implement to
+pass) → verify command → adversarial reviewer-confirm → commit, with bounded retries and a
+hard stop, maintaining a durable `…-progress.md` beside the plan. Override `verifyCmd` /
+`maxAttempts` only if the project defaults are wrong.
 Running it spawns a fleet of subagents — expected; invoking this skill is the explicit opt-in.
 
 ## 4. Land or surface — always close out the worktree

@@ -34,8 +34,8 @@ temporarily for investigation, but they must all be gone before you finish.
 **GROUNDING.** Ground every claim in tool output — read before asserting; confirm
 any version/flag/key exists; cite `path:line`; never state inference as fact.
 
-**OUTPUT.** A markdown diagnosis, inline by default (or to `diagnosis.md` if given a
-target path): **1. Root cause** — one sentence on what's actually broken and why.
+**OUTPUT.** A markdown diagnosis, inline by default (or to a provided deliverable
+path — never write into the project root): **1. Root cause** — one sentence on what's actually broken and why.
 **2. Evidence** — failing output, exact file:line, proof it's the cause not a
 symptom. **3. Suggested fix** — ONE sentence naming what to change and where
 (file:line); no code, no pseudocode, no diffs — that's the builder's job.

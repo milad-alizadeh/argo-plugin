@@ -44,33 +44,30 @@ Only if the `graphify` CLI is present: run `graphify install --platform claude`
 `deepen-architecture` from `${CLAUDE_PLUGIN_ROOT}/templates/skills/` into
 `.claude/skills/`.
 
-**Gitignore the churn; commit the labels.** The graph splits into two artifacts with
-opposite economics: **structure** (`graph.json`/`GRAPH_REPORT.md`/`graph.html`) is
-large, churny, and cheap to rebuild from code (AST, no LLM); **community labels**
-(`.graphify_labels.json`) are small, stable, **LLM-produced** — the expensive part,
-and what makes the graph queryable for Claude (you query "the auth community", not
-"Community 7"). Committing the churny files from parallel worktrees is a
-merge-conflict factory; gitignoring the *labels* would force re-paying LLM cost (or
-navigating unlabeled) on every checkout. So split them:
+The labeled `graph.json` (community names embedded per node) is what Claude reads,
+so it must be **committed and present**. To stay conflict-free across parallel
+worktree agents, exactly **one writer commits it, on `main` only** — worktrees never
+commit the graph.
 
-- **Commit `.graphify_labels.json`; gitignore the rest** of `graphify-out/`:
-  ```
-  **/graphify-out/*
-  !**/graphify-out/.graphify_labels.json
-  ```
-- **Per-workspace graphs** (a single root `graphify .` handles workspaces poorly):
-  `graphify <each app/package dir>` → `<ws>/graphify-out/`. The first build runs the
-  full LLM pass to seed labels (committed).
-- **Rebuild locally** (SessionStart step, auto-discovering workspaces by a present
-  `graphify-out/`): `graphify update <ws>` rebuilds structure with **no LLM** and
-  **re-attaches the committed labels** — every fresh checkout/worktree is labeled at
-  zero LLM cost; only genuinely-new communities show as placeholders. No
-  post-commit/post-merge/merge-driver (the fragile machinery: husky's relative
-  `core.hooksPath` doesn't fire in worktrees, `graphify update` never commits,
-  union-merging JSON corrupts silently).
-- **Naming new communities = single writer:** `integrator`/CI runs `graphify label
-  --missing-only` after integration on main and commits the updated
-  `.graphify_labels.json`. Worktrees never write it in parallel → no conflicts.
+- **Seed per workspace** (works for both shapes): **monorepo** → `graphify <each
+  app/package dir>` → `<ws>/graphify-out/`; **single-app** → one `graphify .` at the
+  repo root (a single root build handles a real monorepo poorly, so split there).
+- **Install the templates** from `${CLAUDE_PLUGIN_ROOT}/templates/graphify/`: append
+  `gitignore` to the project's `.gitignore` (commits `graph.json` + `GRAPH_REPORT.md`
+  + `.graphify_labels.json`, ignores `graph.html`/`cache/`/analysis), and copy
+  `refresh-graph.sh` into the project (e.g. `scripts/`). The script auto-discovers
+  workspaces, so it serves monorepo and single-app unchanged.
+- **Single writer = the `integrator` agent (or a local main-side step), on-device.**
+  On each integration to `main`, hands-off, it runs `refresh-graph.sh`:
+  `graphify update --force` + `graphify label --missing-only --backend=claude-cli`
+  (spawns on-device `claude` — subscription auth, **no API key**) + commit. The writer
+  must run where `claude` is authenticated — **on-device, not headless cloud CI**;
+  without a backend, labels degrade to `Community N` (no crash). Solo dev = one
+  writer, one machine → no write-race.
+- **Worktrees never commit the graph** — they read main's (present + labeled
+  instantly on checkout). An agent that wants its own in-flight code mapped runs a
+  **local, uncommitted** `graphify update <ws>` (never staged) — so parallel
+  worktrees can't conflict on graph files. No merge-driver, no per-worktree hooks.
 
 If graphify is absent, skip silently — the active skills degrade to plain read/grep.
 

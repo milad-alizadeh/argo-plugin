@@ -109,7 +109,7 @@ const SLICES = {
       type: 'array',
       items: {
         type: 'object',
-        required: ['id', 'goal', 'acceptance', 'matrix', 'reviewRisk'],
+        required: ['id', 'goal', 'acceptance', 'matrix', 'reviewRisk', 'testSurface'],
         properties: {
           id: { type: 'string', description: 'short kebab id, unique, e.g. mcp-ask-user' },
           goal: { type: 'string', description: 'the smallest shippable vertical slice' },
@@ -135,6 +135,16 @@ const SLICES = {
               'crypto/secrets, concurrency, IPC/preload boundaries, permissions, data migrations) or you judge it ' +
               'error-prone — it will get an independent adversarial review. \'low\' for routine logic/config. You may ' +
               'only RAISE risk; a low flag never suppresses a review a risk-sensitive path or sample forces.',
+          },
+          testSurface: {
+            type: 'string',
+            enum: ['unit', 'e2e', 'both'],
+            description:
+              "Which harness proves this slice through its REAL interface (rules/testing.md): 'unit' = fast " +
+              'headless runner (e.g. vitest) driving the real API/store/DB/CLI directly; ' +
+              "'e2e' = the app driven through its real UI (e.g. Playwright against the running app); " +
+              "'both' when the same behaviour must be proven headless AND through the running app. Pick by what " +
+              'the real interface actually IS — do not default to unit for UI or e2e for pure logic.',
           },
         },
       },
@@ -272,11 +282,12 @@ for (const slice of slices) {
       `Follow the \`test-first\` and \`engineering-principles\` skills throughout.\n\n` +
         `RED step of strict test-first — write ONLY the test(s), NO implementation:\n` +
         `  id: ${slice.id}\n  goal: ${slice.goal}\n  acceptance: ${slice.acceptance}\n` +
+        `  test surface: ${slice.testSurface} — ${slice.testSurface === 'unit' ? 'drive the real API/store/DB/CLI directly in the headless runner (e.g. vitest); do NOT stand up the app UI' : slice.testSurface === 'e2e' ? 'drive the running app through its real UI (e.g. Playwright); do NOT unit-test the logic in isolation' : 'BOTH — a headless test on the real API/store/DB AND an e2e test through the running app UI'}\n` +
         `  edge-case matrix (each row needs a test through the REAL interface, per rules/testing.md): ${slice.matrix.join('; ')}\n\n` +
         (attempt > 1
           ? `Your prior attempt was REJECTED and discarded. Start fresh; address these rejection reasons:\n- ${lastReasons.join('\n- ')}\n\n`
           : '') +
-        `Write tests that exercise the feature through its real interface and cover every applicable matrix row. Then ` +
+        `Write tests on the ${slice.testSurface} surface named above that exercise the feature through its real interface and cover every applicable matrix row. Then ` +
         `RUN them and capture the output. They MUST FAIL — and fail because the behaviour/module under test is missing ` +
         `or incorrect, NOT because the test file itself is malformed (a typo/syntax error in the test). Do NOT write or ` +
         `modify any implementation code. Do NOT commit. Report the exact test command, the verbatim failing output, and ` +

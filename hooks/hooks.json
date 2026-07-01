@@ -1,5 +1,5 @@
 {
-  "description": "Argo guardrails — block destructive git operations and pipe-to-shell supply-chain attacks before they run.",
+  "description": "Argo guardrails — block destructive git + pipe-to-shell before they run, and auto-format files as they're written.",
   "hooks": {
     "PreToolUse": [
       {
@@ -14,6 +14,18 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/check-pipe-to-shell.mjs\"",
             "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/format-on-write.mjs\"",
+            "timeout": 15
           }
         ]
       }

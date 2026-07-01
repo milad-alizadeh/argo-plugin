@@ -1,0 +1,15 @@
+# Pre-push gate template (installed by /argo:setup-claude). The last line before code
+# leaves the machine when there's no CI. Runs the fail-loud checks across the whole graph;
+# setup-claude instantiates the commands from the project's detected typecheck/lint/test
+# (and a cache-buster like TURBO_FORCE for caching runners). Formatting is NOT gated here —
+# it's an auto-fix concern (see the format-on-write hook). Bypassable with --no-verify;
+# add a required CI check as the unbypassable backstop when available.
+pre-push:
+  parallel: true
+  jobs:
+    - name: typecheck
+      run: bun run typecheck
+    - name: lint
+      run: bun run lint
+    - name: test
+      run: bun run test

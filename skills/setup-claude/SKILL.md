@@ -62,6 +62,29 @@ chains `${CLAUDE_PLUGIN_ROOT}/hooks/trust-gate.mjs` onto Verify for slices marke
 logic/library/config slices set `requiresLaunch:false` and are unaffected — the gate never
 blocks a slice that isn't shipping launchable behaviour.
 
+## 6b. Install enforcement hooks (format-on-write + pre-push gate)
+Guarantee that AI-written code stays typed/lint-clean/formatted **no matter when or by
+whom it's written** — layered, treating auto-fixable (format) differently from fail-loud
+(type/lint/test):
+
+- **Format = auto-fix, never a gate.** The plugin's `format-on-write.mjs` PostToolUse hook
+  (auto-loaded, matcher `Edit|Write`) runs the project's own `prettier` on each touched
+  file. No install needed here — it activates with the plugin. (No project prettier → it
+  no-ops silently.)
+- **Type + lint + test = the gate.** The load-bearing guarantee is a **CI required status
+  check on the protected branch** running the FULL graph (`turbo run typecheck lint test`),
+  because it's the one layer `--no-verify` can't reach and is author-agnostic. If the
+  project has CI, wire that as a required check.
+- **No CI yet → install the pre-push gate.** Copy `${CLAUDE_PLUGIN_ROOT}/templates/lefthook.yml`
+  to the project root, `bun add -d lefthook`, add `"prepare": "lefthook install"` to the root
+  `package.json` (so a fresh clone re-installs the hook), and run `lefthook install` once.
+  Instantiate the three `run:` commands from the detected typecheck/lint/test (with the same
+  cache-buster as §6). Pre-push is bypassable — it's fast local feedback, not the guarantee;
+  say so and recommend adding CI later.
+
+Do not gate formatting in the pre-push hook or CI-as-failure beyond a `--check` backstop —
+a machine can fix whitespace; failing a build on it is waste.
+
 ## 7. graphify (conditional) — treat the graph as local build cache
 Only if the `graphify` CLI is present: run `graphify install --platform claude`
 (graphify installs its **own** maintained skill — don't vendor one) and copy

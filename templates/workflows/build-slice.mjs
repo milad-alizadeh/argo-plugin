@@ -269,7 +269,8 @@ for (const slice of slices) {
     // captured red proof — defending against "wrote the impl, backfilled a passing test".
     phase('Red')
     const red = await agent(
-      `RED step of strict test-first — write ONLY the test(s), NO implementation:\n` +
+      `Follow the \`test-first\` and \`engineering-principles\` skills throughout.\n\n` +
+        `RED step of strict test-first — write ONLY the test(s), NO implementation:\n` +
         `  id: ${slice.id}\n  goal: ${slice.goal}\n  acceptance: ${slice.acceptance}\n` +
         `  edge-case matrix (each row needs a test through the REAL interface, per rules/testing.md): ${slice.matrix.join('; ')}\n\n` +
         (attempt > 1
@@ -293,7 +294,8 @@ for (const slice of slices) {
     // refactor. Focused tests only in-loop; the authoritative full suite is the Verify gate next.
     phase('Green')
     const green = await agent(
-      `GREEN step: make the failing tests from the RED step pass by implementing this slice.\n` +
+      `Follow the \`test-first\` and \`engineering-principles\` skills throughout.\n\n` +
+        `GREEN step: make the failing tests from the RED step pass by implementing this slice.\n` +
         `  slice: ${slice.id} — ${slice.goal}\n  the tests already exist (command: ${red.testCommand}) and currently fail:\n` +
         `${red.failingOutput}\n\n` +
         `Implement the minimal REAL code to turn them green, then refactor. You may correct a test ONLY if it is ` +

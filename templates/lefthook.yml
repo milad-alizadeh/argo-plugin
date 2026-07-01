@@ -13,3 +13,10 @@ pre-push:
       run: bun run lint
     - name: test
       run: bun run test
+
+# Single touchpoint, single writer: graphify refreshes only when main integrates commits.
+# refresh-graph.sh self-guards (main-only, skips worktrees).
+post-merge:
+  jobs:
+    - name: graphify-refresh
+      run: bash scripts/refresh-graph.sh

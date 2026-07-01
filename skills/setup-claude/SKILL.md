@@ -104,13 +104,16 @@ commit the graph.
   + `.graphify_labels.json`, ignores `graph.html`/`cache/`/analysis), and copy
   `refresh-graph.sh` into the project (e.g. `scripts/`). The script auto-discovers
   workspaces, so it serves monorepo and single-app unchanged.
-- **Single writer = the `integrator` agent (or a local main-side step), on-device.**
-  On each integration to `main`, hands-off, it runs `refresh-graph.sh`:
+- **Single touchpoint, single writer = a `post-merge` git hook** (installed via
+  `lefthook`), on-device. It fires **only when `main` integrates commits** (a merge or
+  `git pull`) — the one moment the graph should advance — and runs `refresh-graph.sh`:
   `graphify update --force` + `graphify label --missing-only --backend=claude-cli`
-  (spawns on-device `claude` — subscription auth, **no API key**) + commit. The writer
-  must run where `claude` is authenticated — **on-device, not headless cloud CI**;
-  without a backend, labels degrade to `Community N` (no crash). Solo dev = one
-  writer, one machine → no write-race.
+  (spawns on-device `claude` — subscription auth, **no API key**) + commit. The script
+  self-guards (main-only, skips worktrees), so worktree/feature-branch commits never
+  write the graph → no write-race. `post-merge` (not `post-commit`) means it never fires
+  on ordinary commits and can't recurse on its own graph commit. Must run where `claude`
+  is authenticated — **on-device, not headless CI**; without a backend, labels degrade to
+  `Community N` (no crash).
 - **Worktrees never commit the graph** — they read main's (present + labeled
   instantly on checkout). An agent that wants its own in-flight code mapped runs a
   **local, uncommitted** `graphify update <ws>` (never staged) — so parallel

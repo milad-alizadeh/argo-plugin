@@ -13,6 +13,14 @@
 set -euo pipefail
 
 command -v graphify >/dev/null 2>&1 || { echo "graphify not installed — skipping graph refresh"; exit 0; }
+
+# SINGLE-WRITER guards — this may be invoked automatically (post-merge hook), so it must
+# no-op anywhere it isn't the sole authorized writer:
+#   1. only on `main` (feature branches / the default integration branch)
+#   2. never inside a linked worktree (git-dir under .git/worktrees/) — worktrees read
+#      main's graph, never write it, so parallel builds can't race on graph.json
+[ "$(git rev-parse --abbrev-ref HEAD)" = "main" ] || { echo "graphify refresh: not on main — skipping"; exit 0; }
+case "$(git rev-parse --git-dir)" in */worktrees/*) echo "graphify refresh: in a worktree — skipping"; exit 0 ;; esac
 cd "$(git rev-parse --show-toplevel)"
 
 # Discover workspaces = dirs containing a graphify-out/ (skip node_modules/.git).

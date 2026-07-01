@@ -132,9 +132,11 @@ const SLICES = {
             enum: ['low', 'high'],
             description:
               "'high' if this slice touches security/correctness-sensitive surface (auth, the trust gate, " +
-              'crypto/secrets, concurrency, IPC/preload boundaries, permissions, data migrations) or you judge it ' +
-              'error-prone — it will get an independent adversarial review. \'low\' for routine logic/config. You may ' +
-              'only RAISE risk; a low flag never suppresses a review a risk-sensitive path or sample forces.',
+              'crypto/secrets, concurrency, IPC/preload boundaries, permissions, data migrations), OR touches a ' +
+              'HIGH-BLAST-RADIUS module — one many others depend on in the graphify graph (check GRAPH_REPORT.md / ' +
+              'graph.json for dependents; a change there ripples widely) — OR you judge it error-prone. It then gets ' +
+              "an independent adversarial review. 'low' for routine, low-fan-in logic/config. You may only RAISE " +
+              'risk; a low flag never suppresses a review a risk-sensitive path or sample forces.',
           },
           testSurface: {
             type: 'string',

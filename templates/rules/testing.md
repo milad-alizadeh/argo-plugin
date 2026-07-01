@@ -14,6 +14,23 @@ library's graph tools (e.g. `@xstate/graph` — enumerate reachable paths/events
 then prove each renders through the real interface — coverage comes from the
 machine definition, not hand-picked cases.
 
+### Assert the rendered UI, not the internal API/bridge call beneath it
+
+When the app has an internal data/transport layer between the UI and its logic
+(IPC in Electron, a GraphQL/REST client, a WebSocket bridge, a native bridge in
+mobile, …), calling that layer directly from an e2e test and asserting on its
+return value is NOT the same as proving the feature works — it proves the data
+layer, not what the user sees. Wherever a rendered UI exists for the behaviour
+under test, the e2e test MUST assert against that UI (`page.locator(...)`,
+visible text, element state/class, screen reader tree, …) — a session starting
+shows something on screen; a status change is visible; an error shows a visible
+indicator. An internal-API-only check is a **unit test wearing an e2e
+costume** — acceptable ONLY as a stand-in before the UI for that behaviour
+exists yet (state so explicitly in the test's docstring, e.g. "no UI yet —
+ships in a later slice"), and it must be replaced or supplemented with a real
+UI assertion the moment that UI lands. Do not let an internal-layer check
+quietly become the permanent proof of a shipped, user-facing feature.
+
 ## Every new feature ships with an edge-case matrix
 
 A feature is not done until its plan/PR contains an **explicit edge-case matrix**

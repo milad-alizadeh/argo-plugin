@@ -9,6 +9,7 @@ export const meta = {
   whenToUse:
     'After a plan doc exists (e.g. from argo:planner), to build it slice-by-slice with deterministic gates and risk-tiered review. Run via /argo:build-feature, which isolates it in its own git worktree (per-slice commits land on the worktree branch, never the main checkout).',
   phases: [
+    { title: 'Preflight', detail: 'one cheap up-front bun install, once per run, before any slice builder runs' },
     { title: 'Slice', detail: 'adapt the plan into an ordered, machine-readable slice list' },
     { title: 'Build', detail: 'one agent per slice: red -> green -> revert-check -> verify -> self-commit' },
     { title: 'Confirm', detail: 'independent reviewer, ONLY for risk-flagged slices, before/instead of self-commit' },
@@ -44,15 +45,21 @@ const RISKY_PATHS =
   /(^|\/)(hooks|preload|ipc|auth|security|crypto|permissions|secrets|session|middleware|migrations)(\/|$)|\.env|mcp\.json|settings\.json|package\.json|bun\.lock/i
 const REVIEW_SAMPLE_EVERY = opts?.reviewSampleEvery ?? 5
 // Known before Build runs (no changedPaths yet).
-function preflightReview(slice, index) {
+function preflightReview(slice, index, total) {
   if (slice.reviewRisk === 'high') return { review: true, why: 'planner marked reviewRisk:high' }
   if (slice.requiresLaunch === true) return { review: true, why: 'requiresLaunch (app behaviour)' }
-  if (index % REVIEW_SAMPLE_EVERY === 0) return { review: true, why: `drift sample (1-in-${REVIEW_SAMPLE_EVERY})` }
+  // A run shorter than the sample cadence never reaches a full 1-in-N cycle, which would
+  // silently give it ZERO drift-sample coverage — guarantee at least its final slice gets one.
+  if (total <= REVIEW_SAMPLE_EVERY) {
+    if (index === total - 1) return { review: true, why: 'drift sample (short run, final slice)' }
+    return { review: false, why: 'low-risk (upfront): pending path check' }
+  }
+  if ((index + 1) % REVIEW_SAMPLE_EVERY === 0) return { review: true, why: `drift sample (1-in-${REVIEW_SAMPLE_EVERY})` }
   return { review: false, why: 'low-risk (upfront): pending path check' }
 }
 // Re-checked after Build using the real changedPaths; the script has final say, not the model.
-function shouldReview(slice, changedPaths, index) {
-  const pre = preflightReview(slice, index)
+function shouldReview(slice, changedPaths, index, total) {
+  const pre = preflightReview(slice, index, total)
   if (pre.review) return pre
   const hit = (changedPaths ?? []).find((p) => RISKY_PATHS.test(p))
   if (hit) return { review: true, why: `risk-sensitive path: ${hit}` }
@@ -121,7 +128,7 @@ const BUILD = {
   ],
   properties: {
     testCommand: { type: 'string', description: "exact command that runs THIS slice's new tests" },
-    failingOutput: { type: 'string', description: 'verbatim RED output, before implementation' },
+    failingOutput: { type: 'string', description: 'the RED failure output, before implementation — trimmed to the failing section (not the full runner banner), but the failure text itself verbatim' },
     failedForRightReason: {
       type: 'boolean',
       description: 'true iff the tests failed because the behaviour/module under test is missing/incorrect — NOT because the test file itself is malformed',
@@ -138,7 +145,7 @@ const BUILD = {
     revertCheckNotes: { type: 'string', description: 'what you saw on revert (the failure), or why revert-check could not run' },
     verifyExitCode: { type: 'integer', description: 'the actual exit status of the full verify command' },
     verifyPassed: { type: 'boolean', description: 'strictly verifyExitCode === 0' },
-    verifyOutput: { type: 'string', description: 'the literal trailing output of the verify command (failures verbatim)' },
+    verifyOutput: { type: 'string', description: 'a trimmed grep/tail of the verify command\'s failing/summary lines (full log kept on disk, never deleted) — the failure text itself verbatim, not paraphrased' },
     needsReview: {
       type: 'boolean',
       description:
@@ -171,6 +178,14 @@ const FINAL_VERDICT = {
     findings: { type: 'array', items: { type: 'string' }, description: 'specific issues, each with file:line; empty if ok' },
   },
 }
+const PREFLIGHT = {
+  type: 'object',
+  required: ['installExitCode', 'installOutput'],
+  properties: {
+    installExitCode: { type: 'integer', description: 'exact exit code of `bun install` run from the repo root' },
+    installOutput: { type: 'string', description: 'verbatim trailing output of `bun install` (truncate to last ~4000 chars if huge)' },
+  },
+}
 
 // Renders + writes the durable progress doc.
 const ICON = { pending: '⏳', building: '🔨', done: '✅', blocked: '⛔' }
@@ -194,6 +209,25 @@ async function publishProgress(rows, summary) {
     { label: 'progress', phase: 'Track', model: 'haiku', effort: 'low' },
   )
 }
+
+// Cheap, once-per-run environment sanity check. A fresh build-feature worktree always
+// starts with zero/stale node_modules, so without this, slice 1's builder routinely
+// rediscovers and self-heals the same broken-dependency state mid-session (expensive,
+// repeated per run). Fail loud here instead of letting every run pay for it piecemeal.
+phase('Preflight')
+const preflight = await agent(
+  `From the repo root, run EXACTLY: \`bun install\`. Do nothing else — no typecheck, no lint, no test, ` +
+    `no code changes, no other commands. Report installExitCode (the real exit code) and installOutput ` +
+    `(verbatim, truncated to the last ~4000 chars if huge).`,
+  { label: 'preflight-install', phase: 'Preflight', model: 'haiku', effort: 'low', schema: PREFLIGHT },
+)
+if (preflight?.installExitCode !== 0) {
+  throw new Error(
+    `build-slices: preflight \`bun install\` failed (exit ${preflight?.installExitCode ?? '?'}) — fix the ` +
+      `environment before building slices:\n${preflight?.installOutput ?? '(no output)'}`,
+  )
+}
+log(`preflight: bun install clean (exit 0) — dependencies ready for all slices`)
 
 // Decompose the plan into an ordered, typed slice list.
 phase('Slice')
@@ -227,7 +261,7 @@ for (const slice of slices) {
   await publishProgress(rows, `${confirmedCount}/${slices.length} confirmed — building ${slice.id}…`)
 
   const sliceVerify = gatedVerify(verifyCmd, slice.requiresLaunch === true)
-  const pre = preflightReview(slice, index)
+  const pre = preflightReview(slice, index, slices.length)
 
   let attempt = 0
   let confirmed = false
@@ -242,6 +276,19 @@ for (const slice of slices) {
     phase('Build')
     const build = await agent(
       `Follow the \`test-first\` and \`engineering-principles\` skills throughout.\n\n` +
+        `CONTEXT HYGIENE — this whole slice runs in ONE continuous session; every command's stdout stays in your ` +
+        `context for every step after it, so it compounds. Keep it lean without losing honesty:\n` +
+        `  - Never run the full verify command more than once — only at STEP 4. During RED/GREEN, run ONLY this ` +
+        `slice's own test file/command, never the whole suite.\n` +
+        `  - For any command whose full output you don't need to inspect line-by-line (installs, builds, a passing ` +
+        `typecheck/lint), redirect to a scratch log and print a trimmed tail/grep instead of letting the raw stream ` +
+        `sit in your context. CAPTURE THE EXIT CODE FIRST, before any grep/tail — redirect with \`;\`, never pipe the ` +
+        `command itself into grep/tail (a pipe makes \`$?\` reflect grep/tail's exit status, not the command's, which ` +
+        `would corrupt the exit-code gate) — e.g. \`bun install > /tmp/build-${slice.id}-install.log 2>&1; echo ` +
+        `EXIT:$?; tail -n 30 /tmp/build-${slice.id}-install.log\` (note the \`;\` before both \`echo\` and \`tail\` — ` +
+        `never \`|\`). NEVER delete the scratch log — only trim what you echo back.\n` +
+        `  - If you must fix an unrelated broken dependency to get RED/GREEN working, do it in as few commands as ` +
+        `possible and log/trim the same way.\n\n` +
         (attempt > 1
           ? `RETRY (attempt ${attempt}). First run EXACTLY: \`git reset --hard HEAD && git clean -fd -e '*-progress.md'\` ` +
             `to discard your previous rejected attempt, then start fresh. Prior rejection reasons — address them:\n` +
@@ -251,16 +298,25 @@ for (const slice of slices) {
         `  id: ${slice.id}\n  goal: ${slice.goal}\n  acceptance: ${slice.acceptance}\n` +
         `  test surface: ${slice.testSurface} — ${slice.testSurface === 'unit' ? 'drive the real API/store/DB/CLI directly in the headless runner (e.g. vitest); do NOT stand up the app UI' : slice.testSurface === 'e2e' ? 'drive the running app through its real UI (e.g. Playwright); do NOT unit-test the logic in isolation' : 'BOTH — a headless test on the real API/store/DB AND an e2e test through the running app UI'}\n` +
         `  edge-case matrix (each row needs a test through the REAL interface, per rules/testing.md): ${slice.matrix.join('; ')}\n\n` +
-        `STEP 1 — RED: write ONLY the test(s), no implementation. Run them; they MUST fail, and fail because the ` +
-        `behaviour/module is missing/incorrect, NOT because the test file itself is malformed. Report failedForRightReason honestly.\n\n` +
+        `STEP 1 — RED: write ONLY the test(s), no implementation. Run ONLY this slice's own test command (a scoped ` +
+        `test file/pattern, never the full verify suite) via a scratch log + trimmed tail/grep, per CONTEXT HYGIENE ` +
+        `above. They MUST fail, and fail because the behaviour/module is missing/incorrect, NOT because the test ` +
+        `file itself is malformed. Report failedForRightReason honestly, and failingOutput as the trimmed failing ` +
+        `section only (not the full runner banner).\n\n` +
         `STEP 2 — GREEN: implement the minimal real code to turn them green. You may correct a test ONLY if it is ` +
         `genuinely wrong (say so in revertCheckNotes) — do NOT weaken or delete a test to force green.\n\n` +
         `STEP 3 — REVERT-CHECK (required, do not skip): temporarily revert ONLY your implementation changes (git stash ` +
         `push, or manually undo — keep the test files as they are), re-run testCommand — it MUST fail again. If it ` +
         `still passes, your test is vacuous (asserts nothing real) — fix the test, do not proceed. Then restore your ` +
         `implementation (git stash pop, or reapply). Report revertCheckPassed honestly.\n\n` +
-        `STEP 4 — VERIFY: run EXACTLY this command from the repo root: \`${sliceVerify}\` — report the real exit code ` +
-        `and set verifyPassed = (exitCode === 0). Do not paraphrase failures; include them verbatim.\n\n` +
+        `STEP 4 — VERIFY (run this exactly ONCE, here, never earlier): run EXACTLY this command from the repo root, ` +
+        `capturing its REAL exit code BEFORE any grep/tail (redirect with \`;\`, never pipe the command itself into ` +
+        `grep/tail — a pipe would make the captured code reflect grep/tail's exit status, not the verify command's, ` +
+        `silently corrupting the verifyPassed gate): \`${sliceVerify} > /tmp/build-${slice.id}-verify.log 2>&1; echo ` +
+        `EXIT:$?\` — THAT echoed number is verifyExitCode; set verifyPassed = (that number === 0). Only after capturing ` +
+        `it, separately run \`tail\`/\`grep\` on the log file to produce a trimmed grep/tail of the failing/summary ` +
+        `lines as verifyOutput (keep the full log on disk, never delete it). Do not paraphrase failures; include the ` +
+        `trimmed failure lines verbatim.\n\n` +
         `STEP 5 — COMMIT DECISION: ${pre.review
           ? `this slice was FLAGGED for independent review upfront (${pre.why}) — do NOT commit. Set needsReview=true, committed=false, and stop after verify.`
           : `check EVERY path in changedPaths against this pattern (JS regex): ${RISKY_PATHS.source} — if ANY path ` +
@@ -289,7 +345,7 @@ for (const slice of slices) {
     }
     log(`slice ${slice.id}: red proven, revert-check passed, verify green (attempt ${attempt}) via \`${build.testCommand}\``)
 
-    const gate = shouldReview(slice, build.changedPaths, index)
+    const gate = shouldReview(slice, build.changedPaths, index, slices.length)
     const alreadyCommitted = build.committed === true
 
     if (!gate.review) {
@@ -329,7 +385,7 @@ for (const slice of slices) {
             `files — never graph artifacts (do not stage anything under a graphify-out/ directory). Write a concise ` +
             `conventional-commit message (goal: ${slice.goal}), commit with the repo's own git identity and signing. ` +
             `Do NOT push. Report the commit SHA.`,
-          { agentType: 'argo:builder', label: `land:${slice.id}#${attempt}`, phase: 'Land', schema: LANDED },
+          { agentType: 'argo:builder', model: 'haiku', effort: 'low', label: `land:${slice.id}#${attempt}`, phase: 'Land', schema: LANDED },
         )
         confirmed = true
         sha = landed?.sha ?? '(unreported)'

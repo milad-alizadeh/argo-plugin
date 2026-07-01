@@ -67,6 +67,39 @@ const progressPath =
   opts?.progressPath ?? (planPath.endsWith('.md') ? planPath.slice(0, -3) : planPath) + '-progress.md'
 const MAX_ATTEMPTS = opts?.maxAttempts ?? 3
 
+// ── Tiered reviewer gating (council-decided) ────────────────────────────────
+// The independent reviewer (Confirm) is expensive and — per the measurement — adds
+// ~zero value on trivial slices but catches real bugs on risky ones. So run it only
+// when warranted. ESCALATE-ONLY: the planner's `reviewRisk` can raise review but a
+// `low` flag never SUPPRESSES a review a deterministic trigger demands.
+// Triggers: planner flagged high | slice launches app behaviour | a changed path is
+// risk-sensitive | a periodic drift sample. NOTE deliberately NOT gating on diff SIZE
+// — the real bugs we've caught were one-liners (size is anti-correlated with danger).
+// Known gap (needs a shell/content-scan, deferred): unnamed risk (a new IPC channel,
+// exec/eval, a DELETED check) that touches no risky-named path. When the reviewer
+// catches such a case, codify it as a new RISKY_PATHS entry so it's caught for free next.
+const RISKY_PATHS =
+  opts?.riskyPaths ??
+  /(^|\/)(hooks|preload|ipc|auth|security|crypto|permissions|secrets|session|middleware|migrations)(\/|$)|\.env|mcp\.json|settings\.json|package\.json|bun\.lock/i
+const REVIEW_SAMPLE_EVERY = opts?.reviewSampleEvery ?? 5
+function shouldReview(slice, changedPaths, index) {
+  if (slice.reviewRisk === 'high') return { review: true, why: 'planner marked reviewRisk:high' }
+  if (slice.requiresLaunch === true) return { review: true, why: 'requiresLaunch (app behaviour)' }
+  const hit = (changedPaths ?? []).find((p) => RISKY_PATHS.test(p))
+  if (hit) return { review: true, why: `risk-sensitive path: ${hit}` }
+  if (index % REVIEW_SAMPLE_EVERY === 0) return { review: true, why: `drift sample (1-in-${REVIEW_SAMPLE_EVERY})` }
+  return { review: false, why: 'low-risk: deterministic gates only' }
+}
+// Green reports the paths it changed (mechanical self-report — not a risk judgement) so the
+// gate can check them against RISKY_PATHS deterministically.
+const GREEN_REPORT = {
+  type: 'object',
+  required: ['changedPaths'],
+  properties: {
+    changedPaths: { type: 'array', items: { type: 'string' }, description: 'repo-relative paths this slice created or modified' },
+  },
+}
+
 // ── Schemas ───────────────────────────────────────────────────────────────
 const SLICES = {
   type: 'object',
@@ -76,7 +109,7 @@ const SLICES = {
       type: 'array',
       items: {
         type: 'object',
-        required: ['id', 'goal', 'acceptance', 'matrix'],
+        required: ['id', 'goal', 'acceptance', 'matrix', 'reviewRisk'],
         properties: {
           id: { type: 'string', description: 'short kebab id, unique, e.g. mcp-ask-user' },
           goal: { type: 'string', description: 'the smallest shippable vertical slice' },
@@ -93,6 +126,15 @@ const SLICES = {
               'true ONLY if this slice ships app/UI behaviour a user launches and exercises — such slices are ' +
               'gated by the trust gate (§8.2): Verify goes RED unless a launch evidence receipt proves the app ' +
               'was launched AND exercised. Pure logic / library / config slices are false (the default).',
+          },
+          reviewRisk: {
+            type: 'string',
+            enum: ['low', 'high'],
+            description:
+              "'high' if this slice touches security/correctness-sensitive surface (auth, the trust gate, " +
+              'crypto/secrets, concurrency, IPC/preload boundaries, permissions, data migrations) or you judge it ' +
+              'error-prone — it will get an independent adversarial review. \'low\' for routine logic/config. You may ' +
+              'only RAISE risk; a low flag never suppresses a review a risk-sensitive path or sample forces.',
           },
         },
       },
@@ -250,15 +292,16 @@ for (const slice of slices) {
     // GREEN — implement the minimal real code to turn the now-existing red tests green, then
     // refactor. Focused tests only in-loop; the authoritative full suite is the Verify gate next.
     phase('Green')
-    await agent(
+    const green = await agent(
       `GREEN step: make the failing tests from the RED step pass by implementing this slice.\n` +
         `  slice: ${slice.id} — ${slice.goal}\n  the tests already exist (command: ${red.testCommand}) and currently fail:\n` +
         `${red.failingOutput}\n\n` +
         `Implement the minimal REAL code to turn them green, then refactor. You may correct a test ONLY if it is ` +
         `genuinely wrong (e.g. asserts on an implementation detail) — say so explicitly; do NOT weaken or delete tests ` +
         `to force green. Run only the FOCUSED tests for this slice during your loop (the workflow owns the ` +
-        `authoritative full verify next). Do NOT commit (the workflow commits after the slice is confirmed).`,
-      { agentType: 'argo:builder', label: `green:${slice.id}#${attempt}`, phase: 'Green' },
+        `authoritative full verify next). Do NOT commit (the workflow commits after the slice is confirmed). ` +
+        `Report the repo-relative paths of every file you created or modified.`,
+      { agentType: 'argo:builder', label: `green:${slice.id}#${attempt}`, phase: 'Green', schema: GREEN_REPORT },
     )
 
     // Verify — the gate. An agent is the only option (no raw-shell primitive), but `passed` is
@@ -279,9 +322,16 @@ for (const slice of slices) {
       continue
     }
 
-    // Confirm — independent adversarial check against green-but-broken. The reviewer already
-    // carries the test-honesty rules; this is the structural value (an unbiased reader, after
-    // the builder, before commit), so the prompt stays lean.
+    // Confirm — independent adversarial check against green-but-broken, but ONLY when the
+    // slice warrants it (tiered gating). Deterministic gates (red-proof + real-exit Verify +
+    // trust gate) have already passed; the reviewer adds value only on risk/judgment surface.
+    const gate = shouldReview(slice, green?.changedPaths, slices.indexOf(slice))
+    if (!gate.review) {
+      confirmed = true
+      log(`slice ${slice.id}: review SKIPPED (${gate.why}) — deterministic gates passed`)
+      continue
+    }
+    log(`slice ${slice.id}: review REQUIRED (${gate.why})`)
     phase('Confirm')
     const verdict = await agent(
       `Slice "${slice.id}" passed \`${sliceVerify}\`. Its tests were proven RED before implementation ` +

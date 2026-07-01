@@ -1,24 +1,7 @@
-// ─────────────────────────────────────────────────────────────────────────
-// ISOLATION: tree-agnostic — builds and commits in the CURRENT working tree/branch. The
-// caller (/argo:build-feature) runs it inside a dedicated git WORKTREE; subagents inherit
-// that cwd, so nothing here touches the user's main checkout.
-//
-// Per slice, ONE `argo:builder` call does red -> green -> revert-check -> verify and
-// self-commits (it already has Bash — no separate agent needed just to run a command).
-// The independent reviewer only fires for risk-flagged slices (see shouldReview); everyone
-// else stands on the revert-check + real exit code alone. Revert-check = temporarily undo
-// the implementation and confirm the test fails again — the cheap defense against a test
-// that can never fail (a real exit code can't catch that on its own).
-//
-// graphify single-writer rule: never stage graph artifacts here; the integrator refreshes
-// the graph on the default branch post-merge.
-//
-// DEPENDS ON argo:builder / argo:reviewer; unknown agentTypes fall back to general-purpose
-// — /argo:build-feature preflights this.
-//
-// RESUME: retry counts live in plain locals, not tracked by the runtime's resume; a resumed
-// run re-enters a slice from attempt 1 (safe — it never commits unverified work).
-// ─────────────────────────────────────────────────────────────────────────
+// Builds every slice in a plan doc, test-first, in the current worktree/branch.
+// Per slice: one argo:builder call does red -> green -> revert-check -> verify -> self-commit.
+// An independent argo:reviewer only runs for risk-flagged slices. One final review pass
+// checks the whole run's diff at the end. Progress is written to a durable doc per slice.
 export const meta = {
   name: 'build-slices',
   description:
@@ -35,56 +18,39 @@ export const meta = {
   ],
 }
 
-// ── Inputs ────────────────────────────────────────────────────────────────
-// args.planPath     — path to the phase plan doc that seeds the slices (required)
-// args.verifyCmd    — the deterministic verify command (default: the repo's own)
-// args.trustGateCmd — §7 gate chained onto Verify for requiresLaunch slices (default pipes a
-//                     Stop-hook payload into $ARGO_TRUST_GATE; setup-claude sets the real path)
-// args.progressPath — where to write the live progress doc (default: alongside the plan)
-// args may arrive as an object, a JSON-encoded string (harness-dependent), or a bare plan path.
+// Inputs: args.planPath (required), args.verifyCmd, args.trustGateCmd, args.progressPath,
+// args.maxAttempts, args.riskyPaths, args.reviewSampleEvery. May arrive as an object, a
+// JSON-encoded string, or a bare plan path.
 let opts = args
 if (typeof opts === 'string') {
   try { opts = JSON.parse(opts) } catch { opts = { planPath: opts } }
 }
 const planPath = typeof opts === 'string' ? opts : opts?.planPath
 if (!planPath) throw new Error('build-slices: pass { planPath } (path to the phase plan doc) as args')
-// NOTE: this bun default is a PLACEHOLDER. /argo:setup-claude rewrites it to the project's
-// real detected commands on install; on a non-bun project the placeholder fails every slice.
 const verifyCmd = opts?.verifyCmd ?? 'bun run typecheck && bun run lint && bun run test'
-// §7 trust-gate chain: for slices marked requiresLaunch, Verify becomes
-// `${verifyCmd} && ${trustGateCmd}` so it goes RED without launch evidence. The default
-// pipes a Stop-hook payload (carrying $PWD) into the gate; /argo:setup-claude rewrites
-// $ARGO_TRUST_GATE to the installed plugin hook path. Mirrors plugin/lib/gatedVerify.mjs
-// (the tested source of truth — workflow scripts can't import local modules).
 const trustGateCmd =
   opts?.trustGateCmd ??
   `node -e 'process.stdout.write(JSON.stringify({cwd:process.cwd()}))' | node "\${ARGO_TRUST_GATE:?set ARGO_TRUST_GATE to trust-gate.mjs}"`
+// Chains the trust gate onto Verify for slices that ship launchable app behaviour.
 const gatedVerify = (base, requiresLaunch) => (requiresLaunch ? `${base} && ${trustGateCmd}` : base)
 const progressPath =
   opts?.progressPath ?? (planPath.endsWith('.md') ? planPath.slice(0, -3) : planPath) + '-progress.md'
 const MAX_ATTEMPTS = opts?.maxAttempts ?? 2
 
-// ── Tiered reviewer gating ───────────────────────────────────────────────────
-// Confirm is expensive and adds ~zero value on trivial slices, so it only runs when
-// warranted. ESCALATE-ONLY: reviewRisk can raise review but 'low' never suppresses a
-// deterministic trigger. Not gated on diff size — real bugs found here were one-liners.
-// Gap: unnamed risk with no risky-named path (new IPC channel, exec/eval, a deleted check)
-// slips through until Confirm catches it and it's added to RISKY_PATHS.
+// Decides whether a slice needs the independent reviewer. Escalate-only: reviewRisk/
+// requiresLaunch/a risky path/the sample rate can each force review; nothing suppresses one.
 const RISKY_PATHS =
   opts?.riskyPaths ??
   /(^|\/)(hooks|preload|ipc|auth|security|crypto|permissions|secrets|session|middleware|migrations)(\/|$)|\.env|mcp\.json|settings\.json|package\.json|bun\.lock/i
 const REVIEW_SAMPLE_EVERY = opts?.reviewSampleEvery ?? 5
-// Known upfront (before Build runs) — no changedPaths yet. Tells the builder whether it may
-// self-commit or must hold off for Confirm.
+// Known before Build runs (no changedPaths yet).
 function preflightReview(slice, index) {
   if (slice.reviewRisk === 'high') return { review: true, why: 'planner marked reviewRisk:high' }
   if (slice.requiresLaunch === true) return { review: true, why: 'requiresLaunch (app behaviour)' }
   if (index % REVIEW_SAMPLE_EVERY === 0) return { review: true, why: `drift sample (1-in-${REVIEW_SAMPLE_EVERY})` }
   return { review: false, why: 'low-risk (upfront): pending path check' }
 }
-// Authoritative — re-evaluated AFTER Build using the real changedPaths. The script, not the
-// model, is the final authority on escalation (defense in depth against the builder missing
-// its own risky-path self-check).
+// Re-checked after Build using the real changedPaths; the script has final say, not the model.
 function shouldReview(slice, changedPaths, index) {
   const pre = preflightReview(slice, index)
   if (pre.review) return pre
@@ -146,11 +112,6 @@ const SLICES = {
     },
   },
 }
-// The single Build call's report. `verifyPassed` is bound to the REAL exit code (never model
-// opinion). `revertCheckPassed` is the cheap, mechanical defense against a vacuous test: an
-// assertion that can never fail also can't produce a real failing exit code, so exit-code
-// verification alone cannot catch it — this can, for near-zero extra cost (it reuses the same
-// test run). `needsReview`/`committed` implement the self-commit-unless-risky protocol.
 const BUILD = {
   type: 'object',
   required: [
@@ -211,10 +172,7 @@ const FINAL_VERDICT = {
   },
 }
 
-// ── Progress doc (durable oversight artifact) ───────────────────────────────
-// Workflow scripts have no filesystem access, so the script renders the markdown
-// deterministically and a thin haiku agent writes it verbatim. Republished when a
-// slice starts and when it resolves, so the doc is always current even if the run dies.
+// Renders + writes the durable progress doc.
 const ICON = { pending: '⏳', building: '🔨', done: '✅', blocked: '⛔' }
 function renderProgress(rows, summary) {
   const body = rows
@@ -237,10 +195,7 @@ async function publishProgress(rows, summary) {
   )
 }
 
-// ── Phase 1: adapt the plan into an ordered, machine-readable slice list ────
-// Kept distinct from the planner: the planner writes a prose plan doc; this turns it
-// into the typed slice list the loop consumes. If the plan is already well-decomposed
-// this is a cheap adaptation, not a second planning pass.
+// Decompose the plan into an ordered, typed slice list.
 phase('Slice')
 const sliced = await agent(
   `Read the plan at \`${planPath}\`. Turn it into an ORDERED list of the smallest vertical slices that each ship ` +
@@ -252,7 +207,6 @@ const sliced = await agent(
 )
 const slices = sliced?.slices
 if (!slices?.length) throw new Error('build-slices: slicing produced no slices (agent skipped or plan empty)')
-// Validate the order honours dependsOn so the sequential loop never builds on an unbuilt prerequisite.
 const pos = new Map(slices.map((s, i) => [s.id, i]))
 for (const s of slices)
   for (const dep of s.dependsOn ?? [])
@@ -263,10 +217,7 @@ log(`${slices.length} slice(s) planned from ${planPath}`)
 const rows = slices.map((s, i) => ({ n: i + 1, id: s.id, status: 'pending', attempts: 0, result: '' }))
 await publishProgress(rows, `0/${slices.length} slices confirmed.`)
 
-// ── Per-slice loop: Build (self-contained) → [Confirm → Land] ──────────────
-// SEQUENTIAL by design: slices are dependency-ordered and share one working tree, so a
-// single writer avoids git races. This is conservative, not fast — a multi-slice plan is a
-// fire-and-forget run. Independent (dependsOn-free) slices could later run worktree-parallel.
+// Sequential: slices are dependency-ordered and share one working tree.
 const results = []
 let confirmedCount = 0
 for (const slice of slices) {
@@ -287,8 +238,7 @@ for (const slice of slices) {
     attempt++
     row.attempts = attempt
 
-    // ONE agent does red -> green -> revert-check -> verify -> (self-commit unless risky).
-    // Reset-on-retry is folded into this same prompt (no separate reset agent call).
+    // One agent: red -> green -> revert-check -> verify -> self-commit unless risky.
     phase('Build')
     const build = await agent(
       `Follow the \`test-first\` and \`engineering-principles\` skills throughout.\n\n` +
@@ -339,8 +289,6 @@ for (const slice of slices) {
     }
     log(`slice ${slice.id}: red proven, revert-check passed, verify green (attempt ${attempt}) via \`${build.testCommand}\``)
 
-    // Authoritative re-check (script, not model) — escalate-only, defense in depth against the
-    // builder missing its own risky-path self-check.
     const gate = shouldReview(slice, build.changedPaths, index)
     const alreadyCommitted = build.committed === true
 
@@ -356,8 +304,6 @@ for (const slice of slices) {
       continue
     }
 
-    // Independent review required — reviews the working diff if uncommitted, or the last
-    // commit if the builder committed anyway (defense-in-depth path).
     log(`slice ${slice.id}: review REQUIRED (${gate.why})`)
     phase('Confirm')
     const verdict = await agent(
@@ -392,8 +338,6 @@ for (const slice of slices) {
     } else {
       lastReasons = verdict?.reasons?.length ? verdict.reasons : ['confirm step was skipped or returned nothing']
       if (alreadyCommitted) {
-        // Builder committed despite needing review (its self-check missed a risky path) and
-        // review rejected it — undo so the retry starts clean.
         await agent(
           `Undo the last commit so a retry starts clean. Run EXACTLY: \`git reset --hard HEAD~1\`. Then report "reset".`,
           { label: `undo:${slice.id}#${attempt}`, phase: 'Confirm', model: 'haiku', effort: 'low' },
@@ -404,7 +348,6 @@ for (const slice of slices) {
   }
 
   if (!confirmed) {
-    // HARD STOP — surface the thrashing slice; do not build dependents on a broken prerequisite.
     row.status = 'blocked'
     row.result = (lastReasons[0] ?? 'blocked').slice(0, 200)
     results.push({ id: slice.id, status: 'BLOCKED', attempts: attempt, lastReasons })
@@ -420,10 +363,7 @@ for (const slice of slices) {
   await publishProgress(rows, `${confirmedCount}/${slices.length} slices confirmed.`)
 }
 
-// ── Final batch review (advisory net, not the primary gate) ─────────────────
-// Reviews the WHOLE run's diff at once for cross-slice/emergent issues no single slice's
-// review could see. Runs only over the slices that actually landed (one commit each, this
-// loop is the single writer, so HEAD~doneCount..HEAD is exactly this run's commits).
+// One advisory review over the whole run's diff, once, at the end.
 const doneCount = results.filter((r) => r.status === 'DONE').length
 let finalReview = null
 if (doneCount > 0) {

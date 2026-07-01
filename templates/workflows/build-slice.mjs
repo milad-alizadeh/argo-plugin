@@ -43,6 +43,8 @@ export const meta = {
 // args.verifyCmd    — the deterministic verify command (default: the repo's own)
 // args.trustGateCmd — §7 gate chained onto Verify for requiresLaunch slices (default pipes a
 //                     Stop-hook payload into $ARGO_TRUST_GATE; setup-claude sets the real path)
+// args.blastRadiusPaths — repo-relative paths graphify flags as high blast radius; editing
+//                     one escalates to review (build-feature passes .argo/blast-radius.json)
 // args.progressPath — where to write the live progress doc (default: alongside the plan)
 // args may arrive as an object, a JSON-encoded string (harness-dependent), or a bare plan path.
 let opts = args
@@ -82,11 +84,19 @@ const RISKY_PATHS =
   opts?.riskyPaths ??
   /(^|\/)(hooks|preload|ipc|auth|security|crypto|permissions|secrets|session|middleware|migrations)(\/|$)|\.env|mcp\.json|settings\.json|package\.json|bun\.lock/i
 const REVIEW_SAMPLE_EVERY = opts?.reviewSampleEvery ?? 5
+// Graphify blast-radius hot-set: paths the knowledge graph flags as high-impact (many
+// dependents). The risky-path glob's DATA-DERIVED cousin — catches the UNNAMED central
+// module the glob misses. Populated by the caller from graphify (.argo/blast-radius.json,
+// dependency edges only); empty when graphify is absent or the graph lacks real dep edges,
+// so it simply adds no escalation until the graph is rich enough. Escalate-only.
+const BLAST_RADIUS = new Set(Array.isArray(opts?.blastRadiusPaths) ? opts.blastRadiusPaths : [])
 function shouldReview(slice, changedPaths, index) {
   if (slice.reviewRisk === 'high') return { review: true, why: 'planner marked reviewRisk:high' }
   if (slice.requiresLaunch === true) return { review: true, why: 'requiresLaunch (app behaviour)' }
   const hit = (changedPaths ?? []).find((p) => RISKY_PATHS.test(p))
   if (hit) return { review: true, why: `risk-sensitive path: ${hit}` }
+  const hot = (changedPaths ?? []).find((p) => BLAST_RADIUS.has(p))
+  if (hot) return { review: true, why: `high blast radius (graphify): ${hot}` }
   if (index % REVIEW_SAMPLE_EVERY === 0) return { review: true, why: `drift sample (1-in-${REVIEW_SAMPLE_EVERY})` }
   return { review: false, why: 'low-risk: deterministic gates only' }
 }

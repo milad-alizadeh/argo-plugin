@@ -38,9 +38,15 @@ for ws in "${WORKSPACES[@]}"; do
   )
 done
 
+# Emit the blast-radius hot-set (.argo/blast-radius.json) from the refreshed graph —
+# dependency edges only; empty on a shallow graph. build-slice's review gate reads it.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+[ -f "$SCRIPT_DIR/blast-radius.mjs" ] && node "$SCRIPT_DIR/blast-radius.mjs" || true
+
 # Stage only the durable artifacts (graph.json carries the embedded labels Claude
-# reads; the report + label cache). Bulk/cache files are gitignored.
+# reads; the report + label cache; the blast-radius hot-set). Bulk/cache files are gitignored.
 git add ':(glob)**/graphify-out/graph.json' \
         ':(glob)**/graphify-out/GRAPH_REPORT.md' \
-        ':(glob)**/graphify-out/.graphify_labels.json' 2>/dev/null || true
-git diff --cached --quiet || git commit -m "chore(graphify): refresh knowledge graph"
+        ':(glob)**/graphify-out/.graphify_labels.json' \
+        .argo/blast-radius.json 2>/dev/null || true
+git diff --cached --quiet || git commit -m "chore(graphify): refresh knowledge graph + blast-radius"

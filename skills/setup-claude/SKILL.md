@@ -99,6 +99,14 @@ commit the graph.
 - **Seed per workspace** (works for both shapes): **monorepo** → `graphify <each
   app/package dir>` → `<ws>/graphify-out/`; **single-app** → one `graphify .` at the
   repo root (a single root build handles a real monorepo poorly, so split there).
+- **Blast-radius review escalation (graphify-derived):** `refresh-graph.sh` also runs
+  `blast-radius.mjs` (installed alongside it) to emit `.argo/blast-radius.json` — the paths
+  the graph flags as high-impact (most **dependents**, dependency edges only, never
+  `contains`). `/argo:build-feature` passes this to `build-slice`, whose review gate
+  escalates when a slice edits one — the risky-path glob's data-derived cousin, catching the
+  UNNAMED central module the hand-named glob misses. It is **dormant until the graph captures
+  real import/call edges** (a shallow `contains`-only graph emits an empty set → no false
+  escalations), so it's safe to install early; its usefulness scales with graph richness.
 - **Install the templates** from `${CLAUDE_PLUGIN_ROOT}/templates/graphify/`: append
   `gitignore` to the project's `.gitignore` (commits `graph.json` + `GRAPH_REPORT.md`
   + `.graphify_labels.json`, ignores `graph.html`/`cache/`/analysis), and copy

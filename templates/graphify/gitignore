@@ -5,5 +5,6 @@
 # setup-claude appends this to the project's .gitignore.
 **/graphify-out/*
 !**/graphify-out/graph.json
+!**/graphify-out/graph.html
 !**/graphify-out/GRAPH_REPORT.md
 !**/graphify-out/.graphify_labels.json

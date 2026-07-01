@@ -49,6 +49,7 @@ done
 # Stage only the durable artifacts (graph.json carries the embedded labels Claude
 # reads; the report + label cache). Bulk/cache files are gitignored.
 git add ':(glob)**/graphify-out/graph.json' \
+        ':(glob)**/graphify-out/graph.html' \
         ':(glob)**/graphify-out/GRAPH_REPORT.md' \
         ':(glob)**/graphify-out/.graphify_labels.json' 2>/dev/null || true
 git diff --cached --quiet || git commit -m "chore(graphify): refresh knowledge graph"

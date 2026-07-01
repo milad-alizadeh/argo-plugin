@@ -42,10 +42,10 @@ install convention hooks into the project's own `.claude/` (also per the referen
 Copy `${CLAUDE_PLUGIN_ROOT}/templates/workflows/*` into the project's
 `.claude/workflows/` (create it if absent) — these are the orchestration scripts the
 Workflow tool runs (plugins can't auto-load workflows, so they're installed here, like
-the rules). `build-slice` is the automated build stage invoked by `/argo:build-feature`;
+the rules). `build-slices` is the automated build stage invoked by `/argo:build-feature`;
 it expects the argo agents (`argo:builder`/`argo:reviewer`), also installed by this pack.
 
-**Instantiate, don't ship raw:** `build-slice`'s `verifyCmd` default is a bun placeholder.
+**Instantiate, don't ship raw:** `build-slices`'s `verifyCmd` default is a bun placeholder.
 Replace it with the project's **detected** typecheck/lint/test commands (from §2) so it
 doesn't fail every slice on a non-bun project — same adapt-on-install treatment the rules
 get. **Defeat build-cache false-greens:** if the project uses a caching task runner
@@ -53,7 +53,7 @@ get. **Defeat build-cache false-greens:** if the project uses a caching task run
 / `--force`) — a cached pass can mask tests that never ran (observed in dogfooding). Don't
 overwrite a workflow the user has edited: switch to diff/ask mode (per §1).
 
-**Wire the trust gate (§7, only if the trust-gate hook is installed):** `build-slice`
+**Wire the trust gate (§7, only if the trust-gate hook is installed):** `build-slices`
 chains `${CLAUDE_PLUGIN_ROOT}/hooks/trust-gate.mjs` onto Verify for slices marked
 `requiresLaunch` (those that ship launchable app/UI behaviour). Export
 `ARGO_TRUST_GATE=<abs path to trust-gate.mjs>` in the build environment (or pass

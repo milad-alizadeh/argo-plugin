@@ -37,9 +37,7 @@ worktrees never collide on the git index.
 
 ## 3. Run the build-slice workflow
 Invoke the **`build-slice`** workflow (Workflow tool, `name: "build-slice"`) with
-`args: { planPath: "<plan>" }`. If `.argo/blast-radius.json` exists (the graphify hot-set),
-read it and pass its array as `args.blastRadiusPaths` too — so editing a high-impact module
-escalates to review. It decomposes the plan into dependency-ordered slices and,
+`args: { planPath: "<plan>" }`. It decomposes the plan into dependency-ordered slices and,
 per slice, runs **Red** (write the failing test first, proven red) → **Green** (implement to
 pass) → verify command → adversarial reviewer-confirm → commit, with bounded retries and a
 hard stop, maintaining a durable `…-progress.md` beside the plan. Override `verifyCmd` /

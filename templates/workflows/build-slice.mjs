@@ -65,7 +65,7 @@ const trustGateCmd =
 const gatedVerify = (base, requiresLaunch) => (requiresLaunch ? `${base} && ${trustGateCmd}` : base)
 const progressPath =
   opts?.progressPath ?? (planPath.endsWith('.md') ? planPath.slice(0, -3) : planPath) + '-progress.md'
-const MAX_ATTEMPTS = opts?.maxAttempts ?? 3
+const MAX_ATTEMPTS = opts?.maxAttempts ?? 2
 
 // ── Tiered reviewer gating (council-decided) ────────────────────────────────
 // The independent reviewer (Confirm) is expensive and — per the measurement — adds

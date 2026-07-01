@@ -79,6 +79,11 @@ describe('trust gate (§8.2) — code-enforced, fails closed', () => {
     expect((await runGate(hookInput())).code).not.toBe(0)
   })
 
+  it('regression: gate must go RED on a future-dated receipt (negative age fail-open)', async () => {
+    writeReceipt(cwd, greenReceipt({ startedAt: NOW + 999_999_999 }))
+    expect((await runGate(hookInput())).code).not.toBe(0)
+  })
+
   // ── default-deny: malformed input → BLOCK (opposite of pipe-to-shell hook) ──
   it('BLOCK: unparseable receipt JSON (default-deny)', async () => {
     writeReceipt(cwd, '{ not valid json')

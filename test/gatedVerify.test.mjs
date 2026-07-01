@@ -59,5 +59,13 @@ describe('gatedVerify — chain the trust gate into Verify (§7)', () => {
     it('gateCommand alone goes RED on a missing receipt', async () => {
       expect(await run(gateCommand(GATE), cwd)).not.toBe(0)
     })
+
+    it('regression: a double-quote in the cwd path must not wedge the gate (JSON injection)', async () => {
+      const quoted = mkdtempSync(join(tmpdir(), 'argo-gv-')) + '/a"b'
+      mkdirSync(quoted, { recursive: true })
+      writeExercisedReceipt(quoted)
+      expect(await run(gatedVerify('true', true, GATE), quoted)).toBe(0)
+      rmSync(quoted, { recursive: true, force: true })
+    })
   })
 })

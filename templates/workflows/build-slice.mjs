@@ -60,7 +60,8 @@ const verifyCmd = opts?.verifyCmd ?? 'bun run typecheck && bun run lint && bun r
 // $ARGO_TRUST_GATE to the installed plugin hook path. Mirrors plugin/lib/gatedVerify.mjs
 // (the tested source of truth — workflow scripts can't import local modules).
 const trustGateCmd =
-  opts?.trustGateCmd ?? `printf '{"cwd":"%s"}' "$PWD" | node "\${ARGO_TRUST_GATE:?set ARGO_TRUST_GATE to trust-gate.mjs}"`
+  opts?.trustGateCmd ??
+  `node -e 'process.stdout.write(JSON.stringify({cwd:process.cwd()}))' | node "\${ARGO_TRUST_GATE:?set ARGO_TRUST_GATE to trust-gate.mjs}"`
 const gatedVerify = (base, requiresLaunch) => (requiresLaunch ? `${base} && ${trustGateCmd}` : base)
 const progressPath =
   opts?.progressPath ?? (planPath.endsWith('.md') ? planPath.slice(0, -3) : planPath) + '-progress.md'

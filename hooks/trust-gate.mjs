@@ -70,6 +70,8 @@ if (receipt.exitCode !== 0) block(`launch exited non-zero (exitCode ${receipt.ex
 if (!receipt.exercised) block('launched but never exercised — no observable evidence through the real surface')
 
 const age = Date.now() - receipt.startedAt
-if (age > MAX_RECEIPT_AGE_MS) block(`receipt is stale (${Math.round(age / 1000)}s old) — re-launch required`)
+// Reject BOTH stale (past) and future-dated receipts — a negative age (clock skew or a
+// forged future startedAt) must never slip past the staleness guard (fail closed).
+if (age < 0 || age > MAX_RECEIPT_AGE_MS) block(`receipt timestamp out of range (${Math.round(age / 1000)}s) — re-launch required`)
 
 process.exit(0) // PASS — a real launch did something observable

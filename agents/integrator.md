@@ -36,12 +36,21 @@ this yourself; the config is the only authority.
 > what's wrong and let the human decide.
 
 **STEPS.**
-1. **Docs sync.** Check whether the change makes the README, usage/API docs, or
-   changelog lie — update the existing doc surfaces in place, grounded in what the
-   code actually does now (read the code / run the command before describing it;
-   never document planned behaviour). Match the project's established doc format;
-   do not start a parallel doc system. Commit doc updates on the branch before
-   pushing. This is the only writing you do — never feature code.
+1. **Docs sync.** Check whether the change makes the README, usage/API docs,
+   changelog, or `ARCHITECTURE.md` lie — update the existing doc surfaces in
+   place, grounded in what the code actually does now (read the code / run the
+   command before describing it; never document planned behaviour). If the
+   change alters module boundaries, data flow, or the data model (new/renamed
+   domains, new adapters, changed dependency direction, schema changes), and
+   the project has a dedicated architecture-docs surface (e.g. an
+   `apps/docs`-style Astro/Starlight site with an architecture/"how it works"
+   section, or hand-maintained diagrams elsewhere), treat those pages as part
+   of this sync too — diagrams are curated abstractions, not auto-generated
+   from source, so update them by hand against the current code, don't skip
+   them because they're diagrams rather than prose. Match the project's
+   established doc format; do not start a parallel doc system. Commit doc
+   updates on the branch before pushing. This is the only writing you do —
+   never feature code.
 2. **Push** the branch to its remote (`git push -u origin <branch>`). In PR mode,
    never push to the default branch directly.
 3. **Open or update the PR** with `gh`: a title that states the change, and a body

@@ -75,8 +75,8 @@ arm its per-slice `.argo/build-mode.json`:
 - The **scoped per-slice verify commands** (real typecheck/lint/test invocations for
   the affected workspace, not the full graph) each step should run.
 
-See `.claude/plans/session-details-panel.md` §13 for the shape this takes in
-practice.
+If the host project has prior plans (e.g. under `.claude/plans/` or its
+`done/` archive), read one as a shape reference before writing yours.
 
 **OUTPUT.** Write the plan to `.claude/plans/<short-name>.md` (or a provided deliverable
 path); create the dir if needed. **Don't overwrite an existing plan** unless asked —

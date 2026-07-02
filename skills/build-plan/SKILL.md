@@ -193,7 +193,11 @@ math re-asserted per consumer layer.
   the default branch (`git push origin HEAD:<default>`, pre-push suite as the gate)
   with no PR to self-review. Either way it does not touch graphify — the post-merge
   lefthook refreshes it when the local default branch integrates the work. Then
-  **ExitWorktree** (`remove` once merged).
+  **ExitWorktree** (`remove` once merged). **Archive the plan**: once landed, if the
+  project keeps a done-plans folder (e.g. `.claude/plans/done/`), move the plan doc +
+  its progress doc there (a normal committed change) so the plans root stays
+  queued-work-only; create the folder on first use if the project organizes plans
+  this way.
 - **BLOCKED** → do NOT merge. Delete `.argo/build-mode.json`, **ExitWorktree (`keep`)**
   so the worktree + branch stay on disk for inspection. Surface the blocked slice, its
   reasons, and the progress-doc path, and stop.

@@ -94,6 +94,13 @@ If the session compacts or a fresh session takes over: read the plan doc, the pr
 doc, and `git log --oneline` on the branch; the next unchecked plan step is the next
 action. Never re-do a committed step.
 
+**tdd-guard clears on every session start** — if tdd-guard is installed, its
+`test.json` resets when a new session boots, so red/green evidence must be
+re-established by running tests *within the resumed session*, as a **direct runner
+invocation** (a turbo cache hit doesn't spawn the runner and leaves `test.json`
+stale). `.argo/red-proof.json` — not tdd-guard's live file — is the durable
+cross-session proof the commit gate actually checks.
+
 ## 6. Review — twice per feature, never per slice
 - **Checkpoint review** at the plan's declared seam (or halfway if none declared):
   spawn `argo:reviewer` on the branch diff so far. Fix merge-blocking findings before
@@ -103,9 +110,11 @@ action. Never re-do a committed step.
 
 ## 7. Land or surface — always close out the worktree
 - **All slices done + final review clean** → delete `.argo/build-mode.json`, hand the
-  branch to **`argo:integrator`** (the authoritative pre-merge gate): it re-verifies,
-  opens the PR / merges to the default branch, and — on-device, on the default branch,
-  never a worktree — refreshes graphify. Then **ExitWorktree** (`remove` once merged).
+  branch to **`argo:integrator`**: it pushes the branch and opens/updates the PR — it
+  does not merge (its preconditions forbid being on the default branch) and does not
+  touch graphify. Merging happens via the PR; once `main` integrates it, the post-merge
+  lefthook fires automatically, on-device, and refreshes graphify. Then **ExitWorktree**
+  (`remove` once merged).
 - **BLOCKED** → do NOT merge. Delete `.argo/build-mode.json`, **ExitWorktree (`keep`)**
   so the worktree + branch stay on disk for inspection. Surface the blocked slice, its
   reasons, and the progress-doc path, and stop.

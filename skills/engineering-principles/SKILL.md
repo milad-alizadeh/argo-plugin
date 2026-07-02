@@ -70,5 +70,3 @@ Any "yes" to 1–3, or "no" to 4 → fix it before reporting done.
 > Note: these govern code *structure*. **ACID** (atomicity, consistency,
 > isolation, durability) is a different concern — DB transaction safety — and
 > lives with the database rules, not here.
-
-<!-- The agent-injected copy of these rules is the `engineering-principles` core directive (main/agents/directives). -->

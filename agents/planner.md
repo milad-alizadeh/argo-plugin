@@ -38,6 +38,23 @@ learn; partial work should survive an interruption. Revisions update it in place
 confirm success). If you give time estimates, calibrate to agentic speed (a human's
 "days" is often an agent's "hours").
 
+**Build metadata** — every step carries the markers `argo:build-plan` consumes to
+arm its per-slice `.argo/build-mode.json`:
+- `testable: false` on any step that's non-behavioral (design tokens, config, pure
+  styling, fixture seeding) — exempt from forced red-green. Everything else defaults
+  behavioral (red first).
+- `requiresLaunch: true` on any step that needs fresh launch-evidence (the step ships
+  launchable app/UI behaviour and its own e2e/launch run produces the receipt);
+  otherwise `false`.
+- An optional explicit **seam declaration** ("Checkpoint review after step N") where
+  a natural review point exists before dependents build on top; if none, build-plan
+  defaults to halfway.
+- The **scoped per-slice verify commands** (real typecheck/lint/test invocations for
+  the affected workspace, not the full graph) each step should run.
+
+See `.claude/plans/session-details-panel.md` §13 for the shape this takes in
+practice.
+
 **OUTPUT.** Write the plan to `.claude/plans/<short-name>.md` (or a provided deliverable
 path); create the dir if needed. **Don't overwrite an existing plan** unless asked —
 update in place or version it. When done, summarise the three most important

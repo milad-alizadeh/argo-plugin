@@ -115,6 +115,11 @@ project's own test reporter as ground truth. It enforces **order**, not test **q
 - **Opt-out:** `--no-tdd` (or the user saying so) skips this whole step. Mid-session,
   tdd-guard has its own toggle for legitimate exceptions — spikes disable it for the
   session (throwaway code has a "no tests" contract by design; see the spike skill).
+- **Session-start clears its evidence.** tdd-guard wipes `test.json` at the start of
+  every session — red/green must be re-established by running tests *within* the
+  current session, and via a **direct runner invocation** (a turbo cache hit skips
+  the runner and leaves `test.json` stale, looking un-run). tdd-guard's live file is
+  not durable proof across sessions; `.argo/red-proof.json` is.
 
 ## 7. graphify (conditional) — treat the graph as local build cache
 Only if the `graphify` CLI is present: run `graphify install --platform claude`

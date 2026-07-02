@@ -21,11 +21,24 @@ stack (see "How opinionation is delivered" below).
 - **Agents** (`agents/`) — full lifecycle roles, invoked on demand:
   `scaffolder → planner → builder → reviewer → debugger`, plus `auditor`
   (whole-codebase health) and `integrator` (lands work / PRs / docs sync).
-- **Skills** (`skills/`) — on-demand disciplines: `engineering-principles`,
-  `test-first`, `root-cause`, `grill-me`, `spike`, `session-handoff`,
-  `author-skill`, and `setup-claude`.
-- **Hooks** (`hooks/`) — safety-only guardrails: block destructive git
-  (opt out with `ARGO_DISABLE_GIT_GUARD=1`) and block pipe-to-shell.
+- **Skills** (`skills/`) — on-demand disciplines and methodology, all ten:
+  `engineering-principles`, `test-first`, `build-plan`, `root-cause`,
+  `grill-me`, `spike`, `scaffold`, `session-handoff`, `author-skill`, and
+  `setup-claude`.
+- **Hooks** (`hooks/`) — six hooks in three categories:
+  - *Safety guardrails (always on):* `block-dangerous-git.sh` — blocks
+    destructive git commands (opt out with `ARGO_DISABLE_GIT_GUARD=1`);
+    `check-pipe-to-shell.mjs` — blocks piping remote content into a shell.
+  - *Self-scoping build gates (armed only during a `/argo:build-plan` run,
+    inert otherwise — installing the pack never gates a normal commit):*
+    `red-proof-gate.mjs` — blocks a commit without a fresh fail-then-pass
+    test receipt for the current slice; `trust-gate.mjs` — blocks a commit
+    on a `requiresLaunch: true` slice without fresh launch evidence. Both
+    read `.argo/build-mode.json`; delete it and they go quiet.
+  - *Write hygiene (always on):* `format-on-write.mjs` — auto-formats every
+    file Claude edits/writes with the project's own formatter;
+    `test-smell.mjs` — flags smelly test edits (e.g. assertions weakened to
+    force a pass) after they're written.
 
 Only agent/skill **descriptions** load into context until a role/skill is
 invoked — the pack is ~1.6k tokens always-on.

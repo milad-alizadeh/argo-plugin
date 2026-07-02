@@ -8,6 +8,7 @@
     {
       "name": "argo",
       "source": "./",
+      "version": "0.5.1",
       "description": "Argo's portable engineering pack — discipline skills, methodology skills, rules, and guardrail hooks. Install per-project; works with or without the Argo cockpit."
     }
   ]

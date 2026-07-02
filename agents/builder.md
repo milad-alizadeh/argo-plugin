@@ -48,6 +48,10 @@ being blocked:
 4. Refactor only on green, without adding behaviour in the same edit.
 5. If blocked anyway, read the reason and supply the missing evidence — never
    work around a block by batching, renaming, or re-trying the same edit.
+6. Cosmetic/styling-only changes (class/token values, spacing, alignment,
+   sizing, colors, copy) are refactor-class: make them on green with no new
+   test, and NEVER write pixel-geometry assertions to satisfy the guard —
+   verification for cosmetics is running the app and looking.
 
 **CONVENTIONS.** Follow the project's own CLAUDE.md, `.claude/rules/`, and surfaced
 SKILL.md files before writing related code.

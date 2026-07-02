@@ -25,6 +25,25 @@ evidence. Know its rules up front:
 5. If blocked, read the reason and supply the missing evidence — never batch,
    rename, or retry your way around a block.
 
+## Cosmetic changes are looked at, not unit-tested
+
+A cosmetic change only affects visual presentation — class/token values,
+spacing, alignment, sizing, visual ordering, colors, typography, label copy —
+with no logic change. For these:
+
+- Do NOT write unit/component tests asserting pixel geometry (bounding boxes,
+  computed px gaps, exact widths). They codify today's styles, break on the
+  next legitimate restyle, and prove nothing a human glance doesn't.
+- Verification IS looking at it: run the app (or a screenshot) and confirm
+  existing suites stay green. That's the whole requirement.
+- Where tdd-guard is installed, these edits are refactor-class: allowed on
+  green, no new failing test required.
+- The exemption ends where behavior begins: enabled/disabled, shown/hidden
+  content, handlers, conditional rendering ARE behavior — normal TDD applies.
+  A styling bug that broke a functional invariant (control unreachable,
+  content clipped to invisible) may warrant a regression test asserting the
+  INVARIANT (visible, clickable), never the geometry.
+
 ## Tests on the real interface are the primary surface
 
 Verify a feature by exercising it through the surface a user actually touches —

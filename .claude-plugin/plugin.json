@@ -1,7 +1,7 @@
 {
   "name": "argo",
-  "version": "0.5.3",
-  "description": "Argo's portable engineering 'way of working' for Claude Code — opinionated but non-breaking. Ships active: on-demand discipline skills, full-lifecycle agent roles, and three hook categories — safety guardrails (dangerous-git, pipe-to-shell, always on), self-scoping build gates (red-proof, trust — armed only during gated builds via .argo/build-mode.json, inert otherwise), and write hygiene (format-on-write, test-smell). Opinionated rules ship inert as templates the setup-claude skill installs adapted to the host project's stack. Works in any project, with or without the Argo cockpit. See README.",
+  "version": "0.6.0",
+  "description": "Argo's portable engineering 'way of working' for Claude Code — opinionated but non-breaking. Ships active: on-demand discipline skills, full-lifecycle agent roles, and four hook categories — safety guardrails (dangerous-git, pipe-to-shell, lockfile-edit, bash-source-write, always on), self-scoping build gates (red-proof, trust — armed only during gated builds via .argo/build-mode.json, inert otherwise), write hygiene (format-on-write, test-smell), and a session-start way-of-working card. Opinionated rules ship inert as templates the setup-claude skill installs adapted to the host project's stack. Works in any project, with or without the Argo cockpit. See README.",
   "author": {
     "name": "Argo"
   }

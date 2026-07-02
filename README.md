@@ -21,24 +21,32 @@ stack (see "How opinionation is delivered" below).
 - **Agents** (`agents/`) — full lifecycle roles, invoked on demand:
   `scaffolder → planner → builder → reviewer → debugger`, plus `auditor`
   (whole-codebase health) and `integrator` (lands work / PRs / docs sync).
-- **Skills** (`skills/`) — on-demand disciplines and methodology, all ten:
+- **Skills** (`skills/`) — on-demand disciplines and methodology, all eleven:
   `engineering-principles`, `test-first`, `build-plan`, `root-cause`,
-  `grill-me`, `spike`, `scaffold`, `session-handoff`, `author-skill`, and
-  `setup-claude`.
-- **Hooks** (`hooks/`) — six hooks in three categories:
+  `grill-me`, `spike`, `scaffold`, `session-handoff`, `finish-branch`,
+  `author-skill`, and `setup-claude`.
+- **Hooks** (`hooks/`) — nine hooks in four categories:
   - *Safety guardrails (always on):* `block-dangerous-git.sh` — blocks
     destructive git commands (opt out with `ARGO_DISABLE_GIT_GUARD=1`);
-    `check-pipe-to-shell.mjs` — blocks piping remote content into a shell.
+    `check-pipe-to-shell.mjs` — blocks piping remote content into a shell;
+    `block-lockfile-edit.mjs` — blocks hand-edits to lockfiles (use the
+    package manager); `block-bash-source-write.mjs` — blocks writing source
+    files via shell (heredoc/`>`/`tee`/`sed -i`/`cp`), so edits go through
+    Write/Edit where the guards see them (opt out with
+    `ARGO_DISABLE_BASH_SOURCE_GUARD=1`).
   - *Self-scoping build gates (armed only during a `/argo:build-plan` run,
     inert otherwise — installing the pack never gates a normal commit):*
     `red-proof-gate.mjs` — blocks a commit without a fresh fail-then-pass
     test receipt for the current slice; `trust-gate.mjs` — blocks a commit
     on a `requiresLaunch: true` slice without fresh launch evidence. Both
-    read `.argo/build-mode.json`; delete it and they go quiet.
+    read `.argo/build-mode.json` at the repo root; delete it and they go quiet.
   - *Write hygiene (always on):* `format-on-write.mjs` — auto-formats every
     file Claude edits/writes with the project's own formatter;
     `test-smell.mjs` — flags smelly test edits (e.g. assertions weakened to
     force a pass) after they're written.
+  - *Session start:* `session-context.mjs` — injects a compact (~600-token)
+    "argo way of working" card so every session knows the loop and to check
+    skills before improvising.
 
 Only agent/skill **descriptions** load into context until a role/skill is
 invoked — the pack is ~1.6k tokens always-on.
@@ -68,3 +76,38 @@ prompt. When invoked through the Argo cockpit, a runtime seed (the task, worktre
 path, an approved plan if one exists, and a structured deliverable target) is
 appended after the body; the instructions are identical in both cases. Standalone,
 an agent reports inline; under Argo it also reports through structured hooks.
+
+## Portability — opinionated about process, agnostic about stack
+
+The contract in one line: **argo is opinionated about the way of working (the
+canonical loop, test-first, hook-enforced gates) and agnostic about your
+stack.** The core — agents, skills, and hooks — names no language, framework,
+or package manager; project specifics enter through exactly one door:
+`setup-claude`, which detects your stack and installs adapted rules,
+placeholders, and config (e.g. `.claude/argo-source-extensions.json` for the
+source-write guard) with per-rule consent. Hooks that lean toward one stack
+today are disclosed as dormant during setup rather than pretending to cover
+everything. If you find a hardcoded command or a stack assumption anywhere
+outside `setup-claude`, that's a portability bug — file it.
+
+**Ejectability:** everything here is stock Claude Code plus this plugin. The
+Argo desktop app is an optional UI/voice layer on top — it observes, it never
+owns the loop. At any point you can drop the app and drive the identical
+gates, guards, and skills from a bare `claude` terminal in any project.
+
+## After installing on a new project
+
+1. Run **`/argo:setup-claude`** — it detects your stack, installs the adapted
+   rules with per-rule consent, wires the gated-build receipts, and (where a
+   supported test runner exists) offers tdd-guard.
+2. Confirm the hooks are live: start a fresh session and you should see the
+   argo way-of-working card; a `git commit` in a normal (non-build) repo is
+   unaffected — the build gates arm only during `/argo:build-plan`.
+3. Optional: if setup-claude wired tdd-guard, `tdd-guard off` / `tdd-guard on`
+   toggle it mid-session. Either way, know that the commit gates block only
+   during a gated build, never your everyday commits.
+4. The loop, in five lines: `/argo:scaffold` a new app · `/argo:grill-me` a
+   design · `argo:planner` a plan · `/argo:build-plan` to build it hands-off ·
+   `argo:reviewer` / `/argo:root-cause` / `argo:integrator` to review, debug,
+   and land.
+5. No Argo app required for any of the above — any terminal, any editor, works.

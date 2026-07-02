@@ -88,6 +88,13 @@ For each slice:
    The red-proof gate blocks the commit without it — receipt must name THIS slice,
    the test file must exist, `redExit` non-zero, `greenExit` 0, and it must postdate
    HEAD (no reuse across slices).
+
+   **Ordering matters — gates run BEFORE your command executes.** The commit gates
+   are PreToolUse hooks: they judge the disk and index as they are *before* the
+   command runs. Write the receipt in one command, stage in the next, commit in a
+   third — a single compound command that writes the receipt and commits will be
+   judged on pre-command state and blocked. The one sanctioned compound form is
+   `git add <testFile> && git commit …` (the gate parses that exact `&&` chain).
 5. **Verify** (scoped): run the affected workspace's typecheck + lint + tests — not the
    full graph every slice; the checkpoint and final review run the full suite.
 6. **Commit** (conventional message, one slice = one commit). The gates check the
@@ -109,6 +116,11 @@ re-established by running tests *within the resumed session*, as a **direct runn
 invocation** (a turbo cache hit doesn't spawn the runner and leaves `test.json`
 stale). `.argo/red-proof.json` — not tdd-guard's live file — is the durable
 cross-session proof the commit gate actually checks.
+
+**When the plan edits this plugin's own hooks:** the session runs the INSTALLED
+plugin cache's hooks, not the branch's freshly edited copies. Expect gate
+behaviour to match the cached version until `claude plugin update` + a session
+restart; don't burn time debugging a "fix that didn't take".
 
 ## 6. Review — twice per feature, never per slice
 - **Checkpoint review** at the plan's declared seam (or halfway if none declared):
@@ -138,11 +150,14 @@ math re-asserted per consumer layer.
 
 ## 7. Land or surface — always close out the worktree
 - **All slices done + final review clean** → delete `.argo/build-mode.json`, hand the
-  branch to **`argo:integrator`**: it pushes the branch and opens/updates the PR — it
-  does not merge (its preconditions forbid being on the default branch) and does not
-  touch graphify. Merging happens via the PR; once `main` integrates it, the post-merge
-  lefthook fires automatically, on-device, and refreshes graphify. Then **ExitWorktree**
-  (`remove` once merged).
+  branch to **`argo:integrator`**. How it lands depends on the project's landing mode
+  (`.claude/argo-config.json`, set by `setup-claude`): in **pr** mode (the default) it
+  pushes the branch and opens/updates the PR — it never merges, and merging happens
+  via the PR. In **merge** mode (solo maintainer) it lands the branch straight onto
+  the default branch (`git push origin HEAD:<default>`, pre-push suite as the gate)
+  with no PR to self-review. Either way it does not touch graphify — the post-merge
+  lefthook refreshes it when the local default branch integrates the work. Then
+  **ExitWorktree** (`remove` once merged).
 - **BLOCKED** → do NOT merge. Delete `.argo/build-mode.json`, **ExitWorktree (`keep`)**
   so the worktree + branch stay on disk for inspection. Surface the blocked slice, its
   reasons, and the progress-doc path, and stop.

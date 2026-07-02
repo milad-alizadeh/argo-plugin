@@ -65,6 +65,25 @@ The trust gate is Argo-runtime-specific (its launch receipt is written by the Ar
 itself when launched and exercised); in other host projects it stays inert on
 `requiresLaunch: false` slices — document, don't wire.
 
+### 6a. Landing mode — ask solo vs team, write `.claude/argo-config.json`
+Ask ONE question: "Solo maintainer, or does this project have reviewers?" Then write
+`.claude/argo-config.json` at the repo root:
+
+```json
+{ "landing": "merge" }
+```
+
+- `"merge"` (solo): `argo:integrator` lands finished branches straight onto the
+  default branch — no PR to self-review; the pre-push hook suite is the gate. Also
+  offer to drop or `workflow_dispatch`-gate any CI workflow that duplicates the
+  local pre-push suite (a solo repo paying CI minutes to re-run what pre-push
+  already ran is waste — their call).
+- `"pr"` (team, and the default when the file is absent): the classic push-branch +
+  open-PR flow.
+
+The file is committed (it's team policy, not local state). Never infer the mode —
+absent file means `"pr"`.
+
 ## 6b. Install enforcement hooks (format-on-write + pre-push gate)
 Guarantee that AI-written code stays typed/lint-clean/formatted **no matter when or by
 whom it's written** — layered, treating auto-fixable (format) differently from fail-loud

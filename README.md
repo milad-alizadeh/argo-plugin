@@ -85,7 +85,8 @@ stack.** The core — agents, skills, and hooks — names no language, framework
 or package manager; project specifics enter through exactly one door:
 `setup-claude`, which detects your stack and installs adapted rules,
 placeholders, and config (e.g. `.claude/argo-source-extensions.json` for the
-source-write guard) with per-rule consent. Hooks that lean toward one stack
+source-write guard, and `.claude/argo-config.json` with `"landing": "pr" |
+"merge"` — team-PR flow vs solo direct-merge landing) with per-rule consent. Hooks that lean toward one stack
 today are disclosed as dormant during setup rather than pretending to cover
 everything. If you find a hardcoded command or a stack assumption anywhere
 outside `setup-claude`, that's a portability bug — file it.

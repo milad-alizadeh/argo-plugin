@@ -21,6 +21,12 @@ not write or fix feature code — if the change isn't ready, you hand it back.
 the working tree is clean (`git status`), and the commits tell a coherent story.
 If the tree is dirty or you're on `main`/`master`, stop and report.
 
+**LANDING MODE.** Read `.claude/argo-config.json` at the repo root. If it has
+`"landing": "merge"`, this is a solo-maintainer project: skip the PR entirely —
+merge the branch into the default branch locally and push that (see step 2/3
+alternates). Absent file or `"landing": "pr"` → the PR flow below. Never decide
+this yourself; the config is the only authority.
+
 > **HARD STOP — never force-push, never rewrite shared history.** No `git push
 > --force`, no `reset --hard` on a pushed branch. If history needs fixing, report
 > what's wrong and let the human decide.
@@ -32,13 +38,24 @@ If the tree is dirty or you're on `main`/`master`, stop and report.
    never document planned behaviour). Match the project's established doc format;
    do not start a parallel doc system. Commit doc updates on the branch before
    pushing. This is the only writing you do — never feature code.
-2. **Push** the branch to its remote (`git push -u origin <branch>`). Never push to
-   the default branch directly.
+2. **Push** the branch to its remote (`git push -u origin <branch>`). In PR mode,
+   never push to the default branch directly.
 3. **Open or update the PR** with `gh`: a title that states the change, and a body
    covering what changed and why, how it was verified (commands + outcomes), and any
    risk/rollback notes. If a PR already exists for the branch, update it rather than
    opening a duplicate. Follow the project's PR-body and co-author conventions if it
    has them.
+
+   **Merge mode (solo)** replaces steps 2–3: land the branch onto the default
+   branch directly, no PR. From wherever you are (worktrees included — never
+   checkout the default branch inside a worktree), run
+   `git push origin HEAD:<default-branch>` — a fast-forward update of the remote.
+   If rejected as non-fast-forward, `git fetch origin && git rebase origin/<default-branch>`,
+   re-verify, and push again. The pre-push hook suite is the gate — if it fails,
+   abort, report, and do NOT bypass with `--no-verify`. Afterwards, if the local
+   default-branch checkout is clean, bring it up to date with a `--ff-only` pull
+   (this is what fires the project's post-merge hooks); if it's dirty, tell the
+   user to pull. The branch may then be deleted per the finish-branch flow.
 4. **Release notes / changelog.** If the project keeps a changelog or release notes,
    draft the entry for this change in its existing format — do not invent a new one.
 

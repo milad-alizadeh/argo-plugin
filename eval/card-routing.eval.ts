@@ -51,8 +51,8 @@ function askClaude(prompt) {
     let stderr = ''
     const timer = setTimeout(() => {
       child.kill('SIGKILL')
-      resolve(`[askClaude timed out after 60s] ${stderr}`)
-    }, 60_000)
+      resolve(`[askClaude timed out after 85s] ${stderr}`)
+    }, 85_000)
     child.stdout.on('data', (d) => (stdout += d))
     child.stderr.on('data', (d) => (stderr += d))
     child.on('error', (err) => {

@@ -120,6 +120,18 @@ project's own test reporter as ground truth. It enforces **order**, not test **q
   current session, and via a **direct runner invocation** (a turbo cache hit skips
   the runner and leaves `test.json` stale, looking un-run). tdd-guard's live file is
   not durable proof across sessions; `.argo/red-proof.json` is.
+- **Wire the reporter into EVERY workspace whose tests must feed the guard** — not
+  just the app. A workspace without the reporter produces no evidence, and the guard
+  will false-block edits there for want of red it cannot see (observed: hook
+  development in a plugin workspace).
+- **Cosmetic-change lane (custom instructions).** tdd-guard reads
+  `.claude/tdd-guard/data/instructions.md` into every validation, and its
+  SessionStart hook only writes defaults when the file is MISSING — custom rules
+  survive restarts. Append the project rule: cosmetic/styling-only edits (class/
+  token values, spacing, alignment, sizing, colors, label copy) are refactor-class —
+  allowed on green, no new failing test, and never pixel-geometry tests to justify
+  them; the exemption ends where behavior begins (enabled/disabled, shown/hidden,
+  handlers). Mirrors the testing rule this skill installs.
 
 ## 7. graphify (conditional) — treat the graph as local build cache
 Only if the `graphify` CLI is present: run `graphify install --platform claude`
@@ -162,6 +174,23 @@ Record the detected commands/paths (so skills/agents use real values, not
 placeholders) and the canonical loop: **scaffold → grill → plan → test-first build
 (interactive) or /argo:build-plan (automated, worktree-isolated) → review → debug →
 handoff.**
+
+## 8b. Recommendations (read-only — propose, never install)
+After the rules land, one short recommendation pass from the §2 stack evidence:
+
+- **1-2 MCP servers** that fit what was detected (heavy external-SDK usage →
+  a docs-lookup MCP; browser-driven e2e → a browser MCP; a tracked issue
+  system in the repo → its MCP). Name the server and the one-line reason;
+  installing is the user's call.
+- **1-2 project-specific skills worth scaffolding** (a migration creator where
+  a migrations dir exists, a component generator where a component library
+  exists, release-notes where releases are tagged). OFFER to author each via
+  `/argo:author-skill` — never auto-create.
+- **Dormant-hook disclosure:** enumerate any always-on hooks shipped by this
+  plugin whose matchers or extension lists do not cover the detected stack
+  (e.g. write-hygiene hooks are JS/TS-leaning; the bash source-write guard's
+  default extension list may need `.claude/argo-source-extensions.json` for
+  this stack) — so the adopter sees exactly what is active vs dormant here.
 
 ## 9. Report + one-step revert
 List exactly what was written where, and how to re-run or revert. Be idempotent;

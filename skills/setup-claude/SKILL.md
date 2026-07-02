@@ -195,14 +195,26 @@ project's own test reporter as ground truth. It enforces **order**, not test **q
   allowed on green, no new failing test, and never pixel-geometry tests to justify
   them; the exemption ends where behavior begins (enabled/disabled, shown/hidden,
   handlers). Mirrors the testing rule this skill installs.
-- **Minimal-fix fast path (same instructions file).** Also append: when the
-  proposed edit is a single statement whose changed field/symbol is named by the
-  CURRENT failing assertion, approve it — the immediately following test run is
-  the red→green confirmation; do not block demanding that confirmation first,
-  and never re-block an identical edit already assessed as plausibly minimal.
-  (Observed in dogfooding: the guard blocked one one-line fix twice, each time
-  conceding "if this IS the minimal fix, it is allowed" — pure round-trip waste.
-  TDD stays intact: a wrong guess still fails the very next run.)
+- **Minimal-fix fast path (same instructions file).** Also append: approve the
+  minimal change that makes the CURRENT failing assertion pass — both a single
+  statement whose field/symbol the assertion names, AND a small coordinated
+  cluster driven by ONE failing behavioral assertion at the **public interface**
+  (UI element shown/hidden, CLI stdout/exit-code, returned value, response body):
+  e.g. a new handler plus the one or two call sites that invoke it. That one
+  assertion is sufficient Red for the whole cluster — don't demand a separate
+  unit Red per new symbol. Bound it: every edit must be on the path the assertion
+  exercises; a new branch/action it doesn't reach is net-new and needs its own
+  Red. Do not block for the confirmation run first, and an identical-or-subset
+  edit already assessed as plausibly minimal MUST be approved on re-presentation
+  — never re-block it. Include one worked example verbatim (a UI project's
+  natural one: an e2e assertion justifying a new handler + its two call sites in
+  one pass). This is interface-neutral by design — it mirrors the testing rule
+  ("assert through the public interface"), and stays safe default-on because it
+  only triggers when a fresh failing behavioral assertion is on record; the next
+  test run remains the real green gate. (Observed in dogfooding: the guard
+  blocked a 4-line handler+wiring change 5+ times, each time conceding "if the
+  e2e IS your red this may be acceptable" then re-blocking on per-symbol Red —
+  pure round-trip waste; the change was correct and its e2e red was on record.)
 
 ## 7. graphify (conditional) — treat the graph as local build cache
 Only if the `graphify` CLI is present: run `graphify install --platform claude`

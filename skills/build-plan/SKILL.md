@@ -32,9 +32,19 @@ single-slice TDD, use `/argo:test-first`.
   substitute hand-verification or author specs you cannot execute (a sandboxed build
   once shipped e2e tests that had never run — two latent bugs surfaced on first real
   execution).
-- **Session rooting**: run the build from a session rooted in the checkout being
-  built — a session rooted elsewhere splits tdd-guard's evidence paths (the guard
-  reads the session root's data dir; test runs write the checkout's).
+- **Session rooting is a HARD requirement, not a preference**: the build session
+  must be rooted in the worktree being built (EnterWorktree re-roots; an
+  orchestrator spawning a builder agent must use true worktree isolation, never
+  "create a worktree and cd into it" — cd does not move the session root). A
+  session rooted elsewhere splits tdd-guard's evidence paths (the guard reads the
+  SESSION ROOT's data dir; test runs write the CHECKOUT's), and with two or more
+  concurrent builds rooted at the same parent, their evidence overwrites each
+  other and the guard false-blocks on the other build's test output (observed in
+  dogfooding). Degraded fallback if re-rooting is impossible: immediately before
+  every guarded edit, in one compound command, run the exact relevant spec
+  directly AND `cp <worktree>/.claude/tdd-guard/data/test.json
+  <session-root>/.claude/tdd-guard/data/test.json`, then edit in the very next
+  round — and never run two builds this way at once.
 
 No clean-tree check is needed: the build runs in a separate worktree, so the user's main
 checkout (dirty or not) is untouched.

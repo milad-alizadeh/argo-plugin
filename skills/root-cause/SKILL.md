@@ -57,11 +57,6 @@ exists, that absence is itself the finding (flag it for architecture work). Ever
 bug fix should ship a regression test named after the bug, failing on the
 unpatched code and passing after.
 
-**Research rule: 3 failed attempts = stop guessing, search online.** When the
-failing thing is a tool, framework, or environment behaviour (not your own
-logic), someone has hit it before — WebSearch the exact symptom (issue
-trackers, docs, prior art) before a fourth blind attempt.
-
 **Escalation rule: 3+ failed fix attempts on the same bug = stop fixing.** The
 bug is no longer the finding — the architecture is. Question the design
 assumption the failing fixes share (wrong boundary, wrong ownership, wrong

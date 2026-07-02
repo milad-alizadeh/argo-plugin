@@ -84,6 +84,14 @@ describe('red-proof gate — commit-scoped, marker-armed, receipts not narration
     expect((await runGate(commitInput())).code).toBe(0)
   })
 
+  it('PASS: compound `git add <testFile> && git commit` — the command itself stages the red test (PreToolUse fires before staging happens)', async () => {
+    armBuildMode(cwd)
+    writeProof(cwd)
+    execFileSync('git', ['-C', cwd, 'init', '-q']) // repo exists, testFile NOT staged yet
+    const r = await runGate(commitInput('git add sample.spec.ts src/impl.ts && git commit -m "feat: s2"'))
+    expect(r.code).toBe(0)
+  })
+
   // ── fail closed once armed ───────────────────────────────────────────────────
   it('BLOCK: armed behavioral slice with no receipt at all', async () => {
     armBuildMode(cwd)

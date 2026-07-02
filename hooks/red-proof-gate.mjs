@@ -153,6 +153,9 @@ if (proof.recordedAt <= headTime)
 
 // The red test itself must be part of THIS commit — build-plan lands one commit per
 // slice, and the slice's red test is always staged alongside its implementation.
+// PreToolUse fires BEFORE the command runs, so a compound `git add … && git commit`
+// hasn't staged anything yet at check time — accept the testFile if the command's
+// own text stages it (an explicit path, or a stage-everything form).
 let stagedFiles = []
 try {
   stagedFiles = execFileSync('git', ['-C', repoDir, 'diff', '--cached', '--name-only'], { encoding: 'utf8' })
@@ -161,7 +164,14 @@ try {
 } catch {
   stagedFiles = []
 }
-if (!stagedFiles.includes(proof.testFile))
-  block(`receipt's testFile "${proof.testFile}" is not staged in this commit — the red test must land with its slice`)
+const commandStagesTestFile = command
+  .split(/[;|&]+/)
+  .some(
+    (seg) =>
+      /\bgit\b[^\n]*\badd\b/.test(seg) &&
+      (seg.includes(proof.testFile) || /\badd\b\s+(-A\b|--all\b|\.(\s|$))/.test(seg)),
+  )
+if (!stagedFiles.includes(proof.testFile) && !commandStagesTestFile)
+  block(`receipt's testFile "${proof.testFile}" is not staged in this commit — the red test must land with its slice (stage it first, or stage it in the same command: git add <testFile> && git commit)`)
 
 process.exit(0)

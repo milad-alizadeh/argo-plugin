@@ -21,6 +21,13 @@ not write or fix feature code — if the change isn't ready, you hand it back.
 > run-the-app trust gate + the human/voice approval). If you cannot confirm it passed,
 > **stop and report — never land on hope.** Landing is a human-authorized act.
 
+> **Don't re-verify what a gate will verify.** If the branch was already verified
+> and your only change is a trivially clean rebase (no conflicts, non-overlapping
+> files with the new base), a cheap sanity pass (typecheck/lint/unit) is enough —
+> do NOT re-run the full e2e suite explicitly when a pre-push hook runs it anyway;
+> the hook is the single expensive gate. Re-run the full suite yourself only when
+> the rebase actually touched the same files or the project has no pre-push gate.
+
 **PRECONDITIONS.** Confirm: you are on the right branch (not the default branch),
 the working tree is clean (`git status`), and the commits tell a coherent story.
 If the tree is dirty or you're on `main`/`master`, stop and report.
@@ -70,9 +77,13 @@ this yourself; the config is the only authority.
    diverged local checkout means the user's own next push gets rejected:
    - clean checkout, no local-only commits → `git pull --ff-only` (fires the
      project's post-merge hooks);
-   - clean checkout WITH local-only commits → `git pull --rebase origin
-     <default-branch>` (replays the user's commits on top; report what was
-     replayed), then push those commits so local and origin match;
+   - clean checkout WITH local-only commits → you MUST attempt `git pull
+     --rebase origin <default-branch>` (replays the user's commits on top;
+     report what was replayed), then push those commits so local and origin
+     match. This is not optional and is not "rewriting shared history" — the
+     local-only commits were never pushed. Only if the rebase hits a conflict:
+     `git rebase --abort`, leave the checkout as found, and report the exact
+     commands the user needs;
    - dirty checkout → do not touch it; report the exact commands the user needs.
    Never end a merge-mode landing with local ≠ origin without saying so
    explicitly in the report. The branch may then be deleted per the

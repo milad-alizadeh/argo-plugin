@@ -182,6 +182,17 @@ After the rules land, one short recommendation pass from the §2 stack evidence:
   a docs-lookup MCP; browser-driven e2e → a browser MCP; a tracked issue
   system in the repo → its MCP). Name the server and the one-line reason;
   installing is the user's call.
+- **TypeScript/JavaScript stack → language-server code intelligence.** Argo
+  builds apps and apps are usually TS (web, Electron, React Native):
+  recommend the official `typescript-lsp` plugin (`/plugin install
+  typescript-lsp@claude-plugins-official`) — go-to-definition,
+  find-references and live diagnostics replace grep-and-guess for every
+  agent. Precheck: `typescript-language-server` on PATH; if absent, print
+  the one-line global install (`npm i -g typescript-language-server
+  typescript`) — never auto-install globals. (Bundling an `lspServers`
+  block into argo's own manifest is deliberately deferred until the
+  server's eager-vs-lazy startup behavior is verified — an eager server
+  in every non-TS host would violate ship-inert.)
 - **1-2 project-specific skills worth scaffolding** (a migration creator where
   a migrations dir exists, a component generator where a component library
   exists, release-notes where releases are tagged). OFFER to author each via

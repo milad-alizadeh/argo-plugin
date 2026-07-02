@@ -35,6 +35,13 @@ function writeProof(cwd, over = {}) {
   )
 }
 
+/** Init a git repo (if needed) and stage the receipt's testFile, mirroring a real
+ * build-plan commit where the slice's red test always lands staged alongside it. */
+function stageTestFile(cwd, dir = cwd, testFile = 'sample.spec.ts') {
+  execFileSync('git', ['-C', dir, 'init', '-q'])
+  execFileSync('git', ['-C', dir, 'add', testFile])
+}
+
 describe('red-proof gate — commit-scoped, marker-armed, receipts not narration', () => {
   let cwd
   beforeEach(() => { cwd = mkdtempSync(join(tmpdir(), 'argo-redproof-')) })
@@ -52,6 +59,13 @@ describe('red-proof gate — commit-scoped, marker-armed, receipts not narration
     expect((await runGate(commitInput('git status'))).code).toBe(0)
   })
 
+  it('BLOCK: `git ci` (the common commit alias) is recognized as a commit', async () => {
+    armBuildMode(cwd)
+    const r = await runGate(commitInput('git ci -m "feat: s2"'))
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/no red-proof receipt/)
+  })
+
   it('PASS: malformed hook stdin → inert (cannot locate a build to gate)', async () => {
     expect((await runGate('not json')).code).toBe(0)
   })
@@ -66,6 +80,7 @@ describe('red-proof gate — commit-scoped, marker-armed, receipts not narration
   it('PASS: well-formed receipt for the current slice (red non-zero, green zero, fresh)', async () => {
     armBuildMode(cwd)
     writeProof(cwd)
+    stageTestFile(cwd)
     expect((await runGate(commitInput())).code).toBe(0)
   })
 
@@ -105,6 +120,106 @@ describe('red-proof gate — commit-scoped, marker-armed, receipts not narration
     mkdirSync(join(cwd, '.argo'), { recursive: true })
     writeFileSync(join(cwd, '.argo', 'build-mode.json'), '{ nope')
     expect((await runGate(commitInput())).code).toBe(2)
+  })
+
+  // ── directory redirection: -C / --git-dir / --work-tree ─────────────────────
+  it('BLOCK: hook cwd is unguarded but `-C <dir>` redirects the commit to an armed dir', async () => {
+    const unguardedCwd = mkdtempSync(join(tmpdir(), 'argo-redproof-unguarded-'))
+    armBuildMode(cwd) // marker lives in the -C target, not the hook's own cwd
+    const payload = JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: `git -C ${cwd} commit -m "feat: s2"` },
+      cwd: unguardedCwd,
+    })
+    const result = await runGate(payload)
+    rmSync(unguardedCwd, { recursive: true, force: true })
+    expect(result.code).toBe(2)
+    expect(result.stderr).toMatch(/no red-proof receipt/)
+  })
+
+  it('PASS: `-C <dir>` redirect resolves the receipt and testFile lookup, not just the marker', async () => {
+    const unguardedCwd = mkdtempSync(join(tmpdir(), 'argo-redproof-unguarded-'))
+    armBuildMode(cwd)
+    writeProof(cwd) // receipt + testFile live in the -C target, not hook.cwd
+    stageTestFile(cwd)
+    const payload = JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: `git -C ${cwd} commit -m "feat: s2"` },
+      cwd: unguardedCwd,
+    })
+    const result = await runGate(payload)
+    rmSync(unguardedCwd, { recursive: true, force: true })
+    expect(result.code).toBe(0)
+  })
+
+  it('BLOCK: `-C <dir>` redirect checks HEAD-time against the -C target repo, not hook.cwd', async () => {
+    const unguardedCwd = mkdtempSync(join(tmpdir(), 'argo-redproof-unguarded-'))
+    armBuildMode(cwd)
+    writeProof(cwd, { recordedAt: Date.now() - 60_000 }) // predates the -C target's HEAD below
+    execFileSync('git', ['-C', cwd, 'init', '-q'])
+    execFileSync('git', ['-C', cwd, 'add', '.'])
+    execFileSync('git', ['-C', cwd, '-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'first'])
+    const payload = JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: `git -C ${cwd} commit -m "feat: s2"` },
+      cwd: unguardedCwd, // not a git repo — if this were used for HEAD-time, headTime would fall back to 0 and wrongly pass
+    })
+    const result = await runGate(payload)
+    rmSync(unguardedCwd, { recursive: true, force: true })
+    expect(result.code).toBe(2)
+    expect(result.stderr).toMatch(/predates HEAD/)
+  })
+
+  it('BLOCK: `--git-dir=<dir>/.git` redirects to that dir\'s parent as the effective repo', async () => {
+    const targetCwd = mkdtempSync(join(tmpdir(), 'argo-redproof-gitdir-'))
+    armBuildMode(targetCwd)
+    const payload = JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: `git --git-dir=${targetCwd}/.git commit -m "feat: s2"` },
+      cwd,
+    })
+    const result = await runGate(payload)
+    rmSync(targetCwd, { recursive: true, force: true })
+    expect(result.code).toBe(2)
+    expect(result.stderr).toMatch(/no red-proof receipt/)
+  })
+
+  it('BLOCK: `--work-tree=<dir>` wins over --git-dir as the effective repo', async () => {
+    const targetCwd = mkdtempSync(join(tmpdir(), 'argo-redproof-worktree-'))
+    armBuildMode(targetCwd)
+    const payload = JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: `git --work-tree=${targetCwd} --git-dir=${cwd}/.git commit -m "feat: s2"` },
+      cwd,
+    })
+    const result = await runGate(payload)
+    rmSync(targetCwd, { recursive: true, force: true })
+    expect(result.code).toBe(2)
+    expect(result.stderr).toMatch(/no red-proof receipt/)
+  })
+
+  // ── the red test must be staged in the commit it justifies ──────────────────
+  it('BLOCK: receipt testFile exists but is not staged in this commit', async () => {
+    armBuildMode(cwd)
+    writeProof(cwd) // writes sample.spec.ts on disk but never `git add`s it
+    execFileSync('git', ['-C', cwd, 'init', '-q'])
+    const r = await runGate(commitInput())
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/staged/)
+  })
+
+  // ── clock-skew ceiling: a receipt can't be dated arbitrarily far in the future ──
+  it('regression: gate must go RED on a future-dated receipt beyond the clock-skew allowance', async () => {
+    armBuildMode(cwd)
+    writeProof(cwd, { recordedAt: Date.now() + 60_000 }) // 60s ahead — beyond the 30s allowance
+    const r = await runGate(commitInput())
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/future/)
   })
 
   it('regression: receipt predating HEAD must not land a second commit', async () => {

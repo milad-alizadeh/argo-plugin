@@ -21,10 +21,21 @@
  * ITS OWN cwd, which in a monorepo is the workspace dir, not the repo root.
  *
  * Exit 0 → PASS (land allowed). Exit 2 → BLOCK (RED), reason on stderr.
+ *
+ * TRUST BOUNDARY: the build-mode marker and the launch-evidence receipt are
+ * SELF-ATTESTED by the gated builder session / the Argo app it launched —
+ * nothing here is written by an independent runner. This gate verifies shape,
+ * freshness, and slice-match; it catches a sloppy/forgetful agent, not a
+ * determined forger. Full provenance would require a runner-written receipt
+ * (deliberate non-goal for now).
+ *
+ * ALIAS SCOPE: commit detection matches the literal `commit` subcommand and the
+ * common `ci` alias. Exotic user-defined git aliases are out of scope — builder
+ * sessions don't configure aliases; this gate catches sloppiness, not adversaries.
  */
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve, dirname, sep } from 'node:path'
 
 const MAX_RECEIPT_AGE_MS = 10 * 60 * 1000 // a receipt older than this is stale → BLOCK
 
@@ -51,12 +62,48 @@ try {
 }
 
 const command = hook?.tool_input?.command
-if (typeof command !== 'string' || !/\bgit\b[^\n;|&]*\bcommit\b/.test(command)) process.exit(0)
+if (typeof command !== 'string' || !/\bgit\b[^\n;|&]*\b(commit|ci)\b/.test(command)) process.exit(0)
 
 const cwd = hook?.cwd
 if (typeof cwd !== 'string' || cwd.length === 0) process.exit(0)
 
-const markerPath = join(cwd, '.argo', 'build-mode.json')
+/**
+ * Resolve the EFFECTIVE git repo dir a commit command targets, so gating follows
+ * -C / --git-dir redirection rather than trusting the hook's reported cwd
+ * verbatim — otherwise a commit could target a gated worktree from an
+ * unguarded cwd (bypass) or blame an unrelated gated cwd for a commit that
+ * actually lands elsewhere (false-arm).
+ *
+ * Precedence: --work-tree wins; else --git-dir's parent (strip trailing
+ * /.git); else sequential -C resolution; else the hook's own cwd.
+ */
+function effectiveRepoDir(command, cwd) {
+  const flagValue = (re) => {
+    const m = re.exec(command)
+    return m ? (m[2] ?? m[3] ?? m[4]) : null
+  }
+
+  let dir = cwd
+  const cRe = /(?:^|\s)-C\s+("([^"]+)"|'([^']+)'|(\S+))/g
+  let m
+  while ((m = cRe.exec(command))) {
+    dir = resolve(dir, m[2] ?? m[3] ?? m[4])
+  }
+
+  const workTree = flagValue(/--work-tree(?:=|\s+)("([^"]+)"|'([^']+)'|(\S+))/)
+  if (workTree) return resolve(dir, workTree)
+
+  const gitDir = flagValue(/--git-dir(?:=|\s+)("([^"]+)"|'([^']+)'|(\S+))/)
+  if (gitDir) {
+    const resolved = resolve(dir, gitDir)
+    return resolved.endsWith(`${sep}.git`) ? resolved.slice(0, -`${sep}.git`.length) : resolved
+  }
+
+  return dir
+}
+
+const repoDir = effectiveRepoDir(command, cwd)
+const markerPath = join(repoDir, '.argo', 'build-mode.json')
 if (!existsSync(markerPath)) process.exit(0) // not a gated build — inert
 
 // From here on: gated build → fail closed (default-deny).
@@ -85,7 +132,7 @@ function findReceipt(root) {
   return null
 }
 
-const receiptPath = findReceipt(cwd)
+const receiptPath = findReceipt(repoDir)
 if (!receiptPath) block('no launch evidence — the app was never launched (no receipt found)')
 
 let receipt

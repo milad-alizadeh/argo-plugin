@@ -62,6 +62,8 @@ export class PlaywrightReporter {
     })
   }
 
+  // Last-write-wins is intentional: tdd-guard reads a single current snapshot, not a
+  // merged history — a later reporter instance's onEnd fully replaces this file's contents.
   async onEnd(result) {
     const output = {
       testModules: Array.from(this.modules.entries()).map(([moduleId, tests]) => ({

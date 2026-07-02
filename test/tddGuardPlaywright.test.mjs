@@ -163,6 +163,18 @@ describe('tdd-guard-playwright reporter — writes the tdd-guard test.json contr
     expect(isTestPassing(output)).toBe(false)
   })
 
+  it('two reporter instances run sequentially: the file holds only the SECOND instance\'s results (last-write-wins, no merge)', async () => {
+    // beforeEach's `reporter` stands in for the FIRST run
+    await run([[fakeTest({ id: 'a' }), fakeResult()]], 'passed')
+    // a second, independent run (e.g. a re-run) uses a fresh reporter instance
+    const second = new PlaywrightReporter({ projectRoot: root })
+    second.onTestEnd(fakeTest({ id: 'b', title: 'shows detail' }), fakeResult())
+    await second.onEnd({ status: 'passed' })
+    expect(written().testModules).toEqual([
+      { moduleId: FILE_A, tests: [{ name: 'shows detail', fullName: 'chromium > shows detail', state: 'passed' }] },
+    ])
+  })
+
   it('accepts an injected storage (sibling-reporter convention)', async () => {
     const saved = []
     const custom = new PlaywrightReporter({ storage: { saveTest: async (c) => saved.push(c) } })

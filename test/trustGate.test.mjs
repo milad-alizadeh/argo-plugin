@@ -61,9 +61,77 @@ describe('trust gate (§8.2) — commit-scoped, marker-armed, fails closed when 
     expect((await runGate(commitInput('ls -la'))).code).toBe(0)
   })
 
+  it('BLOCK: `git ci` (the common commit alias) is recognized as a commit', async () => {
+    armBuildMode(cwd)
+    const r = await runGate(commitInput('git ci -m "feat: slice"'))
+    expect(r.code).not.toBe(0)
+    expect(r.stderr).toMatch(/no launch evidence/)
+  })
+
   it('PASS: armed but slice does not ship launchable behaviour (requiresLaunch:false)', async () => {
     armBuildMode(cwd, { requiresLaunch: false })
     expect((await runGate(commitInput())).code).toBe(0)
+  })
+
+  // ── directory redirection: -C / --git-dir / --work-tree ─────────────────────
+  it('BLOCK: hook cwd is unguarded but `-C <dir>` redirects the commit to an armed dir', async () => {
+    const unguardedCwd = mkdtempSync(join(tmpdir(), 'argo-gate-unguarded-'))
+    armBuildMode(cwd) // marker lives in the -C target, not the hook's own cwd
+    const payload = JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: `git -C ${cwd} commit -m "feat: slice"` },
+      cwd: unguardedCwd,
+    })
+    const result = await runGate(payload)
+    rmSync(unguardedCwd, { recursive: true, force: true })
+    expect(result.code).not.toBe(0)
+    expect(result.stderr).toMatch(/no launch evidence/)
+  })
+
+  it('BLOCK: `--git-dir=<dir>/.git` redirects to that dir\'s parent as the effective repo', async () => {
+    const targetCwd = mkdtempSync(join(tmpdir(), 'argo-gate-gitdir-'))
+    armBuildMode(targetCwd)
+    const payload = JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: `git --git-dir=${targetCwd}/.git commit -m "feat: slice"` },
+      cwd,
+    })
+    const result = await runGate(payload)
+    rmSync(targetCwd, { recursive: true, force: true })
+    expect(result.code).not.toBe(0)
+    expect(result.stderr).toMatch(/no launch evidence/)
+  })
+
+  it('BLOCK: `--work-tree=<dir>` wins over --git-dir as the effective repo', async () => {
+    const targetCwd = mkdtempSync(join(tmpdir(), 'argo-gate-worktree-'))
+    armBuildMode(targetCwd)
+    const payload = JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: `git --work-tree=${targetCwd} --git-dir=${cwd}/.git commit -m "feat: slice"` },
+      cwd,
+    })
+    const result = await runGate(payload)
+    rmSync(targetCwd, { recursive: true, force: true })
+    expect(result.code).not.toBe(0)
+    expect(result.stderr).toMatch(/no launch evidence/)
+  })
+
+  it('PASS: `-C <dir>` redirect resolves the receipt lookup too, not just the marker', async () => {
+    const unguardedCwd = mkdtempSync(join(tmpdir(), 'argo-gate-unguarded-'))
+    armBuildMode(cwd)
+    writeReceipt(cwd, greenReceipt()) // receipt lives in the -C target, not hook.cwd
+    const payload = JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: `git -C ${cwd} commit -m "feat: slice"` },
+      cwd: unguardedCwd,
+    })
+    const result = await runGate(payload)
+    rmSync(unguardedCwd, { recursive: true, force: true })
+    expect(result.code).toBe(0)
   })
 
   // ── GREEN across ≥2 shapes (§5.3) ──────────────────────────────────────────

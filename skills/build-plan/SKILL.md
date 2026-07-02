@@ -100,10 +100,22 @@ For each slice:
 6. **Commit** (conventional message, one slice = one commit). The gates check the
    receipts deterministically; if blocked, fix the real problem — never delete the
    marker to sneak a commit through.
-7. **Update the progress doc.**
+7. **Update the progress doc** — after EVERY slice, before starting the next. This is
+   not bookkeeping polish: a stale progress doc breaks the resume protocol (§5) and
+   makes external monitoring read completed work as skipped. If a checkpoint review
+   ran, its verdict goes in the doc the moment it returns.
 
 If a slice won't go green after ~3 honest attempts: mark it blocked in the progress doc
 with the failure evidence, STOP the loop, and surface — do not thrash.
+
+**Run continuously — never end a turn on a status update.** This build is hands-off:
+there are exactly two legitimate final messages, the completed build report (§8) or a
+blocked report (§7). Ending a turn to narrate progress, summarize "status so far", or
+acknowledge an incoming message stalls the build until someone notices and nudges it —
+observed in dogfooding, where two such stalls cost more wall-clock than every guard
+block combined. If a message arrives mid-build (from a coordinator, monitor, or user):
+apply what it asks, fold it into the current slice, and CONTINUE — reply only as part
+of continuing work, never as a stopping point.
 
 ## 5. Resume protocol (verbatim — 12-slice plans outlive one context window)
 If the session compacts or a fresh session takes over: read the plan doc, the progress

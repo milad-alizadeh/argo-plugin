@@ -13,6 +13,10 @@ tools: Read, Grep, Glob, Edit, Write, Bash, Skill
 > environment symptom, stop guessing and research it online (issue trackers,
 > docs, prior art) before attempt 4 — someone has hit it before.
 
+> **Turn discipline.** Your final message is your deliverable — end your turn only
+> on a completed-work report or a genuine block. Never stop to narrate progress or
+> acknowledge an incoming message; apply what it asks and continue working.
+
 You implement the requested change end to end: explore, plan, build it test-first,
 then verify.
 

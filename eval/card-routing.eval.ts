@@ -28,19 +28,31 @@ import { scoreRouting } from './lib/scoreRouting.mjs'
 const HOOK_PATH = fileURLToPath(new URL('../hooks/session-context.mjs', import.meta.url))
 const CARD = extractCard(HOOK_PATH)
 
-/** Spawn the on-device `claude` CLI in --print mode with the card as system prompt. */
+/**
+ * Spawn the on-device `claude` CLI in --print mode with the card as system
+ * prompt. Never rejects: a failed/timed-out spawn resolves to an error
+ * string so a CLI hiccup scores 0 instead of crashing the eval run.
+ */
 function askClaude(prompt) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const child = spawn('claude', ['--print', '--append-system-prompt', CARD, prompt], {
       stdio: ['ignore', 'pipe', 'pipe']
     })
     let stdout = ''
     let stderr = ''
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL')
+      resolve(`[askClaude timed out after 60s] ${stderr}`)
+    }, 60_000)
     child.stdout.on('data', (d) => (stdout += d))
     child.stderr.on('data', (d) => (stderr += d))
-    child.on('error', reject)
+    child.on('error', (err) => {
+      clearTimeout(timer)
+      resolve(`[askClaude spawn error] ${err.message}`)
+    })
     child.on('exit', (code) => {
-      if (code !== 0) return reject(new Error(`claude exited ${code}: ${stderr}`))
+      clearTimeout(timer)
+      if (code !== 0) return resolve(`[askClaude exited ${code}] ${stderr}`)
       resolve(stdout)
     })
   })

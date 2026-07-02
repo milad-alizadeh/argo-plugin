@@ -38,6 +38,10 @@ TDD here is enforced mechanically (edit-time guard where installed; commit
 gates during gated builds). Cosmetic/styling-only changes are refactor-class:
 no new tests required, never geometry assertions — verify by looking.
 
+Anti-spiral rule: after 3 failed attempts at the same tool/framework/
+environment problem, STOP guessing and research online (WebSearch — issue
+trackers, docs, prior art) before attempt 4. Someone has hit it before.
+
 This card is a pointer, not a summary — read the skill before following it.
 Standing rules live in .claude/rules/.`
 

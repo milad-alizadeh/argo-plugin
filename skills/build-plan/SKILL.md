@@ -102,6 +102,8 @@ For each slice:
    marker to sneak a commit through.
 7. **Update the progress doc.**
 
+If a slice fails 3 attempts on a tool/framework/environment symptom, research it
+online (WebSearch the exact error) before attempt 4 — never keep guessing blind.
 If a slice won't go green after ~3 honest attempts: mark it blocked in the progress doc
 with the failure evidence, STOP the loop, and surface — do not thrash.
 

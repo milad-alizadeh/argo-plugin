@@ -45,6 +45,19 @@ One run = one worktree = one branch. All building, verifying, and committing hap
 inside the worktree; the main checkout is never written to, and concurrent builds in
 separate worktrees never collide on the git index.
 
+**Fresh-worktree checklist — run BEFORE the first slice, not when something breaks:**
+1. **Read CLAUDE.md + `.claude/rules/` from the worktree first** — verify commands,
+   test env flags, which binaries the e2e suite spawns, known worktree gotchas. This
+   survival kit informs every later step; don't rediscover it mid-slice.
+2. **Install dependencies from the worktree root** with the project's package manager
+   (a fresh worktree has no `node_modules`/venv/build cache; in a workspace monorepo
+   never install from inside a workspace).
+3. **Re-confirm the §1 runner proof against the FRESH install** — §1 proved the
+   runners work in some environment; re-prove with one fast existing test per runner
+   here, because fresh installs drop postinstall artifacts (a bundled app binary the
+   e2e launcher needs is the common casualty; step 1's stack-facts usually name the
+   fix).
+
 ## 3. Arm the gates — `.argo/build-mode.json`
 Ensure `.argo/` is gitignored, then write the build-mode marker in the worktree root.
 While this file exists, the plugin's commit gates (`red-proof-gate.mjs`,
@@ -78,8 +91,15 @@ For each slice:
 1. **Update** `.argo/build-mode.json` to this slice.
 2. **Red** (skip if `testable: false`): write the test that specifies the slice's
    behaviour through the real interface (per the project's testing rules — DOM/API/CLI,
-   not internals). Run it; record the non-zero exit code.
-3. **Green**: implement the minimum to pass. Run the test; record exit code 0.
+   not internals). Run it; record the non-zero exit code. **Run only THAT spec file**
+   (`<e2e-runner> <file>`, direct invocation) — never the full e2e suite for a
+   red/green proof; each full-app boot costs tens of seconds and red-green-rerun
+   multiplies it.
+3. **Green**: implement the minimum to pass. Run the test (same single-file scope);
+   record exit code 0. **Exception — cross-cutting slices**: if the slice touched a
+   shared surface other specs depend on (a common fixture, selector, shared
+   component, global setup), run the full e2e suite once now, on green — per-file
+   scoping must never let a slice silently break its neighbours.
 4. **Receipt**: write `.argo/red-proof.json`:
    ```json
    { "slice": "<id>", "testFile": "<path>", "redExit": 1, "greenExit": 0,
@@ -96,7 +116,11 @@ For each slice:
    judged on pre-command state and blocked. The one sanctioned compound form is
    `git add <testFile> && git commit …` (the gate parses that exact `&&` chain).
 5. **Verify** (scoped): run the affected workspace's typecheck + lint + tests — not the
-   full graph every slice; the checkpoint and final review run the full suite.
+   full graph every slice; the full e2e suite runs **at minimum** at the checkpoint
+   and the final review (plus any cross-cutting slice per step 3's exception, and the
+   pre-push hook where the landing mode has one — merge mode relies on it; pr mode
+   may not have one, so don't count it as coverage). These are floors, not ceilings —
+   when in doubt about blast radius, run the suite.
 6. **Commit** (conventional message, one slice = one commit). The gates check the
    receipts deterministically; if blocked, fix the real problem — never delete the
    marker to sneak a commit through.

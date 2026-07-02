@@ -8,6 +8,23 @@ behaviour, not a typo). A test that has never been seen red proves nothing about
 the code it guards. (Where tdd-guard is installed this order is enforced
 mechanically; the rule stands regardless.)
 
+### Working under tdd-guard — follow the protocol, don't get taught by blocks
+
+Where tdd-guard is active it validates every Write/Edit against live test
+evidence. Know its rules up front:
+
+1. Test file first, **ONE new test per edit** — two tests in one edit is a
+   violation, as is a new implementation file with no failing test on record.
+2. Run that exact failing test **immediately before** the implementation edit.
+   The guard only trusts fresh in-session runner output — its state clears at
+   session start, and cached (e.g. turbo-cached) runs write nothing, so invoke
+   the test runner directly.
+3. Match the failure stage: import/symbol failure → minimal stub only;
+   assertion failure → just enough logic to pass that assertion.
+4. Refactor only on green; don't add behaviour in a refactor edit.
+5. If blocked, read the reason and supply the missing evidence — never batch,
+   rename, or retry your way around a block.
+
 ## Tests on the real interface are the primary surface
 
 Verify a feature by exercising it through the surface a user actually touches —

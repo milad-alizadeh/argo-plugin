@@ -92,6 +92,14 @@ describe('red-proof gate — commit-scoped, marker-armed, receipts not narration
     expect(r.code).toBe(0)
   })
 
+  it('BLOCK: `git add t || git commit` — commit runs only when the add FAILED, so the mention does not count', async () => {
+    armBuildMode(cwd)
+    writeProof(cwd)
+    execFileSync('git', ['-C', cwd, 'init', '-q'])
+    const r = await runGate(commitInput('git add sample.spec.ts || git commit -m "feat: s2"'))
+    expect(r.code).toBe(2)
+  })
+
   it('BLOCK: text mention of `git add` in a segment that never executes does not count (checkpoint finding: `false && git add t; git commit`)', async () => {
     armBuildMode(cwd)
     writeProof(cwd)

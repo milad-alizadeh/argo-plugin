@@ -26,6 +26,15 @@ single-slice TDD, use `/argo:test-first`.
 - **argo:reviewer** is available (checkpoint + final review). If absent, stop and say so.
 - **Verify commands** are known: the project's real typecheck/lint/test commands (from
   CLAUDE.md stack-facts or the manifests). Never guess.
+- **Runners actually execute here**: before slice 1, prove every runner the plan's
+  verify commands need can run in THIS environment — unit, component, AND the e2e
+  launcher (e.g. the app binary exists). If one can't, STOP and surface it; never
+  substitute hand-verification or author specs you cannot execute (a sandboxed build
+  once shipped e2e tests that had never run — two latent bugs surfaced on first real
+  execution).
+- **Session rooting**: run the build from a session rooted in the checkout being
+  built — a session rooted elsewhere splits tdd-guard's evidence paths (the guard
+  reads the session root's data dir; test runs write the checkout's).
 
 No clean-tree check is needed: the build runs in a separate worktree, so the user's main
 checkout (dirty or not) is untouched.
@@ -107,6 +116,25 @@ cross-session proof the commit gate actually checks.
   building dependents on top. Run the FULL verify suite here.
 - **Final review**: after the last slice, one `argo:reviewer` pass on the full branch
   diff. Fix merge-blocking findings, re-verify.
+
+**Dispatching the reviewer** — hand over FILES, not pasted context: point it at the
+branch, the plan doc, and the progress doc by path (everything pasted into a dispatch
+prompt stays resident in your context and is re-read every turn). Never pre-judge
+findings in the dispatch prompt — if you are writing "do not flag X", stop: you are
+pre-judging.
+
+**Receiving the review** — findings are claims, not orders:
+- Verify each finding against the actual code before acting on it; a reviewer citing
+  the wrong line or a mitigated path gets pushed back with the evidence, plainly.
+- Before accepting a "you should also handle / generalize" suggestion, grep for actual
+  usage — if no call site needs it, decline it as YAGNI and say so in the progress doc.
+- No performative agreement: never "You're absolutely right!" — state what you
+  verified, what you fixed, what you rejected and why.
+
+**Per-slice verify is the SCOPED commands from the plan** — the full suite runs at the
+checkpoint and final review only. For cosmetic/layout fixes within a slice, assert
+structure or computed style at the fix's owner (one place), never boundingBox pixel
+math re-asserted per consumer layer.
 
 ## 7. Land or surface — always close out the worktree
 - **All slices done + final review clean** → delete `.argo/build-mode.json`, hand the

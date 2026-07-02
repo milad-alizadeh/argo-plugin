@@ -16,6 +16,15 @@
  * CLI — never set ANTHROPIC_API_KEY for this eval, spawning `claude` picks
  * up local auth on its own.
  *
+ * SERIAL ONLY: every `claude` spawn shares this machine's one subscription
+ * seat. Running spawns concurrently (even just a handful) bursts the
+ * account's server-side rate limit and can take down every other agent
+ * currently running under the same login — this was observed directly
+ * during development. `evalite.config.ts` pins `maxConcurrency: 1`, and the
+ * `serialize()` queue below is a second, code-level guarantee that at most
+ * one `claude` process is ever in flight regardless of how evalite/vitest
+ * schedules the dataset's trials.
+ *
  * Run: `bun run eval` (or `bunx evalite run eval/card-routing.eval.ts`).
  * Never wired into `bun run test` / CI — usage-bounded, on-demand only.
  */
@@ -58,6 +67,14 @@ function askClaude(prompt) {
   })
 }
 
+/** Global one-at-a-time queue: chains every askClaude call onto the previous. */
+let queue = Promise.resolve()
+function serialize(fn) {
+  const run = queue.then(fn)
+  queue = run // askClaude never rejects, so the chain never breaks
+  return run
+}
+
 const scenarios = [
   {
     prompt: "My tests are failing with a weird error and I don't know why",
@@ -79,7 +96,7 @@ const scenarios = [
 
 evalite('card-routing', {
   data: async () => scenarios.map((s) => ({ input: s.prompt, expected: s.expected })),
-  task: async (input) => askClaude(input),
+  task: async (input) => serialize(() => askClaude(input)),
   trialCount: 2,
   scorers: [
     {

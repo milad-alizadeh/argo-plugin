@@ -38,6 +38,25 @@ learn; partial work should survive an interruption. Revisions update it in place
 confirm success). If you give time estimates, calibrate to agentic speed (a human's
 "days" is often an agent's "hours").
 
+**NO PLACEHOLDERS.** "TBD", "add appropriate error handling", "similar to step N",
+"handle edge cases" are plan FAILURES — every step states its actual files, actual
+behavior, actual verify command. If you can't fill a slot yet, that's an ambiguity
+for the user (below), not a placeholder.
+
+**AMBIGUITIES GO TO THE USER FIRST.** A load-bearing open question (contradicts a
+test, changes the data model, incompatible outcomes) is resolved with the user
+BEFORE the plan is written — never parked as an "open questions" section inside a
+plan that steps then silently assume an answer to.
+
+**ARCHITECT PANEL — only for architecturally load-bearing plans.** When the plan
+introduces a new module boundary, a data-model choice, or a cross-cutting pattern
+(the same bar as load-bearing ambiguities — small/mechanical plans stay single-pass):
+draft 2-3 approaches through deliberately opposed lenses — **minimal-change**
+(smallest diff, maximum reuse), **clean-architecture** (right boundaries, even at
+migration cost), **pragmatic** (ship-speed + quality balance). Present the
+trade-offs in two or three rows, state YOUR recommendation with the reason, and let
+the user pick before writing the full plan for the winner.
+
 **Build metadata** — every step carries the markers `argo:build-plan` consumes to
 arm its per-slice `.argo/build-mode.json`:
 - `testable: false` on any step that's non-behavioral (design tokens, config, pure

@@ -1,22 +1,33 @@
-# Pre-push gate template (installed by /argo:setup-claude). The last line before code
-# leaves the machine when there's no CI. Runs the fail-loud checks across the whole graph;
-# setup-claude instantiates the commands from the project's detected typecheck/lint/test
-# (and a cache-buster like TURBO_FORCE for caching runners). Formatting is NOT gated here —
-# it's an auto-fix concern (see the format-on-write hook). Bypassable with --no-verify;
+# Hook templates (installed by /argo:setup-claude). setup-claude fills the {{…}}
+# slots from the project's detected typecheck/lint/test commands. Formatting is NOT
+# gated in any hook — it's an auto-fix concern (see the format-on-write hook).
+
+# Fast pre-commit gate — lint + typecheck only (no tests), so it catches breakage
+# at commit time without slowing the loop. With a caching runner (turbo/nx) and
+# declared task inputs this is near-instant on unchanged packages.
+pre-commit:
+  jobs:
+    - name: lint+typecheck
+      run: {{LINT_CMD}} && {{TYPECHECK_CMD}}
+
+# Pre-push gate — the last line before code leaves the machine when there's no CI.
+# Runs the fail-loud checks across the whole graph. Bypassable with --no-verify;
 # add a required CI check as the unbypassable backstop when available.
 pre-push:
   parallel: true
   jobs:
     - name: typecheck
-      run: bun run typecheck
+      run: {{TYPECHECK_CMD}}
     - name: lint
-      run: bun run lint
+      run: {{LINT_CMD}}
     - name: test
-      run: bun run test
+      run: {{TEST_CMD}}
 
-# Single touchpoint, single writer: graphify refreshes only when main integrates commits.
-# refresh-graph.sh self-guards (main-only, skips worktrees).
+# Single touchpoint, single writer: graphify refreshes only when main integrates commits
+# (post-merge ONLY — a per-commit trigger is pure labeling latency). Guarded so projects
+# without graphify installed skip it silently; refresh-graph.sh also self-guards
+# (main-only, skips worktrees).
 post-merge:
   jobs:
     - name: graphify-refresh
-      run: bash scripts/refresh-graph.sh
+      run: sh -c 'command -v graphify >/dev/null 2>&1 || exit 0; bash scripts/refresh-graph.sh'

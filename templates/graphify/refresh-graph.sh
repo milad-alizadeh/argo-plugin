@@ -43,13 +43,24 @@ for ws in "${WORKSPACES[@]}"; do
     cd "$ws"
     PYTHONHASHSEED=0 graphify update . --force
     graphify label . --missing-only --backend=claude-cli || echo "  (labeling degraded to placeholders)"
+    # Prune dated backup dirs (graphify-out/YYYY-MM-DD/) older than 14 days —
+    # graphify snapshots one per day and never cleans up, so they accumulate.
+    find graphify-out -maxdepth 1 -type d \
+      -name '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' -mtime +14 \
+      -exec rm -rf {} + 2>/dev/null || true
   )
 done
 
 # Stage only the durable artifacts (graph.json carries the embedded labels Claude
 # reads; the report + label cache). Bulk/cache files are gitignored.
-git add ':(glob)**/graphify-out/graph.json' \
-        ':(glob)**/graphify-out/graph.html' \
-        ':(glob)**/graphify-out/GRAPH_REPORT.md' \
-        ':(glob)**/graphify-out/.graphify_labels.json' 2>/dev/null || true
-git diff --cached --quiet || git commit -m "chore(graphify): refresh knowledge graph"
+GRAPH_PATHS=(
+  ':(glob)**/graphify-out/graph.json'
+  ':(glob)**/graphify-out/graph.html'
+  ':(glob)**/graphify-out/GRAPH_REPORT.md'
+  ':(glob)**/graphify-out/.graphify_labels.json'
+)
+git add -- "${GRAPH_PATHS[@]}" 2>/dev/null || true
+# Commit scoped to the graphify pathspec — a dirty index elsewhere (e.g. files the
+# user staged mid-task when the post-merge hook fires) must never be swept in.
+git diff --cached --quiet -- "${GRAPH_PATHS[@]}" \
+  || LEFTHOOK=0 git commit -m "chore(graphify): refresh knowledge graph" -- "${GRAPH_PATHS[@]}"

@@ -26,5 +26,10 @@ the shape. Identify it from the prompt, the surrounding code, or by asking.
 4. **Surface the state** after every action or variant switch.
 5. **Delete or absorb when done.** Keep only the *answer* — capture it in a
    design doc or decision record, then delete the prototype.
+6. **Disable TDD enforcement for the session.** A spike's "no tests, throwaway"
+   contract is incompatible with tdd-guard by design — if the project has
+   tdd-guard installed, toggle it off for this session (`tdd-guard off` /
+   its session toggle) before spiking, and say you did. Re-enable (or just end
+   the session) when the spike is deleted or absorbed.
 
 <!-- Adapted from mattpocock/skills (MIT). -->

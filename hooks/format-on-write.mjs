@@ -7,6 +7,7 @@
  */
 import { existsSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
+import { dirname, join, isAbsolute } from 'node:path'
 
 function read(stream) {
   return new Promise((resolve) => {
@@ -28,9 +29,25 @@ try {
 const FORMATTABLE = /\.(ts|tsx|js|jsx|mjs|cjs|css|json|md|html|ya?ml)$/
 if (!filePath || !FORMATTABLE.test(filePath)) process.exit(0)
 
-// Use the project's own prettier only — do not auto-install one.
-const bin = 'node_modules/.bin/prettier'
-if (existsSync(bin)) {
+/**
+ * Resolve the project's own prettier by walking UP from the written file's directory
+ * (never CWD — the hook's CWD is the session root, which in a monorepo/worktree is
+ * usually not the workspace that owns the file). Nearest node_modules/.bin/prettier
+ * wins, matching Node's own resolution order.
+ */
+function findPrettier(fromFile) {
+  let dir = isAbsolute(fromFile) ? dirname(fromFile) : join(process.cwd(), dirname(fromFile))
+  while (true) {
+    const bin = join(dir, 'node_modules', '.bin', 'prettier')
+    if (existsSync(bin)) return bin
+    const parent = dirname(dir)
+    if (parent === dir) return null
+    dir = parent
+  }
+}
+
+const bin = findPrettier(filePath)
+if (bin) {
   try {
     execFileSync(bin, ['--write', '--log-level', 'silent', filePath], { stdio: 'ignore' })
   } catch {

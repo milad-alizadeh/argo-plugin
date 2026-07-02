@@ -30,9 +30,9 @@ guessing. (Under Argo you may ask via the `ask_user` tool.)
 any version/flag/key exists; cite `path:line`; never state inference as fact. Never
 hand-edit a lockfile or version — use the package manager.
 
-**TESTS (test-first).** Build behaviour test-first: one test through the public
-interface (UI/API/machine) → RED → minimal code → GREEN → refactor while green, one
-slice at a time. Tests assert behaviour, not implementation. (See `test-first`.)
+**TESTS (test-first).** Invoke the `test-first` skill (`Skill: argo:test-first`)
+and follow its loop for every behaviour change — do not improvise a compressed
+version of it.
 
 **CONVENTIONS.** Follow the project's own CLAUDE.md, `.claude/rules/`, and surfaced
 SKILL.md files before writing related code.

@@ -20,10 +20,10 @@ stack (see "How opinionation is delivered" below).
 
 - **Agents** (`agents/`) — full lifecycle roles, invoked on demand:
   `scaffolder → planner → builder → reviewer → debugger`, plus `auditor`
-  (whole-codebase health), `integrator` (lands work / PRs), `documenter`.
+  (whole-codebase health) and `integrator` (lands work / PRs / docs sync).
 - **Skills** (`skills/`) — on-demand disciplines: `engineering-principles`,
   `test-first`, `root-cause`, `grill-me`, `spike`, `session-handoff`,
-  `author-skill`, `terse-mode`, and `setup-claude`.
+  `author-skill`, and `setup-claude`.
 - **Hooks** (`hooks/`) — safety-only guardrails: block destructive git
   (opt out with `ARGO_DISABLE_GIT_GUARD=1`) and block pipe-to-shell.
 

@@ -1,22 +1,29 @@
 #!/usr/bin/env node
 /**
- * Trust gate (§8.2) — the code-enforced centerpiece. Decides whether a build slice
- * may land by reading the LAUNCH EVIDENCE RECEIPT a real run wrote, never prose.
+ * Trust gate (§8.2) — decides whether a build slice may land by reading the LAUNCH
+ * EVIDENCE RECEIPT a real run wrote, never prose. Registered as a PreToolUse hook on
+ * Bash, enforcing only `git commit` commands.
  *
- * Wired as a Stop hook (and callable directly by the workflow's Verify step). It is
- * the DELIBERATE OPPOSITE of the pipe-to-shell hook: that one allows on malformed
- * input; this one DENIES on anything missing, unparseable, incomplete, or stale.
- * Fail closed — the only path to exit 0 is a receipt proving the app launched AND
- * did something observable (an OSC-777 prompt_submit/stop or an MCP report_status).
+ * SELF-SCOPING (same contract as red-proof-gate): entirely inert unless
+ * `.argo/build-mode.json` exists in the session cwd AND marks the current slice
+ * `requiresLaunch: true`. The build-plan skill maintains that marker; outside a
+ * gated build — normal commits, non-Argo host projects — this hook always exits 0.
+ * The gate is Argo-runtime-specific by design: the receipt is written by the Argo
+ * app's own launch evidence recorder; generalizing it is documented out of scope.
  *
- * Exit 0  → PASS (land allowed).
- * Exit 2  → BLOCK (RED), with the reason on stderr.
+ * INSIDE a gated launch-slice it is fail-closed — the deliberate opposite of the
+ * pipe-to-shell hook: anything missing, unparseable, incomplete, or stale DENIES.
+ * The only path to exit 0 is a receipt proving the app launched AND did something
+ * observable (an OSC-777 prompt_submit/stop or an MCP report_status).
  *
- * Self-contained: reads .argo/launch-receipt.json relative to the hook's cwd, with
- * no dependency on @argo/core (the plugin is independently distributable).
+ * Receipt search: `<cwd>/.argo/launch-receipt.json`, then one workspace level down
+ * (`<cwd>/apps/<ws>/.argo/...`) — the launched app writes the receipt relative to
+ * ITS OWN cwd, which in a monorepo is the workspace dir, not the repo root.
+ *
+ * Exit 0 → PASS (land allowed). Exit 2 → BLOCK (RED), reason on stderr.
  */
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
 const MAX_RECEIPT_AGE_MS = 10 * 60 * 1000 // a receipt older than this is stale → BLOCK
@@ -36,23 +43,56 @@ function readStdin() {
 }
 
 const raw = await readStdin().catch(() => '')
-
-// default-deny: malformed hook input → BLOCK (opposite of the pipe-to-shell hook)
 let hook
 try {
   hook = JSON.parse(raw)
 } catch {
-  block('hook input was not valid JSON (default-deny)')
+  process.exit(0) // not in a gated build context — scope check below is what arms us
 }
 
+const command = hook?.tool_input?.command
+if (typeof command !== 'string' || !/\bgit\b[^\n;|&]*\bcommit\b/.test(command)) process.exit(0)
+
 const cwd = hook?.cwd
-if (typeof cwd !== 'string' || cwd.length === 0) block('hook input had no cwd')
+if (typeof cwd !== 'string' || cwd.length === 0) process.exit(0)
+
+const markerPath = join(cwd, '.argo', 'build-mode.json')
+if (!existsSync(markerPath)) process.exit(0) // not a gated build — inert
+
+// From here on: gated build → fail closed (default-deny).
+let mode
+try {
+  mode = JSON.parse(readFileSync(markerPath, 'utf8'))
+} catch {
+  block('build-mode.json is unreadable/malformed (default-deny inside a gated build)')
+}
+
+// Pure logic/library/config slices don't ship launchable behaviour — unaffected.
+if (mode?.requiresLaunch !== true) process.exit(0)
+
+function findReceipt(root) {
+  const direct = join(root, '.argo', 'launch-receipt.json')
+  if (existsSync(direct)) return direct
+  const appsDir = join(root, 'apps')
+  try {
+    for (const ws of readdirSync(appsDir)) {
+      const p = join(appsDir, ws, '.argo', 'launch-receipt.json')
+      if (existsSync(p)) return p
+    }
+  } catch {
+    /* no apps/ dir — single-app layout */
+  }
+  return null
+}
+
+const receiptPath = findReceipt(cwd)
+if (!receiptPath) block('no launch evidence — the app was never launched (no receipt found)')
 
 let receipt
 try {
-  receipt = JSON.parse(readFileSync(join(cwd, '.argo', 'launch-receipt.json'), 'utf8'))
+  receipt = JSON.parse(readFileSync(receiptPath, 'utf8'))
 } catch {
-  block('no launch evidence — the app was never launched (no/unreadable receipt)')
+  block('launch receipt is unreadable/malformed (default-deny)')
 }
 
 // structural validation — a receipt missing required fields is not evidence

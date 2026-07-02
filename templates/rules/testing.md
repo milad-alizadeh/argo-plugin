@@ -1,5 +1,13 @@
 # Testing Rules
 
+## A test must fail before its implementation exists
+
+Fail-first is what makes a test evidence rather than decoration: run the new test
+before writing the code and watch it fail for the RIGHT reason (the missing
+behaviour, not a typo). A test that has never been seen red proves nothing about
+the code it guards. (Where tdd-guard is installed this order is enforced
+mechanically; the rule stands regardless.)
+
 ## Tests on the real interface are the primary surface
 
 Verify a feature by exercising it through the surface a user actually touches —
@@ -38,8 +46,10 @@ and a test exercises each row end-to-end through the real interface. "Test it
 well" is not a matrix — enumerate the states. Do not hand-wave coverage; list the
 cases, then drive each one.
 
-Every feature's matrix MUST consider these standing categories (include the rows
-that apply; state "n/a" for the rest so the omission is deliberate, not forgotten):
+Weigh each standing category below and include the rows that genuinely apply to
+the feature — no n/a bookkeeping for the rest (forced rows on a feature with no
+behaviour in that category produce fake tests, not coverage). Non-behavioral
+changes (design tokens, config, pure styling) need no matrix at all:
 
 - **Empty / zero state** — no items, first run, nothing selected.
 - **Single vs many** — one item, and a crowded list (ordering, overflow, scroll).

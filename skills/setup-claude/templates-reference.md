@@ -1,8 +1,9 @@
 # setup-claude — template instantiation reference
 
 How to instantiate each template under `${CLAUDE_PLUGIN_ROOT}/templates/rules/`
-into the host project's `.claude/rules/`. For each accepted template: substitute
-the detected values, set a `paths:` glob matching THIS project's real layout
+into the host project's `.claude/rules/`. For each accepted template: fill every
+explicit `{{…}}` slot (e.g. `{{LOCKFILE}}`, `{{LINT_CMD}}`) from the detected
+values, set a `paths:` glob matching THIS project's real layout
 (never ship an unscoped rule), and on a non-TS project write the
 language-appropriate equivalent instead.
 

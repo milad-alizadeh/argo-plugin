@@ -45,10 +45,9 @@ Rules that fall out of this:
 
 ## Reuse before you build
 
-This is DRY applied to UI. A visual unit (a row, a card, a labelled field, a
-button, a list, a section header, an icon) is a _shape_, and DRY governs shapes
-exactly as it governs values and types. Hand-writing new HTML for something that
-already exists is a duplication bug.
+The general duplication rules live in the `engineering-principles` skill; these
+are their UI-specific consequences for visual shapes (a row, a card, a labelled
+field, a button, a list, a section header, an icon):
 
 - **Before writing any raw markup, search the primitives directory (and the parent
   domain folder) for a component that already renders it.** If one exists, import

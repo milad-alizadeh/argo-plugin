@@ -1,5 +1,5 @@
 {
-  "description": "Argo guardrails — block destructive git + pipe-to-shell before they run, and auto-format files as they're written.",
+  "description": "Argo guardrails — block destructive git + pipe-to-shell before they run, gate build-mode commits on machine-checkable receipts (red-proof + launch evidence), and auto-format files as they're written.",
   "hooks": {
     "PreToolUse": [
       {
@@ -14,6 +14,16 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/check-pipe-to-shell.mjs\"",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/red-proof-gate.mjs\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/trust-gate.mjs\"",
+            "timeout": 10
           }
         ]
       }
@@ -26,6 +36,11 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/format-on-write.mjs\"",
             "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/test-smell.mjs\"",
+            "timeout": 10
           }
         ]
       }

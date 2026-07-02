@@ -38,29 +38,32 @@ For each accepted template, instantiate it with detected values and a correct
 `paths:` glob — see `templates-reference.md` for the per-template mapping. Optionally
 install convention hooks into the project's own `.claude/` (also per the reference).
 
-## 6. Install workflows
-Copy `${CLAUDE_PLUGIN_ROOT}/templates/workflows/*` into the project's
-`.claude/workflows/` (create it if absent) — these are the orchestration scripts the
-Workflow tool runs (plugins can't auto-load workflows, so they're installed here, like
-the rules). `build-slices` is the automated build stage invoked by `/argo:build-feature`;
-it expects the argo agents (`argo:builder`/`argo:reviewer`), also installed by this pack.
+**Placeholders:** templates carry explicit `{{…}}` slots (`{{TYPECHECK_CMD}}`,
+`{{LINT_CMD}}`, `{{TEST_CMD}}`, `{{LOCKFILE}}`, …) wherever a project-specific value
+belongs. Fill every slot from the values detected in §2 — never leave a `{{…}}`
+literal in an installed file.
 
-**Instantiate, don't ship raw:** `build-slices`'s `verifyCmd` default is a bun placeholder.
-Replace it with the project's **detected** typecheck/lint/test commands (from §2) so it
-doesn't fail every slice on a non-bun project — same adapt-on-install treatment the rules
-get. **Defeat build-cache false-greens:** if the project uses a caching task runner
-(turbo/nx/bazel), the instantiated `verifyCmd` MUST force execution (e.g. `TURBO_FORCE=true`
-/ `--force`) — a cached pass can mask tests that never ran (observed in dogfooding). Don't
-overwrite a workflow the user has edited: switch to diff/ask mode (per §1).
+## 6. Gated builds — `.argo/` receipts (no workflows to install)
+The automated build stage (`/argo:build-plan`) is a **single long-lived builder
+session**, not a workflow script — there is nothing to copy into `.claude/workflows/`.
+Its commit gates (`red-proof-gate.mjs`, `trust-gate.mjs`) auto-load with the plugin and
+are **inert by default**: they arm only while a build maintains `.argo/build-mode.json`,
+so installing the pack never gates a host project's normal commits.
 
-**Wire the trust gate (§7, only if the trust-gate hook is installed):** `build-slices`
-chains `${CLAUDE_PLUGIN_ROOT}/hooks/trust-gate.mjs` onto Verify for slices marked
-`requiresLaunch` (those that ship launchable app/UI behaviour). Export
-`ARGO_TRUST_GATE=<abs path to trust-gate.mjs>` in the build environment (or pass
-`trustGateCmd` as a workflow arg) so those slices go RED unless a launch evidence receipt
-(`.argo/launch-receipt.json`) proves the app was launched **and** exercised. Pure
-logic/library/config slices set `requiresLaunch:false` and are unaffected — the gate never
-blocks a slice that isn't shipping launchable behaviour.
+Setup here is small:
+- Ensure **`.argo/` is in the project's `.gitignore`** (receipts are local evidence,
+  never committed).
+- Record the **detected** typecheck/lint/test commands in CLAUDE.md stack-facts (§8) —
+  build-plan reads them from there, so it never fails a slice on guessed commands.
+- If the project uses a caching task runner (turbo/nx/bazel), make sure its task
+  `inputs` are declared so cache hits are trustworthy — a cached pass over undeclared
+  inputs can mask tests that never ran (observed in dogfooding). Only reach for a force
+  flag (e.g. `TURBO_FORCE=true` / `--force`) to bust a known-stale cache, never as the
+  standing verify command.
+
+The trust gate is Argo-runtime-specific (its launch receipt is written by the Argo app
+itself when launched and exercised); in other host projects it stays inert on
+`requiresLaunch: false` slices — document, don't wire.
 
 ## 6b. Install enforcement hooks (format-on-write + pre-push gate)
 Guarantee that AI-written code stays typed/lint-clean/formatted **no matter when or by
@@ -71,19 +74,42 @@ whom it's written** — layered, treating auto-fixable (format) differently from
   (auto-loaded, matcher `Edit|Write`) runs the project's own `prettier` on each touched
   file. No install needed here — it activates with the plugin. (No project prettier → it
   no-ops silently.)
-- **Type + lint + test = the gate.** The load-bearing guarantee is a **CI required status
-  check on the protected branch** running the FULL graph (`turbo run typecheck lint test`),
-  because it's the one layer `--no-verify` can't reach and is author-agnostic. If the
-  project has CI, wire that as a required check.
-- **No CI yet → install the pre-push gate.** Copy `${CLAUDE_PLUGIN_ROOT}/templates/lefthook.yml`
+- **Type + lint + test = the gate.** A **CI required status check on the protected
+  branch** running the FULL graph (`turbo run typecheck lint test`) is recommended where
+  a team exists — it's the one layer `--no-verify` can't reach and is author-agnostic.
+  If the project has CI, wire that as a required check. For a single-builder personal
+  project, the pre-push gate below is an acceptable last line.
+- **No CI → install the pre-push gate.** Copy `${CLAUDE_PLUGIN_ROOT}/templates/lefthook.yml`
   to the project root, `bun add -d lefthook`, add `"prepare": "lefthook install"` to the root
   `package.json` (so a fresh clone re-installs the hook), and run `lefthook install` once.
-  Instantiate the three `run:` commands from the detected typecheck/lint/test (with the same
-  cache-buster as §6). Pre-push is bypassable — it's fast local feedback, not the guarantee;
-  say so and recommend adding CI later.
+  Fill its `{{…}}` slots from the detected typecheck/lint/test (plain, no
+  force flags — see §6 on cache trust). Pre-push is bypassable — it's fast local feedback;
+  recommend adding CI when the project grows a team.
 
 Do not gate formatting in the pre-push hook or CI-as-failure beyond a `--check` backstop —
 a machine can fix whitespace; failing a build on it is waste.
+
+## 6c. TDD enforcement (tdd-guard) — default-on where supported
+Deterministic tests-fail-first enforcement belongs in a hook, not agent narration.
+[tdd-guard](https://github.com/nizos/tdd-guard) is the community-standard PreToolUse
+guard: it blocks implementation edits that aren't preceded by a failing test, using the
+project's own test reporter as ground truth. It enforces **order**, not test **quality**
+— the red-proof commit gate (§6) and the reviewer stay responsible for quality.
+
+- **Detect the runner first** (from §2): tdd-guard supports Vitest, Jest, Storybook,
+  pytest, PHPUnit, Go testing, cargo (Rust), RSpec and Minitest. Supported → install
+  **default-on**: `/plugin marketplace add nizos/tdd-guard`, `/plugin install
+  tdd-guard@tdd-guard`, then `/tdd-guard:setup` to wire the reporter. Unsupported
+  runner → print `TDD enforcement unavailable for <runner> — skipping tdd-guard` and
+  move on. **Never** install an inert or all-blocking hook as a fallback.
+- **Auth pre-check (hard requirement):** tdd-guard's validation model must run on the
+  Claude Code SDK/subscription auth (its default, `VALIDATION_CLIENT=sdk`) — metered
+  API keys are banned here. Confirm `ANTHROPIC_API_KEY` is NOT set in the environment
+  (if set, Claude Code may bill it); if the project can only run tdd-guard via an API
+  key, STOP and surface — do not adopt.
+- **Opt-out:** `--no-tdd` (or the user saying so) skips this whole step. Mid-session,
+  tdd-guard has its own toggle for legitimate exceptions — spikes disable it for the
+  session (throwaway code has a "no tests" contract by design; see the spike skill).
 
 ## 7. graphify (conditional) — treat the graph as local build cache
 Only if the `graphify` CLI is present: run `graphify install --platform claude`
@@ -124,7 +150,7 @@ If graphify is absent, skip silently — the active skills degrade to plain read
 ## 8. Write stack-facts + canonical loop into CLAUDE.md
 Record the detected commands/paths (so skills/agents use real values, not
 placeholders) and the canonical loop: **scaffold → grill → plan → test-first build
-(interactive) or /argo:build-feature (automated, worktree-isolated) → review → debug →
+(interactive) or /argo:build-plan (automated, worktree-isolated) → review → debug →
 handoff.**
 
 ## 9. Report + one-step revert

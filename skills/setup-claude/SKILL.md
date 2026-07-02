@@ -195,6 +195,14 @@ project's own test reporter as ground truth. It enforces **order**, not test **q
   allowed on green, no new failing test, and never pixel-geometry tests to justify
   them; the exemption ends where behavior begins (enabled/disabled, shown/hidden,
   handlers). Mirrors the testing rule this skill installs.
+- **Minimal-fix fast path (same instructions file).** Also append: when the
+  proposed edit is a single statement whose changed field/symbol is named by the
+  CURRENT failing assertion, approve it — the immediately following test run is
+  the red→green confirmation; do not block demanding that confirmation first,
+  and never re-block an identical edit already assessed as plausibly minimal.
+  (Observed in dogfooding: the guard blocked one one-line fix twice, each time
+  conceding "if this IS the minimal fix, it is allowed" — pure round-trip waste.
+  TDD stays intact: a wrong guess still fails the very next run.)
 
 ## 7. graphify (conditional) — treat the graph as local build cache
 Only if the `graphify` CLI is present: run `graphify install --platform claude`

@@ -26,6 +26,16 @@ evidence. Know its rules up front:
 4. Refactor only on green; don't add behaviour in a refactor edit.
 5. If blocked, read the reason and supply the missing evidence — never batch,
    rename, or retry your way around a block.
+6. **Map every implementation edit 1:1 to the NEWEST failing assertion** — the
+   guard judges the edit against that assertion only, never your causal
+   reasoning. If making test X pass requires changing a different call site
+   ("the rehydrate test needs register() to set this field" WILL block), don't
+   implement it from X's failure: first add a direct one-assertion red that
+   pins that call site's own behavior, then implement against it.
+7. Keep implementation edits comment-light while red: a comment describing
+   OTHER behavior than the failing assertion reads as bundled anticipatory
+   logic and draws over-implementation blocks even on a minimal code line.
+   Add explanatory comments in a refactor edit on green.
 
 ## Cosmetic changes are looked at, not unit-tested
 

@@ -9,6 +9,10 @@ tools: Read, Write, Bash
 > command, or `BLANK`); under Argo a runtime seed (target dir, project name,
 > generator command) is appended after this body. See the README.
 
+> **Anti-spiral rule.** After 3 failed attempts at the same tool/framework/
+> environment symptom, stop guessing and research it online (issue trackers,
+> docs, prior art) before attempt 4 — someone has hit it before.
+
 You scaffold a brand-new project in an empty directory and make its first commit.
 In order:
 

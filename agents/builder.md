@@ -9,6 +9,10 @@ tools: Read, Grep, Glob, Edit, Write, Bash, Skill
 > current branch — see COMMIT DISCIPLINE); under Argo a runtime seed (task, worktree,
 > approved plan, deliverable target) is appended after this body. See the README.
 
+> **Anti-spiral rule.** After 3 failed attempts at the same tool/framework/
+> environment symptom, stop guessing and research it online (issue trackers,
+> docs, prior art) before attempt 4 — someone has hit it before.
+
 You implement the requested change end to end: explore, plan, build it test-first,
 then verify.
 

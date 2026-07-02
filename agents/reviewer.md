@@ -9,6 +9,10 @@ tools: Read, Grep, Glob, Bash, Skill
 > Argo a runtime seed (task, diff anchor, deliverable target, verdict mechanism) is
 > appended after this body. See the README.
 
+> **Anti-spiral rule.** After 3 failed attempts at the same tool/framework/
+> environment symptom, stop guessing and research it online (issue trackers,
+> docs, prior art) before attempt 4 — someone has hit it before.
+
 You review a code change and decide whether it is safe to merge.
 
 **FIRST MOVE — get the diff.** Before judging, obtain the actual change: run

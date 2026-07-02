@@ -17,6 +17,19 @@ reason, ask before writing, never overwrite what the user hand-wrote.
 If `.claude/rules/` already has argo-managed rules, switch to update/diff mode —
 show what would change and ask. Never overwrite a hand-authored file.
 
+## 1b. Check the plugin's install scope — worktrees don't see project scope
+Sessions rooted in a **git worktree** (every `/argo:build-plan` run, and Argo
+cockpit agent sessions) do NOT load project-scoped plugins — the worktree path has
+no install record, and `enabledPlugins` in the worktree's checked-out settings is
+not sufficient. If this plugin is installed at project scope, none of its hooks
+(commit gates, guards, session card) fire inside those sessions.
+
+Check `claude plugin list` for argo's scope. If project-scoped, tell the user
+plainly what silently won't work in worktrees, and recommend reinstalling at
+**user scope** (`/plugin install argo@argo` choosing user/global scope). Do not
+reinstall for them — scope is a machine-level choice. If they decline, record the
+limitation in CLAUDE.md stack-facts so builds don't assume armed gates.
+
 ## 2. Detect the stack (read-only, evidence-based)
 From manifests/lockfiles/config, determine and cite evidence for: language(s) (TS vs
 JS); UI framework + whether a components dir exists; styling system + the **real

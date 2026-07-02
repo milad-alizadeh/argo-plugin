@@ -2,6 +2,11 @@
 # slots from the project's detected typecheck/lint/test commands. Formatting is NOT
 # gated in any hook — it's an auto-fix concern (see the format-on-write hook).
 
+# PATH shim for hooks spawned by GUI git clients (VS Code etc.), which inherit
+# launchd's minimal PATH with no bun/node. Installed alongside as .lefthookrc
+# (from templates/lefthookrc).
+rc: .lefthookrc
+
 # Fast pre-commit gate — lint + typecheck only (no tests), so it catches breakage
 # at commit time without slowing the loop. With a caching runner (turbo/nx) and
 # declared task inputs this is near-instant on unchanged packages.

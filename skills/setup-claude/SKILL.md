@@ -137,8 +137,14 @@ whom it's written** — layered, treating auto-fixable (format) differently from
   If the project has CI, wire that as a required check. For a single-builder personal
   project, the pre-push gate below is an acceptable last line.
 - **No CI → install the pre-push gate.** Copy `${CLAUDE_PLUGIN_ROOT}/templates/lefthook.yml`
-  to the project root, `bun add -d lefthook`, add `"prepare": "lefthook install"` to the root
-  `package.json` (so a fresh clone re-installs the hook), and run `lefthook install` once.
+  to the project root and `${CLAUDE_PLUGIN_ROOT}/templates/lefthookrc` to `.lefthookrc`
+  (the `rc:` PATH shim — GUI git clients like VS Code spawn hooks with launchd's minimal
+  PATH, so without it every hook job fails with `bun: command not found` and the client
+  shows a misleading generic push error). Then `bun add -d lefthook`, add
+  `"prepare": "lefthook install"` to the root `package.json` (so a fresh clone re-installs
+  the hook), and run `lefthook install` once — ALWAYS from the main checkout, never from a
+  git worktree (the generated hook shim hardcodes the installing checkout's node_modules
+  path, which dangles when that worktree is deleted).
   Fill its `{{…}}` slots from the detected typecheck/lint/test (plain, no
   force flags — see §6 on cache trust). Pre-push is bypassable — it's fast local feedback;
   recommend adding CI when the project grows a team.

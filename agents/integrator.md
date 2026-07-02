@@ -65,10 +65,18 @@ this yourself; the config is the only authority.
    `git push origin HEAD:<default-branch>` — a fast-forward update of the remote.
    If rejected as non-fast-forward, `git fetch origin && git rebase origin/<default-branch>`,
    re-verify, and push again. The pre-push hook suite is the gate — if it fails,
-   abort, report, and do NOT bypass with `--no-verify`. Afterwards, if the local
-   default-branch checkout is clean, bring it up to date with a `--ff-only` pull
-   (this is what fires the project's post-merge hooks); if it's dirty, tell the
-   user to pull. The branch may then be deleted per the finish-branch flow.
+   abort, report, and do NOT bypass with `--no-verify`. **Afterwards, always leave
+   the user's default-branch checkout in sync** — a landed remote with a stale or
+   diverged local checkout means the user's own next push gets rejected:
+   - clean checkout, no local-only commits → `git pull --ff-only` (fires the
+     project's post-merge hooks);
+   - clean checkout WITH local-only commits → `git pull --rebase origin
+     <default-branch>` (replays the user's commits on top; report what was
+     replayed), then push those commits so local and origin match;
+   - dirty checkout → do not touch it; report the exact commands the user needs.
+   Never end a merge-mode landing with local ≠ origin without saying so
+   explicitly in the report. The branch may then be deleted per the
+   finish-branch flow.
 4. **Release notes / changelog.** If the project keeps a changelog or release notes,
    draft the entry for this change in its existing format — do not invent a new one.
 

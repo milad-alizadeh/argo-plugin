@@ -15,6 +15,8 @@ evidence. Know its rules up front:
 
 1. Test file first, **ONE new test per edit** — two tests in one edit is a
    violation, as is a new implementation file with no failing test on record.
+   Parameterized tests count per ROW: an `it.each`/`test.each` with N rows is N
+   tests — introduce it with one row and add rows one edit at a time.
 2. Run that exact failing test **immediately before** the implementation edit.
    The guard only trusts fresh in-session runner output — its state clears at
    session start, and cached (e.g. turbo-cached) runs write nothing, so invoke

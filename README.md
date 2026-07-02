@@ -16,6 +16,25 @@ Add the marketplace and enable the plugin (per-project or globally):
 Then run the **`setup-claude`** skill once to adapt the opinionated rules to your
 stack (see "How opinionation is delivered" below).
 
+**Auto-update (recommended):** third-party marketplaces don't auto-update by
+default. Either toggle "Enable auto-update" on the argo marketplace in
+`/plugin` → Marketplaces, or set it in `~/.claude/settings.json`:
+
+```json
+"extraKnownMarketplaces": {
+  "argo": {
+    "source": { "source": "github", "repo": "milad-alizadeh/argo-plugin" },
+    "autoUpdate": true
+  }
+}
+```
+
+With that on, Claude Code refreshes the marketplace at startup, updates the
+plugin, and prompts `/reload-plugins` when a new version landed. Without it,
+update manually: `claude plugin update argo@argo`. Either way, the plugin's
+SessionStart nudge tells each set-up project when its `.claude/` setup is older
+than the installed plugin (`/argo:setup-claude` re-syncs it).
+
 ## What ships active (loads when the plugin is enabled)
 
 - **Agents** (`agents/`) — full lifecycle roles, invoked on demand:

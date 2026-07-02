@@ -1,6 +1,66 @@
 {
   "testModules": [
     {
+      "moduleId": "/Users/milad/Developer/argo-plugin/test/blockBashSourceWrite.test.mjs",
+      "tests": [
+        {
+          "name": "BLOCK: heredoc redirection into a source file (the observed bypass)",
+          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > BLOCK: heredoc redirection into a source file (the observed bypass)",
+          "state": "passed"
+        },
+        {
+          "name": "BLOCK: sed -i in-place edit of a source file",
+          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > BLOCK: sed -i in-place edit of a source file",
+          "state": "passed"
+        },
+        {
+          "name": "BLOCK: tee into a source file",
+          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > BLOCK: tee into a source file",
+          "state": "passed"
+        },
+        {
+          "name": "BLOCK: cp staging a source file into place",
+          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > BLOCK: cp staging a source file into place",
+          "state": "passed"
+        },
+        {
+          "name": "BLOCK: interpreter one-liner writing a source file (node -e writeFileSync)",
+          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > BLOCK: interpreter one-liner writing a source file (node -e writeFileSync)",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: shell writes to non-source targets (logs, JSON, markdown, /tmp) stay allowed",
+          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > PASS: shell writes to non-source targets (logs, JSON, markdown, /tmp) stay allowed",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: stdout-redirect codegen into generated paths (the mainstream pattern)",
+          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > PASS: stdout-redirect codegen into generated paths (the mainstream pattern)",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: ARGO_DISABLE_BASH_SOURCE_GUARD=1 escape hatch disables the guard entirely",
+          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > PASS: ARGO_DISABLE_BASH_SOURCE_GUARD=1 escape hatch disables the guard entirely",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: corpus of real builder commands from actual transcripts — zero false positives",
+          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > PASS: corpus of real builder commands from actual transcripts — zero false positives",
+          "state": "passed"
+        },
+        {
+          "name": "BLOCK: output-dir names nested inside source trees are NOT exempt (src/build/, src/layout/out/)",
+          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > BLOCK: output-dir names nested inside source trees are NOT exempt (src/build/, src/layout/out/)",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: malformed stdin / missing command — fail open, never crashes",
+          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > PASS: malformed stdin / missing command — fail open, never crashes",
+          "state": "passed"
+        }
+      ]
+    },
+    {
       "moduleId": "/Users/milad/Developer/argo-plugin/test/trustGate.test.mjs",
       "tests": [
         {
@@ -116,6 +176,86 @@
       ]
     },
     {
+      "moduleId": "/Users/milad/Developer/argo-plugin/test/blockLockfileEdit.test.mjs",
+      "tests": [
+        {
+          "name": "BLOCK: Write to bun.lock",
+          "fullName": "block-lockfile-edit — never hand-edit a lockfile, use the package manager > BLOCK: Write to bun.lock",
+          "state": "passed"
+        },
+        {
+          "name": "BLOCK: Edit to package-lock.json",
+          "fullName": "block-lockfile-edit — never hand-edit a lockfile, use the package manager > BLOCK: Edit to package-lock.json",
+          "state": "passed"
+        },
+        {
+          "name": "BLOCK: bun.lockb — the suffix-match branch, distinct from exact-name lookup",
+          "fullName": "block-lockfile-edit — never hand-edit a lockfile, use the package manager > BLOCK: bun.lockb — the suffix-match branch, distinct from exact-name lookup",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: package.json, source files, and near-miss names are untouched",
+          "fullName": "block-lockfile-edit — never hand-edit a lockfile, use the package manager > PASS: package.json, source files, and near-miss names are untouched",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: malformed stdin / missing file_path — fail open, never crashes",
+          "fullName": "block-lockfile-edit — never hand-edit a lockfile, use the package manager > PASS: malformed stdin / missing file_path — fail open, never crashes",
+          "state": "passed"
+        }
+      ]
+    },
+    {
+      "moduleId": "/Users/milad/Developer/argo-plugin/test/checkPipeToShell.test.mjs",
+      "tests": [
+        {
+          "name": "BLOCK: curl | bash",
+          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > BLOCK: curl | bash",
+          "state": "passed"
+        },
+        {
+          "name": "BLOCK: wget | sh",
+          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > BLOCK: wget | sh",
+          "state": "passed"
+        },
+        {
+          "name": "BLOCK: curl | python3",
+          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > BLOCK: curl | python3",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: curl -o file (download to a file, no pipe to a shell)",
+          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > PASS: curl -o file (download to a file, no pipe to a shell)",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: curl | grep (piped into a non-shell command)",
+          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > PASS: curl | grep (piped into a non-shell command)",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: ls -la (non-networked command)",
+          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > PASS: ls -la (non-networked command)",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: malformed hook stdin (not JSON) — fail open, does not crash",
+          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > PASS: malformed hook stdin (not JSON) — fail open, does not crash",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: empty stdin — fail open, does not crash",
+          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > PASS: empty stdin — fail open, does not crash",
+          "state": "passed"
+        },
+        {
+          "name": "PASS: hook JSON with no command field — fail open",
+          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > PASS: hook JSON with no command field — fail open",
+          "state": "passed"
+        }
+      ]
+    },
+    {
       "moduleId": "/Users/milad/Developer/argo-plugin/test/blockDangerousGit.test.mjs",
       "tests": [
         {
@@ -201,66 +341,6 @@
       ]
     },
     {
-      "moduleId": "/Users/milad/Developer/argo-plugin/test/blockBashSourceWrite.test.mjs",
-      "tests": [
-        {
-          "name": "BLOCK: heredoc redirection into a source file (the observed bypass)",
-          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > BLOCK: heredoc redirection into a source file (the observed bypass)",
-          "state": "passed"
-        },
-        {
-          "name": "BLOCK: sed -i in-place edit of a source file",
-          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > BLOCK: sed -i in-place edit of a source file",
-          "state": "passed"
-        },
-        {
-          "name": "BLOCK: tee into a source file",
-          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > BLOCK: tee into a source file",
-          "state": "passed"
-        },
-        {
-          "name": "BLOCK: cp staging a source file into place",
-          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > BLOCK: cp staging a source file into place",
-          "state": "passed"
-        },
-        {
-          "name": "BLOCK: interpreter one-liner writing a source file (node -e writeFileSync)",
-          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > BLOCK: interpreter one-liner writing a source file (node -e writeFileSync)",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: shell writes to non-source targets (logs, JSON, markdown, /tmp) stay allowed",
-          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > PASS: shell writes to non-source targets (logs, JSON, markdown, /tmp) stay allowed",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: stdout-redirect codegen into generated paths (the mainstream pattern)",
-          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > PASS: stdout-redirect codegen into generated paths (the mainstream pattern)",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: ARGO_DISABLE_BASH_SOURCE_GUARD=1 escape hatch disables the guard entirely",
-          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > PASS: ARGO_DISABLE_BASH_SOURCE_GUARD=1 escape hatch disables the guard entirely",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: corpus of real builder commands from actual transcripts — zero false positives",
-          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > PASS: corpus of real builder commands from actual transcripts — zero false positives",
-          "state": "passed"
-        },
-        {
-          "name": "BLOCK: output-dir names nested inside source trees are NOT exempt (src/build/, src/layout/out/)",
-          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > BLOCK: output-dir names nested inside source trees are NOT exempt (src/build/, src/layout/out/)",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: malformed stdin / missing command — fail open, never crashes",
-          "fullName": "block-bash-source-write — closes the shell-write subset of the guard bypass > PASS: malformed stdin / missing command — fail open, never crashes",
-          "state": "passed"
-        }
-      ]
-    },
-    {
       "moduleId": "/Users/milad/Developer/argo-plugin/test/sessionContext.test.mjs",
       "tests": [
         {
@@ -296,86 +376,6 @@
         {
           "name": "stays silent when the setup is current (setupVersion matches the plugin version)",
           "fullName": "session-context — setup lifecycle nudges > stays silent when the setup is current (setupVersion matches the plugin version)",
-          "state": "passed"
-        }
-      ]
-    },
-    {
-      "moduleId": "/Users/milad/Developer/argo-plugin/test/blockLockfileEdit.test.mjs",
-      "tests": [
-        {
-          "name": "BLOCK: Write to bun.lock",
-          "fullName": "block-lockfile-edit — never hand-edit a lockfile, use the package manager > BLOCK: Write to bun.lock",
-          "state": "passed"
-        },
-        {
-          "name": "BLOCK: Edit to package-lock.json",
-          "fullName": "block-lockfile-edit — never hand-edit a lockfile, use the package manager > BLOCK: Edit to package-lock.json",
-          "state": "passed"
-        },
-        {
-          "name": "BLOCK: bun.lockb — the suffix-match branch, distinct from exact-name lookup",
-          "fullName": "block-lockfile-edit — never hand-edit a lockfile, use the package manager > BLOCK: bun.lockb — the suffix-match branch, distinct from exact-name lookup",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: package.json, source files, and near-miss names are untouched",
-          "fullName": "block-lockfile-edit — never hand-edit a lockfile, use the package manager > PASS: package.json, source files, and near-miss names are untouched",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: malformed stdin / missing file_path — fail open, never crashes",
-          "fullName": "block-lockfile-edit — never hand-edit a lockfile, use the package manager > PASS: malformed stdin / missing file_path — fail open, never crashes",
-          "state": "passed"
-        }
-      ]
-    },
-    {
-      "moduleId": "/Users/milad/Developer/argo-plugin/test/checkPipeToShell.test.mjs",
-      "tests": [
-        {
-          "name": "BLOCK: curl | bash",
-          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > BLOCK: curl | bash",
-          "state": "passed"
-        },
-        {
-          "name": "BLOCK: wget | sh",
-          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > BLOCK: wget | sh",
-          "state": "passed"
-        },
-        {
-          "name": "BLOCK: curl | python3",
-          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > BLOCK: curl | python3",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: curl -o file (download to a file, no pipe to a shell)",
-          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > PASS: curl -o file (download to a file, no pipe to a shell)",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: curl | grep (piped into a non-shell command)",
-          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > PASS: curl | grep (piped into a non-shell command)",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: ls -la (non-networked command)",
-          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > PASS: ls -la (non-networked command)",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: malformed hook stdin (not JSON) — fail open, does not crash",
-          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > PASS: malformed hook stdin (not JSON) — fail open, does not crash",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: empty stdin — fail open, does not crash",
-          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > PASS: empty stdin — fail open, does not crash",
-          "state": "passed"
-        },
-        {
-          "name": "PASS: hook JSON with no command field — fail open",
-          "fullName": "check-pipe-to-shell — universal PreToolUse guard on every Bash call > PASS: hook JSON with no command field — fail open",
           "state": "passed"
         }
       ]

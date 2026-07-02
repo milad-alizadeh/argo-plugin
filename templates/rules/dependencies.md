@@ -1,6 +1,9 @@
 ---
 # TEMPLATE — installed (adapted) by the setup-claude skill, not shipped active.
-# setup-claude sets the paths glob to this project's real manifest/lockfiles.
+# setup-claude sets the paths glob to this project's real manifest AND lockfile
+# paths — include the lockfile glob (bun.lock / package-lock.json / uv.lock /
+# Cargo.lock / …) so the rule attaches when one is edited, which is exactly the
+# hand-edit this rule forbids.
 paths:
   - "**/package.json"
   - "**/pyproject.toml"

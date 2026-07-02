@@ -102,6 +102,11 @@ project's own test reporter as ground truth. It enforces **order**, not test **q
   tdd-guard@tdd-guard`, then `/tdd-guard:setup` to wire the reporter. Unsupported
   runner → print `TDD enforcement unavailable for <runner> — skipping tdd-guard` and
   move on. **Never** install an inert or all-blocking hook as a fallback.
+- **Playwright:** upstream has no reporter, but this pack bundles one —
+  `${CLAUDE_PLUGIN_ROOT}/reporters/tdd-guard-playwright/` (schema-verified against
+  tdd-guard-vitest). Wire it in the project's playwright config:
+  `reporter: [['list'], ['tdd-guard-playwright', { projectRoot: '<abs repo root>' }]]`
+  and add the package via the project's package manager (path dep until published).
 - **Auth pre-check (hard requirement):** tdd-guard's validation model must run on the
   Claude Code SDK/subscription auth (its default, `VALIDATION_CLIENT=sdk`) — metered
   API keys are banned here. Confirm `ANTHROPIC_API_KEY` is NOT set in the environment

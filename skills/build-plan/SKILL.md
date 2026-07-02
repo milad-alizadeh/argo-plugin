@@ -119,6 +119,10 @@ cross-session proof the commit gate actually checks.
   so the worktree + branch stay on disk for inspection. Surface the blocked slice, its
   reasons, and the progress-doc path, and stop.
 
+For any other end-of-branch path (merge locally, keep for later, discard) —
+and for the exact worktree-then-branch cleanup ordering — use
+`/argo:finish-branch`.
+
 ## 8. Report
 Relay: branch name, slices done vs blocked, token/time spend if tracked, the
 progress-doc path, the PR link (if landed), and — for BLOCKED — the kept worktree path.

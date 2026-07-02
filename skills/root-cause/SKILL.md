@@ -57,6 +57,12 @@ exists, that absence is itself the finding (flag it for architecture work). Ever
 bug fix should ship a regression test named after the bug, failing on the
 unpatched code and passing after.
 
+**Escalation rule: 3+ failed fix attempts on the same bug = stop fixing.** The
+bug is no longer the finding — the architecture is. Question the design
+assumption the failing fixes share (wrong boundary, wrong ownership, wrong
+lifecycle), surface THAT as the diagnosis, and hand off to design work instead
+of attempting a fourth patch.
+
 ## Phase 6 — Cleanup + post-mortem
 
 - [ ] Original repro no longer reproduces (re-run the Phase 1 loop)

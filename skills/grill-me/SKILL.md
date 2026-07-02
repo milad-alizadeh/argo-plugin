@@ -1,12 +1,26 @@
 ---
 name: grill-me
-description: Interview the user relentlessly about a plan or design until you reach shared understanding, resolving each decision before any code is written. Use when the user wants to stress-test or pressure-test a plan, asks to "grill" their design, or before a non-trivial change where misalignment is likely.
+description: Interview the user relentlessly about a plan, design, or blank-slate idea until you reach shared understanding, co-creating a design doc where none exists, before any code is written. Use when the user wants to stress-test or pressure-test a plan, asks to "grill" their design, wants to design something from scratch, or before a non-trivial change where misalignment is likely.
 ---
 
-# Stress-Test a Plan
+# Stress-Test a Plan (or co-create one from nothing)
 
 The most common failure is misalignment: you build the wrong thing because you
 guessed at an unstated decision. Fix it up front by interrogating the plan.
+
+**Hard gate:** for non-trivial work, no implementation before a design/plan doc
+exists. "This is too simple to need a design" is itself a claim — grill it
+(what makes it simple? what breaks if that's wrong?) before accepting it.
+
+## Two entry modes
+
+- **Existing plan/design** → interrogate it (the rules below).
+- **Blank slate** (an idea, no doc) → co-create the design: explore what exists
+  in the codebase first → questions one at a time (rules below) → sketch 2-3
+  approaches with trade-offs and a recommendation → write a sectioned design
+  doc (problem, chosen approach, rejected alternatives + why, open risks) →
+  self-review it against the answers given → user reviews → hand off to
+  `argo:planner` for the implementation plan.
 
 Interview the user relentlessly about every aspect of this plan until you reach
 a shared understanding. Walk down each branch of the design tree, resolving

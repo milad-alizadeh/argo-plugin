@@ -1,7 +1,9 @@
 {
   "name": "argo",
   "description": "Argo's portable engineering pack for Claude Code — opinionated discipline skills, methodology, rules, and guardrails that run standalone in any project.",
-  "owner": { "name": "Argo" },
+  "owner": {
+    "name": "Argo"
+  },
   "plugins": [
     {
       "name": "argo",

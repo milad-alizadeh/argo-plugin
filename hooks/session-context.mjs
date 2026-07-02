@@ -45,7 +45,32 @@ trackers, docs, prior art) before attempt 4. Someone has hit it before.
 This card is a pointer, not a summary — read the skill before following it.
 Standing rules live in .claude/rules/.`
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
+
+/** Lifecycle nudge: the card knows WHEN to send you through setup-claude. */
+function setupNudge(cwd) {
+  if (!cwd) return ''
+  const configPath = join(cwd, '.claude', 'argo-config.json')
+  if (!existsSync(configPath)) {
+    return `\n\nSETUP: argo is installed but this project isn't set up — run /argo:setup-claude (stack detection + adapted rules, per-item consent).`
+  }
+  try {
+    const config = JSON.parse(readFileSync(configPath, 'utf8'))
+    const pluginVersion = JSON.parse(
+      readFileSync(new URL('../.claude-plugin/plugin.json', import.meta.url), 'utf8')
+    ).version
+    if (!config.setupVersion) {
+      return `\n\nSETUP: this project's argo setup predates setup versioning — run /argo:setup-claude once to adopt it (adds setupVersion + managedFiles; touches only argo-managed files).`
+    }
+    if (pluginVersion && config.setupVersion !== pluginVersion) {
+      return `\n\nSETUP: this project was set up with argo v${config.setupVersion}; the plugin is now v${pluginVersion} — run /argo:setup-claude to review updates (touches only argo-managed files).`
+    }
+  } catch {
+    // Unreadable config or manifest — stay quiet; the card must never break a session.
+  }
+  return ''
+}
 
 function main() {
   let raw = ''
@@ -66,7 +91,7 @@ function main() {
     JSON.stringify({
       hookSpecificOutput: {
         hookEventName: 'SessionStart',
-        additionalContext: CARD
+        additionalContext: CARD + setupNudge(hook.cwd)
       }
     })
   )

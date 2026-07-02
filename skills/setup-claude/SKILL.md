@@ -13,9 +13,34 @@ rules in the host project's `.claude/`**, matched to the stack that's actually t
 **Core principle:** opinionated, never imposing. Detect what's real, propose with a
 reason, ask before writing, never overwrite what the user hand-wrote.
 
-## 1. Refuse to clobber
-If `.claude/rules/` already has argo-managed rules, switch to update/diff mode —
-show what would change and ask. Never overwrite a hand-authored file.
+## 0. Wizard UX — forms, not walls of text
+Every decision in this skill goes through the **AskUserQuestion tool** — native
+multiple-choice prompts, never a paragraph ending in "shall I?". Rules:
+
+- Batch related decisions into one call (up to 4 questions per screen): e.g. one
+  screen for {landing mode, tdd-guard, rules-to-install (multiSelect)}.
+- Put the recommended option FIRST, labeled `(Recommended)`, with the detected
+  evidence in its description ("vitest found in package.json").
+- Free-form input (custom commands, paths) rides the built-in "Other" option —
+  don't ask open prose questions for things that have sane detected defaults.
+- Prose is for two moments only: the opening one-liner ("detected X, Y, Z — a few
+  questions") and the §9 report.
+
+## 1. Entry mode — first run, update, or re-run
+Read `.claude/argo-config.json` first; it decides the mode:
+
+- **Missing → first-run wizard**: the full flow below (§1b–§9).
+- **`setupVersion` older than the plugin's version → update mode**: diff-driven.
+  Re-derive what each managed file WOULD contain now, then for each file in the
+  config's `managedFiles` whose content would change, show the diff and ask
+  (one AskUserQuestion per batch of files). Touch ONLY `managedFiles`. If a
+  managed file's on-disk content no longer matches what setup last wrote (the
+  user hand-edited it), NEVER auto-update it — surface the conflict and let them
+  choose keep / overwrite / merge-manually.
+- **Current version → offer**: "setup is current (vX.Y.Z) — re-run detection
+  anyway, or exit?" via AskUserQuestion.
+
+Never overwrite a hand-authored file in any mode.
 
 ## 1b. Check the plugin's install scope — worktrees don't see project scope
 Sessions rooted in a **git worktree** (every `/argo:build-plan` run, and Argo
@@ -235,6 +260,24 @@ After the rules land, one short recommendation pass from the §2 stack evidence:
   default extension list may need `.claude/argo-source-extensions.json` for
   this stack) — so the adopter sees exactly what is active vs dormant here.
 
-## 9. Report + one-step revert
-List exactly what was written where, and how to re-run or revert. Be idempotent;
-every file this skill writes must be removable in one step.
+## 9. Finalize config, report + one-step revert
+Before reporting, complete `.claude/argo-config.json` (started in §6a) so the
+lifecycle machinery works:
+
+```json
+{
+  "landing": "merge",
+  "setupVersion": "<the plugin version that ran this setup>",
+  "managedFiles": [".claude/rules/testing.md", ".claude/rules/…", "…"]
+}
+```
+
+- `setupVersion` — read from the plugin's own manifest, never hardcoded. The
+  session-start card compares it against the running plugin and nudges
+  `/argo:setup-claude` when setup falls behind; writing it wrong silences or
+  spams every future session.
+- `managedFiles` — every file THIS run wrote or updated (rules, hook configs,
+  tdd-guard instructions), repo-relative. Update mode (§1) may touch only these.
+
+Then report: list exactly what was written where, and how to re-run or revert.
+Be idempotent; every file this skill writes must be removable in one step.

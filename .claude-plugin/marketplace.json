@@ -1,6 +1,6 @@
 {
   "name": "argo",
-  "description": "Argo's portable engineering pack for Claude Code — opinionated discipline skills, methodology, rules, and guardrails that run standalone in any project.",
+  "description": "Argo's portable engineering pack for Claude Code \u2014 opinionated discipline skills, methodology, rules, and guardrails that run standalone in any project.",
   "owner": {
     "name": "Argo"
   },
@@ -8,8 +8,8 @@
     {
       "name": "argo",
       "source": "./",
-      "version": "0.6.0",
-      "description": "Argo's portable engineering pack — discipline skills, methodology skills, rules, and guardrail hooks. Install per-project; works with or without the Argo cockpit."
+      "version": "0.7.0",
+      "description": "Argo's portable engineering pack \u2014 discipline skills, methodology skills, rules, and guardrail hooks. Install per-project; works with or without the Argo cockpit."
     }
   ]
 }

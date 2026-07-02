@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 const HOOK = fileURLToPath(new URL('../hooks/session-context.mjs', import.meta.url))
 
@@ -48,6 +51,69 @@ describe('session-context — SessionStart way-of-working card', () => {
       const r = await runHook(stdin)
       expect(r.code).toBe(0)
       expect(r.stdout).toBe('')
+    }
+  })
+})
+
+describe('session-context — setup lifecycle nudges', () => {
+  it('nudges to run /argo:setup-claude when the project has no .claude/argo-config.json', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
+    try {
+      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
+      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
+      expect(context).toContain('/argo:setup-claude')
+      expect(context).toMatch(/not set up|isn't set up/i)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('nudges to re-run setup when argo-config.json was written by an older plugin version', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
+    try {
+      mkdirSync(join(dir, '.claude'), { recursive: true })
+      writeFileSync(
+        join(dir, '.claude', 'argo-config.json'),
+        JSON.stringify({ landing: 'merge', setupVersion: '0.1.0' })
+      )
+      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
+      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
+      expect(context).toContain('/argo:setup-claude')
+      expect(context).toContain('0.1.0')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('nudges when argo-config.json predates setup versioning (no setupVersion field)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
+    try {
+      mkdirSync(join(dir, '.claude'), { recursive: true })
+      writeFileSync(join(dir, '.claude', 'argo-config.json'), JSON.stringify({ landing: 'merge' }))
+      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
+      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
+      expect(context).toContain('/argo:setup-claude')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('stays silent when the setup is current (setupVersion matches the plugin version)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
+    try {
+      const { version } = JSON.parse(
+        readFileSync(fileURLToPath(new URL('../.claude-plugin/plugin.json', import.meta.url)), 'utf8')
+      )
+      mkdirSync(join(dir, '.claude'), { recursive: true })
+      writeFileSync(
+        join(dir, '.claude', 'argo-config.json'),
+        JSON.stringify({ landing: 'merge', setupVersion: version })
+      )
+      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
+      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
+      expect(context).not.toContain('SETUP:')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
     }
   })
 })

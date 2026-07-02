@@ -36,6 +36,7 @@
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, resolve, dirname, sep } from 'node:path'
+import { execFileSync } from 'node:child_process'
 
 const MAX_RECEIPT_AGE_MS = 10 * 60 * 1000 // a receipt older than this is stale → BLOCK
 
@@ -99,6 +100,17 @@ function effectiveRepoDir(command, cwd) {
     return resolved.endsWith(`${sep}.git`) ? resolved.slice(0, -`${sep}.git`.length) : resolved
   }
 
+  // Ascend to the repo toplevel — the marker lives at the repo root, and a
+  // commit run from a subdirectory of an armed repo must not slip past the
+  // gate (mirrors red-proof-gate; checkpoint finding).
+  try {
+    const top = execFileSync('git', ['-C', dir, 'rev-parse', '--show-toplevel'], {
+      encoding: 'utf8',
+    }).trim()
+    if (top) return top
+  } catch {
+    /* not a git repo — keep dir */
+  }
   return dir
 }
 

@@ -74,6 +74,18 @@ function effectiveRepoDir(command, cwd) {
     return resolved.endsWith(`${sep}.git`) ? resolved.slice(0, -`${sep}.git`.length) : resolved
   }
 
+  // Ascend to the repo toplevel: the marker lives at the repo root, but the
+  // hook's cwd is wherever the shell happens to sit — a commit run from a
+  // subdirectory of an armed repo must not slip past the gate (checkpoint
+  // finding: builds observed committing ungated from plugin/).
+  try {
+    const top = execFileSync('git', ['-C', dir, 'rev-parse', '--show-toplevel'], {
+      encoding: 'utf8',
+    }).trim()
+    if (top) return top
+  } catch {
+    /* not a git repo — keep dir; the gate stays keyed to cwd */
+  }
   return dir
 }
 
@@ -164,13 +176,22 @@ try {
 } catch {
   stagedFiles = []
 }
-const commandStagesTestFile = command
-  .split(/[;|&]+/)
-  .some(
-    (seg) =>
-      /\bgit\b[^\n]*\badd\b/.test(seg) &&
-      (seg.includes(proof.testFile) || /\badd\b\s+(-A\b|--all\b|\.(\s|$))/.test(seg)),
-  )
+// Execution-aware acceptance: the add counts only when it is `&&`-chained
+// ahead of the commit within the SAME `;`/newline statement — in an && chain
+// the commit cannot run unless the add succeeded first. A `;`-separated or
+// `||`-joined mention is text, not execution (checkpoint finding:
+// `false && git add t; git commit` must not pass).
+const stagesInAddSegment = (seg) =>
+  /\bgit\b[^\n]*\badd\b/.test(seg) &&
+  (seg.includes(proof.testFile) || /\badd\b\s+(-A\b|--all\b|\.(\s|$))/.test(seg))
+const commandStagesTestFile = command.split(/[;\n]+/).some((statement) => {
+  const commitIdx = statement.search(/\bgit\b[^\n;|&]*\b(commit|ci)\b/)
+  if (commitIdx === -1) return false
+  const before = statement.slice(0, commitIdx)
+  if (/\|\|/.test(before)) return false // || between add and commit: commit runs on FAILURE
+  const segments = before.split(/&&/)
+  return segments.some(stagesInAddSegment)
+})
 if (!stagedFiles.includes(proof.testFile) && !commandStagesTestFile)
   block(`receipt's testFile "${proof.testFile}" is not staged in this commit — the red test must land with its slice (stage it first, or stage it in the same command: git add <testFile> && git commit)`)
 

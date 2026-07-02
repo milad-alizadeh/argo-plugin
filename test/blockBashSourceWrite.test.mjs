@@ -106,6 +106,11 @@ describe('block-bash-source-write — closes the shell-write subset of the guard
     }
   })
 
+  it('BLOCK: output-dir names nested inside source trees are NOT exempt (src/build/, src/layout/out/)', async () => {
+    expect((await runHook(bashInput('cat > src/build/config.ts <<EOF\nx\nEOF'))).code).toBe(2)
+    expect((await runHook(bashInput("sed -i '' 's/a/b/' src/layout/out/panel.ts"))).code).toBe(2)
+  })
+
   it('PASS: malformed stdin / missing command — fail open, never crashes', async () => {
     for (const stdin of ['not json', '', JSON.stringify({ tool_input: {} })]) {
       expect((await runHook(stdin)).code).toBe(0)

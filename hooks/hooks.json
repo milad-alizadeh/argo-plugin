@@ -17,6 +17,11 @@
           },
           {
             "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/block-bash-source-write.mjs\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/red-proof-gate.mjs\"",
             "timeout": 10
           },
@@ -24,11 +29,6 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/trust-gate.mjs\"",
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/block-bash-source-write.mjs\"",
-            "timeout": 5
           }
         ]
       },

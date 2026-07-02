@@ -92,6 +92,29 @@ describe('red-proof gate — commit-scoped, marker-armed, receipts not narration
     expect(r.code).toBe(0)
   })
 
+  it('BLOCK: text mention of `git add` in a segment that never executes does not count (checkpoint finding: `false && git add t; git commit`)', async () => {
+    armBuildMode(cwd)
+    writeProof(cwd)
+    execFileSync('git', ['-C', cwd, 'init', '-q'])
+    const r = await runGate(commitInput('false && git add sample.spec.ts; git commit -m "feat: s2"'))
+    expect(r.code).toBe(2)
+  })
+
+  it('BLOCK: hook cwd in a SUBDIRECTORY of the armed repo still gates (marker at repo root, commit from repo/sub/)', async () => {
+    armBuildMode(cwd)
+    execFileSync('git', ['-C', cwd, 'init', '-q'])
+    mkdirSync(join(cwd, 'sub'), { recursive: true })
+    const r = await runGate(
+      JSON.stringify({
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Bash',
+        tool_input: { command: 'git commit -m "feat: s2"' },
+        cwd: join(cwd, 'sub'),
+      }),
+    )
+    expect(r.code).toBe(2) // armed at the repo root — a subdir cwd must not disarm the gate
+  })
+
   // ── fail closed once armed ───────────────────────────────────────────────────
   it('BLOCK: armed behavioral slice with no receipt at all', async () => {
     armBuildMode(cwd)

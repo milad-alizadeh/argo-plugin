@@ -32,7 +32,13 @@ const DEFAULT_EXTENSIONS = [
 ]
 
 // Paths where shell-written "source" is conventional, not a bypass.
-const GENERATED_PATH = /(^|\/)(generated|dist|out|build|node_modules|tmp|\.argo)\/|\.gen\.[a-z]+$|(^|\/)\/?tmp\//i
+// `generated/` is exempt at ANY depth (src/generated/api.ts is the mainstream
+// codegen shape); build-output dirs are exempt only at the path ROOT (or
+// absolute /tmp) — a source subfolder that happens to be named build/out/dist
+// (src/build/config.ts) is still guarded. Checkpoint finding: the previous
+// anywhere-in-path match silently exempted nested output-dir names.
+const GENERATED_PATH =
+  /(^|\/)generated\/|\.gen\.[a-z]+$|^(?:\.\/)?(dist|out|build|node_modules|tmp|\.argo)\/|^\/tmp\//i
 
 function loadExtensions(cwd) {
   try {

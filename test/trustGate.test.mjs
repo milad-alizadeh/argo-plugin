@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { spawn } from 'node:child_process'
+import { spawn, execFileSync } from 'node:child_process'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -54,6 +54,21 @@ describe('trust gate (§8.2) — commit-scoped, marker-armed, fails closed when 
   // ── SCOPING: inert outside a gated build ────────────────────────────────────
   it('PASS: no build-mode marker → inert, even with no receipt (normal commits unaffected)', async () => {
     expect((await runGate(commitInput())).code).toBe(0)
+  })
+
+  it('BLOCK: hook cwd in a SUBDIRECTORY of the armed repo still gates (marker at repo root)', async () => {
+    armBuildMode(cwd)
+    execFileSync('git', ['-C', cwd, 'init', '-q'])
+    mkdirSync(join(cwd, 'sub'), { recursive: true })
+    const r = await runGate(
+      JSON.stringify({
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Bash',
+        tool_input: { command: 'git commit -m "feat: slice"' },
+        cwd: join(cwd, 'sub'),
+      }),
+    )
+    expect(r.code).toBe(2) // armed at the repo root — a subdir cwd must not disarm the gate
   })
 
   it('PASS: non-commit Bash command → inert even when armed', async () => {

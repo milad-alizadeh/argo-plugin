@@ -1,0 +1,26 @@
+{
+  "name": "figma-design-kit",
+  "version": "0.1.0",
+  "description": "Pure logic for the Figma-to-code design pack: spec comparator, conversion table, schema validators, waiver invalidation",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "comparator.js",
+    "conversion-table.js",
+    "schemas.js",
+    "waivers.js"
+  ],
+  "keywords": [
+    "figma",
+    "design-tokens",
+    "design-system"
+  ],
+  "dependencies": {
+    "zod": "^3.23.8"
+  }
+}

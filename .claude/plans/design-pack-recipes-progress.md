@@ -16,7 +16,7 @@ Decisions confirmed before build (2026-07-04):
 | 3 | done | (pending commit) | design-lint.md moved to recipe code-target; authored no-arbitrary-values rule (B1/B2) |
 | 4 | done | (pending commit) | extracted token-writer.md from figma-sync step 7 |
 | 5 | done | (pending commit) | tier-1b conditional note; also fixed the stale lint-file path reference (moved in Slice 3) |
-| 6 | pending | | |
+| 6 | done | (pending commit) | templates-reference.md updated for recipe paths/install-when; also authored the recipe's README.md manifest (disposition-table item with no assigned slice in the plan) |
 | 7 | pending | | checkpoint review here |
 | 8 | pending | | |
 | 9 | pending | | |

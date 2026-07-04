@@ -15,7 +15,7 @@ Decisions confirmed before build (2026-07-04):
 | 2a | done | (pending commit) | import-boundary guard test; regex scoped to real import/require, not doc-comment prose (avoided a false positive against tier0-rules.js's own docstring) |
 | 3 | done | (pending commit) | design-lint.md moved to recipe code-target; authored no-arbitrary-values rule (B1/B2) |
 | 4 | done | (pending commit) | extracted token-writer.md from figma-sync step 7 |
-| 5 | pending | | |
+| 5 | done | (pending commit) | tier-1b conditional note; also fixed the stale lint-file path reference (moved in Slice 3) |
 | 6 | pending | | |
 | 7 | pending | | checkpoint review here |
 | 8 | pending | | |

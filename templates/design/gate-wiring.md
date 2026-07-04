@@ -14,7 +14,7 @@ covers them automatically, same as any other test in the project.
 | Tier | What | Where it lives | Runs via |
 |---|---|---|---|
 | 1 — spec-diff | story-walking tests vs `design/specs/*.json` | `{{SPEC_DIFF_WALKER_DIR}}` | `{{TEST_CMD}}` |
-| 1b — base-congruence | same mechanism over base-component smoke stories | `{{SPEC_DIFF_WALKER_DIR}}` (base-component fixtures) | `{{TEST_CMD}}` |
+| 1b — base-congruence | same mechanism over base-component smoke stories (only applies when the installed recipe's `baseSource` is `external-library`, or `same-file` with vendored base code present; off entirely for `baseSource: none`, per D23) | `{{SPEC_DIFF_WALKER_DIR}}` (base-component fixtures) | `{{TEST_CMD}}` |
 | 5 — token drift | regenerate `base.css`'s generated region from `tokens.json`, `git diff --exit-code` | `{{TOKEN_DRIFT_SCRIPT}}` | `{{TEST_CMD}}` or a dedicated script step |
 
 No new lefthook/pre-commit entries are needed for these three — they are
@@ -47,6 +47,8 @@ Invoke `test:vrt` at:
   `/argo:figma-audit`, `/argo:figma-sync`, and `/argo:figma-create` — never
   a test command, since it requires live Figma Plugin API access.
 - **Tier 4** (static lint) is enforced by this project's existing lint step
-  (`{{LINT_CMD}}`) plus the design-pack's lint rule addition — see
-  `templates/design/lint/design-lint.md`. No separate wiring needed; it rides
-  the lint job that's already a pre-commit gate.
+  (`{{LINT_CMD}}`) plus the design-pack's lint rule addition — see the
+  installed recipe's `code-target/lint/design-lint.md` (e.g.
+  `templates/design/recipes/shadcn-tailwind-external-kit/code-target/lint/design-lint.md`).
+  No separate wiring needed; it rides the lint job that's already a
+  pre-commit gate.

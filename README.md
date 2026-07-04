@@ -40,10 +40,12 @@ than the installed plugin (`/argo:setup-claude` re-syncs it).
 - **Agents** (`agents/`) — full lifecycle roles, invoked on demand:
   `scaffolder → planner → builder → reviewer → debugger`, plus `auditor`
   (whole-codebase health) and `integrator` (lands work / PRs / docs sync).
-- **Skills** (`skills/`) — on-demand disciplines and methodology, all eleven:
+- **Skills** (`skills/`) — on-demand disciplines and methodology, eighteen:
   `engineering-principles`, `test-first`, `build-plan`, `root-cause`,
   `grill-me`, `spike`, `scaffold`, `session-handoff`, `finish-branch`,
-  `author-skill`, and `setup-claude`.
+  `author-skill`, `setup-claude`, `orchestrate`, and the Figma-to-code
+  design pack — `setup-design`, `figma-audit`, `figma-sync`, `figma-create`,
+  `figma-to-code`, `design-upgrade`.
 - **Hooks** (`hooks/`) — nine hooks in four categories:
   - *Safety guardrails (always on):* `block-dangerous-git.sh` — blocks
     destructive git commands (opt out with `ARGO_DISABLE_GIT_GUARD=1`);

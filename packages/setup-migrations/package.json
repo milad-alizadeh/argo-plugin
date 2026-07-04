@@ -12,6 +12,7 @@
     "index.js",
     "semver.js",
     "runner.js",
-    "migrations.js"
+    "migrations.js",
+    "resolve-vendor-plan.js"
   ]
 }

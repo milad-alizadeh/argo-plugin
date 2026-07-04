@@ -9,26 +9,37 @@ describe('nonSemanticBindingViolation', () => {
   const KIT_FILE_KEY = 'kit-file-key'
 
   it('passes a kit-sourced variable', () => {
-    const variable = { remote: true, key: `${KIT_FILE_KEY}:1:2`, variableCollectionId: 'coll1' }
-    expect(nonSemanticBindingViolation(variable, KIT_FILE_KEY)).toBeNull()
+    const variable = { remote: true, key: `${KIT_FILE_KEY}:1:2`, collectionName: 'Kit Colors' }
+    expect(nonSemanticBindingViolation(variable, KIT_FILE_KEY, 'Semantic')).toBeNull()
   })
 
-  it('passes a Semantic (non-kit, collection-bound) variable', () => {
-    const variable = { remote: false, key: 'local:1:2', variableCollectionId: 'semantic-coll' }
-    expect(nonSemanticBindingViolation(variable, KIT_FILE_KEY)).toBeNull()
+  it('passes a variable actually bound to the Semantic collection', () => {
+    const variable = { remote: false, key: 'local:1:2', collectionName: 'Semantic' }
+    expect(nonSemanticBindingViolation(variable, KIT_FILE_KEY, 'Semantic')).toBeNull()
   })
 
-  it('flags a variable that is neither kit-sourced nor Semantic', () => {
-    const variable = { remote: false, key: 'local:1:2', variableCollectionId: null }
-    expect(nonSemanticBindingViolation(variable, KIT_FILE_KEY)).toEqual({
+  it('flags a variable bound to a local Primitives collection — not the Semantic collection, not kit-sourced (confirmed live: Slice 14)', () => {
+    const variable = { remote: false, key: 'local:1:2', collectionName: 'Primitives' }
+    expect(nonSemanticBindingViolation(variable, KIT_FILE_KEY, 'Semantic')).toEqual({
       rule: 'non-semantic-binding',
       detail: 'bound to a non-Semantic variable outside the kit library'
     })
   })
 
-  it('uses the project-configured Semantic collection name in the message', () => {
-    const variable = { remote: false, key: 'local:1:2', variableCollectionId: null }
-    expect(nonSemanticBindingViolation(variable, KIT_FILE_KEY, 'Theme')).toEqual({
+  it('flags a variable with no resolvable collection name', () => {
+    const variable = { remote: false, key: 'local:1:2', collectionName: null }
+    expect(nonSemanticBindingViolation(variable, KIT_FILE_KEY, 'Semantic')).toEqual({
+      rule: 'non-semantic-binding',
+      detail: 'bound to a non-Semantic variable outside the kit library'
+    })
+  })
+
+  it('uses the project-configured Semantic collection name for both the comparison and the message', () => {
+    const variable = { remote: false, key: 'local:1:2', collectionName: 'Theme' }
+    expect(nonSemanticBindingViolation(variable, KIT_FILE_KEY, 'Theme')).toBeNull()
+
+    const primitiveVariable = { remote: false, key: 'local:1:2', collectionName: 'Primitives' }
+    expect(nonSemanticBindingViolation(primitiveVariable, KIT_FILE_KEY, 'Theme')).toEqual({
       rule: 'non-semantic-binding',
       detail: 'bound to a non-Theme variable outside the kit library'
     })

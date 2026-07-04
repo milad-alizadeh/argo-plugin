@@ -9,12 +9,19 @@
 /**
  * Relocated from templates/design/tier0-audit.js (was inline, kit-coupled).
  * A bound variable is either kit-sourced (its key resolves to the kit library
- * file) or Semantic (locally defined, has a collection) — anything else is a
+ * file) or bound to the project's actual Semantic collection by name —
+ * anything else (including a local Primitives-collection binding) is a
  * non-Semantic binding outside the kit library.
+ *
+ * `variable.collectionName` — NOT presence of a variableCollectionId — is
+ * the deciding field: live-Figma verification (Slice 14) confirmed that
+ * checking only "has some local collection" is vacuous, since a component
+ * bound directly to a local Primitives variable also has a
+ * variableCollectionId and would incorrectly pass.
  */
 export function nonSemanticBindingViolation(variable, kitLibraryFileKey, semanticCollectionName = 'Semantic') {
   const isKitSourced = Boolean(variable.remote && variable.key?.startsWith(kitLibraryFileKey))
-  const isSemantic = Boolean(variable.variableCollectionId) && !isKitSourced
+  const isSemantic = !isKitSourced && variable.collectionName === semanticCollectionName
   if (!isKitSourced && !isSemantic) {
     return {
       rule: 'non-semantic-binding',

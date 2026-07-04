@@ -40,10 +40,27 @@ async function runRecipeTier0Checks(node, { hard }) {
     const variable = await figma.variables.getVariableByIdAsync(alias.id)
     if (!variable) continue
 
-    const nonSemantic = nonSemanticBindingViolation(variable, KIT_LIBRARY_FILE_KEY, SEMANTIC_COLLECTION_NAME)
+    // collectionName (not just presence of variableCollectionId) is what actually
+    // distinguishes the Semantic collection from a local Primitives collection —
+    // live-Figma verification (Slice 14) confirmed a variableCollectionId-only
+    // check is vacuous, since Primitives bindings have one too.
+    //
+    // Marshal explicitly, field by field — a live Variable object's remote/key/
+    // variableCollectionId are prototype getters, NOT own enumerable properties,
+    // so `{ ...variable }` silently drops them (confirmed live, Slice 14: spread
+    // yielded only `{ id }`). Always name the fields a pure function needs.
+    const collection = variable.variableCollectionId
+      ? await figma.variables.getVariableCollectionByIdAsync(variable.variableCollectionId)
+      : null
+    const marshaledVariable = {
+      remote: variable.remote,
+      key: variable.key,
+      collectionName: collection?.name ?? null
+    }
+    const nonSemantic = nonSemanticBindingViolation(marshaledVariable, KIT_LIBRARY_FILE_KEY, SEMANTIC_COLLECTION_NAME)
     if (nonSemantic) report(nonSemantic.rule, nonSemantic.detail)
 
-    const retiredKey = retiredFileKeyBindingViolation(variable, RETIRED_KIT_LIBRARY_FILE_KEYS)
+    const retiredKey = retiredFileKeyBindingViolation(marshaledVariable, RETIRED_KIT_LIBRARY_FILE_KEYS)
     if (retiredKey) report(retiredKey.rule, retiredKey.detail)
   }
 

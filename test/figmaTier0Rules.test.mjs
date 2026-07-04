@@ -1,0 +1,173 @@
+import { describe, it, expect } from 'vitest'
+import {
+  unboundFillViolations,
+  unboundStrokeViolations,
+  unboundRadiusViolation,
+  unboundTypeViolation,
+  missingAutoLayoutViolation,
+  detachedInstanceViolation,
+  nonSemanticNameViolation,
+  variantNamingViolations,
+  darkCopyViolation,
+  implicitLineHeightViolation,
+  storyUrlScopeViolation
+} from '../packages/figma-design-kit/tier0-rules.js'
+
+describe('unboundFillViolations', () => {
+  it('flags a solid fill with no bound color variable', () => {
+    const node = { fills: [{ type: 'SOLID', boundVariables: {} }] }
+    expect(unboundFillViolations(node)).toEqual([{ rule: 'unbound-fill', detail: 'solid fill has no bound color variable' }])
+  })
+  it('passes a solid fill with a bound color variable', () => {
+    const node = { fills: [{ type: 'SOLID', boundVariables: { color: { id: '1:2' } } }] }
+    expect(unboundFillViolations(node)).toEqual([])
+  })
+  it('ignores non-solid fills', () => {
+    const node = { fills: [{ type: 'GRADIENT_LINEAR', boundVariables: {} }] }
+    expect(unboundFillViolations(node)).toEqual([])
+  })
+})
+
+describe('unboundStrokeViolations', () => {
+  it('flags a solid stroke with no bound color variable', () => {
+    const node = { strokes: [{ type: 'SOLID', boundVariables: {} }] }
+    expect(unboundStrokeViolations(node)).toEqual([{ rule: 'unbound-stroke', detail: 'solid stroke has no bound color variable' }])
+  })
+  it('passes a solid stroke with a bound color variable', () => {
+    const node = { strokes: [{ type: 'SOLID', boundVariables: { color: { id: '1:2' } } }] }
+    expect(unboundStrokeViolations(node)).toEqual([])
+  })
+})
+
+describe('unboundRadiusViolation', () => {
+  it('flags a numeric cornerRadius with no bound variable', () => {
+    const node = { cornerRadius: 8, boundVariables: {} }
+    expect(unboundRadiusViolation(node)).toEqual({ rule: 'unbound-radius', detail: 'cornerRadius has no bound variable' })
+  })
+  it('passes a bound cornerRadius', () => {
+    const node = { cornerRadius: 8, boundVariables: { cornerRadius: { id: '1:2' } } }
+    expect(unboundRadiusViolation(node)).toBeNull()
+  })
+  it('passes a node with no cornerRadius', () => {
+    expect(unboundRadiusViolation({})).toBeNull()
+  })
+})
+
+describe('unboundTypeViolation', () => {
+  it('flags a text node with no bound fontSize', () => {
+    const node = { fontName: { family: 'Inter' }, boundVariables: {} }
+    expect(unboundTypeViolation(node)).toEqual({ rule: 'unbound-type', detail: 'text node font size has no bound variable' })
+  })
+  it('passes a text node with a bound fontSize', () => {
+    const node = { fontName: { family: 'Inter' }, boundVariables: { fontSize: { id: '1:2' } } }
+    expect(unboundTypeViolation(node)).toBeNull()
+  })
+})
+
+describe('missingAutoLayoutViolation', () => {
+  it('flags a frame-like node with layoutMode NONE', () => {
+    const node = { type: 'FRAME', layoutMode: 'NONE' }
+    expect(missingAutoLayoutViolation(node)).toEqual({ rule: 'missing-auto-layout', detail: 'frame-like node has no Auto Layout' })
+  })
+  it('passes a frame with Auto Layout', () => {
+    const node = { type: 'FRAME', layoutMode: 'VERTICAL' }
+    expect(missingAutoLayoutViolation(node)).toBeNull()
+  })
+  it('ignores non-frame-like node types', () => {
+    expect(missingAutoLayoutViolation({ type: 'TEXT', layoutMode: 'NONE' })).toBeNull()
+  })
+})
+
+describe('detachedInstanceViolation', () => {
+  it('flags an instance with no resolvable main component', () => {
+    const node = { type: 'INSTANCE', hasMainComponent: false }
+    expect(detachedInstanceViolation(node)).toEqual({ rule: 'detached-instance', detail: 'instance has no resolvable main component' })
+  })
+  it('passes an instance with a resolvable main component', () => {
+    expect(detachedInstanceViolation({ type: 'INSTANCE', hasMainComponent: true })).toBeNull()
+  })
+})
+
+describe('nonSemanticNameViolation', () => {
+  it('flags an auto-generated default name', () => {
+    expect(nonSemanticNameViolation({ name: 'Rectangle 12' })).toEqual({
+      rule: 'non-semantic-name',
+      detail: 'node name "Rectangle 12" looks auto-generated, not semantic'
+    })
+  })
+  it('passes a semantic name', () => {
+    expect(nonSemanticNameViolation({ name: 'PrimaryButton' })).toBeNull()
+  })
+})
+
+describe('variantNamingViolations', () => {
+  it('flags a Title-Case variant property (D18)', () => {
+    const node = { type: 'COMPONENT_SET', componentPropertyDefinitions: { Size: {} } }
+    expect(variantNamingViolations(node)).toEqual([
+      { rule: 'variant-naming', detail: 'variant property "Size" should be lowercase (D18)' }
+    ])
+  })
+  it('passes lowercase variant properties', () => {
+    const node = { type: 'COMPONENT_SET', componentPropertyDefinitions: { size: {} } }
+    expect(variantNamingViolations(node)).toEqual([])
+  })
+  it('ignores non-COMPONENT_SET nodes', () => {
+    expect(variantNamingViolations({ type: 'COMPONENT', componentPropertyDefinitions: { Size: {} } })).toEqual([])
+  })
+})
+
+describe('darkCopyViolation (D11)', () => {
+  it('flags a component with no adjacent dark-mode copy', () => {
+    const node = { type: 'COMPONENT', name: 'Button', siblings: [] }
+    expect(darkCopyViolation(node, 'Semantic')).toEqual({ rule: 'missing-dark-copy', detail: 'component has no adjacent dark-mode instance copy (D11)' })
+  })
+  it('flags a dark copy that does not explicitly set the Semantic mode', () => {
+    const node = {
+      type: 'COMPONENT',
+      name: 'Button',
+      siblings: [{ name: 'Button (Dark)', explicitVariableModes: {} }]
+    }
+    expect(darkCopyViolation(node, 'Semantic')).toEqual({
+      rule: 'incorrect-dark-copy',
+      detail: 'dark copy does not set the Semantic collection mode explicitly'
+    })
+  })
+  it('passes a correctly-configured dark copy', () => {
+    const node = {
+      type: 'COMPONENT',
+      name: 'Button',
+      siblings: [{ name: 'Button (Dark)', explicitVariableModes: { Semantic: 'dark-mode-id' } }]
+    }
+    expect(darkCopyViolation(node, 'Semantic')).toBeNull()
+  })
+})
+
+describe('implicitLineHeightViolation (D20)', () => {
+  it('flags implicit AUTO line-height', () => {
+    const node = { lineHeight: { unit: 'AUTO' } }
+    expect(implicitLineHeightViolation(node)).toEqual({
+      rule: 'implicit-line-height',
+      detail: 'text node uses implicit AUTO line-height; must be explicit (D20)'
+    })
+  })
+  it('passes an explicit line-height', () => {
+    expect(implicitLineHeightViolation({ lineHeight: { unit: 'PIXELS', value: 20 } })).toBeNull()
+  })
+})
+
+describe('storyUrlScopeViolation (D1)', () => {
+  it('flags a file-level (non-node-scoped) story URL', () => {
+    const node = { type: 'COMPONENT', storyUrl: 'https://storybook.example/?path=/story/button' }
+    expect(storyUrlScopeViolation(node)).toEqual({
+      rule: 'non-node-scoped-story-url',
+      detail: 'storyUrl "https://storybook.example/?path=/story/button" is not node-scoped'
+    })
+  })
+  it('passes a node-scoped story URL', () => {
+    const node = { type: 'COMPONENT', storyUrl: 'https://storybook.example/?node-id=1-2' }
+    expect(storyUrlScopeViolation(node)).toBeNull()
+  })
+  it('ignores a component with no storyUrl', () => {
+    expect(storyUrlScopeViolation({ type: 'COMPONENT' })).toBeNull()
+  })
+})

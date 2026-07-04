@@ -15,6 +15,7 @@
     "conversion-table.js",
     "schemas.js",
     "waivers.js",
+    "tier0-rules.js",
     "recipes/external-kit.js"
   ],
   "keywords": [

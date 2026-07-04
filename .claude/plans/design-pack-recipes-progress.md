@@ -8,10 +8,10 @@ Decisions confirmed before build (2026-07-04):
 
 | Slice | Status | Commit | Notes |
 |---|---|---|---|
-| 0 | pending | | |
-| 1 | pending | | |
-| 1a | pending | | |
-| 2 | pending | | |
+| 0 | done | 4cf99e6 | recipe dir scaffold + config recipe/recipeConfig fields |
+| 1 | done | 55c15b1 | moved base-congruence walker; authored kit-patches/kit.lock examples |
+| 1a | done | 5daa716 | sourceVersion rename + KitLockSchema/KitPatchSchema subpath export (F1) |
+| 2 | done | (pending commit) | tier0-rules.js extracted into figma-design-kit + new figma-design-kit-shadcn-tailwind package; tier0-audit.js + tier0-recipe-checks.js are now thin walkers (per B) |
 | 2a | pending | | |
 | 3 | pending | | |
 | 4 | pending | | |

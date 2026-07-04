@@ -17,13 +17,20 @@ Builds on `figma:figma-use`.
    Figma before syncing, never sync a dirty file.
 2. **Dump tokens.** Full variable dump (collections, modes, values,
    descriptions) into `design/tokens.json`, plus freshness metadata: file
-   version, `lastModified`, and this sync's timestamp (D4). Validate the
-   result against `figma-design-kit`'s `KitLockSchema`-shaped fields before
-   writing.
+   version, `lastModified`, and this sync's timestamp (D4). When the
+   installed recipe's `baseSource == "external-library"`, also validate the
+   kit-lock-relevant fields against `figma-design-kit`'s
+   `recipes/external-kit`-subpath `KitLockSchema` and write `design/kit.lock`
+   from them — for any other `baseSource` there is no separate kit file, so
+   this freshness metadata is just recorded, not schema-checked against a
+   kit lock.
 3. **Dump specs.** Per-variant×**state**×mode node metrics — including
    `layoutSizing` (D14/D20) — into `design/specs/<Component>.json`, for
-   **both** project components and used base components. Validate each
-   entry against `StoryMapEntrySchema`'s sibling shape where applicable.
+   project components always, and for **used base components** only when
+   the installed recipe's `baseSource` calls for a separate base-component
+   spec dump (`external-library`, or `same-file` with vendored base code) —
+   a no-op sub-step under `baseSource: none`. Validate each entry against
+   `StoryMapEntrySchema`'s sibling shape where applicable.
 4. **Capture reference screenshots.** Per variant×mode, into
    `design/screenshots/<Component>/<variant>.<mode>.png` — so tier 2 and
    headless rebuilds never need live MCP access (C6). For the dark side:
@@ -36,9 +43,14 @@ Builds on `figma:figma-use`.
 6. **Build `story-map.json`.** Component key + node id → story id → import
    path → prop mapping (D1), validated against `figma-design-kit`'s
    `StoryMapEntrySchema`.
-7. **Regenerate the generated `@theme` region** in the project's
-   `tokenFilePath` (from `design/config.json`) from the freshly dumped
-   `tokens.json` — this is the ONE writer for that region (D19); never hand-edit it.
+7. **Follow the installed recipe's code-target token-writer doc**
+   (`design/config.json`'s `recipe` field selects which
+   `templates/design/recipes/<recipe>/code-target/token-writer.md` applies —
+   today that's `token-writer.md` for `shadcn-tailwind-external-kit`) to
+   regenerate the generated token region in the project's `tokenFilePath`
+   from the freshly dumped `tokens.json` — that doc names the ONE writer for
+   that region (D19); never hand-edit it. A future non-Tailwind code-target
+   ships its own sibling doc; this step never needs to change to support it.
 8. **Refresh fixtures** the spec-diff/VRT walkers read (`design/specs/*`,
    `design/screenshots/*`) so the next gated-build slice sees fresh data.
 9. **Commit** every artifact above as one commit (or a small, clearly-scoped

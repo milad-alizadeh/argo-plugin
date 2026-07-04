@@ -20,7 +20,7 @@ Decisions confirmed before build (2026-07-04):
 | 7 | done | 91a7c83 | setup-design/SKILL.md: §0a Figma gate, §0b Professional-plan gate (F10), §0c recipe selection; §4/§5/§7 made recipe-conditional |
 | 7-fix | done | (pending commit) | Checkpoint review (Slices 0-7) verdict: FAIL — kit-patches-conformance was implemented+tested but never wired into tier0-audit.js (dead code), and figma-audit/SKILL.md:24's doc/code mismatch was still unresolved. Fixed: tier0-audit.js now calls runKitPatchesConformance once per audit (file-wide, via a documented TODO-marked collectModifiedKitCopyNodes() stub — Figma-sandbox-only detection, proven at Slice 14 per existing precedent). Also realigned the splice mechanism to the plan amendment pulled in from main (cherry-picked 49af9a7): single `// {{RECIPE_TIER0_CHECKS}}` marker line, verbatim-content splice by setup-design §4, not an import. Non-blocking finding also fixed: nonSemanticBindingViolation's message restored SEMANTIC_COLLECTION_NAME context (was hardcoded "non-Semantic" after extraction). |
 | 8 | done | (pending commit) | figma-audit/SKILL.md: assembled-script contract, mechanism-vs-recipe check split, ad-hoc pre-install assembly procedure |
-| 9 | pending | | |
+| 9 | done | (pending commit) | figma-sync/SKILL.md: step 7 delegates to recipe token-writer.md; steps 2-4 gain baseSource-conditional notes |
 | 10 | pending | | |
 | 11 | pending | | |
 | 12 | pending | | |

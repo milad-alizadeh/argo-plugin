@@ -175,8 +175,19 @@ project's own test reporter as ground truth. It enforces **order**, not test **q
 - **Playwright:** upstream has no reporter, but this pack bundles one —
   `${CLAUDE_PLUGIN_ROOT}/reporters/tdd-guard-playwright/` (schema-verified against
   tdd-guard-vitest). Wire it in the project's playwright config:
-  `reporter: [['list'], ['tdd-guard-playwright', { projectRoot: '<abs repo root>' }]]`
-  and add the package via the project's package manager (path dep until published).
+  `reporter: [['list'], ['tdd-guard-playwright', { projectRoot: '<abs repo root>' }]]`.
+  The reporter is unpublished and pure ESM (no build), so **vendor** it rather
+  than depending on the plugin cache: copy the files in its `package.json`
+  `files` array into a committed dir in the host repo (e.g.
+  `test/vendor/tdd-guard-playwright`, or a workspace package if the host is a
+  workspace) and depend via a **relative** `file:` path (or `workspace:*`).
+  **Never** add a `file:` dep pointing at
+  `${CLAUDE_PLUGIN_ROOT}/reporters/tdd-guard-playwright` — that expands to an
+  absolute, version-stamped plugin-cache path that leaks the local machine, is
+  pinned to one plugin version (breaks on the next plugin update when the old
+  cache dir is GC'd), and doesn't resolve for any other clone or contributor.
+  Re-running `setup-claude` re-vendors it; when it's published upstream,
+  swap the `file:` dep for a normal `^version` and delete the vendored copy.
 - **Auth pre-check (hard requirement):** tdd-guard's validation model must run on the
   Claude Code SDK/subscription auth (its default, `VALIDATION_CLIENT=sdk`) — metered
   API keys are banned here. Confirm `ANTHROPIC_API_KEY` is NOT set in the environment

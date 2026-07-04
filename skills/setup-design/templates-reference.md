@@ -46,12 +46,15 @@ unconditionally.
 | `design-source/semantic-seed.json` | recipe's `baseSource == "external-library"` | none — copied byte-for-byte; project-owned starter data + derivation config only, NO kit-derived keys (edit the data to change the project's starter scale or role-scope table) |
 | `design-source/seed-semantic.js` | recipe's `baseSource == "external-library"` AND both Figma file keys configured (`config.figma.projectFileKey`, `config.recipeConfig.figma.kitLibraryFileKey`) — mirrors the §4a gate | reads the co-installed `semantic-seed.json` for its project-owned sections; `{{DERIVED_SEED_JSON}}` ← the `derive-semantic-seed.js` call's return value from the same §4a pipeline run |
 
-**Package dependencies:** add `figma-design-kit` as a path dependency
-(mirrors `skills/setup-claude/SKILL.md`'s `tdd-guard-playwright`
-instructions verbatim); additionally add `figma-design-kit-shadcn-tailwind`
-as a path dependency when the chosen recipe is
-`shadcn-tailwind-external-kit` — not a template, a real `package.json`
-dependency edit.
+**Package dependencies (see §5):** **vendor** `figma-design-kit` into a
+committed `design/vendor/figma-design-kit` and depend on it via a **relative**
+`file:./design/vendor/figma-design-kit` path — **never** an absolute
+`${CLAUDE_PLUGIN_ROOT}`/plugin-cache path (machine-specific, version-pinned,
+breaks for other clones and on the next plugin update). Do the same for
+`figma-design-kit-shadcn-tailwind` when the chosen recipe is
+`shadcn-tailwind-external-kit`. Not a template — a vendored copy plus a real
+`package.json` dependency edit. `skills/setup-claude/SKILL.md` §6c's
+`tdd-guard-playwright` uses the identical vendor-and-relative-`file:` pattern.
 
 **Brownfield conflicts:** if a template contradicts observed reality (e.g. a
 component dir already binds Primitives directly in several places), say so

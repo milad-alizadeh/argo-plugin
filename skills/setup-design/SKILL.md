@@ -188,16 +188,42 @@ Report the created/skipped summary verbatim to the user. This step only ever
 CREATES/imports — it never deletes or renames an existing variable, so
 re-running `setup-design` on an already-seeded file is always safe.
 
-## 5. Add path dependencies
+## 5. Vendor the figma-design-kit package(s) — relative dep, never an absolute plugin-cache path
 
-Mirrors `skills/setup-claude/SKILL.md` §6c's tdd-guard-playwright
-instructions verbatim: add `figma-design-kit` to the host project's manifest
-as a path dependency pointing at
-`${CLAUDE_PLUGIN_ROOT}/packages/figma-design-kit` (published later if ever —
-same lifecycle note as `tdd-guard-playwright`). Additionally add
-`figma-design-kit-shadcn-tailwind` as a path dependency when the chosen
-recipe (§0c) is `shadcn-tailwind-external-kit` — its `tier0-recipe-checks.js`
-imports from it.
+`figma-design-kit` is imported **by bare name** from the spec-diff/VRT walker
+test files (`spec-diff.walker.spec-diff.js`, `base-congruence.walker.spec-diff.js`,
+and the assembled `tier0-audit.js`), so the host project needs it resolvable
+by its own package manager — but it is **not published to a registry**
+("published later if ever"). Do **NOT** add it as a `file:` dependency
+pointing at `${CLAUDE_PLUGIN_ROOT}/packages/figma-design-kit`: that expands
+to an **absolute, version-stamped plugin-cache path**
+(`~/.claude/plugins/cache/argo/argo/<version>/packages/…`) that leaks the
+local machine, is pinned to one plugin version and breaks the moment the
+plugin updates and the old cache dir is garbage-collected, and does not
+resolve for any other clone, machine, or contributor. This was a real
+shipped bug (observed: a committed `package.json` with
+`file:/Users/<name>/.claude/plugins/cache/argo/argo/0.10.1/packages/…`).
+
+Instead **vendor** it (both packages are pure ESM, no build step): copy the
+files listed in the package's own `package.json` `files` array from
+`${CLAUDE_PLUGIN_ROOT}/packages/figma-design-kit` into a **committed**
+directory in the host repo — default `design/vendor/figma-design-kit` (under
+`design/`, so tdd-guard's `design/**` ignore from §3a already covers it) —
+and add a **relative** `file:` dependency:
+`"figma-design-kit": "file:./design/vendor/figma-design-kit"`. When the
+chosen recipe (§0c) is `shadcn-tailwind-external-kit`, do the same for
+`figma-design-kit-shadcn-tailwind` (its `tier0-recipe-checks.js` imports from
+it): `"figma-design-kit-shadcn-tailwind": "file:./design/vendor/figma-design-kit-shadcn-tailwind"`.
+Then run the project's package-manager install so the bare `figma-design-kit`
+imports resolve (`figma-design-kit`'s own `zod` dependency installs
+transitively). Commit the vendored copies — they are what make the repo
+portable.
+
+Re-running `setup-design` (or `design-upgrade` after a kit/plugin bump)
+re-vendors the copy: the vendored package and the copied templates/walkers
+are a matched set, refreshed together. If/when the packages are published to
+a registry, replace the `file:` deps with a normal `^version` and delete
+`design/vendor/`.
 
 ## 6. Append the testing.md amendment — with consent
 

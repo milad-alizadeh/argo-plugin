@@ -7,7 +7,7 @@ const baseWaiver = {
   property: 'borderRadius',
   figmaValue: 8,
   codeValue: 9,
-  kitLockVersion: 'v12',
+  sourceVersion: 'v12',
   reason: 'known kit drift, tracked in issue #42',
   date: '2026-07-04'
 }
@@ -30,15 +30,15 @@ describe('checkWaiver', () => {
 })
 
 describe('invalidateWaivers', () => {
-  const otherWaiver = { ...baseWaiver, component: 'Card', kitLockVersion: 'v11' }
+  const otherWaiver = { ...baseWaiver, component: 'Card', sourceVersion: 'v11' }
 
-  it('keeps waivers whose kitLockVersion matches the current one', () => {
+  it('keeps waivers whose sourceVersion matches the current one', () => {
     const { valid, invalidated } = invalidateWaivers([baseWaiver], 'v12')
     expect(valid).toEqual([baseWaiver])
     expect(invalidated).toEqual([])
   })
 
-  it('invalidates waivers whose kitLockVersion no longer matches', () => {
+  it('invalidates waivers whose sourceVersion no longer matches', () => {
     const { valid, invalidated } = invalidateWaivers([baseWaiver, otherWaiver], 'v12')
     expect(valid).toEqual([baseWaiver])
     expect(invalidated).toEqual([otherWaiver])

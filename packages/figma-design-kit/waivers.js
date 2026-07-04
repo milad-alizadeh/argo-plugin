@@ -9,14 +9,15 @@ export function checkWaiver(waiver, observedFigmaValue, observedCodeValue) {
 }
 
 /**
- * D15: drops any waiver whose kitLockVersion no longer matches the current
- * kit.lock version — used by design-upgrade after a kit re-import.
+ * D15/D23: drops any waiver whose sourceVersion no longer matches the caller-supplied
+ * current design-source version — e.g. design-upgrade passes the kit.lock version after
+ * a kit re-import for the external-kit recipe; other recipes supply their own pin.
  */
-export function invalidateWaivers(waivers, currentKitLockVersion) {
+export function invalidateWaivers(waivers, currentSourceVersion) {
   const valid = []
   const invalidated = []
   for (const waiver of waivers) {
-    if (waiver.kitLockVersion === currentKitLockVersion) valid.push(waiver)
+    if (waiver.sourceVersion === currentSourceVersion) valid.push(waiver)
     else invalidated.push(waiver)
   }
   return { valid, invalidated }

@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import {
-  WaiverSchema,
-  KitPatchSchema,
-  KitLockSchema,
-  StoryMapEntrySchema
-} from '../packages/figma-design-kit/schemas.js'
+import { WaiverSchema, StoryMapEntrySchema } from '../packages/figma-design-kit/schemas.js'
+import { KitPatchSchema, KitLockSchema } from '../packages/figma-design-kit/recipes/external-kit.js'
 
 describe('WaiverSchema', () => {
   const valid = {
@@ -13,17 +9,17 @@ describe('WaiverSchema', () => {
     property: 'borderRadius',
     figmaValue: 8,
     codeValue: 9,
-    kitLockVersion: 'v12',
+    sourceVersion: 'v12',
     reason: 'known kit drift, tracked in issue #42',
     date: '2026-07-04'
   }
 
-  it('accepts the D15 shape', () => {
+  it('accepts the D15 shape (generic sourceVersion pin)', () => {
     expect(WaiverSchema.safeParse(valid).success).toBe(true)
   })
 
-  it('rejects a waiver missing kitLockVersion', () => {
-    const { kitLockVersion, ...missing } = valid
+  it('rejects a waiver missing sourceVersion', () => {
+    const { sourceVersion, ...missing } = valid
     expect(WaiverSchema.safeParse(missing).success).toBe(false)
   })
 })

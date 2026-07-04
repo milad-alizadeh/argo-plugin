@@ -6,14 +6,16 @@
   "type": "module",
   "main": "index.js",
   "exports": {
-    ".": "./index.js"
+    ".": "./index.js",
+    "./recipes/external-kit": "./recipes/external-kit.js"
   },
   "files": [
     "index.js",
     "comparator.js",
     "conversion-table.js",
     "schemas.js",
-    "waivers.js"
+    "waivers.js",
+    "recipes/external-kit.js"
   ],
   "keywords": [
     "figma",

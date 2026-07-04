@@ -1,13 +1,15 @@
 import { z } from 'zod'
 
-/** D15: {component, variant, property, figmaValue, codeValue, kitLockVersion, reason, date} */
+/** D15/D23: {component, variant, property, figmaValue, codeValue, sourceVersion, reason, date}.
+ * sourceVersion is a generic design-source pin — the external-kit recipe maps it to the
+ * kit.lock version; other recipes may pin to a different source of truth. */
 export const WaiverSchema = z.object({
   component: z.string(),
   variant: z.string(),
   property: z.string(),
   figmaValue: z.union([z.string(), z.number()]),
   codeValue: z.union([z.string(), z.number()]),
-  kitLockVersion: z.string(),
+  sourceVersion: z.string(),
   reason: z.string(),
   date: z.string()
 })

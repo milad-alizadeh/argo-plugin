@@ -1,19 +1,50 @@
 {
   "colors": [
-    {
-      "name": "background",
-      "resolvedType": "COLOR",
-      "scopes": ["FRAME_FILL", "SHAPE_FILL"],
-      "modes": { "Light": "{{KIT_VARIABLE_KEY}}", "Dark": "{{KIT_VARIABLE_KEY}}" }
-    }
+    { "name": "background", "resolvedType": "COLOR", "scopes": ["FRAME_FILL", "SHAPE_FILL"], "modes": { "Light": "4bbe12d9b47f9752654ced43ad95095bcaa486b9", "Dark": "350bc264a5a067443ea3552e8181ca5e45919f08" } },
+    { "name": "foreground", "resolvedType": "COLOR", "scopes": ["TEXT_FILL", "SHAPE_FILL"], "modes": { "Light": "350bc264a5a067443ea3552e8181ca5e45919f08", "Dark": "5941c7616de29a037e4f1d1aeec87b94da614fa3" } },
+    { "name": "card", "resolvedType": "COLOR", "scopes": ["FRAME_FILL", "SHAPE_FILL"], "modes": { "Light": "4bbe12d9b47f9752654ced43ad95095bcaa486b9", "Dark": "39b531e6cad4ec3d01084ed49bfff3748c638398" } },
+    { "name": "card-foreground", "resolvedType": "COLOR", "scopes": ["TEXT_FILL", "SHAPE_FILL"], "modes": { "Light": "350bc264a5a067443ea3552e8181ca5e45919f08", "Dark": "5941c7616de29a037e4f1d1aeec87b94da614fa3" } },
+    { "name": "popover", "resolvedType": "COLOR", "scopes": ["FRAME_FILL", "SHAPE_FILL"], "modes": { "Light": "4bbe12d9b47f9752654ced43ad95095bcaa486b9", "Dark": "e92e4c2944a519c293bbe498b97809c9a7fff9f8" } },
+    { "name": "popover-foreground", "resolvedType": "COLOR", "scopes": ["TEXT_FILL", "SHAPE_FILL"], "modes": { "Light": "350bc264a5a067443ea3552e8181ca5e45919f08", "Dark": "5941c7616de29a037e4f1d1aeec87b94da614fa3" } },
+    { "name": "primary", "resolvedType": "COLOR", "scopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"], "modes": { "Light": "39b531e6cad4ec3d01084ed49bfff3748c638398", "Dark": "49311e85758cbd35d37bcfd79a13ad8849ba4757" } },
+    { "name": "primary-foreground", "resolvedType": "COLOR", "scopes": ["TEXT_FILL", "SHAPE_FILL"], "modes": { "Light": "5941c7616de29a037e4f1d1aeec87b94da614fa3", "Dark": "39b531e6cad4ec3d01084ed49bfff3748c638398" } },
+    { "name": "secondary", "resolvedType": "COLOR", "scopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"], "modes": { "Light": "e8ce59156262582700f01d0dee19649ed46381b3", "Dark": "e92e4c2944a519c293bbe498b97809c9a7fff9f8" } },
+    { "name": "secondary-foreground", "resolvedType": "COLOR", "scopes": ["TEXT_FILL", "SHAPE_FILL"], "modes": { "Light": "350bc264a5a067443ea3552e8181ca5e45919f08", "Dark": "5941c7616de29a037e4f1d1aeec87b94da614fa3" } },
+    { "name": "muted", "resolvedType": "COLOR", "scopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"], "modes": { "Light": "e8ce59156262582700f01d0dee19649ed46381b3", "Dark": "e92e4c2944a519c293bbe498b97809c9a7fff9f8" } },
+    { "name": "muted-foreground", "resolvedType": "COLOR", "scopes": ["TEXT_FILL", "SHAPE_FILL"], "modes": { "Light": "e2f7a7d99726779f8daa4cd5748c2b864bb344ef", "Dark": "d810fefbcd2cefaddbb0920141db033b5463b8d5" } },
+    { "name": "accent", "resolvedType": "COLOR", "scopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"], "modes": { "Light": "e8ce59156262582700f01d0dee19649ed46381b3", "Dark": "78465c61d579b17d9608b58d308af70470cc5b9f" } },
+    { "name": "accent-foreground", "resolvedType": "COLOR", "scopes": ["TEXT_FILL", "SHAPE_FILL"], "modes": { "Light": "39b531e6cad4ec3d01084ed49bfff3748c638398", "Dark": "5941c7616de29a037e4f1d1aeec87b94da614fa3" } },
+    { "name": "destructive", "resolvedType": "COLOR", "scopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"], "modes": { "Light": "3eaa4724af59876ce4e9189eb324c8d33a48d0ce", "Dark": "bd3ed422e9aee36fcd4ff7586772edba252aef1c" } },
+    { "name": "border", "resolvedType": "COLOR", "scopes": ["STROKE_COLOR"], "modes": { "Light": "49311e85758cbd35d37bcfd79a13ad8849ba4757", "Dark": "78465c61d579b17d9608b58d308af70470cc5b9f" } },
+    { "name": "input", "resolvedType": "COLOR", "scopes": ["STROKE_COLOR", "FRAME_FILL"], "modes": { "Light": "49311e85758cbd35d37bcfd79a13ad8849ba4757", "Dark": "39b531e6cad4ec3d01084ed49bfff3748c638398" } },
+    { "name": "ring", "resolvedType": "COLOR", "scopes": ["STROKE_COLOR"], "modes": { "Light": "e2f7a7d99726779f8daa4cd5748c2b864bb344ef", "Dark": "e2f7a7d99726779f8daa4cd5748c2b864bb344ef" } },
+    { "name": "chart-1", "resolvedType": "COLOR", "scopes": ["SHAPE_FILL", "STROKE_COLOR"], "modes": { "Light": "90f6e4689b7b3d95d55ea26cae1e2d47a034662a", "Dark": "90f6e4689b7b3d95d55ea26cae1e2d47a034662a" } },
+    { "name": "chart-2", "resolvedType": "COLOR", "scopes": ["SHAPE_FILL", "STROKE_COLOR"], "modes": { "Light": "eefb20fed69c4bef88d6518fd04c5e4ac897dc64", "Dark": "eefb20fed69c4bef88d6518fd04c5e4ac897dc64" } },
+    { "name": "chart-3", "resolvedType": "COLOR", "scopes": ["SHAPE_FILL", "STROKE_COLOR"], "modes": { "Light": "bb81866bc621e766b645cb86c3ff642ab601633e", "Dark": "bb81866bc621e766b645cb86c3ff642ab601633e" } },
+    { "name": "chart-4", "resolvedType": "COLOR", "scopes": ["SHAPE_FILL", "STROKE_COLOR"], "modes": { "Light": "5d5e8ab01253fd1e037ab36f76fc9a5905fbdb27", "Dark": "5d5e8ab01253fd1e037ab36f76fc9a5905fbdb27" } },
+    { "name": "chart-5", "resolvedType": "COLOR", "scopes": ["SHAPE_FILL", "STROKE_COLOR"], "modes": { "Light": "29944a152ac3f439ce25fded171dce0372251060", "Dark": "29944a152ac3f439ce25fded171dce0372251060" } },
+    { "name": "sidebar", "resolvedType": "COLOR", "scopes": ["FRAME_FILL", "SHAPE_FILL"], "modes": { "Light": "5941c7616de29a037e4f1d1aeec87b94da614fa3", "Dark": "39b531e6cad4ec3d01084ed49bfff3748c638398" } },
+    { "name": "sidebar-foreground", "resolvedType": "COLOR", "scopes": ["TEXT_FILL", "SHAPE_FILL"], "modes": { "Light": "350bc264a5a067443ea3552e8181ca5e45919f08", "Dark": "5941c7616de29a037e4f1d1aeec87b94da614fa3" } },
+    { "name": "sidebar-primary", "resolvedType": "COLOR", "scopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"], "modes": { "Light": "39b531e6cad4ec3d01084ed49bfff3748c638398", "Dark": "bb81866bc621e766b645cb86c3ff642ab601633e" } },
+    { "name": "sidebar-primary-foreground", "resolvedType": "COLOR", "scopes": ["TEXT_FILL", "SHAPE_FILL"], "modes": { "Light": "5941c7616de29a037e4f1d1aeec87b94da614fa3", "Dark": "5941c7616de29a037e4f1d1aeec87b94da614fa3" } },
+    { "name": "sidebar-accent", "resolvedType": "COLOR", "scopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"], "modes": { "Light": "e8ce59156262582700f01d0dee19649ed46381b3", "Dark": "e92e4c2944a519c293bbe498b97809c9a7fff9f8" } },
+    { "name": "sidebar-accent-foreground", "resolvedType": "COLOR", "scopes": ["TEXT_FILL", "SHAPE_FILL"], "modes": { "Light": "39b531e6cad4ec3d01084ed49bfff3748c638398", "Dark": "5941c7616de29a037e4f1d1aeec87b94da614fa3" } },
+    { "name": "sidebar-border", "resolvedType": "COLOR", "scopes": ["STROKE_COLOR"], "modes": { "Light": "49311e85758cbd35d37bcfd79a13ad8849ba4757", "Dark": "78465c61d579b17d9608b58d308af70470cc5b9f" } },
+    { "name": "sidebar-ring", "resolvedType": "COLOR", "scopes": ["STROKE_COLOR"], "modes": { "Light": "e2f7a7d99726779f8daa4cd5748c2b864bb344ef", "Dark": "e2f7a7d99726779f8daa4cd5748c2b864bb344ef" } }
   ],
   "floats": [
-    {
-      "name": "radius-md",
-      "resolvedType": "FLOAT",
-      "scopes": ["CORNER_RADIUS"],
-      "key": "{{KIT_VARIABLE_KEY}}"
-    }
+    { "name": "radius-none", "resolvedType": "FLOAT", "scopes": ["CORNER_RADIUS"], "key": "989fb6a93d96cb68024b48943915b1cc0e4a52f4" },
+    { "name": "radius-xs", "resolvedType": "FLOAT", "scopes": ["CORNER_RADIUS"], "key": "23ca85b0ef2c4135174ac6d48d1f503a153d2980" },
+    { "name": "radius-sm", "resolvedType": "FLOAT", "scopes": ["CORNER_RADIUS"], "key": "b659bc26671242b0b92bef0cbc4fbeae93817b32" },
+    { "name": "radius-md", "resolvedType": "FLOAT", "scopes": ["CORNER_RADIUS"], "key": "c5870820d65da893f878f94b4a276d88cf16f46e" },
+    { "name": "radius-lg", "resolvedType": "FLOAT", "scopes": ["CORNER_RADIUS"], "key": "85aa8b1da416cdf598e69d5144100c74f142302b" },
+    { "name": "radius-xl", "resolvedType": "FLOAT", "scopes": ["CORNER_RADIUS"], "key": "12c12c30fbe8eab377f1e491dcb08ef7185e33a1" },
+    { "name": "radius-2xl", "resolvedType": "FLOAT", "scopes": ["CORNER_RADIUS"], "key": "27fc0369072ba6784f2fd54ecd88d55f600b8d1f" },
+    { "name": "radius-3xl", "resolvedType": "FLOAT", "scopes": ["CORNER_RADIUS"], "key": "fa6a7bfcc3e359ecb533a6a383f6a3713b1cc62d" },
+    { "name": "radius-4xl", "resolvedType": "FLOAT", "scopes": ["CORNER_RADIUS"], "key": "9cc07363e0a003d426b33b7bf91d59e94c82dcc5" },
+    { "name": "radius-full", "resolvedType": "FLOAT", "scopes": ["CORNER_RADIUS"], "key": "be398759cf0ebb409ea4f9075fd1a19777e65681" },
+    { "name": "stroke-width", "resolvedType": "FLOAT", "scopes": ["STROKE_FLOAT"], "key": "23ca85b0ef2c4135174ac6d48d1f503a153d2980" },
+    { "name": "border-width", "resolvedType": "FLOAT", "scopes": ["STROKE_FLOAT"], "key": "b54b9c79bab86a42536a2892f85b9eccceae2070" }
   ],
   "primitives": {
     "spacing": [0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 128]

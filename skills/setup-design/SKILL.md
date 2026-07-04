@@ -61,9 +61,13 @@ plugin-repo change (this skill does not build upgrade detection, see plan
 
 Copy from `${CLAUDE_PLUGIN_ROOT}/templates/design/` into the host project,
 filling every `{{…}}` slot per `skills/setup-design/templates-reference.md`:
-`vrt-walker/`, `spec-diff-walker/`, `gate-wiring.md`, `lint/design-lint.md`,
-`config.example.json` → `design/config.json`. Ask where each walker
-directory should live (offer a sane default, e.g. `test/vrt/`,
+`tier0-audit.js` (into `design/`, so `figma-audit`/`figma-sync`/`figma-create`
+read the project's own filled copy rather than the plugin template),
+`vrt-walker/`, `spec-diff-walker/`, `gate-wiring.md`,
+`config.example.json` → `design/config.json` — always. `lint/design-lint.md`
+only when a lint config and a components dir already exist (per
+`templates-reference.md`'s condition for that one template). Ask where each
+walker directory should live (offer a sane default, e.g. `test/vrt/`,
 `test/spec-diff/`) if the host project has no obvious convention.
 
 ## 5. Add `figma-design-kit` as a path dependency

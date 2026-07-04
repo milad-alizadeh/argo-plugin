@@ -7,7 +7,11 @@ description: Run the canonical tier-0 Figma hygiene audit against named componen
 
 Owns the **canonical** tier-0 Figma hygiene audit (design-pack plan, X3:
 "figma-audit owns the canonical audit script; sync/create call it" — there is
-exactly one copy of this logic, never a second divergent one).
+exactly one copy of this logic, never a second divergent one). That one
+copy is an **assembled** script (F12): the mechanism's `tier0-audit.js` with
+the installed recipe's `tier0-recipe-checks.js` spliced into its
+`// {{RECIPE_TIER0_CHECKS}}` marker — one script, one severity-grouped
+report, never two separately-executed audit scripts.
 
 **Mandatory prerequisite:** load `figma:figma-use` first — this skill's every
 check runs by executing `templates/design/tier0-audit.js` inside Figma's
@@ -16,12 +20,18 @@ hard-to-debug `use_figma` failures.
 
 ## What it checks (figma-to-code-pipeline.md §5 tier 0)
 
-Unbound fills/strokes/radii/type, non-Semantic bindings (distinguished by
-library source, §8), missing Auto Layout, detached instances, non-semantic
-names, D18 variant naming (`Size`→`size`, Title-Case→lowercase), missing or
-incorrect dark copy for **components only** (D11), explicit line-height
-(D20), node-scoped story URLs (`?node-id=`, D1/C13), and edits to the kit
-copy not present in `design/kit-patches.json`.
+**Mechanism checks (every recipe):** unbound fills/strokes/radii/type,
+missing Auto Layout, detached instances, non-semantic names, D18 variant
+naming (`Size`→`size`, Title-Case→lowercase), missing or incorrect dark copy
+for **components only** (D11), explicit line-height (D20), node-scoped
+story URLs (`?node-id=`, D1/C13).
+
+**Recipe checks (installed recipe only):** for `shadcn-tailwind-external-kit`
+— non-Semantic bindings (distinguished by library source, §8),
+retired-file-key bindings (a stale binding left over from a Library Swap),
+and edits to the kit copy not present in `design/kit-patches.json`. A
+different recipe (or `baseSource: none`) supplies its own check set, or
+none at all.
 
 ## Two modes
 
@@ -37,13 +47,19 @@ copy not present in `design/kit-patches.json`.
 ## Procedure
 
 1. Load `figma:figma-use`.
-2. Locate `templates/design/tier0-audit.js` — read it from the host
-   project's `design/` dir if `setup-design` has already installed it there
-   (with its `{{…}}` slots filled from `design/config.json`), otherwise read
-   the plugin's own template copy directly (running before install is
-   supported — the caller is expected to fill in the two slots,
-   `{{SEMANTIC_COLLECTION_NAME}}` and `{{KIT_LIBRARY_FILE_KEY}}`, from
-   whatever config is available, or ask the user).
+2. Locate the **assembled** `tier0-audit.js` — read it from the host
+   project's `design/` dir if `setup-design` has already installed and
+   assembled it there (mechanism + the installed recipe's
+   `tier0-recipe-checks.js` spliced in, all `{{…}}` slots filled from
+   `design/config.json`). If running before install (no host project has it
+   yet), assemble the same way ad hoc from the plugin's own template copies:
+   splice `templates/design/recipes/<recipe>/design-source/tier0-recipe-checks.js`
+   into the mechanism template's `// {{RECIPE_TIER0_CHECKS}}` marker,
+   filling `{{SEMANTIC_COLLECTION_NAME}}` (mechanism) and the recipe's own
+   slots (e.g. `{{KIT_LIBRARY_FILE_KEY}}`) from whatever config is
+   available, or ask the user. Never run the mechanism script alone and
+   call it complete — a recipe's checks are part of the canonical audit,
+   not an optional extra.
 3. Execute it via `use_figma`, passing `{ componentNames: [...] }` for a
    named audit or `{}` for a file-wide sweep.
 4. Report violations grouped by `severity`. For a named audit with any

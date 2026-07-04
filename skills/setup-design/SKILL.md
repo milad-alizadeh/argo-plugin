@@ -99,22 +99,39 @@ triad, that's a `design-upgrade`-style gated bump in the HOST project, not a
 plugin-repo change (this skill does not build upgrade detection, see plan
 §6 risk 2).
 
-## 3a. Append the tdd-guard instructions amendment — with consent, before copying templates
+## 3a. Ignore `design/` in tdd-guard's config — with consent, before copying templates
 
-If the host project has `.claude/tdd-guard/data/instructions.md` (tdd-guard
-installed by `setup-claude`), show the diff and ask before appending
-`templates/design/tdd-guard-instructions-amendment.md`'s "Design-pack
-template lane" text — **never silently edit a file another skill already
-owns.** Do this BEFORE §4's template copy: without it, tdd-guard blocks
-every design-pack template file this skill (and
-`figma-sync`/`figma-create`/`design-upgrade`) copies or assembles into
-`design/` as "premature implementation" — those files are Figma Plugin-API
-scripts that run only inside Figma via `use_figma` and can never be
-exercised by this project's own test runner, so no failing test can ever
-precede them (observed: this blocked template installation entirely in a
-real host project run). If tdd-guard isn't installed yet, or the user
-declines, skip silently — there's nothing to gate yet; the same offer
-recurs harmlessly on a future `setup-design` run once tdd-guard exists.
+If the host project has `.claude/tdd-guard/data/` (tdd-guard installed by
+`setup-claude`), add `design/**` to tdd-guard's `ignorePatterns` in
+`.claude/tdd-guard/data/config.json` — with consent, showing the diff, never
+silently editing a file another skill already owns. Do this BEFORE §4's
+template copy: without it, tdd-guard blocks every design-pack template file
+this skill (and `figma-sync`/`figma-create`/`design-upgrade`) copies or
+assembles into `design/` as "premature implementation" — those files are
+Figma Plugin-API scripts that run only inside Figma via `use_figma` and can
+never be exercised by this project's own test runner, so no failing test can
+ever precede them (observed: this blocked template installation entirely in
+a real host project run).
+
+`ignorePatterns` is a deterministic glob skip evaluated before tdd-guard's
+LLM validation call — not an instruction the guard's model could
+misjudge or override — so it is the correct mechanism here, not tdd-guard's
+free-text custom-instructions file (that file shapes *how* the model judges
+a change; this is a hard bypass for files that were never meant to be judged
+at all). **Custom `ignorePatterns` REPLACE tdd-guard's defaults entirely**
+(per tdd-guard's own docs) — so:
+- If `config.json` doesn't exist yet: create it with tdd-guard's documented
+  defaults (`*.md`, `*.txt`, `*.log`, `*.json`, `*.yml`, `*.yaml`, `*.xml`,
+  `*.html`, `*.css`, `*.erb`, `*.rst`) plus `design/**` appended, and
+  `guardEnabled: true`.
+- If `config.json` already exists: read it, and if `design/**` (or an
+  equivalent pattern already covering it, e.g. `design/**/*`) isn't already
+  in `ignorePatterns`, append it — preserve every other field and pattern
+  verbatim, never regenerate the file from scratch.
+
+If tdd-guard isn't installed yet, or the user declines, skip silently —
+there's nothing to gate yet; the same offer recurs harmlessly on a future
+`setup-design` run once tdd-guard exists.
 
 ## 4. Copy and fill design-pack templates
 
@@ -214,7 +231,6 @@ have a Figma file connected yet.
 List exactly what was written/installed where (mirrors `setup-claude` §9):
 shadcn init result, Storybook/Vitest versions recorded, every template
 copied + its fill values, the path dependency added, whether the testing.md
-amendment landed, whether the tdd-guard instructions amendment landed, and
-the `design/` scaffolding created. Verified by manual dry-run against a
-scratch project only — no host project lives in this repo to install into
-for real.
+amendment landed, whether tdd-guard's `ignorePatterns` was updated, and the
+`design/` scaffolding created. Verified by manual dry-run against a scratch
+project only — no host project lives in this repo to install into for real.

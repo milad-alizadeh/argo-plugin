@@ -54,7 +54,30 @@ breaks for other clones and on the next plugin update). Do the same for
 `figma-design-kit-shadcn-tailwind` when the chosen recipe is
 `shadcn-tailwind-external-kit`. Not a template — a vendored copy plus a real
 `package.json` dependency edit. `skills/setup-claude/SKILL.md` §6c's
-`tdd-guard-playwright` uses the identical vendor-and-relative-`file:` pattern.
+`tdd-guard-playwright` uses the identical `resolveVendorPlan`-driven pattern
+(`workspace:*` on a monorepo host, relative `file:` otherwise).
+
+### Update mode — per-category reconcile strategy (§5a)
+
+When `setup-design` re-runs against a project whose `design/config.json`
+`_meta.setupVersion` is older than the plugin (§0d), it reconciles by category
+rather than re-running the wizard. This table mirrors the skill's §5a so the
+two don't drift:
+
+| Category | Examples | Reconcile strategy |
+|---|---|---|
+| (a) Regenerated template | `tier0-audit.js`, `vrt-walker/*`, `spec-diff` walker, `testing.md` amendment | Re-derive current content, diff vs disk, ask per batch (≤4/AskUserQuestion). A file whose on-disk content ≠ last-derived is hand-edited → conflict prompt (keep/overwrite/merge), never auto-overwrite. |
+| (b) Structured user-config | `design/config.json` | `mergeConfigShape` (design-config-merge): add missing shape keys, preserve every existing value, never delete on-disk-only keys; write `merged` via `JSON.stringify`, report `addedKeys`. |
+| (c) Vendored dirs | `packages/<pkg>` or `design/vendor/<pkg>` | Compare vendored copy's `version` vs plugin's `packages/<pkg>`; on a bump, full-dir re-copy to the `resolveVendorPlan` location. |
+| (d) Foreign-file managed edit | `package.json` deps, tdd-guard `config.json` `ignorePatterns` | Idempotent re-apply of only the managed portion; dep rewrites go through migrations (below). |
+| (e) External Figma state | Semantic-layer seeding | Out of scope for file reconcile — handled by §4a / `design-upgrade`; printed as a pointer, not silently skipped. |
+
+**Migrations (§5a step 1):** `pendingMigrations(_meta.setupVersion)` from
+`setup-migrations` runs first (a stale absolute `file:` dep can break
+`bun install` before diffs run). Migration #1
+(`vendor-figma-design-kit-absolute-path`) rewrites an absolute plugin-cache
+`file:` dep — and, on a workspace host, an off-convention relative
+`design/vendor` dep — to the host's correct vendored form.
 
 **Brownfield conflicts:** if a template contradicts observed reality (e.g. a
 component dir already binds Primitives directly in several places), say so

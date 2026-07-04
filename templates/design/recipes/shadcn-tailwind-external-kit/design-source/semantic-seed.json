@@ -1,0 +1,18 @@
+{
+  "colors": [
+    {
+      "name": "background",
+      "resolvedType": "COLOR",
+      "scopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "modes": { "Light": "{{KIT_VARIABLE_KEY}}", "Dark": "{{KIT_VARIABLE_KEY}}" }
+    }
+  ],
+  "floats": [
+    {
+      "name": "radius-md",
+      "resolvedType": "FLOAT",
+      "scopes": ["CORNER_RADIUS"],
+      "key": "{{KIT_VARIABLE_KEY}}"
+    }
+  ]
+}

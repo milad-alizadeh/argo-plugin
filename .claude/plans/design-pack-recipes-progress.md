@@ -23,6 +23,6 @@ Decisions confirmed before build (2026-07-04):
 | 9 | done | (pending commit) | figma-sync/SKILL.md: step 7 delegates to recipe token-writer.md; steps 2-4 gain baseSource-conditional notes |
 | 10 | done | (pending commit) | figma-create/SKILL.md branches on baseSource for base-instance composition (B3) |
 | 11 | done | (pending commit) | figma-to-code/SKILL.md step 3: tier-1b conditional applicability + updated spec-diff-walker path |
-| 12 | pending | | |
+| 12 | done | (pending commit) | design-upgrade/SKILL.md: baseSource guard clause (this worktree branched before the interim paragraph existed, so authored it fresh here) + updated path/schema references |
 | 13 | pending | | |
 | 14 | pending | | final review before landing |

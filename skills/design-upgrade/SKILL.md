@@ -5,10 +5,18 @@ description: The paired shadcn + Figma kit upgrade (D15) - manual shadcn merge, 
 
 # design-upgrade
 
-**Applies only to projects whose design source is an external kit library
-(`baseSource: external-library` in `design/config.json`).** A same-file or
-no-design-system project has no kit to swap — nothing here applies; stop and
-say so.
+**Applies only to projects whose design source is an external kit library**
+(`design/config.json`'s `recipe`-selected `baseSource == "external-library"`).
+Read `design/config.json`'s `recipe` field first: if the installed recipe's
+`baseSource` is not `external-library`, **stop** and state the alternative
+explicitly (D23):
+
+- **`same-file`:** this is just a normal shadcn upgrade (`shadcn diff` +
+  manual merge) plus editing the local Figma components directly — there is
+  no separate kit file, no Library Swap, and no retired-file-key check to
+  run.
+- **`none`:** no design kit exists to upgrade under this recipe — this
+  skill doesn't apply.
 
 The paired upgrade D15 specifies: shadcn's code side and the Figma kit's
 design side move together, verified at every step — never a silent
@@ -36,8 +44,8 @@ either-side-only bump.
    names against the new kit copy's — Library Swap only works because names
    matched; record any renames the swap silently rode past, since those
    need dependent bindings checked by hand.
-5. **Re-run the congruence gate (tier 1b).** Use
-   `templates/design/spec-diff-walker/base-congruence.walker.spec-diff.js`
+5. **Re-run the congruence gate (tier 1b).** Use the recipe's
+   `design-source/base-congruence.walker.spec-diff.js`
    (already installed) against the newly re-imported kit specs. Any drift
    here that isn't a sanctioned kit patch (`design/kit-patches.json`) is
    either fixed in the vendored merge (step 1) or... continue to step 6.
@@ -49,7 +57,8 @@ either-side-only bump.
    fix — never silently re-add the old waiver under the new version.
 7. **Update `kit.lock`.** New kit version, import date, library file key,
    and fresh freshness metadata (file version/lastModified/sync timestamp,
-   D4), validated against `figma-design-kit`'s `KitLockSchema`.
+   D4), validated against `figma-design-kit`'s `recipes/external-kit`-subpath
+   `KitLockSchema`.
 
 ## Why this order matters
 

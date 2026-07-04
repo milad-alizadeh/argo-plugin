@@ -239,7 +239,7 @@ above; nothing before it depends on the answer.
 | *(new)* | `templates/design/recipes/shadcn-tailwind-external-kit/design-source/kit.lock.example.json` | fills the previously-nonexistent template, shaped per `KitLockSchema` |
 | *(new)* | `templates/design/recipes/shadcn-tailwind-external-kit/code-target/token-writer.md` | extracted from `figma-sync/SKILL.md` step 7's inline prose |
 | *(new)* | `templates/design/recipes/shadcn-tailwind-external-kit/README.md` | recipe manifest: `baseSource: external-library`, `codeTarget: tailwind` |
-| `skills/setup-design/SKILL.md` | **modified** | Figma-usage gate + Professional-plan gate + recipe selection, ahead of the existing install flow |
+| `skills/setup-design/SKILL.md` | **modified** | Figma-usage gate + Professional-plan gate + recipe selection, ahead of the existing install flow; §4 gains the tier0-audit assembly step (splice recipe checks at the `// {{RECIPE_TIER0_CHECKS}}` marker — owned by Slice 7) |
 | `skills/setup-design/templates-reference.md` | **modified** | new recipe paths, `recipe` config field row |
 | `skills/figma-audit/SKILL.md` | **modified** | loads mechanism `tier0-audit.js` + the installed recipe's check module, merges violations |
 | `skills/figma-sync/SKILL.md` | **modified** | branches on `baseSource` for kit-lock/kit-patches steps; token-writer step delegates to the recipe's `token-writer.md` |
@@ -345,10 +345,12 @@ coverage.
   `non-semantic-binding` block (`:56-68`), marshal live `figma.*` node/
   variable objects into the plain-object shapes the pure functions expect,
   call `packages/figma-design-kit/tier0-rules.js`'s eleven functions, and
-  add a **marked recipe-checks injection region** where `setup-design`
-  splices in a call to the active recipe's walker at install time (per
-  X3/F12 — the host project always runs ONE assembled canonical script,
-  never two separately-executed scripts). Create
+  add a **marked recipe-checks injection region** — a single literal marker
+  line, `// {{RECIPE_TIER0_CHECKS}}`, at the point in the walk where recipe
+  checks run — where `setup-design` splices in the active recipe's walker at
+  install time (per X3/F12 — the host project always runs ONE assembled
+  canonical script, never two separately-executed scripts; Slice 7 owns the
+  §4 splice step itself). Create
   `templates/design/recipes/shadcn-tailwind-external-kit/design-source/tier0-recipe-checks.js`
   as the thin walker counterpart: marshals live objects, calls
   `packages/figma-design-kit-shadcn-tailwind`'s three functions.
@@ -446,7 +448,14 @@ this skill's new gate/recipe-selection contract; nothing before it does.
     (Slice 4), upgrade flow — each resolving to files installed from
     `templates/design/recipes/<name>/`.
   - Existing §§1-9 (now renumbered §§1-9 after the new §§0a-0c) proceed
-    unchanged EXCEPT: §7 "Create `design/` scaffolding" becomes conditional
+    unchanged EXCEPT two steps: §4 "Copy and fill design-pack templates"
+    gains the **assembly step** (F12): when installing `tier0-audit.js` into
+    `design/`, replace its `// {{RECIPE_TIER0_CHECKS}}` marker line (Slice 2)
+    with the contents of the chosen recipe's
+    `design-source/tier0-recipe-checks.js` — the installed file is the ONE
+    assembled canonical script, with no unresolved marker left behind (for
+    `baseSource: none` recipes with no checks file, the marker line is simply
+    deleted). And: §7 "Create `design/` scaffolding" becomes conditional
     — only create `kit-patches.json`/`kit.lock` placeholders (now copied
     from the recipe's `design-source/` templates, Slice 1) when the chosen
     recipe's `baseSource` is `external-library`.
@@ -456,7 +465,8 @@ this skill's new gate/recipe-selection contract; nothing before it does.
 ### Slice 8 — `figma-audit/SKILL.md` update (testable: false; per F12)
 - **Files:** modify `skills/figma-audit/SKILL.md` — the skill runs the
   host's **single assembled** `tier0-audit.js` (mechanism base + recipe
-  checks spliced in by `setup-design`, Slice 2) — one script, one
+  checks spliced at Slice 2's marker by `setup-design` §4, Slice 7) — one
+  script, one
   severity-grouped report. When running from the plugin's own templates
   (pre-install), it assembles the same way ad hoc. Never two
   separately-executed audit scripts.

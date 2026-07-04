@@ -1,6 +1,6 @@
 ---
 name: design-upgrade
-description: The paired shadcn + Figma kit upgrade (D15) - manual shadcn merge, kit re-import + Library Swap, post-swap audit, congruence re-gate, waiver invalidation by kitLockVersion, kit.lock update. Use when the user asks to upgrade shadcn/the design kit, or when a new upstream shadcn/kit release needs adopting.
+description: The paired shadcn + Figma kit upgrade (D15) - manual shadcn merge, kit re-import + Library Swap, post-swap audit, congruence re-gate, waiver invalidation by sourceVersion, kit.lock update. Use when the user asks to upgrade shadcn/the design kit, or when a new upstream shadcn/kit release needs adopting.
 ---
 
 # design-upgrade
@@ -41,9 +41,9 @@ either-side-only bump.
    (already installed) against the newly re-imported kit specs. Any drift
    here that isn't a sanctioned kit patch (`design/kit-patches.json`) is
    either fixed in the vendored merge (step 1) or... continue to step 6.
-6. **Waiver invalidation by `kitLockVersion`.** Call
-   `figma-design-kit`'s `invalidateWaivers(waivers, newKitLockVersion)` —
-   any waiver whose `kitLockVersion` no longer matches is dropped. A
+6. **Waiver invalidation by `sourceVersion`.** Call
+   `figma-design-kit`'s `invalidateWaivers(waivers, newSourceVersion)` —
+   any waiver whose `sourceVersion` no longer matches is dropped. A
    dropped waiver that still fails the congruence gate needs either a new,
    freshly-pinned waiver (re-observe the actual current pair) or a real
    fix — never silently re-add the old waiver under the new version.

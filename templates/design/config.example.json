@@ -19,5 +19,9 @@
     "figma": {
       "kitLibraryFileKey": "{{KIT_FILE_KEY}}"
     }
+  },
+  "_meta": {
+    "setupVersion": "{{SETUP_VERSION}}",
+    "managedFiles": []
   }
 }

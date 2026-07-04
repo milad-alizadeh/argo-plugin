@@ -8,15 +8,23 @@
  *
  * Reads the bundled semantic-seed.json (installed alongside this script by
  * setup-design's assembly step, same relative-import convention as
- * tier0-recipe-checks.js's ./kit-patches.json). The seed's `primitives` and
- * `semanticSpacing` sections are project-owned starter data, NOT kit-derived
- * (D10: Primitives are project-local) — derive-semantic-seed.js never
- * regenerates them, only `colors`/`floats`. Nothing in this script hardcodes
- * the spacing scale or the starter token names; a project wanting a
- * different starter scale edits the seed data, never this script.
+ * tier0-recipe-checks.js's ./kit-patches.json) for its project-owned
+ * `primitives`/`semanticSpacing` sections (D10: Primitives are project-local
+ * — never kit-derived). Nothing in this script hardcodes the spacing scale
+ * or the starter token names; a project wanting a different starter scale
+ * edits the seed data, never this script.
+ *
+ * {{DERIVED_SEED_JSON}} — the `{ colors, floats }` object returned moments
+ * earlier by derive-semantic-seed.js running against the kit file, injected
+ * by the invoking skill (setup-design §4a) as this pipeline's in-session
+ * hand-off. NOT read from a committed file — Figma variable keys are
+ * per-copy, so nothing kit-derived is ever committed (semantic-seeding.md
+ * §2 Decision 1); this data is fresh on every seeding run.
  */
 
 import semanticSeed from './semantic-seed.json'
+
+const DERIVED_SEED = JSON.parse('{{DERIVED_SEED_JSON}}')
 
 async function ensurePrimitivesCollection() {
   const collections = await figma.variables.getLocalVariableCollectionsAsync()
@@ -82,7 +90,7 @@ async function importColorVariables(semantic) {
 
   let created = 0
   let skipped = 0
-  for (const entry of semanticSeed.colors ?? []) {
+  for (const entry of DERIVED_SEED.colors ?? []) {
     if (existingNames.has(entry.name)) { skipped += 1; continue }
 
     const variable = figma.variables.createVariable(entry.name, semantic, 'COLOR')
@@ -108,7 +116,7 @@ async function importFloatVariables(semantic) {
 
   let created = 0
   let skipped = 0
-  for (const entry of semanticSeed.floats ?? []) {
+  for (const entry of DERIVED_SEED.floats ?? []) {
     if (existingNames.has(entry.name)) { skipped += 1; continue }
 
     const variable = figma.variables.createVariable(entry.name, semantic, 'FLOAT')

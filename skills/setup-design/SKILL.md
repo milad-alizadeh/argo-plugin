@@ -134,13 +134,25 @@ filled (not still `{{…}}` placeholders). If either is unfilled: skip with a
 printed note — "Semantic seeding needs both file keys configured — run
 `/argo:setup-design` again once they're set, or seed manually later."
 
-If gated in: load `figma:figma-use`, then run
-`design-source/seed-semantic.js` via `use_figma` against the project file,
-passing the (already-derived, committed) `design-source/semantic-seed.json`
-content. Report the created/skipped summary verbatim to the user. This step
-only ever CREATES/imports — it never deletes or renames an existing
-variable, so re-running `setup-design` on an already-seeded file is always
-safe.
+If gated in: load `figma:figma-use`, then run this **two-call pipeline**
+(nothing kit-derived is ever committed — Figma variable keys are per-copy,
+so a static snapshot would break on the first kit re-import):
+
+1. Run `design-source/derive-semantic-seed.js` via `use_figma` against the
+   KIT file (`recipeConfig.figma.kitLibraryFileKey`), injecting its
+   `{{DERIVE_CONFIG_JSON}}` slot with the co-installed
+   `design-source/semantic-seed.json`'s `derive` section verbatim. Capture
+   its returned `{ colors, floats }` — this is fresh, current-copy data,
+   resolved live every run.
+2. Run `design-source/seed-semantic.js` via `use_figma` against the PROJECT
+   file (`figma.projectFileKey`), injecting its `{{DERIVED_SEED_JSON}}` slot
+   with step 1's return value verbatim (the seed's project-owned
+   `primitives`/`semanticSpacing` sections are read by the script itself via
+   its own `./semantic-seed.json` import, no injection needed for those).
+
+Report the created/skipped summary verbatim to the user. This step only ever
+CREATES/imports — it never deletes or renames an existing variable, so
+re-running `setup-design` on an already-seeded file is always safe.
 
 ## 5. Add path dependencies
 

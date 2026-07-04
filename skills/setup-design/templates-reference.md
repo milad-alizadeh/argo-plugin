@@ -32,9 +32,9 @@ unconditionally.
 | `code-target/lint/design-lint.md` | a lint config + component dir exist | `{{COMPONENTS_GLOB}}` ← the project's real components dir glob; `{{PRIMITIVE_TOKEN_PREFIX}}` ← the project's Primitive naming convention |
 | `code-target/token-writer.md` | always (for this recipe) | `{{TOKEN_FILE_PATH}}` ← `config.tokenFilePath` — `figma-sync`'s step 7 delegates to this doc instead of narrating the token-writer inline |
 | `README.md` | reference only, not copied into the host project | states this recipe's `baseSource`/`codeTarget` for setup-design's own recipe-selection bookkeeping |
-| `design-source/derive-semantic-seed.js` | reference only, not copied into the host project | run on-demand via `use_figma` against the kit file to regenerate `semantic-seed.json` — a plugin-repo maintenance script, same category as this recipe's own `README.md` |
-| `design-source/semantic-seed.json` | recipe's `baseSource == "external-library"` | none — copied byte-for-byte, this is data, not a `{{…}}` template |
-| `design-source/seed-semantic.js` | recipe's `baseSource == "external-library"` AND both Figma file keys configured (`config.figma.projectFileKey`, `config.recipeConfig.figma.kitLibraryFileKey`) — mirrors the §4a gate | reads the co-installed `semantic-seed.json`, no `{{…}}` slots of its own |
+| `design-source/derive-semantic-seed.js` | recipe's `baseSource == "external-library"` (installed alongside the seeder — §4a runs it against the kit file on EVERY seeding, and `design-upgrade` can rerun it after a Library Swap) | `{{DERIVE_CONFIG_JSON}}` ← the co-installed `semantic-seed.json`'s `derive` section (`excludeNames`/`roleScopes`), injected fresh on every invocation, not just at initial install |
+| `design-source/semantic-seed.json` | recipe's `baseSource == "external-library"` | none — copied byte-for-byte; project-owned starter data + derivation config only, NO kit-derived keys (edit the data to change the project's starter scale or role-scope table) |
+| `design-source/seed-semantic.js` | recipe's `baseSource == "external-library"` AND both Figma file keys configured (`config.figma.projectFileKey`, `config.recipeConfig.figma.kitLibraryFileKey`) — mirrors the §4a gate | reads the co-installed `semantic-seed.json` for its project-owned sections; `{{DERIVED_SEED_JSON}}` ← the `derive-semantic-seed.js` call's return value from the same §4a pipeline run |
 
 **Package dependencies:** add `figma-design-kit` as a path dependency
 (mirrors `skills/setup-claude/SKILL.md`'s `tdd-guard-playwright`

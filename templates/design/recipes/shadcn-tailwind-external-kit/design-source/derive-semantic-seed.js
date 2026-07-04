@@ -1,15 +1,35 @@
 /**
- * Derives semantic-seed.json's content from the published shadcn kit library
- * file (D19/D23-F3). RUNS IN THE KIT FILE, NOT THE PROJECT FILE — this is a
- * maintenance script, run on-demand via `use_figma` against the kit's own
- * fileKey, never installed into a host project (templates-reference.md marks
- * it "reference only").
+ * Derives the live colors/floats data setup-design's §4a seeding pipeline
+ * hands to seed-semantic.js (D19/D23-F3). RUNS IN THE KIT FILE, NOT THE
+ * PROJECT FILE — installed alongside the seeder (baseSource ==
+ * "external-library"), invoked via `use_figma` against the CONFIGURED kit
+ * file key (`recipeConfig.figma.kitLibraryFileKey`) on EVERY seeding run,
+ * and rerunnable by `design-upgrade` after a Library Swap.
  *
  * Why a separate file/call: getLocalVariableCollectionsAsync() only resolves
  * a file's OWN local collections — the teamLibrary API visible from the
- * project file exposes library names/keys but not valuesByMode/alias targets
- * (semantic-seeding.md's spike Finding 1). Deriving the seed therefore
- * requires a live use_figma call scoped to the kit file itself.
+ * project file exposes library names/keys but not valuesByMode/alias targets.
+ * Deriving therefore requires a live use_figma call scoped to the kit file.
+ *
+ * Why nothing kit-derived is ever committed (semantic-seeding.md §2 Decision
+ * 1): Figma variable KEYS are per-copy — every team's duplicate of the
+ * community kit mints new variables with new keys, and a design-upgrade
+ * re-import mints a new copy again. A committed key snapshot breaks on the
+ * first upgrade and is useless to any project whose kit copy isn't the one
+ * it was derived from. The stable cross-copy contract is NAMES (the `mode`
+ * collection shape, variable names, the exclusion list, the role-scope
+ * patterns) — those survive duplication/re-import; keys are resolved fresh
+ * on every run. This script therefore RETURNS its { colors, floats } dump
+ * in-session — it never writes a file — and the invoking skill hands that
+ * return value to seed-semantic.js moments later in the same pipeline run.
+ *
+ * {{DERIVE_CONFIG_JSON}} — a JSON literal of this recipe's
+ *   design-source/semantic-seed.json `derive` section
+ *   (`{ excludeNames: string[], roleScopes: { exact, suffixes, prefixes } }`),
+ *   injected by the invoking skill on every invocation — a use_figma script
+ *   can't read project files itself, so this config can't be a static
+ *   `import` like semantic-seed.json's project-owned sections are in
+ *   seed-semantic.js.
  *
  * Kit-side shape (LIVE-CONFIRMED against fileKey 4lPUPl8OUan4i90Bc2ZMXe,
  * semantic-seeding.md Slice 8):
@@ -24,41 +44,29 @@
  *   number scale (0, 1, 2, ... 9999) — NOT the named semantic floats. It is
  *   never dumped wholesale; only the named FLOAT entries of the `mode`
  *   collection are captured.
- * - This script writes the seed's per-mode keys as the CANONICAL `Light`/
- *   `Dark` names (matching seed-semantic.js's own Semantic collection mode
- *   names), not the kit's raw `light mode`/`dark mode` — mapped by fuzzy
- *   substring match ("light"/"dark") on the kit's mode name.
+ * - This script returns per-mode keys under the CANONICAL `Light`/`Dark`
+ *   names (matching seed-semantic.js's own Semantic collection mode names),
+ *   not the kit's raw `light mode`/`dark mode` — mapped by fuzzy substring
+ *   match ("light"/"dark") on the kit's mode name.
  *
- * Output: writes semantic-seed.json's shape (see that file for the schema).
+ * Confirmed live (Slice 8): the return shape is 31 COLOR entries (per-mode
+ * keys) + 12 FLOAT entries (single key) = 43 total (47 minus the 4
+ * exclusions) — no real variable name falls through to the "no role-scope
+ * mapping" throw below.
  */
 
-// Demo-only variables shipped in the stock kit that are not part of the real
-// semantic set (spike Finding 1, confirmed live) — excluded from the dump.
-const DEMO_ARTIFACT_NAMES = new Set([
-  'background-color',
-  'semantic-background',
-  'semantic-border',
-  'semantic-foreground'
-])
+const DERIVE_CONFIG = JSON.parse('{{DERIVE_CONFIG_JSON}}')
+const EXCLUDE_NAMES = new Set(DERIVE_CONFIG.excludeNames)
 
-/**
- * Role -> scopes mapping (spike Finding 2). LIVE-CONFIRMED against every one
- * of the 31 real semantic color names + 12 float names in the kit's `mode`
- * collection (semantic-seeding.md Slice 8, fileKey 4lPUPl8OUan4i90Bc2ZMXe) —
- * no name in the real file falls through to the null/throw case below.
- */
+/** Match by exact name, then suffix, then prefix — data-driven, no hardcoded names here. */
 function roleScopesFor(name) {
-  if (['background', 'card', 'popover', 'sidebar'].includes(name)) return ['FRAME_FILL', 'SHAPE_FILL']
-  if (name === 'foreground' || name.endsWith('-foreground')) return ['TEXT_FILL', 'SHAPE_FILL']
-  if ([
-    'primary', 'secondary', 'muted', 'accent', 'destructive',
-    'sidebar-primary', 'sidebar-accent'
-  ].includes(name)) return ['FRAME_FILL', 'SHAPE_FILL', 'TEXT_FILL']
-  if (['border', 'ring', 'sidebar-border', 'sidebar-ring'].includes(name)) return ['STROKE_COLOR']
-  if (name === 'input') return ['STROKE_COLOR', 'FRAME_FILL']
-  if (name.startsWith('chart-')) return ['SHAPE_FILL', 'STROKE_COLOR']
-  if (name.startsWith('radius-')) return ['CORNER_RADIUS']
-  if (name === 'stroke-width' || name === 'border-width') return ['STROKE_FLOAT']
+  if (DERIVE_CONFIG.roleScopes.exact[name]) return DERIVE_CONFIG.roleScopes.exact[name]
+  for (const { suffix, scopes } of DERIVE_CONFIG.roleScopes.suffixes ?? []) {
+    if (name.endsWith(suffix)) return scopes
+  }
+  for (const { prefix, scopes } of DERIVE_CONFIG.roleScopes.prefixes ?? []) {
+    if (name.startsWith(prefix)) return scopes
+  }
   return null
 }
 
@@ -104,11 +112,11 @@ async function deriveSemanticSeed() {
   for (const variableId of collection.variableIds) {
     const variable = await figma.variables.getVariableByIdAsync(variableId)
     if (!variable) continue
-    if (DEMO_ARTIFACT_NAMES.has(variable.name)) continue
+    if (EXCLUDE_NAMES.has(variable.name)) continue
 
     const scopes = roleScopesFor(variable.name)
     if (!scopes) {
-      throw new Error(`derive-semantic-seed: no role-scope mapping for variable "${variable.name}" — extend roleScopesFor and re-run`)
+      throw new Error(`derive-semantic-seed: no role-scope mapping for variable "${variable.name}" — extend semantic-seed.json's derive.roleScopes and re-run`)
     }
 
     if (variable.resolvedType === 'COLOR') {

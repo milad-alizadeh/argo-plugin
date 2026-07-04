@@ -13,10 +13,14 @@ node creation, variable binding, and variant-set assembly.
 
 ## Authoring rules (what the self-audit checks)
 
-- **Base instances + Semantic bindings only.** Compose from the shadcn kit's
-  base component instances; every fill/stroke/radius/type binds the
-  project's Semantic collection — never a Primitive directly (§8's
-  library-source distinction), never a literal.
+- **Base instances (when the recipe has them) + Semantic bindings only.**
+  When the installed recipe's `baseSource` is `external-library` or
+  `same-file` with vendored base code, compose from those base component
+  instances. Under `baseSource: none` — no base library exists to compose
+  from — build components from scratch using Semantic bindings only, no
+  base instances to reference. Either way: every fill/stroke/radius/type
+  binds the project's Semantic collection — never a Primitive directly
+  (§8's library-source distinction), never a literal.
 - **Auto Layout** on every frame-like container — no absolute positioning.
 - **Semantic names** — never Figma's auto-generated `Frame 12`/`Rectangle 4`
   defaults.

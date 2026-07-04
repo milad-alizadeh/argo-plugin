@@ -99,6 +99,23 @@ triad, that's a `design-upgrade`-style gated bump in the HOST project, not a
 plugin-repo change (this skill does not build upgrade detection, see plan
 §6 risk 2).
 
+## 3a. Append the tdd-guard instructions amendment — with consent, before copying templates
+
+If the host project has `.claude/tdd-guard/data/instructions.md` (tdd-guard
+installed by `setup-claude`), show the diff and ask before appending
+`templates/design/tdd-guard-instructions-amendment.md`'s "Design-pack
+template lane" text — **never silently edit a file another skill already
+owns.** Do this BEFORE §4's template copy: without it, tdd-guard blocks
+every design-pack template file this skill (and
+`figma-sync`/`figma-create`/`design-upgrade`) copies or assembles into
+`design/` as "premature implementation" — those files are Figma Plugin-API
+scripts that run only inside Figma via `use_figma` and can never be
+exercised by this project's own test runner, so no failing test can ever
+precede them (observed: this blocked template installation entirely in a
+real host project run). If tdd-guard isn't installed yet, or the user
+declines, skip silently — there's nothing to gate yet; the same offer
+recurs harmlessly on a future `setup-design` run once tdd-guard exists.
+
 ## 4. Copy and fill design-pack templates
 
 Copy from `${CLAUDE_PLUGIN_ROOT}/templates/design/` into the host project,
@@ -197,6 +214,7 @@ have a Figma file connected yet.
 List exactly what was written/installed where (mirrors `setup-claude` §9):
 shadcn init result, Storybook/Vitest versions recorded, every template
 copied + its fill values, the path dependency added, whether the testing.md
-amendment landed, and the `design/` scaffolding created. Verified by manual
-dry-run against a scratch project only — no host project lives in this repo
-to install into for real.
+amendment landed, whether the tdd-guard instructions amendment landed, and
+the `design/` scaffolding created. Verified by manual dry-run against a
+scratch project only — no host project lives in this repo to install into
+for real.

@@ -6,8 +6,9 @@ paths:
 # Design-pack static lint (tier 4)
 
 This project's own design-system rule already forbids raw hex/rgb/hsl colors
-and arbitrary `[…]` values everywhere — that rule stands unchanged. The
-design pack adds exactly one more rule, scoped to components:
+everywhere — that rule stands unchanged (mechanism-level, D10's "no raw hex"
+example). The design pack adds two more rules, scoped to components and
+specific to this recipe's Tailwind code-target:
 
 ## No direct Primitive-variable references in components
 
@@ -27,7 +28,7 @@ the reference silently stops responding to theme changes.
 - Base/kit components are exempt — they legitimately bind kit variables
   directly (the tier-0 audit's library-source distinction, §8).
 
-## Example ESLint config snippet
+### Example ESLint config snippet
 
 ```js
 // eslint.config.js — add alongside this project's existing no-raw-hex rule
@@ -48,3 +49,36 @@ the reference silently stops responding to theme changes.
 Adjust `{{PRIMITIVE_TOKEN_PREFIX}}` to this project's actual Primitive
 naming convention (e.g. `--primitive-`, `primitive-`) — filled by
 `/argo:setup-design` from `design/config.json`.
+
+## No arbitrary `[…]` Tailwind values in components
+
+Arbitrary-value syntax (`className="w-[13px]"`, `bg-[#3366ff]`) bypasses the
+token system exactly the way a raw hex literal would — but the syntax itself
+is Tailwind-specific, so it can't live in the host's generic design-system
+rule and belongs to this code-target instead (D23's own canonical example of
+a target-owned rule).
+
+- **Never** use a Tailwind arbitrary-value bracket (`[…]`) inside
+  `className`/`class` string literals in component source — every spacing,
+  color, radius, or typography value must resolve through a Tailwind
+  theme token (which in turn traces to a Semantic variable).
+- A missing token is a signal to add the Semantic/Tailwind-theme mapping,
+  not to reach for an arbitrary value as a shortcut.
+
+### Example ESLint config snippet
+
+```js
+// eslint.config.js — add alongside the Primitive-reference rule above
+{
+  files: ['{{COMPONENTS_GLOB}}'],
+  rules: {
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: 'Literal[value=/\\[[^\\]]+\\]/]',
+        message: 'No arbitrary […] Tailwind values in components — resolve through a theme token instead.'
+      }
+    ]
+  }
+}
+```

@@ -1,0 +1,8 @@
+{
+  "kitVersion": "{{KIT_VERSION}}",
+  "importDate": "{{DATE}}",
+  "libraryFileKey": "{{KIT_FILE_KEY}}",
+  "fileVersion": "{{FILE_VERSION}}",
+  "lastModified": "{{ISO_TIMESTAMP}}",
+  "syncTimestamp": "{{ISO_TIMESTAMP}}"
+}

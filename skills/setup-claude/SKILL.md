@@ -113,9 +113,12 @@ Ask ONE question: "Solo maintainer, or does this project have reviewers?" Then w
 
 - `"merge"` (solo): `argo:integrator` lands finished branches straight onto the
   default branch — no PR to self-review. The gate is the work itself: gated
-  builds run typecheck/tests/e2e per slice (receipt hooks), and the integrator
-  verifies before pushing. No pre-push hook re-runs the suite — that's pure
-  friction on top of checks that already passed.
+  builds run scoped verification per slice and the full suite (incl. e2e) at
+  checkpoint and final review — the commit gates check receipts, they don't
+  run tests — and the integrator verifies before pushing. No pre-push hook
+  re-runs the suite. **Recommend CI for merge-mode projects unconditionally**:
+  with no PR and no hook, work landed outside a gated build has no
+  author-independent check at all.
 - `"pr"` (team, and the default when the file is absent): the classic push-branch +
   open-PR flow.
 
@@ -131,12 +134,15 @@ whom it's written** — layered, treating auto-fixable (format) differently from
   (auto-loaded, matcher `Edit|Write`) runs the project's own `prettier` on each touched
   file. No install needed here — it activates with the plugin. (No project prettier → it
   no-ops silently.)
-- **Tests/e2e = gated builds, not git hooks.** Full verification runs per slice inside
-  gated builds (receipt hooks) and again at the integrator's final verification. Never
-  install a pre-push suite that re-runs it — redundant for gated work, slow for everything
-  else (e2e is uncached), and bypassable anyway. The author-agnostic backstop is a **CI
-  required status check on the protected branch** (`turbo run typecheck lint test`) where
-  the project has CI or a team; recommend adding CI when the project grows one.
+- **Tests/e2e = gated builds, not git hooks.** Gated builds run scoped verification per
+  slice and the full suite (incl. e2e) at checkpoint and final review; the integrator
+  re-verifies before landing. Never install a pre-push suite that re-runs it — redundant
+  for gated work, slow for everything else (e2e is uncached), and bypassable anyway. The
+  author-agnostic backstop is a **CI required status check on the protected branch**
+  (`turbo run typecheck lint test`) — recommend it for every project, and say so
+  explicitly for merge-mode/solo ones. **Disclose the residual plainly during setup:**
+  tests are enforced only during gated builds and integrator landings; direct pushes
+  outside those flows are unverified until CI exists.
 - **Fast pre-commit only.** Copy `${CLAUDE_PLUGIN_ROOT}/templates/lefthook.yml`
   to the project root and `${CLAUDE_PLUGIN_ROOT}/templates/lefthookrc` to `.lefthookrc`
   (the `rc:` PATH shim — GUI git clients like VS Code spawn hooks with launchd's minimal

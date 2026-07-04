@@ -5,6 +5,11 @@ description: The paired shadcn + Figma kit upgrade (D15) - manual shadcn merge, 
 
 # design-upgrade
 
+**Applies only to projects whose design source is an external kit library
+(`baseSource: external-library` in `design/config.json`).** A same-file or
+no-design-system project has no kit to swap — nothing here applies; stop and
+say so.
+
 The paired upgrade D15 specifies: shadcn's code side and the Figma kit's
 design side move together, verified at every step — never a silent
 either-side-only bump.

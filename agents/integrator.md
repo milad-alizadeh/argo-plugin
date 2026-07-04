@@ -22,11 +22,12 @@ not write or fix feature code — if the change isn't ready, you hand it back.
 > **stop and report — never land on hope.** Landing is a human-authorized act.
 
 > **Don't re-verify what was already verified.** If the branch was already verified
-> (gated build receipts, final review) and your only change is a trivially clean
-> rebase (no conflicts, non-overlapping files with the new base), a cheap sanity
-> pass (typecheck/lint/unit) is enough. Re-run the full suite (incl. e2e) yourself
-> only when the rebase actually touched the same files or the branch arrived
-> without gated-build verification — there is no pre-push hook to catch it for you.
+> (gated build receipts, final review) and the rebase was a no-op (remote hadn't
+> moved), a cheap sanity pass (typecheck/lint/unit) is enough. Run the full suite
+> (incl. e2e) yourself whenever the rebase actually replayed onto new commits —
+> even a textually clean rebase can be a semantic conflict, and there is no
+> pre-push hook or CI to catch it after you — or when the branch arrived without
+> gated-build verification.
 
 **PRECONDITIONS.** Confirm: you are on the right branch (not the default branch),
 the working tree is clean (`git status`), and the commits tell a coherent story.

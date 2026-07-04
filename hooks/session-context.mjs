@@ -72,6 +72,35 @@ function setupNudge(cwd) {
   return ''
 }
 
+/**
+ * Design-pack lifecycle nudge — the design pack owns its own state in
+ * design/config.json's `_meta` (§2a Option B), independent of setup-claude's
+ * argo-config.json. Silent when the design pack was never installed (no
+ * design/config.json) — unlike the setup-claude nudge, absence here is not a
+ * "you forgot to set up" signal.
+ */
+function designSetupNudge(cwd) {
+  if (!cwd) return ''
+  const configPath = join(cwd, 'design', 'config.json')
+  if (!existsSync(configPath)) return '' // design pack not installed — nothing to nudge
+  try {
+    const config = JSON.parse(readFileSync(configPath, 'utf8'))
+    const pluginVersion = JSON.parse(
+      readFileSync(new URL('../.claude-plugin/plugin.json', import.meta.url), 'utf8')
+    ).version
+    const setupVersion = config?._meta?.setupVersion
+    if (!setupVersion) {
+      return `\n\nSETUP: this project's design pack predates version tracking — run /argo:setup-design to adopt it (adds _meta.setupVersion + managedFiles; touches only design-pack files).`
+    }
+    if (pluginVersion && setupVersion !== pluginVersion) {
+      return `\n\nSETUP: the design pack was set up with argo v${setupVersion}; the plugin is now v${pluginVersion} — run /argo:setup-design to review updates (touches only design-pack files).`
+    }
+  } catch {
+    // Unreadable config or manifest — stay quiet; the card must never break a session.
+  }
+  return ''
+}
+
 function main() {
   let raw = ''
   try {
@@ -91,7 +120,7 @@ function main() {
     JSON.stringify({
       hookSpecificOutput: {
         hookEventName: 'SessionStart',
-        additionalContext: CARD + setupNudge(hook.cwd)
+        additionalContext: CARD + setupNudge(hook.cwd) + designSetupNudge(hook.cwd)
       }
     })
   )

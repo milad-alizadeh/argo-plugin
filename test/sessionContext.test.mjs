@@ -117,3 +117,65 @@ describe('session-context — setup lifecycle nudges', () => {
     }
   })
 })
+
+describe('session-context — design-pack lifecycle nudge', () => {
+  const pluginVersion = () =>
+    JSON.parse(readFileSync(fileURLToPath(new URL('../.claude-plugin/plugin.json', import.meta.url)), 'utf8')).version
+
+  it('stays silent when the project has no design/config.json (design pack never installed)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'argo-dnudge-'))
+    try {
+      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
+      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
+      expect(context).not.toContain('/argo:setup-design')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('nudges /argo:setup-design when design/config.json predates _meta tracking', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'argo-dnudge-'))
+    try {
+      mkdirSync(join(dir, 'design'), { recursive: true })
+      writeFileSync(join(dir, 'design', 'config.json'), JSON.stringify({ recipe: 'shadcn-tailwind-external-kit' }))
+      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
+      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
+      expect(context).toContain('/argo:setup-design')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('nudges when design/config.json _meta.setupVersion is older than the plugin, naming the old version', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'argo-dnudge-'))
+    try {
+      mkdirSync(join(dir, 'design'), { recursive: true })
+      writeFileSync(
+        join(dir, 'design', 'config.json'),
+        JSON.stringify({ recipe: 'x', _meta: { setupVersion: '0.1.0', managedFiles: [] } })
+      )
+      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
+      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
+      expect(context).toContain('/argo:setup-design')
+      expect(context).toContain('0.1.0')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('stays silent when design/config.json _meta.setupVersion matches the plugin version', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'argo-dnudge-'))
+    try {
+      mkdirSync(join(dir, 'design'), { recursive: true })
+      writeFileSync(
+        join(dir, 'design', 'config.json'),
+        JSON.stringify({ recipe: 'x', _meta: { setupVersion: pluginVersion(), managedFiles: [] } })
+      )
+      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
+      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
+      expect(context).not.toContain('/argo:setup-design')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})

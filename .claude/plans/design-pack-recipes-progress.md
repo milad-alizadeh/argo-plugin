@@ -17,7 +17,8 @@ Decisions confirmed before build (2026-07-04):
 | 4 | done | (pending commit) | extracted token-writer.md from figma-sync step 7 |
 | 5 | done | (pending commit) | tier-1b conditional note; also fixed the stale lint-file path reference (moved in Slice 3) |
 | 6 | done | (pending commit) | templates-reference.md updated for recipe paths/install-when; also authored the recipe's README.md manifest (disposition-table item with no assigned slice in the plan) |
-| 7 | done | (pending commit) | setup-design/SKILL.md: §0a Figma gate, §0b Professional-plan gate (F10), §0c recipe selection; §4/§5/§7 made recipe-conditional — checkpoint review next |
+| 7 | done | 91a7c83 | setup-design/SKILL.md: §0a Figma gate, §0b Professional-plan gate (F10), §0c recipe selection; §4/§5/§7 made recipe-conditional |
+| 7-fix | done | (pending commit) | Checkpoint review (Slices 0-7) verdict: FAIL — kit-patches-conformance was implemented+tested but never wired into tier0-audit.js (dead code), and figma-audit/SKILL.md:24's doc/code mismatch was still unresolved. Fixed: tier0-audit.js now calls runKitPatchesConformance once per audit (file-wide, via a documented TODO-marked collectModifiedKitCopyNodes() stub — Figma-sandbox-only detection, proven at Slice 14 per existing precedent). Also realigned the splice mechanism to the plan amendment pulled in from main (cherry-picked 49af9a7): single `// {{RECIPE_TIER0_CHECKS}}` marker line, verbatim-content splice by setup-design §4, not an import. Non-blocking finding also fixed: nonSemanticBindingViolation's message restored SEMANTIC_COLLECTION_NAME context (was hardcoded "non-Semantic" after extraction). |
 | 8 | pending | | |
 | 9 | pending | | |
 | 10 | pending | | |

@@ -12,11 +12,14 @@
  * file) or Semantic (locally defined, has a collection) — anything else is a
  * non-Semantic binding outside the kit library.
  */
-export function nonSemanticBindingViolation(variable, kitLibraryFileKey) {
+export function nonSemanticBindingViolation(variable, kitLibraryFileKey, semanticCollectionName = 'Semantic') {
   const isKitSourced = Boolean(variable.remote && variable.key?.startsWith(kitLibraryFileKey))
   const isSemantic = Boolean(variable.variableCollectionId) && !isKitSourced
   if (!isKitSourced && !isSemantic) {
-    return { rule: 'non-semantic-binding', detail: 'bound to a non-Semantic variable outside the kit library' }
+    return {
+      rule: 'non-semantic-binding',
+      detail: `bound to a non-${semanticCollectionName} variable outside the kit library`
+    }
   }
   return null
 }

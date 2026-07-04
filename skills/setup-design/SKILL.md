@@ -107,9 +107,14 @@ filling every `{{…}}` slot per `skills/setup-design/templates-reference.md`:
 `gate-wiring.md`, `config.example.json` → `design/config.json` — always.
 Then assemble `tier0-audit.js` (into `design/`, so
 `figma-audit`/`figma-sync`/`figma-create` read the project's own assembled
-copy rather than the plugin template): splice the chosen recipe's
-`design-source/tier0-recipe-checks.js` into the mechanism script's marked
-injection region (F12/X3 — ONE canonical script, never two). Install the
+copy rather than the plugin template): replace its
+`// {{RECIPE_TIER0_CHECKS}}` marker line verbatim with the chosen recipe's
+`design-source/tier0-recipe-checks.js` file content (the splice point is at
+module top level, so the recipe file's own `import`s survive intact) —
+the installed file is the ONE assembled canonical script (F12/X3), with no
+unresolved marker left behind. For a `baseSource: none` recipe with no
+checks file, delete the marker line instead of leaving it unresolved.
+Install the
 chosen recipe's remaining templates per their `templates-reference.md`
 install-when conditions: `design-source/base-congruence.walker.spec-diff.js`
 + `kit-patches.example.json` + `kit.lock.example.json` (only when the

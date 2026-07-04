@@ -25,6 +25,14 @@ describe('nonSemanticBindingViolation', () => {
       detail: 'bound to a non-Semantic variable outside the kit library'
     })
   })
+
+  it('uses the project-configured Semantic collection name in the message', () => {
+    const variable = { remote: false, key: 'local:1:2', variableCollectionId: null }
+    expect(nonSemanticBindingViolation(variable, KIT_FILE_KEY, 'Theme')).toEqual({
+      rule: 'non-semantic-binding',
+      detail: 'bound to a non-Theme variable outside the kit library'
+    })
+  })
 })
 
 describe('retiredFileKeyBindingViolation', () => {

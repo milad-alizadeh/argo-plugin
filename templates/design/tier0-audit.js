@@ -16,12 +16,16 @@
  * `hard` fails the calling skill loud (D8); `advisory` is a file-wide sweep
  * finding surfaced but not blocking (e.g. un-synced frames).
  *
- * --- RECIPE-CHECKS INJECTION REGION ---
- * /argo:setup-design splices the installed recipe's tier0-recipe-checks.js
- * import + call into the marked region below, so the host project always
- * runs ONE assembled canonical script (X3/F12) — never two separately-
- * executed audit scripts. When no recipe is installed (baseSource: none),
- * the region is left empty.
+ * --- RECIPE-CHECKS SPLICE MARKER ---
+ * /argo:setup-design's §4 assembly step replaces the single marker line below
+ * with the VERBATIM contents of the chosen recipe's design-source/
+ * tier0-recipe-checks.js (its own `import`s survive intact since the splice
+ * point is at module top level) — so the host project's installed
+ * tier0-audit.js is always ONE assembled canonical script (X3/F12), never
+ * two separately-executed files. For a `baseSource: none` recipe with no
+ * checks file, the marker line is simply deleted, leaving
+ * runRecipeTier0Checks/runKitPatchesConformance undefined — the guarded
+ * calls below no-op in that case.
  */
 
 import {
@@ -40,9 +44,7 @@ import {
 
 const SEMANTIC_COLLECTION_NAME = '{{SEMANTIC_COLLECTION_NAME}}'
 
-// --- RECIPE-CHECKS INJECTION REGION: imports ---
-// import { runRecipeTier0Checks } from './tier0-recipe-checks.js'
-// --- end region ---
+// {{RECIPE_TIER0_CHECKS}}
 
 async function auditNode(node, { hard }) {
   const violations = []
@@ -87,9 +89,11 @@ async function auditNode(node, { hard }) {
     if (storyScope) report(storyScope.rule, storyScope.detail)
   }
 
-  // --- RECIPE-CHECKS INJECTION REGION: per-node call ---
-  // violations.push(...(await runRecipeTier0Checks(node, { hard })))
-  // --- end region ---
+  // Recipe-owned per-node checks (e.g. non-semantic-binding, retired-file-key-binding)
+  // — undefined for a baseSource: none recipe with no checks spliced above.
+  if (typeof runRecipeTier0Checks === 'function') {
+    violations.push(...(await runRecipeTier0Checks(node, { hard })))
+  }
 
   return violations
 }
@@ -121,7 +125,31 @@ async function runTier0Audit(options = {}) {
     }
   }
 
+  // Recipe-owned file-wide check (kit-patches-conformance): runs once per
+  // audit, not per node — undefined for a baseSource: none recipe.
+  if (typeof runKitPatchesConformance === 'function') {
+    const modifiedNodes = await collectModifiedKitCopyNodes()
+    violations.push(...runKitPatchesConformance(modifiedNodes))
+  }
+
   return violations
+}
+
+/**
+ * Recipe-owned file-wide checks (kit-patches-conformance) need the set of
+ * kit-copy nodes modified since import, not a per-node predicate — this
+ * marshals that set for whichever recipe's runKitPatchesConformance is
+ * spliced in above.
+ *
+ * TODO(figma-sync): a live-Figma-session-only concern (mirrors the existing
+ * TODOs in base-congruence.walker.spec-diff.js for CDP-forced pseudo-states)
+ * — the concrete "modified since import" signal (a stored per-node
+ * content hash compared against kit.lock's syncTimestamp, or an explicit
+ * plugin-data dirty marker) is proven at Slice 14's live-file verification,
+ * not authored blind here.
+ */
+async function collectModifiedKitCopyNodes() {
+  return []
 }
 
 runTier0Audit

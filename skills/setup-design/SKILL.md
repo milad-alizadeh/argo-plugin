@@ -125,6 +125,23 @@ where each walker directory should live (offer a sane default, e.g.
 `test/vrt/`, `test/spec-diff/`) if the host project has no obvious
 convention.
 
+## 4a. Seed the Semantic layer
+
+Gated on: the chosen recipe (§0c) is `shadcn-tailwind-external-kit` (i.e.
+`baseSource == "external-library"`) AND `design/config.json`'s
+`figma.projectFileKey` and `recipeConfig.figma.kitLibraryFileKey` are both
+filled (not still `{{…}}` placeholders). If either is unfilled: skip with a
+printed note — "Semantic seeding needs both file keys configured — run
+`/argo:setup-design` again once they're set, or seed manually later."
+
+If gated in: load `figma:figma-use`, then run
+`design-source/seed-semantic.js` via `use_figma` against the project file,
+passing the (already-derived, committed) `design-source/semantic-seed.json`
+content. Report the created/skipped summary verbatim to the user. This step
+only ever CREATES/imports — it never deletes or renames an existing
+variable, so re-running `setup-design` on an already-seeded file is always
+safe.
+
 ## 5. Add path dependencies
 
 Mirrors `skills/setup-claude/SKILL.md` §6c's tdd-guard-playwright

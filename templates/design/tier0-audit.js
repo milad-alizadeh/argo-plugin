@@ -39,14 +39,15 @@ import {
   variantNamingViolations,
   darkCopyViolation,
   implicitLineHeightViolation,
-  storyUrlScopeViolation
+  storyUrlScopeViolation,
+  gapPaddingSpacingViolations
 } from 'figma-design-kit'
 
 const SEMANTIC_COLLECTION_NAME = '{{SEMANTIC_COLLECTION_NAME}}'
 
 // {{RECIPE_TIER0_CHECKS}}
 
-async function auditNode(node, { hard }) {
+async function auditNode(node, { hard, spacingScale }) {
   const violations = []
 
   const report = (rule, detail) => {
@@ -62,6 +63,20 @@ async function auditNode(node, { hard }) {
 
   const autoLayout = missingAutoLayoutViolation(node)
   if (autoLayout) report(autoLayout.rule, autoLayout.detail)
+
+  if ('layoutMode' in node) {
+    const gapAndPadding = []
+    const fields = node.layoutMode === 'NONE'
+      ? ['paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom']
+      : ['itemSpacing', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom']
+    for (const field of fields) {
+      if (!(field in node)) continue
+      gapAndPadding.push(await marshalGapPaddingField(node, field))
+    }
+    for (const v of gapPaddingSpacingViolations({ layoutMode: node.layoutMode, gapAndPadding }, spacingScale)) {
+      report(v.rule, v.detail)
+    }
+  }
 
   if (node.type === 'INSTANCE') {
     const main = await node.getMainComponentAsync()
@@ -98,6 +113,25 @@ async function auditNode(node, { hard }) {
   return violations
 }
 
+/**
+ * Marshals a single Auto Layout gap/padding field (D24). boundVariables for a
+ * number property is a single { id } object, not an array (unlike fills/
+ * strokes) — resolved and marshaled explicitly, field by field, same
+ * convention as tier0-recipe-checks.js (remote/key/variableCollectionId are
+ * prototype getters, not own properties, so never spread a live Variable).
+ */
+async function marshalGapPaddingField(node, field) {
+  const value = node[field]
+  const bound = node.boundVariables?.[field]
+  if (!bound?.id) return { field, value, bound: false }
+
+  const variable = await figma.variables.getVariableByIdAsync(bound.id)
+  const collection = variable?.variableCollectionId
+    ? await figma.variables.getVariableCollectionByIdAsync(variable.variableCollectionId)
+    : null
+  return { field, value, bound: true, collectionName: collection?.name ?? null }
+}
+
 async function walk(node, opts, out) {
   out.push(...(await auditNode(node, opts)))
   if ('children' in node) {
@@ -113,15 +147,16 @@ async function walk(node, opts, out) {
 async function runTier0Audit(options = {}) {
   const { componentNames } = options
   const violations = []
+  const spacingScale = await collectPrimitivesSpacingScale()
 
   if (componentNames?.length) {
     for (const name of componentNames) {
       const matches = figma.root.findAll((n) => n.name === name && (n.type === 'COMPONENT' || n.type === 'COMPONENT_SET'))
-      for (const match of matches) await walk(match, { hard: true }, violations)
+      for (const match of matches) await walk(match, { hard: true, spacingScale }, violations)
     }
   } else {
     for (const page of figma.root.children) {
-      for (const topLevel of page.children) await walk(topLevel, { hard: false }, violations)
+      for (const topLevel of page.children) await walk(topLevel, { hard: false, spacingScale }, violations)
     }
   }
 
@@ -150,6 +185,31 @@ async function runTier0Audit(options = {}) {
  */
 async function collectModifiedKitCopyNodes() {
   return []
+}
+
+/**
+ * D24's scale values come from the project file's local Primitives
+ * collection at audit time (Decision 2, semantic-seeding.md) — not a config
+ * constant, so this is a live lookup, same shape as collectModifiedKitCopyNodes.
+ * Returns [] if no Primitives collection exists yet (unseeded project): the
+ * rule then flags every unbound gap/padding value as off-scale rather than
+ * throwing — a loud, honest audit failure instead of a crash.
+ */
+async function collectPrimitivesSpacingScale() {
+  const collections = await figma.variables.getLocalVariableCollectionsAsync()
+  const primitives = collections.find((c) => c.name === 'Primitives')
+  if (!primitives) return []
+
+  const values = []
+  for (const variableId of primitives.variableIds) {
+    const variable = await figma.variables.getVariableByIdAsync(variableId)
+    if (!variable) continue
+    if (!variable.scopes.includes('GAP') && !variable.scopes.includes('WIDTH_HEIGHT')) continue
+    const modeId = primitives.modes[0]?.modeId
+    const value = variable.valuesByMode[modeId]
+    if (typeof value === 'number') values.push(value)
+  }
+  return values.sort((a, b) => a - b)
 }
 
 runTier0Audit

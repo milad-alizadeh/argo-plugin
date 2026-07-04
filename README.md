@@ -32,18 +32,22 @@ default. Either toggle "Enable auto-update" on the argo marketplace in
 With that on, Claude Code refreshes the marketplace at startup, updates the
 plugin, and prompts `/reload-plugins` when a new version landed. Without it,
 update manually: `claude plugin update argo@argo`. Either way, the plugin's
-SessionStart nudge tells each set-up project when its `.claude/` setup is older
-than the installed plugin (`/argo:setup-claude` re-syncs it).
+SessionStart nudge tells each set-up project when its `.claude/` or design-pack
+setup is older than the installed plugin. To pick up the deltas, run
+**`/argo:update`** — it runs every setup skill in update mode plus any pending
+migrations (given the project's current state, without re-running the
+first-time wizard); or run `/argo:setup-claude` / `/argo:setup-design` directly
+to reconcile just one surface.
 
 ## What ships active (loads when the plugin is enabled)
 
 - **Agents** (`agents/`) — full lifecycle roles, invoked on demand:
   `scaffolder → planner → builder → reviewer → debugger`, plus `auditor`
   (whole-codebase health) and `integrator` (lands work / PRs / docs sync).
-- **Skills** (`skills/`) — on-demand disciplines and methodology, eighteen:
+- **Skills** (`skills/`) — on-demand disciplines and methodology, nineteen:
   `engineering-principles`, `test-first`, `build-plan`, `root-cause`,
   `grill-me`, `spike`, `scaffold`, `session-handoff`, `finish-branch`,
-  `author-skill`, `setup-claude`, `orchestrate`, and the Figma-to-code
+  `author-skill`, `setup-claude`, `update`, `orchestrate`, and the Figma-to-code
   design pack — `setup-design`, `figma-audit`, `figma-sync`, `figma-create`,
   `figma-to-code`, `design-upgrade`. The design pack is shaped as a
   provider-neutral **mechanism** (tiered gates, the `figma-design-kit`

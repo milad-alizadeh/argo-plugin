@@ -17,7 +17,7 @@ Decisions confirmed before build (2026-07-04):
 | 4 | done | (pending commit) | extracted token-writer.md from figma-sync step 7 |
 | 5 | done | (pending commit) | tier-1b conditional note; also fixed the stale lint-file path reference (moved in Slice 3) |
 | 6 | done | (pending commit) | templates-reference.md updated for recipe paths/install-when; also authored the recipe's README.md manifest (disposition-table item with no assigned slice in the plan) |
-| 7 | pending | | checkpoint review here |
+| 7 | done | (pending commit) | setup-design/SKILL.md: §0a Figma gate, §0b Professional-plan gate (F10), §0c recipe selection; §4/§5/§7 made recipe-conditional — checkpoint review next |
 | 8 | pending | | |
 | 9 | pending | | |
 | 10 | pending | | |

@@ -17,6 +17,48 @@ AskUserQuestion call (up to 4 per screen), recommended option first and
 labeled, free-form via "Other", prose only for the opening one-liner and the
 final report.
 
+## 0a. Are you using Figma?
+
+AskUserQuestion, single question: "Does this project use Figma as its design
+source of truth?" If no: **stop** — explain in one paragraph that this pack
+is a Figma-to-code pipeline (tier-0 hygiene audit, spec-diff/VRT gates, kit
+sync) and doesn't apply without Figma. Never force Figma onto a project that
+doesn't use it.
+
+## 0b. Professional plan or higher?
+
+AskUserQuestion, single question: "Is this Figma file on a Professional plan
+or higher?" **Why this gate exists (F10):** below Professional, variable
+collections are capped at **one mode**, which blocks the Light+Dark Semantic
+collection this pack's D10/D11 rules depend on — so this gate applies to
+**every** recipe, not just `external-library`; `external-library` additionally
+needs library publishing (a separate Professional-plan-gated feature). Do
+**not** cite the Variables REST API as a workaround — the pipeline explicitly
+rejected it as Enterprise-gated; nothing in this pack depends on it. If no:
+**stop** with the same clear-explanation pattern as §0a — this is a hard
+prerequisite, checked early (D23).
+
+## 0c. Recipe selection
+
+AskUserQuestion: which recipe to install. Today there is exactly one option,
+`shadcn-tailwind-external-kit` (label it recommended/only choice, per this
+skill's existing "recommended option first and labeled" convention below).
+Store the choice into `design/config.json`'s new `recipe` field. Each recipe
+supplies named extension points that skills dispatch to, resolving to files
+installed from `templates/design/recipes/<name>/`:
+
+- **recipe audit checks** — `design-source/tier0-recipe-checks.js`, spliced
+  into `tier0-audit.js`'s injection region (Slice 2's F12 assembly)
+- **recipe sync steps** — `design-source/kit.lock.example.json`/
+  `kit-patches.example.json` (external-library-only), consumed by
+  `figma-sync`
+- **Semantic seeding** — the recipe's `README.md` states its
+  `baseSource`/`codeTarget`, which downstream skills branch on
+- **token writer** — `code-target/token-writer.md`, consumed by
+  `figma-sync` step 7
+- **upgrade flow** — `design-upgrade`'s guard clause reads `recipe`'s
+  `baseSource` to decide whether the paired-upgrade flow applies at all
+
 ## 1. Detect the stack
 
 Confirm (or ask if undetectable): UI framework, components dir, existing
@@ -61,21 +103,33 @@ plugin-repo change (this skill does not build upgrade detection, see plan
 
 Copy from `${CLAUDE_PLUGIN_ROOT}/templates/design/` into the host project,
 filling every `{{…}}` slot per `skills/setup-design/templates-reference.md`:
-`tier0-audit.js` (into `design/`, so `figma-audit`/`figma-sync`/`figma-create`
-read the project's own filled copy rather than the plugin template),
-`vrt-walker/`, `spec-diff-walker/`, `gate-wiring.md`,
-`config.example.json` → `design/config.json` — always. `lint/design-lint.md`
-only when a lint config and a components dir already exist (per
-`templates-reference.md`'s condition for that one template). Ask where each
-walker directory should live (offer a sane default, e.g. `test/vrt/`,
-`test/spec-diff/`) if the host project has no obvious convention.
+`vrt-walker/`, `spec-diff-walker/spec-diff.walker.spec-diff.js`,
+`gate-wiring.md`, `config.example.json` → `design/config.json` — always.
+Then assemble `tier0-audit.js` (into `design/`, so
+`figma-audit`/`figma-sync`/`figma-create` read the project's own assembled
+copy rather than the plugin template): splice the chosen recipe's
+`design-source/tier0-recipe-checks.js` into the mechanism script's marked
+injection region (F12/X3 — ONE canonical script, never two). Install the
+chosen recipe's remaining templates per their `templates-reference.md`
+install-when conditions: `design-source/base-congruence.walker.spec-diff.js`
++ `kit-patches.example.json` + `kit.lock.example.json` (only when the
+recipe's `baseSource == "external-library"`), `code-target/lint/design-lint.md`
+(only when a lint config and a components dir already exist), and
+`code-target/token-writer.md` (always, for whichever recipe is chosen). Ask
+where each walker directory should live (offer a sane default, e.g.
+`test/vrt/`, `test/spec-diff/`) if the host project has no obvious
+convention.
 
-## 5. Add `figma-design-kit` as a path dependency
+## 5. Add path dependencies
 
 Mirrors `skills/setup-claude/SKILL.md` §6c's tdd-guard-playwright
-instructions verbatim: add it to the host project's manifest as a path
-dependency pointing at `${CLAUDE_PLUGIN_ROOT}/packages/figma-design-kit`
-(published later if ever — same lifecycle note as `tdd-guard-playwright`).
+instructions verbatim: add `figma-design-kit` to the host project's manifest
+as a path dependency pointing at
+`${CLAUDE_PLUGIN_ROOT}/packages/figma-design-kit` (published later if ever —
+same lifecycle note as `tdd-guard-playwright`). Additionally add
+`figma-design-kit-shadcn-tailwind` as a path dependency when the chosen
+recipe (§0c) is `shadcn-tailwind-external-kit` — its `tier0-recipe-checks.js`
+imports from it.
 
 ## 6. Append the testing.md amendment — with consent
 
@@ -88,10 +142,15 @@ amendment as a standalone note the user can fold in manually.
 
 ## 7. Create `design/` scaffolding
 
-Create the `design/` dir with empty placeholders: `waivers.json` → `[]`,
-`kit-patches.json` → `{}`. Leave `tokens.json`, `specs/`, `screenshots/`,
-`story-map.json`, `kit.lock` for `figma-sync` to populate on first sync —
-this skill only creates the empty, schema-agnostic placeholders.
+Create the `design/` dir with an empty `waivers.json` → `[]` placeholder
+always. Only when the chosen recipe's `baseSource == "external-library"`:
+also create `kit-patches.json` (copied from the recipe's
+`design-source/kit-patches.example.json`, `{}`) — leave `kit.lock` for
+`figma-sync`'s first sync to populate (per `templates-reference.md`'s
+`kit.lock.example.json` row). For any other `baseSource`, there is no kit
+copy to track edits against — skip both files entirely. Leave `tokens.json`,
+`specs/`, `screenshots/`, `story-map.json` for `figma-sync` to populate on
+first sync regardless of recipe.
 
 ## 8. Offer a smoke check
 

@@ -269,9 +269,10 @@ When §0d selects update mode, reconcile the pack's managed surface by category
 
 1. **Pending migrations first.** Run `pendingMigrations(_meta.setupVersion)`
    from `setup-migrations`; for each, show its `description`, ask consent, and
-   apply — the migration's `detect`/`computePatch` are pure over the parsed
-   `package.json`, and THIS skill performs the resulting file writes / vendor
-   copy (using `resolveVendorPlan` for placement). Migration #1
+   apply — the migration's `detect(pkgJson, ctx)`/`computePatch(pkgJson,
+   planFor, ctx)` are pure over the parsed `package.json` (with `ctx.isWorkspace`
+   from `resolveVendorPlan`), and THIS skill performs the resulting file writes
+   / vendor copy (passing `resolveVendorPlan`'s result as `planFor`). Migration #1
    (`vendor-figma-design-kit-absolute-path`) fixes a project still carrying an
    absolute plugin-cache `file:` dep, and — on a workspace host — an
    off-convention relative `design/vendor` dep, converting either to

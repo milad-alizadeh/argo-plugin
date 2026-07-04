@@ -88,24 +88,30 @@ file, proven live 2026-07-04 against the real argo-v2 file pair) and adds
 
 ## 2. Design decisions (incidental ambiguities, resolved — not load-bearing)
 
-1. **`semantic-seed.json`'s real content can't be authored blind.** Finding 1
-   of the spike (task body) establishes the seed is a *dump* of the kit
-   file's `mode` collection (per-mode color aliases) plus its single-mode
-   `tokens` collection (radius/stroke/border-width floats) — derivation
-   requires a live `use_figma` call **against the kit file**
-   (`getLocalVariableCollectionsAsync` is local-file-only, so this cannot run
-   from the project file — a second, separate `use_figma` call with the kit
-   `fileKey` is required, confirmed by the task's own Finding 1). This repo
-   has no committed Figma file to derive from. **Resolution (matches the
-   task's own instruction to mirror Slice 14 of the landed plan):** author
-   `derive-semantic-seed.js` (the script) and `seed-semantic.js` (the
-   consumer) fully in early slices with a documented, precise expected
-   shape; a dedicated **live verification slice** at the end runs
-   `derive-semantic-seed.js` for real against kit copy `4lPUPl8OUan4i90Bc2ZMXe`
-   and commits the actual resulting `semantic-seed.json` — that slice is the
-   one that ships the real "default derived from the stock shadcn kit."
-   Before that slice lands, `semantic-seed.json` does not exist in a
-   buildable state; nothing in an earlier slice reads it as if it did.
+1. **Nothing kit-derived is ever committed — derivation runs at seed time**
+   *(user decision 2026-07-04, superseding the earlier
+   "derive-once-ship-static-default" shape)*. Figma variable KEYS are
+   per-copy: every team's duplicate of the community kit mints new
+   variables with new keys, and D15's own upgrade flow re-imports the kit
+   as a NEW library copy (new keys again) — so a committed key snapshot is
+   guaranteed to break on the first `design-upgrade` and is useless to any
+   project whose kit copy isn't the one it was derived from. Resolution:
+   `setup-design`'s seeding step is a two-call pipeline — run
+   `derive-semantic-seed.js` via `use_figma` against the CONFIGURED kit
+   file key (`recipeConfig.figma.kitLibraryFileKey` in
+   `design/config.json`; `getLocalVariableCollectionsAsync` is
+   local-file-only, so this must be a separate call in the kit file),
+   then hand its returned `colors`/`floats` data in-session to
+   `seed-semantic.js` running against the project file. The stable
+   contract with the kit is **names** (the two-mode `mode` collection
+   shape, variable names, the demo-artifact exclusion list, the role-scope
+   patterns) — names survive duplication and re-import; keys are resolved
+   fresh on every run. `semantic-seed.json` therefore carries ONLY
+   project-owned, name-keyed starter data + derivation config (§ Slice 4)
+   and is complete from the day it's authored — no placeholder/real-content
+   two-phase, nothing for a live slice to back-fill. The live-verification
+   slice VALIDATES the dynamic pipeline end-to-end; it does not produce a
+   shipped artifact.
 2. **Where does the D24 rule's Primitives spacing scale come from at audit
    time?** The task says "the scale values come from the project file's
    local Primitives collection at audit time" — this requires a live lookup
@@ -300,34 +306,49 @@ to run per-slice).
      chart; prefix `radius-` → radius; exact `stroke-width`/`border-width` →
      width. Confirm this table against the REAL variable name list in the
      live-verification slice; do not ship it unverified against real names.
-  6. Write the resulting object to `semantic-seed.json`'s shape (§5 below).
+  6. RETURN the derived `{ colors, floats }` object from the script — the
+     seeding step (Slice 6) hands it in-session to `seed-semantic.js`.
+     Nothing kit-derived is written to disk or committed (§2 Decision 1:
+     keys are per-copy and per-import; names are the only stable
+     contract).
 - **Verify:** `bun run test` (no logic touched — docs/template-only sanity
   check; this script's actual correctness is provable only in the
   live-verification slice, same accepted gap as `tier0-audit.js`'s
   marshaling code).
 
-### Slice 4 — `semantic-seed.json` placeholder shape (testable: false)
+### Slice 4 — `semantic-seed.json`: project-owned seed config (testable: false)
 - **Files:** create
   `templates/design/recipes/shadcn-tailwind-external-kit/design-source/semantic-seed.json`
-  with the documented SHAPE (not yet the real derived values — those land in
-  the live-verification slice):
+  — **complete from this slice** (no placeholders, no later back-fill).
+  It contains ONLY project-owned starter data + derivation config; nothing
+  kit-derived (no variable keys — §2 Decision 1):
   ```json
   {
-    "colors": [
-      { "name": "background", "resolvedType": "COLOR", "scopes": ["FRAME_FILL", "SHAPE_FILL"], "modes": { "Light": "{{KIT_VARIABLE_KEY}}", "Dark": "{{KIT_VARIABLE_KEY}}" } }
+    "primitives": {
+      "spacing": [0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 128]
+    },
+    "semanticSpacing": [
+      { "name": "spacing/page-inline", "primitive": "spacing/24" },
+      { "name": "spacing/section-gap", "primitive": "spacing/32" }
     ],
-    "floats": [
-      { "name": "radius-md", "resolvedType": "FLOAT", "scopes": ["CORNER_RADIUS"], "key": "{{KIT_VARIABLE_KEY}}" }
-    ]
+    "derive": {
+      "excludeNames": ["background-color", "semantic-background", "semantic-border", "semantic-foreground"],
+      "roleScopes": "<the suffix/exact-name → scopes table from Slice 3 point 5, as data>"
+    }
   }
   ```
-  A header comment (JSON doesn't support comments — put it in this file's
-  entry in `templates-reference.md` instead, per Slice 6) states: "populated
-  by running `derive-semantic-seed.js` against the published kit file; this
-  checked-in copy is regenerated, not hand-edited — see the live-verification
-  slice for the real derived content." Commit this placeholder now so
-  `seed-semantic.js` (Slice 5) has something to import against during
-  authoring; it is explicitly NOT the shipped default yet.
+  The `primitives`/`semanticSpacing` sections are **project-owned starter
+  data, deliberately NOT kit-derived** (D10: Primitives are project-local
+  raw scales; the kit's `tw/space` is alias-pair plumbing, not a curated
+  scale — deriving the project's spacing vocabulary from it would create
+  kit coupling, not remove it). The shipped default is the Tailwind-derived
+  19-step scale with `page-inline`→24 / `section-gap`→32; a project wanting
+  a different starter scale edits this data before the seeding step runs —
+  never the script. The `derive` section is the name-keyed config
+  `derive-semantic-seed.js` consumes (the skill injects it when invoking
+  the script — a `use_figma` script can't read project files itself);
+  names are the stable cross-copy contract, so this config survives kit
+  duplication and D15 re-imports.
 - **Verify:** `bun run test` (docs/template only).
 
 ### Slice 5 — `seed-semantic.js` (testable: false — Plugin API script, `use_figma`)
@@ -338,9 +359,11 @@ to run per-slice).
   1. **Idempotent collection creation.** Read
      `figma.variables.getLocalVariableCollectionsAsync()`. If no collection
      named `Primitives` exists, create one (single mode) with the D24
-     spacing scale: `0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 40, 48, 56,
-     64, 80, 96, 128` (px), each as a `FLOAT` variable scoped
-     `['GAP', 'WIDTH_HEIGHT']`, named `spacing/<value>` (e.g. `spacing/24`).
+     spacing scale **read from `semantic-seed.json`'s `primitives.spacing`
+     array** (shipped default: the 19-step Tailwind-derived scale — the
+     scale is seed DATA, never hardcoded in this script), each value as a
+     `FLOAT` variable scoped `['GAP', 'WIDTH_HEIGHT']`, named
+     `spacing/<value>` (e.g. `spacing/24`).
      If `Primitives` already exists, skip creating it — but still check for
      and create any individual scale-step variables that are missing by
      name (per-variable idempotency, not just per-collection — this is what
@@ -353,10 +376,12 @@ to run per-slice).
      `collection.addMode('Dark')`. If `Semantic` already exists with only
      one mode, add `Dark` if missing; if it already has 2+ modes, skip mode
      creation entirely (already seeded, per argo-v2's live reference file).
-  3. **Import kit variables + create semantic vars + aliases.** Read
-     `semantic-seed.json` (bundled at the splice point same convention as
-     `tier0-recipe-checks.js`'s `./kit-patches.json` relative import,
-     `:23`). For each entry in `colors`: if a variable of that `name`
+  3. **Import kit variables + create semantic vars + aliases.** The
+     `colors`/`floats` data is NOT read from a committed file — it is the
+     return value of `derive-semantic-seed.js`, run moments earlier against
+     the configured kit file (§2 Decision 1); the skill injects it into
+     this script's invocation (the project-owned sections come from the
+     co-installed `semantic-seed.json`). For each entry in `colors`: if a variable of that `name`
      already exists in `Semantic`, skip it (per-variable idempotency); else
      create it (`resolvedType: 'COLOR'`, `scopes` from the seed), and for
      each mode (`Light`, `Dark`) call
@@ -367,12 +392,14 @@ to run per-slice).
      (`resolvedType: 'FLOAT'`), import the single kit key once, and set the
      SAME alias for both `Light` and `Dark` modes (per the task's spike
      summary: "same alias both modes" for radius/stroke/border-width).
-  4. **D24 starter layout tokens.** If `Semantic` doesn't already have a
-     variable named `spacing/page-inline`, create it (`FLOAT`, scope
-     `['GAP']`), aliasing the LOCAL `Primitives` collection's `spacing/24`
-     variable (via `createVariableAlias`, no import needed — same file),
-     same value both modes. Same for `spacing/section-gap` → local
-     `Primitives` `spacing/32`. Skip either that already exists by name.
+  4. **D24 starter layout tokens.** For each entry in the seed's
+     `semanticSpacing` array (shipped default: `spacing/page-inline` →
+     `spacing/24`, `spacing/section-gap` → `spacing/32` — data, not
+     hardcoded): if `Semantic` doesn't already have a variable of that
+     name, create it (`FLOAT`, scope `['GAP']`), aliasing the named LOCAL
+     `Primitives` variable (via `createVariableAlias`, no import needed —
+     same file), same value both modes. Skip any that already exist by
+     name.
   5. Log a summary: collections created vs. already-present, variables
      created vs. skipped-as-present — so a re-run against an already-seeded
      file (like argo-v2's) reports "0 created, N skipped" rather than
@@ -392,29 +419,35 @@ to run per-slice).
   filled (not still `{{…}}` placeholders). If either is unfilled: skip with
   a printed note ("Semantic seeding needs both file keys configured — run
   `/argo:setup-design` again once they're set, or seed manually later").
-  If gated in: load `figma:figma-use`, then run
-  `design-source/seed-semantic.js` via `use_figma` against the project
-  file, passing the (already-derived, committed)
-  `design-source/semantic-seed.json` content. Report the created/skipped
-  summary (Slice 5 point 5) verbatim to the user. Note explicitly: this step
+  If gated in: load `figma:figma-use`, then run the **two-call pipeline**
+  (§2 Decision 1): (1) `design-source/derive-semantic-seed.js` via
+  `use_figma` against the KIT file key, injecting the `derive` config from
+  `design-source/semantic-seed.json` — this returns the fresh, current-copy
+  `colors`/`floats` data (keys resolved live; nothing kit-derived is ever
+  committed); (2) `design-source/seed-semantic.js` via `use_figma` against
+  the PROJECT file key, injecting the step-1 return value plus the seed
+  config's project-owned sections. Report the created/skipped summary
+  (Slice 5 point 5) verbatim to the user. Note explicitly: this step
   only ever CREATES/imports — it never deletes or renames an existing
   variable, so re-running `setup-design` on an already-seeded file (e.g.
   argo-v2's) is always safe.
   Also update `skills/setup-design/templates-reference.md` — add three rows
   to the "Recipe templates" table (`:19-34`), same column shape as the
   existing `tier0-recipe-checks.js` row (`:31`):
-  - `design-source/derive-semantic-seed.js` — install when: reference only,
-    run on-demand against the kit file to regenerate `semantic-seed.json`
-    (not copied into the host project as a standing file — it's a
-    plugin-repo maintenance script, same category as this recipe's own
-    `README.md`).
+  - `design-source/derive-semantic-seed.js` — install when: `baseSource ==
+    "external-library"` (installed alongside the seeder — §4a runs it
+    against the kit file on EVERY seeding, and `design-upgrade` can rerun
+    it after a Library Swap); substitute/scope: consumes the `derive`
+    config from `semantic-seed.json`, injected by the invoking skill.
   - `design-source/semantic-seed.json` — install when: `baseSource ==
-    "external-library"`; substitute/scope: none — copied byte-for-byte, this
-    is data, not a `{{…}}` template.
+    "external-library"`; substitute/scope: none — copied byte-for-byte;
+    project-owned starter data + derivation config only, NO kit-derived
+    keys (edit the data to change the project's starter scale).
   - `design-source/seed-semantic.js` — install when: `baseSource ==
     "external-library"` AND both Figma file keys configured (mirrors the new
-    §4a gate); substitute/scope: reads the co-installed
-    `semantic-seed.json`, no `{{…}}` slots of its own.
+    §4a gate); substitute/scope: receives derive output in-session plus the
+    co-installed `semantic-seed.json`'s project-owned sections, no `{{…}}`
+    slots of its own.
 - **Verify:** `bun run test` (docs only).
 
 ### Slice 7 — manifest/version bump (testable: false)
@@ -429,8 +462,9 @@ to run per-slice).
   `0.9.0` before editing (`grep -rn "0\.9\.0"` outside `node_modules`).
 
 ### Slice 8 — live-file verification (testable: false; manual, on-device — mirrors design-pack-recipes.md's Slice 14)
-**Checkpoint / final review here** — this is the slice that turns Slices 3-4
-from documented-but-unproven scripts into a shipped, verified default.
+**Checkpoint / final review here** — this is the slice that proves the
+dynamic derive→seed pipeline end-to-end against the real file pair (it
+validates; it does not produce any committed artifact — §2 Decision 1).
 - **What:**
   1. Run `derive-semantic-seed.js` (Slice 3) for real via `use_figma`
      against the kit copy `4lPUPl8OUan4i90Bc2ZMXe`. Confirm the two-mode
@@ -438,10 +472,12 @@ from documented-but-unproven scripts into a shipped, verified default.
      script if the real name differs — this is exactly the kind of detail
      flagged as "confirm live" in Slice 3). Confirm the four demo-artifact
      names match exactly. Confirm the role-scope pattern-matching table
-     (Slice 3 point 5) against the REAL variable name list; adjust patterns
-     if any real name doesn't match a rule. Commit the resulting REAL
-     `semantic-seed.json` over Slice 4's placeholder — THIS is the shipped
-     default the task asks for.
+     (Slice 4's `derive.roleScopes` data) against the REAL variable name
+     list; adjust the data if any real name doesn't match a rule. Confirm
+     the returned object has the spike-established shape: 31 COLOR entries
+     with per-mode keys + 12 FLOAT entries with a single key each (43
+     total, 47 minus the four exclusions). Nothing is committed from this
+     run — the return value is the pipeline's in-session hand-off.
   2. Run `seed-semantic.js` (Slice 5) via `use_figma` against the argo-v2
      project file `CLEHEoqvJlRti3dCCfOytS` — which the pipeline plan states
      is **already seeded** by the original spike (45 Semantic vars, 19-step
@@ -509,11 +545,16 @@ default.
 
 ## 6. Risks / accepted trade-offs
 
-- **`semantic-seed.json` ships a placeholder until Slice 8.** If Slice 8
+- **The derive/seed scripts ship unverified until Slice 8 runs.** If Slice 8
   can't run (no Figma MCP connection during the build), the plan lands with
-  a documented-but-unverified seed shape — same residual risk profile as
+  documented-but-unproven Plugin-API scripts — same residual risk profile as
   `tier0-audit.js`'s marshaling code before `design-pack-recipes.md`'s
   Slice 14 ran. Flagged, not hidden.
+- **Seeding now requires live access to the published kit at setup time**
+  (the derive step runs against the kit file on every seeding — the price of
+  never committing per-copy variable keys). If the kit copy is unpublished,
+  unreachable, or the Figma MCP is disconnected, §4a stops loud with the
+  skip note; there is deliberately no stale-snapshot fallback.
 - **Role-scope inference (Slice 3 point 5) is a name-pattern heuristic**,
   not a mechanically-derived fact from the kit dump — it can only be
   confirmed against the real variable names in Slice 8. A future kit

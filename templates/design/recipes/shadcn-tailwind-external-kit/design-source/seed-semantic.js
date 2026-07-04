@@ -8,12 +8,15 @@
  *
  * Reads the bundled semantic-seed.json (installed alongside this script by
  * setup-design's assembly step, same relative-import convention as
- * tier0-recipe-checks.js's ./kit-patches.json).
+ * tier0-recipe-checks.js's ./kit-patches.json). The seed's `primitives` and
+ * `semanticSpacing` sections are project-owned starter data, NOT kit-derived
+ * (D10: Primitives are project-local) — derive-semantic-seed.js never
+ * regenerates them, only `colors`/`floats`. Nothing in this script hardcodes
+ * the spacing scale or the starter token names; a project wanting a
+ * different starter scale edits the seed data, never this script.
  */
 
 import semanticSeed from './semantic-seed.json'
-
-const PRIMITIVES_SPACING_SCALE = [0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 128]
 
 async function ensurePrimitivesCollection() {
   const collections = await figma.variables.getLocalVariableCollectionsAsync()
@@ -34,7 +37,7 @@ async function ensurePrimitivesCollection() {
   const modeId = primitives.modes[0].modeId
   let variablesCreated = 0
   let variablesSkipped = 0
-  for (const value of PRIMITIVES_SPACING_SCALE) {
+  for (const value of semanticSeed.primitives?.spacing ?? []) {
     const name = `spacing/${value}`
     if (existingNames.has(name)) { variablesSkipped += 1; continue }
     const variable = figma.variables.createVariable(name, primitives, 'FLOAT')
@@ -125,7 +128,9 @@ async function importFloatVariables(semantic) {
 /**
  * D24 starter layout tokens — local aliases into the (now-seeded) Primitives
  * spacing scale, so a project has at least one legal Semantic spacing
- * binding out of the box.
+ * binding out of the box. Driven entirely by the seed's `semanticSpacing`
+ * entries (name + which local Primitives variable each aliases) — no names
+ * or values hardcoded here.
  */
 async function createSpacingStarterTokens(semantic, primitives) {
   const existingNames = new Set()
@@ -140,16 +145,11 @@ async function createSpacingStarterTokens(semantic, primitives) {
     if (variable) primitivesVarByName.set(variable.name, variable)
   }
 
-  const starters = [
-    { name: 'spacing/page-inline', sourceName: 'spacing/24' },
-    { name: 'spacing/section-gap', sourceName: 'spacing/32' }
-  ]
-
   let created = 0
   let skipped = 0
-  for (const starter of starters) {
+  for (const starter of semanticSeed.semanticSpacing ?? []) {
     if (existingNames.has(starter.name)) { skipped += 1; continue }
-    const source = primitivesVarByName.get(starter.sourceName)
+    const source = primitivesVarByName.get(starter.primitive)
     if (!source) continue
 
     const variable = figma.variables.createVariable(starter.name, semantic, 'FLOAT')

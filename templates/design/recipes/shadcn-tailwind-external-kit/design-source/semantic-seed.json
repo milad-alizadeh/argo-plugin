@@ -14,5 +14,12 @@
       "scopes": ["CORNER_RADIUS"],
       "key": "{{KIT_VARIABLE_KEY}}"
     }
+  ],
+  "primitives": {
+    "spacing": [0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 128]
+  },
+  "semanticSpacing": [
+    { "name": "spacing/page-inline", "primitive": "spacing/24" },
+    { "name": "spacing/section-gap", "primitive": "spacing/32" }
   ]
 }

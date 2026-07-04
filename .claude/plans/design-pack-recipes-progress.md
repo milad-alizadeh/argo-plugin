@@ -14,7 +14,7 @@ Decisions confirmed before build (2026-07-04):
 | 2 | done | (pending commit) | tier0-rules.js extracted into figma-design-kit + new figma-design-kit-shadcn-tailwind package; tier0-audit.js + tier0-recipe-checks.js are now thin walkers (per B) |
 | 2a | done | (pending commit) | import-boundary guard test; regex scoped to real import/require, not doc-comment prose (avoided a false positive against tier0-rules.js's own docstring) |
 | 3 | done | (pending commit) | design-lint.md moved to recipe code-target; authored no-arbitrary-values rule (B1/B2) |
-| 4 | pending | | |
+| 4 | done | (pending commit) | extracted token-writer.md from figma-sync step 7 |
 | 5 | pending | | |
 | 6 | pending | | |
 | 7 | pending | | checkpoint review here |

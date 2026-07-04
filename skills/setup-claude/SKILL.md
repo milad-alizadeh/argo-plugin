@@ -177,11 +177,14 @@ project's own test reporter as ground truth. It enforces **order**, not test **q
   tdd-guard-vitest). Wire it in the project's playwright config:
   `reporter: [['list'], ['tdd-guard-playwright', { projectRoot: '<abs repo root>' }]]`.
   The reporter is unpublished and pure ESM (no build), so **vendor** it rather
-  than depending on the plugin cache: copy the files in its `package.json`
-  `files` array into a committed dir in the host repo (e.g.
-  `test/vendor/tdd-guard-playwright`, or a workspace package if the host is a
-  workspace) and depend via a **relative** `file:` path (or `workspace:*`).
-  **Never** add a `file:` dep pointing at
+  than depending on the plugin cache — using the SAME `resolveVendorPlan`
+  helper (`setup-migrations`, §2f of `project-reconcile.md`) that `setup-design`
+  §5 uses, so both skills vendor consistently: compute
+  `resolveVendorPlan(rootPkg, 'tdd-guard-playwright', { pnpmWorkspace })`, copy
+  the files in its `package.json` `files` array into `<plan.packageDir>/tdd-guard-playwright`
+  (a workspace `packages/` dir on a monorepo → `workspace:*`, else
+  `test/vendor/` → relative `file:`), and set the dependency to
+  `plan.depSpecifier`. **Never** add a `file:` dep pointing at
   `${CLAUDE_PLUGIN_ROOT}/reporters/tdd-guard-playwright` — that expands to an
   absolute, version-stamped plugin-cache path that leaks the local machine, is
   pinned to one plugin version (breaks on the next plugin update when the old

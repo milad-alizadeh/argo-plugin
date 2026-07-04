@@ -31,10 +31,16 @@ never baseline-then-review.
    interactions) gets ordinary red/green tests same as any other code; the
    design pack does not replace that loop, it adds a *visual* acceptance
    layer on top.
-3. **Tier 1/1b — spec-diff + base-congruence.** Run the spec-diff walker
-   (`templates/design/spec-diff-walker/`, already installed by
-   `setup-design`) against the new component's stories. Fix any drift the
-   comparator reports before moving on.
+3. **Tier 1/1b — spec-diff + base-congruence.** Run the mechanism spec-diff
+   walker (`templates/design/spec-diff-walker/spec-diff.walker.spec-diff.js`,
+   already installed by `setup-design`) against the new component's
+   stories, always. Also run tier 1b's base-congruence walker (installed
+   from the recipe's `design-source/base-congruence.walker.spec-diff.js`)
+   only when the installed recipe's `baseSource` makes it applicable
+   (`external-library`, or `same-file` with vendored base code present) —
+   it's off entirely under `baseSource: none` (mirrors `gate-wiring.md`'s
+   tier-1b conditional note, Slice 5). Fix any drift the comparator reports
+   before moving on.
 4. **Tier 2 — gestalt acceptance, D22 ordering.** Compare each story's
    rendered screenshot against the **committed** reference screenshot
    (light↔light, dark↔dark) and record a **structured PASS/FAIL verdict

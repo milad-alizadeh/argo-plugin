@@ -111,3 +111,32 @@ export function storyUrlScopeViolation(node) {
   }
   return null
 }
+
+/**
+ * spacingScale values and collection membership are resolved by the walker;
+ * this function is pure over the marshaled shape (D24). Legal states for a
+ * gap/padding field: bound to a Semantic spacing variable, or an unbound
+ * literal that is a member of the Primitives spacing scale. A direct binding
+ * to a Primitives variable is not legal — D24 names only the two cases above.
+ */
+export function gapPaddingSpacingViolations(node, spacingScale) {
+  if (node.layoutMode === 'NONE') return []
+  const violations = []
+  for (const entry of node.gapAndPadding ?? []) {
+    const { field, value, bound, collectionName } = entry
+    if (bound) {
+      if (collectionName !== 'Semantic') {
+        violations.push({
+          rule: 'gap-padding-non-semantic-binding',
+          detail: `${field} is bound to a non-Semantic variable ("${collectionName}"); D24 requires a Semantic spacing variable or an on-scale literal`
+        })
+      }
+    } else if (!spacingScale.includes(value)) {
+      violations.push({
+        rule: 'gap-padding-off-scale',
+        detail: `${field} value ${value} is not on the Primitives spacing scale and is not bound to a Semantic spacing variable (D24)`
+      })
+    }
+  }
+  return violations
+}

@@ -13,5 +13,6 @@ export {
   variantNamingViolations,
   darkCopyViolation,
   implicitLineHeightViolation,
-  storyUrlScopeViolation
+  storyUrlScopeViolation,
+  gapPaddingSpacingViolations
 } from './tier0-rules.js'

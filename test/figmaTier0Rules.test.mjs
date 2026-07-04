@@ -10,7 +10,8 @@ import {
   variantNamingViolations,
   darkCopyViolation,
   implicitLineHeightViolation,
-  storyUrlScopeViolation
+  storyUrlScopeViolation,
+  gapPaddingSpacingViolations
 } from '../packages/figma-design-kit/tier0-rules.js'
 
 describe('unboundFillViolations', () => {
@@ -169,5 +170,56 @@ describe('storyUrlScopeViolation (D1)', () => {
   })
   it('ignores a component with no storyUrl', () => {
     expect(storyUrlScopeViolation({ type: 'COMPONENT' })).toBeNull()
+  })
+})
+
+describe('gapPaddingSpacingViolations (D24)', () => {
+  const spacingScale = [0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 128]
+
+  it('passes an unbound value that is a member of the spacing scale', () => {
+    const node = {
+      layoutMode: 'HORIZONTAL',
+      gapAndPadding: [{ field: 'itemSpacing', value: 8, bound: false }]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+  })
+
+  it('flags an unbound value that is not a member of the spacing scale, one violation per offending field', () => {
+    const node = {
+      layoutMode: 'HORIZONTAL',
+      gapAndPadding: [
+        { field: 'itemSpacing', value: 7, bound: false },
+        { field: 'paddingTop', value: 6, bound: false }
+      ]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([
+      { rule: 'gap-padding-off-scale', detail: 'itemSpacing value 7 is not on the Primitives spacing scale and is not bound to a Semantic spacing variable (D24)' }
+    ])
+  })
+
+  it('passes a value bound to the Semantic collection regardless of its value', () => {
+    const node = {
+      layoutMode: 'HORIZONTAL',
+      gapAndPadding: [{ field: 'paddingLeft', value: 24, bound: true, collectionName: 'Semantic' }]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+  })
+
+  it('flags a value bound directly to a Primitive variable (not Semantic)', () => {
+    const node = {
+      layoutMode: 'HORIZONTAL',
+      gapAndPadding: [{ field: 'paddingLeft', value: 24, bound: true, collectionName: 'Primitives' }]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([
+      { rule: 'gap-padding-non-semantic-binding', detail: 'paddingLeft is bound to a non-Semantic variable ("Primitives"); D24 requires a Semantic spacing variable or an on-scale literal' }
+    ])
+  })
+
+  it('ignores nodes with layoutMode NONE regardless of gapAndPadding contents', () => {
+    const node = {
+      layoutMode: 'NONE',
+      gapAndPadding: [{ field: 'itemSpacing', value: 7, bound: false }]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
   })
 })

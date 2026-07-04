@@ -45,7 +45,12 @@ than the installed plugin (`/argo:setup-claude` re-syncs it).
   `grill-me`, `spike`, `scaffold`, `session-handoff`, `finish-branch`,
   `author-skill`, `setup-claude`, `orchestrate`, and the Figma-to-code
   design pack — `setup-design`, `figma-audit`, `figma-sync`, `figma-create`,
-  `figma-to-code`, `design-upgrade`.
+  `figma-to-code`, `design-upgrade`. The design pack is shaped as a
+  provider-neutral **mechanism** (tiered gates, the `figma-design-kit`
+  package) plus swappable **recipes** under `templates/design/recipes/`
+  that own everything design-source- and code-target-specific (kit sync,
+  lint rules, token writer) — one recipe ships today,
+  `shadcn-tailwind-external-kit`.
 - **Hooks** (`hooks/`) — nine hooks in four categories:
   - *Safety guardrails (always on):* `block-dangerous-git.sh` — blocks
     destructive git commands (opt out with `ARGO_DISABLE_GIT_GUARD=1`);

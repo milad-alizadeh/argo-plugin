@@ -1,8 +1,5 @@
 {
-  "figma": {
-    "kitLibraryFileKey": "{{KIT_FILE_KEY}}",
-    "projectFileKey": "{{PROJECT_FILE_KEY}}"
-  },
+  "recipe": "{{RECIPE_NAME}}",
   "semanticCollectionName": "{{SEMANTIC_COLLECTION_NAME}}",
   "tokenFilePath": "{{TOKEN_FILE_PATH}}",
   "knownGoodTriad": {
@@ -14,5 +11,13 @@
     "browser": "{{PINNED_CHROMIUM_BUILD}}",
     "viewport": "{{W}}x{{H}}",
     "dpr": 1
+  },
+  "figma": {
+    "projectFileKey": "{{PROJECT_FILE_KEY}}"
+  },
+  "recipeConfig": {
+    "figma": {
+      "kitLibraryFileKey": "{{KIT_FILE_KEY}}"
+    }
   }
 }

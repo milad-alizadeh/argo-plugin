@@ -1,0 +1,18 @@
+{
+  "figma": {
+    "kitLibraryFileKey": "{{KIT_FILE_KEY}}",
+    "projectFileKey": "{{PROJECT_FILE_KEY}}"
+  },
+  "semanticCollectionName": "{{SEMANTIC_COLLECTION_NAME}}",
+  "tokenFilePath": "{{TOKEN_FILE_PATH}}",
+  "knownGoodTriad": {
+    "storybook": "{{VERSION}}",
+    "vitestAddon": "{{VERSION}}",
+    "vitest": "{{VERSION}}"
+  },
+  "vrtEnvironment": {
+    "browser": "{{PINNED_CHROMIUM_BUILD}}",
+    "viewport": "{{W}}x{{H}}",
+    "dpr": 1
+  }
+}

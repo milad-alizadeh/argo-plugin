@@ -1,5 +1,5 @@
 # Hook templates (installed by /argo:setup-claude). setup-claude fills the {{…}}
-# slots from the project's detected typecheck/lint/test commands. Formatting is NOT
+# slots from the project's detected lint/typecheck commands. Formatting is NOT
 # gated in any hook — it's an auto-fix concern (see the format-on-write hook).
 
 # PATH shim for hooks spawned by GUI git clients (VS Code etc.), which inherit
@@ -14,19 +14,6 @@ pre-commit:
   jobs:
     - name: lint+typecheck
       run: {{LINT_CMD}} && {{TYPECHECK_CMD}}
-
-# Pre-push gate — the last line before code leaves the machine when there's no CI.
-# Runs the fail-loud checks across the whole graph. Bypassable with --no-verify;
-# add a required CI check as the unbypassable backstop when available.
-pre-push:
-  parallel: true
-  jobs:
-    - name: typecheck
-      run: {{TYPECHECK_CMD}}
-    - name: lint
-      run: {{LINT_CMD}}
-    - name: test
-      run: {{TEST_CMD}}
 
 # Single touchpoint, single writer: graphify refreshes only when main integrates commits
 # (post-merge ONLY — a per-commit trigger is pure labeling latency). Guarded so projects

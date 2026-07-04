@@ -112,17 +112,17 @@ Ask ONE question: "Solo maintainer, or does this project have reviewers?" Then w
 ```
 
 - `"merge"` (solo): `argo:integrator` lands finished branches straight onto the
-  default branch — no PR to self-review; the pre-push hook suite is the gate. Also
-  offer to drop or `workflow_dispatch`-gate any CI workflow that duplicates the
-  local pre-push suite (a solo repo paying CI minutes to re-run what pre-push
-  already ran is waste — their call).
+  default branch — no PR to self-review. The gate is the work itself: gated
+  builds run typecheck/tests/e2e per slice (receipt hooks), and the integrator
+  verifies before pushing. No pre-push hook re-runs the suite — that's pure
+  friction on top of checks that already passed.
 - `"pr"` (team, and the default when the file is absent): the classic push-branch +
   open-PR flow.
 
 The file is committed (it's team policy, not local state). Never infer the mode —
 absent file means `"pr"`.
 
-## 6b. Install enforcement hooks (format-on-write + pre-push gate)
+## 6b. Install enforcement hooks (format-on-write + fast pre-commit)
 Guarantee that AI-written code stays typed/lint-clean/formatted **no matter when or by
 whom it's written** — layered, treating auto-fixable (format) differently from fail-loud
 (type/lint/test):
@@ -131,12 +131,13 @@ whom it's written** — layered, treating auto-fixable (format) differently from
   (auto-loaded, matcher `Edit|Write`) runs the project's own `prettier` on each touched
   file. No install needed here — it activates with the plugin. (No project prettier → it
   no-ops silently.)
-- **Type + lint + test = the gate.** A **CI required status check on the protected
-  branch** running the FULL graph (`turbo run typecheck lint test`) is recommended where
-  a team exists — it's the one layer `--no-verify` can't reach and is author-agnostic.
-  If the project has CI, wire that as a required check. For a single-builder personal
-  project, the pre-push gate below is an acceptable last line.
-- **No CI → install the pre-push gate.** Copy `${CLAUDE_PLUGIN_ROOT}/templates/lefthook.yml`
+- **Tests/e2e = gated builds, not git hooks.** Full verification runs per slice inside
+  gated builds (receipt hooks) and again at the integrator's final verification. Never
+  install a pre-push suite that re-runs it — redundant for gated work, slow for everything
+  else (e2e is uncached), and bypassable anyway. The author-agnostic backstop is a **CI
+  required status check on the protected branch** (`turbo run typecheck lint test`) where
+  the project has CI or a team; recommend adding CI when the project grows one.
+- **Fast pre-commit only.** Copy `${CLAUDE_PLUGIN_ROOT}/templates/lefthook.yml`
   to the project root and `${CLAUDE_PLUGIN_ROOT}/templates/lefthookrc` to `.lefthookrc`
   (the `rc:` PATH shim — GUI git clients like VS Code spawn hooks with launchd's minimal
   PATH, so without it every hook job fails with `bun: command not found` and the client
@@ -145,11 +146,11 @@ whom it's written** — layered, treating auto-fixable (format) differently from
   the hook), and run `lefthook install` once — ALWAYS from the main checkout, never from a
   git worktree (the generated hook shim hardcodes the installing checkout's node_modules
   path, which dangles when that worktree is deleted).
-  Fill its `{{…}}` slots from the detected typecheck/lint/test (plain, no
-  force flags — see §6 on cache trust). Pre-push is bypassable — it's fast local feedback;
-  recommend adding CI when the project grows a team.
+  Fill its `{{…}}` slots from the detected lint/typecheck commands (plain, no
+  force flags — see §6 on cache trust). Lint+typecheck at pre-commit is near-instant
+  with a caching runner and catches breakage without slowing the loop.
 
-Do not gate formatting in the pre-push hook or CI-as-failure beyond a `--check` backstop —
+Do not gate formatting in any hook or CI-as-failure beyond a `--check` backstop —
 a machine can fix whitespace; failing a build on it is waste.
 
 ## 6c. TDD enforcement (tdd-guard) — default-on where supported

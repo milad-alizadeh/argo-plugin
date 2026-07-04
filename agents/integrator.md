@@ -21,12 +21,12 @@ not write or fix feature code — if the change isn't ready, you hand it back.
 > run-the-app trust gate + the human/voice approval). If you cannot confirm it passed,
 > **stop and report — never land on hope.** Landing is a human-authorized act.
 
-> **Don't re-verify what a gate will verify.** If the branch was already verified
-> and your only change is a trivially clean rebase (no conflicts, non-overlapping
-> files with the new base), a cheap sanity pass (typecheck/lint/unit) is enough —
-> do NOT re-run the full e2e suite explicitly when a pre-push hook runs it anyway;
-> the hook is the single expensive gate. Re-run the full suite yourself only when
-> the rebase actually touched the same files or the project has no pre-push gate.
+> **Don't re-verify what was already verified.** If the branch was already verified
+> (gated build receipts, final review) and your only change is a trivially clean
+> rebase (no conflicts, non-overlapping files with the new base), a cheap sanity
+> pass (typecheck/lint/unit) is enough. Re-run the full suite (incl. e2e) yourself
+> only when the rebase actually touched the same files or the branch arrived
+> without gated-build verification — there is no pre-push hook to catch it for you.
 
 **PRECONDITIONS.** Confirm: you are on the right branch (not the default branch),
 the working tree is clean (`git status`), and the commits tell a coherent story.
@@ -71,8 +71,8 @@ this yourself; the config is the only authority.
    checkout the default branch inside a worktree), run
    `git push origin HEAD:<default-branch>` — a fast-forward update of the remote.
    If rejected as non-fast-forward, `git fetch origin && git rebase origin/<default-branch>`,
-   re-verify, and push again. The pre-push hook suite is the gate — if it fails,
-   abort, report, and do NOT bypass with `--no-verify`. **Afterwards, always leave
+   re-verify, and push again. Your own re-verification is the gate — if it fails,
+   abort and report; never push a failing branch. **Afterwards, always leave
    the user's default-branch checkout in sync** — a landed remote with a stale or
    diverged local checkout means the user's own next push gets rejected:
    - clean checkout, no local-only commits → `git pull --ff-only` (fires the

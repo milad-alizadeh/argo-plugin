@@ -127,9 +127,9 @@ For each slice:
    `git add <testFile> && git commit …` (the gate parses that exact `&&` chain).
 5. **Verify** (scoped): run the affected workspace's typecheck + lint + tests — not the
    full graph every slice; the full e2e suite runs **at minimum** at the checkpoint
-   and the final review (plus any cross-cutting slice per step 3's exception, and the
-   pre-push hook where the landing mode has one — merge mode relies on it; pr mode
-   may not have one, so don't count it as coverage). These are floors, not ceilings —
+   and the final review (plus any cross-cutting slice per step 3's exception). There
+   is no pre-push hook — the checkpoint and final review ARE the coverage, in both
+   landing modes. These are floors, not ceilings —
    when in doubt about blast radius, run the suite.
 6. **Commit** (conventional message, one slice = one commit). The gates check the
    receipts deterministically; if blocked, fix the real problem — never delete the
@@ -200,8 +200,8 @@ math re-asserted per consumer layer.
   (`.claude/argo-config.json`, set by `setup-claude`): in **pr** mode (the default) it
   pushes the branch and opens/updates the PR — it never merges, and merging happens
   via the PR. In **merge** mode (solo maintainer) it lands the branch straight onto
-  the default branch (`git push origin HEAD:<default>`, pre-push suite as the gate)
-  with no PR to self-review. Either way it does not touch graphify — the post-merge
+  the default branch (`git push origin HEAD:<default>`, its own re-verification as
+  the gate) with no PR to self-review. Either way it does not touch graphify — the post-merge
   lefthook refreshes it when the local default branch integrates the work. Then
   **ExitWorktree** (`remove` once merged). **Archive the plan**: once landed, if the
   project keeps a done-plans folder (e.g. `.claude/plans/done/`), move the plan doc +

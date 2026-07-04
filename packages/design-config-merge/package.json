@@ -1,0 +1,14 @@
+{
+  "name": "design-config-merge",
+  "version": "0.1.0",
+  "description": "Pure shape-merge for design/config.json reconcile: add new template-shape keys, preserve every existing user value, never delete on-disk-only keys",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "files": [
+    "index.js"
+  ]
+}

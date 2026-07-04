@@ -27,6 +27,12 @@ describe('compareColor', () => {
       expect(result.pass).toBe(true)
     }
   })
+
+  it('parses the CSS Color 4 percentage-form lightness (the standard oklch() syntax)', () => {
+    // rgb(239,68,68) is oklch(63.68% 0.2078 25.33) per the CSS spec's own percentage form
+    const result = compareColor({ r: 239 / 255, g: 68 / 255, b: 68 / 255, a: 1 }, 'oklch(63.68% 0.2078 25.33)')
+    expect(result.pass).toBe(true)
+  })
 })
 
 describe('comparePxInteger', () => {

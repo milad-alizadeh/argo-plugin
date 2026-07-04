@@ -74,14 +74,17 @@ function parseHex(hex) {
 
 const NUMBER_TOKEN = '-?[\\d.]+(?:e-?\\d+)?'
 const OKLCH_PATTERN = new RegExp(
-  `oklch\\(\\s*(${NUMBER_TOKEN})%?\\s+(${NUMBER_TOKEN})\\s+(${NUMBER_TOKEN})\\s*\\)`
+  `oklch\\(\\s*(${NUMBER_TOKEN})(%)?\\s+(${NUMBER_TOKEN})\\s+(${NUMBER_TOKEN})\\s*\\)`
 )
 
 function parseOklch(css) {
   const match = css.match(OKLCH_PATTERN)
   if (!match) throw new Error(`unrecognized oklch() syntax: ${css}`)
-  const [, lightness, chroma, hue] = match
-  return oklchToSrgb(parseFloat(lightness), parseFloat(chroma), parseFloat(hue))
+  const [, lightness, percentSign, chroma, hue] = match
+  // CSS Color 4's oklch() writes lightness as a percentage of the 0..1 range
+  // (e.g. "63.7%"); a bare number is already in that 0..1 range.
+  const L = percentSign ? parseFloat(lightness) / 100 : parseFloat(lightness)
+  return oklchToSrgb(L, parseFloat(chroma), parseFloat(hue))
 }
 
 function parseCssColor(css) {

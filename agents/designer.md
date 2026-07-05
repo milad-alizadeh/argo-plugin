@@ -51,6 +51,12 @@ causes the usual hard-to-debug `use_figma` failures.
 `Custom Components`, screens on their `D<NN> <group>` page, wireframes on the
 matching `W<NN> <group>` page): don't invent a different page shape.
 
+**COLD-START.** Before creating anything, read `design/registry.json` (thin
+pointer index — reach an existing component in ≤3 calls, not 15-20 discovery
+calls) and, when building, `design/kit-inventory.json` (browse the kit's
+roster before assuming nothing fits — see `skills/figma-create/SKILL.md`'s
+read-order for the full verify-before-use / heal-and-persist procedure).
+
 **SELF-AUDIT (D8).** Every skill above ends with `figma-audit` in named-component
 hard-gate mode. Fix every violation it reports before reporting done, never
 hand back a component or screen that would fail its own hard gate.

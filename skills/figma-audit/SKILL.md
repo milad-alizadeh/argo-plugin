@@ -52,7 +52,27 @@ none at all.
 2. **File-wide sweep (advisory)** — when run standalone with no component
    names, walks every top-level frame on every page and reports violations
    as **advisory** findings (un-synced frames, stray hygiene issues) — it
-   informs, it doesn't block anything on its own.
+   informs, it doesn't block anything on its own. Also reports
+   `unsectioned-component` (a component not a child of any category shelf
+   frame on `Custom Components`) and `missing-component-description`.
+
+   **Registry-reconcile ride-along (design-memory-placement.md A3).** The
+   sweep already traverses every top-level COMPONENT/COMPONENT_SET — diff
+   that same live list against `design/registry.json` via
+   `reconcileRegistrySweep` (`packages/figma-design-kit/registry-reconcile.js`)
+   to catch drift a per-task incremental upsert can't see on its own:
+   `registry-orphan` (entry whose nodeId no longer resolves AND whose name
+   isn't found live), `registry-unregistered` (live component absent from
+   the registry — an agent that crashed before its final upsert), and
+   `registry-miscategorized` (live category disagrees with the entry). All
+   three are advisory, never blocking. Because the sweep already holds the
+   full node list, also re-resolve + persist any entry whose `nodeId` moved
+   (a `combineAsVariants`/variant restructure minted a new id — far more
+   common than deletion) via `getNodeByIdAsync`/`findAll`, and stamp
+   `syncedAtWriteCount`/`figmaFileVersion` on the registry header — this is
+   a live-Figma-only concern the pure `reconcileRegistrySweep` function
+   can't perform itself; the walker marshals `nodeIdResolves` per entry
+   before calling it.
 
 ## Procedure
 

@@ -30,6 +30,44 @@ all point here instead of restating it.
    mode copies when the Semantic collection has 2+ modes, plus imported
    raster assets named `asset/<name>`. This is the only page components live
    on; a screen never hosts a component definition inline.
+
+   **Category shelves (design-memory-placement.md Mechanism 1).** Within
+   this page, each category in `design/config.json`'s `design.componentCategories`
+   (a closed, project-defined enum — see `packages/figma-design-kit/
+   component-categories.js`) is rendered as its own named **Auto-Layout
+   WRAP frame**: `layoutMode: 'HORIZONTAL'`, `layoutWrap: 'WRAP'`, a FIXED
+   `itemSpacing` (never `SPACE_BETWEEN` — it swallows a set `itemSpacing`,
+   see the R6 gotcha in `figma-create/SKILL.md`). Placement is one
+   deterministic op: `appendChild` the new/moved component to the frame
+   resolved as a pure function of its category — never coordinate math, a
+   bare `SECTION` can't Auto Layout so any "next slot" instruction would
+   overlap the moment a human rearranges a neighbor or a component resizes.
+   A project with no `design.componentCategories` configured defaults to the
+   thin `['primitive', 'composite']` enum; the mode copies of a component sit
+   in a vertical Auto-Layout directly beneath it, inside the same shelf.
+
+   **Category rubric.** Ambiguous cases default to the MORE GENERAL category
+   — the registry pins the final choice once assigned, it doesn't need to be
+   perfect at creation time. Worked examples from argo-v2's real domain set
+   (`rail`, `controls`, `status`, `foundation-atoms`):
+   - `status-pill` → `status` (communicates a state, not an input).
+   - `rail-session-card` → `rail` (serves the cockpit's session rail surface).
+   - `button` → `controls` (a generic interactive primitive, not tied to one
+     surface).
+   - A component with no clear surface owner → `foundation-atoms` (the
+     catch-all; more general than guessing a surface it doesn't yet serve).
+
+   **Revisit trigger.** When `Custom Components` exceeds ~30-40
+   project-owned components, revisit per-category PAGES instead of shelves
+   on one page — a numeric threshold, not a per-agent judgment call. Below
+   that, per-category pages fragment the node-id namespace (the audit
+   reconcile sweep would need to traverse N pages instead of one `findAll`)
+   for no benefit at this scale.
+
+   **`unsectioned-component` advisory rule** (kept, repointed at the shelves,
+   `figma-audit`): any top-level component on this page that isn't a child
+   of a category shelf frame is flagged advisory — never blocking, it's the
+   reconciliation for a human manually rearranging components.
 7. **`Foundations`**: the token sticker sheet (a rendered swatch/type-scale
    page over the Primitives/Semantic collections). Kept as its own page, not
    folded into `Custom Components`, because it's a screen-like reference

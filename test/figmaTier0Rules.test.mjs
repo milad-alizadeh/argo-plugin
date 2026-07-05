@@ -16,7 +16,9 @@ import {
   gapPaddingSpacingViolations,
   isNamedAuditTarget,
   strokeScaleViolation,
-  possibleGateFalsePositiveTag
+  possibleGateFalsePositiveTag,
+  unsectionedComponentViolation,
+  missingComponentDescriptionViolation
 } from '../packages/figma-design-kit/tier0-rules.js'
 
 describe('unboundFillViolations', () => {
@@ -354,6 +356,36 @@ describe('possibleGateFalsePositiveTag (R8)', () => {
   it('does not tag a remote instance whose overrides include a non-size/fill/stroke field', () => {
     const node = { isRemoteInstance: true, overriddenFields: ['fills', 'cornerRadius'] }
     expect(possibleGateFalsePositiveTag(node)).toBe(false)
+  })
+})
+
+describe('unsectionedComponentViolation (design-memory-placement.md, advisory)', () => {
+  it('flags a top-level component not inside any category shelf frame', () => {
+    const node = { type: 'COMPONENT', name: 'Button', insideCategoryShelf: false }
+    expect(unsectionedComponentViolation(node)).toEqual({
+      rule: 'unsectioned-component',
+      detail: 'component "Button" is not a child of any category shelf frame on Custom Components'
+    })
+  })
+
+  it('passes a component that is a child of a category shelf frame', () => {
+    const node = { type: 'COMPONENT', name: 'Button', insideCategoryShelf: true }
+    expect(unsectionedComponentViolation(node)).toBeNull()
+  })
+})
+
+describe('missingComponentDescriptionViolation (Mechanism 3, advisory)', () => {
+  it('flags a component with no description', () => {
+    const node = { type: 'COMPONENT', name: 'Button', description: '' }
+    expect(missingComponentDescriptionViolation(node)).toEqual({
+      rule: 'missing-component-description',
+      detail: 'component "Button" has no description (purpose + category, one line)'
+    })
+  })
+
+  it('passes a component with a description', () => {
+    const node = { type: 'COMPONENT', name: 'Button', description: 'Primary call-to-action. Category: controls.' }
+    expect(missingComponentDescriptionViolation(node)).toBeNull()
   })
 })
 

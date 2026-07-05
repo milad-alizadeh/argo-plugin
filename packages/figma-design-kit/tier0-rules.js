@@ -311,6 +311,34 @@ export function possibleGateFalsePositiveTag(node) {
   return overridden.every((f) => POSSIBLE_FALSE_POSITIVE_OVERRIDE_FIELDS.includes(f))
 }
 
+/**
+ * design-memory-placement.md Mechanism 1: advisory-only reconciliation for a
+ * component that isn't a child of any category shelf frame on
+ * `Custom Components` — a human manually rearranged it, or an agent placed
+ * it directly on the page instead of `appendChild`-ing to the resolved
+ * shelf. Never blocks — self-corrects on the next figma-create upsert.
+ * `insideCategoryShelf` is marshaled by the walker from the node's parent
+ * chain against the configured `componentCategories` shelf frames.
+ */
+export function unsectionedComponentViolation(node) {
+  if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return null
+  if (node.insideCategoryShelf) return null
+  return {
+    rule: 'unsectioned-component',
+    detail: `component "${node.name}" is not a child of any category shelf frame on Custom Components`
+  }
+}
+
+/** Mechanism 3 (advisory): a component with no description misses the one place in-file facts (purpose + category) can't drift. Never blocks. */
+export function missingComponentDescriptionViolation(node) {
+  if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return null
+  if (node.description) return null
+  return {
+    rule: 'missing-component-description',
+    detail: `component "${node.name}" has no description (purpose + category, one line)`
+  }
+}
+
 export function gapPaddingSpacingViolations(node, _spacingScale) {
   // Nodes inside a library instance are exempt (2026-07-05): kit internals
   // bind the kit's own spacing collections (e.g. tw/gap) — not ours to

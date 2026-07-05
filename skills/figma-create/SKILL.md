@@ -132,6 +132,18 @@ file → skip; never invent one.
     the style link (Figma treats the family/weight override as
     de-linking) → always set `textStyleId` LAST, after any `fontName`/size
     changes, and re-read `textStyleId` back to confirm it's still set.**
+  - **A freshly `createAutoLayout()`-ed frame is invisible-on-light /
+    blinding-on-dark → `figma.createAutoLayout()` leaves Figma's default
+    solid white fill in place → set `fills = []` (or the intended bound
+    fill) immediately on creation, in the same edit, never a later pass.**
+  - **A kit instance permanently fails `kit-instance-override` with no
+    edit you recognize → `setExplicitVariableModeForCollection` was called
+    on that instance at some point; `instance.overrides` keeps
+    `explicitVariableModes` in its override history even after clearing
+    the value back to `{}` → never call `setExplicitVariableModeForCollection`
+    on a kit INSTANCE (mode copies use it on locally-authored components
+    only, per D11); if it already happened, recreate the instance —
+    clearing the value does not clear the override history.**
 
 ## Where things go
 
@@ -139,6 +151,51 @@ Page placement follows `templates/design/file-structure.md`, the canonical
 file-organization convention: components (and their mode copies) go on the
 `Custom Components` page; screens go on their `D<NN> <group>` page, mirroring
 the `W<NN> <group>` wireframe page of the same group 1:1.
+
+**Category placement (design-memory-placement.md, step 6) — one deterministic
+op, no coordinate math:**
+1. Resolve the component's category using the rubric in `file-structure.md`.
+2. Validate it is a member of `design/config.json`'s
+   `design.componentCategories` (`isCategoryInEnum` from
+   `figma-design-kit/component-categories`) — an out-of-enum category is a
+   stop-and-ask, never a silent new bucket.
+3. `appendChild` the component (and its mode copies, in a nested vertical
+   Auto Layout beneath it) to that category's Auto-Layout WRAP frame on
+   `Custom Components`. That's the entire placement step — the frame's fixed
+   `itemSpacing` and `layoutWrap: 'WRAP'` do the rest; never compute a
+   column/row position.
+
+**Description (step 7) — set once, batched into the same `use_figma` call
+that creates the component:** `component.description = "<one-line purpose>. Category: <category>."`
+— purpose plus category ONLY. Never write a status word into the
+description (status is registry-side lifecycle state, never in-file — see
+`templates/design/memory-model.md`).
+
+**Registry read-order (step 9, cold-start optimization).** Before creating
+anything, read `design/registry.json` once (~40 lines) — a cold-start agent
+should reach an EXISTING component in ≤3 calls, not 15-20 discovery calls:
+1. If the component's name is already in the registry, verify its `nodeId`
+   via `getNodeByIdAsync` before touching it — never trust a cached id
+   blind.
+2. On a `null` result (a common node-id invalidation cause: a
+   `combineAsVariants`/variant restructure minted a new `COMPONENT_SET`
+   id), `findAll` by name within that category's shelf frame first; found ⇒
+   persist the corrected `nodeId` back to the registry and continue; not
+   found ⇒ fall back to a full Custom-Components scan once, and report the
+   drift in the task output — never silently delete the stale entry.
+
+**Registry upsert (step 8, final step of every create/edit task).** After
+the audit is clean: bootstrap `design/registry.json` with the versioned
+schema if it doesn't exist yet, then a **single-key** read-modify-write —
+re-read the file immediately before writing and merge only this component's
+key (never overwrite the whole file from a stale in-memory copy; flat
+concurrent designer sessions make last-write-wins a real entry-loss risk).
+Entry shape (`RegistryEntrySchema`, `packages/figma-design-kit/schemas.js`):
+`{ nodeId, category, status: 'audit-clean', description, provenance: {
+createdBy: 'figma-create', lastTask, lastAudit: { auditedAt, clean: true }
+} }`. `status` is Figma-side lifecycle ONLY — this skill only ever writes
+`audit-clean` (the outcome of its own self-audit loop); `synced`/`coded` are
+owned by other skills' outputs and never written here.
 
 ## Efficiency (round-trips are the cost driver)
 

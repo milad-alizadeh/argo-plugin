@@ -36,11 +36,22 @@ export function unboundStrokeViolations(node) {
   return violations
 }
 
+const PER_CORNER_RADIUS_FIELDS = ['topLeftRadius', 'topRightRadius', 'bottomLeftRadius', 'bottomRightRadius']
+
+/**
+ * A `cornerRadius` of 0 (or absent) carries no radius design intent, so it's
+ * never flagged — every plain frame defaults to 0. A radius counts as bound
+ * either via the uniform `boundVariables.cornerRadius`, or via all four
+ * per-corner fields being bound (the only bindable radius fields on many
+ * node types) — fix: 2026-07, closed a 71-hit false-positive class.
+ */
 export function unboundRadiusViolation(node) {
-  if ('cornerRadius' in node && typeof node.cornerRadius === 'number' && !node.boundVariables?.cornerRadius) {
-    return { rule: 'unbound-radius', detail: 'cornerRadius has no bound variable' }
-  }
-  return null
+  if (!('cornerRadius' in node) || typeof node.cornerRadius !== 'number' || node.cornerRadius === 0) return null
+  const bound = node.boundVariables ?? {}
+  const boundUniform = Boolean(bound.cornerRadius)
+  const boundPerCorner = PER_CORNER_RADIUS_FIELDS.every((field) => Boolean(bound[field]))
+  if (boundUniform || boundPerCorner) return null
+  return { rule: 'unbound-radius', detail: 'cornerRadius has no bound variable' }
 }
 
 /**

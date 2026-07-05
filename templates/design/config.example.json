@@ -16,6 +16,9 @@
   "figma": {
     "projectFileKey": "{{PROJECT_FILE_KEY}}"
   },
+  "design": {
+    "componentCategories": ["primitive", "composite"]
+  },
   "recipeConfig": {
     "figma": {
       "kitLibraryFileKey": "{{KIT_FILE_KEY}}"

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { WaiverSchema, StoryMapEntrySchema } from '../packages/figma-design-kit/schemas.js'
+import { WaiverSchema, StoryMapEntrySchema, RegistryEntrySchema, RegistryHeaderSchema } from '../packages/figma-design-kit/schemas.js'
 import { KitPatchSchema, KitLockSchema } from '../packages/figma-design-kit/recipes/external-kit.js'
 
 describe('WaiverSchema', () => {
@@ -80,5 +80,30 @@ describe('StoryMapEntrySchema', () => {
       propMapping: {}
     }
     expect(StoryMapEntrySchema.safeParse(missing).success).toBe(false)
+  })
+})
+
+describe('RegistryEntrySchema (design-memory-placement.md, thin pointer index)', () => {
+  const valid = {
+    nodeId: '12:34',
+    category: 'controls',
+    status: 'audit-clean',
+    description: 'Primary call-to-action button',
+    provenance: { createdBy: 'figma-create', lastTask: 'build Button', lastAudit: { auditedAt: '2026-07-05T00:00:00Z', clean: true } }
+  }
+
+  it('accepts the thin pointer-index shape (reusing nodeId as the story-map join key)', () => {
+    expect(RegistryEntrySchema.safeParse(valid).success).toBe(true)
+  })
+
+  it('rejects a status outside draft|audit-clean (synced/coded are derived, never stored)', () => {
+    expect(RegistryEntrySchema.safeParse({ ...valid, status: 'synced' }).success).toBe(false)
+  })
+})
+
+describe('RegistryHeaderSchema', () => {
+  it('accepts the freshness header shape', () => {
+    const header = { figmaFileVersion: '42', syncedAtWriteCount: 3, syncedAt: '2026-07-05T00:00:00Z' }
+    expect(RegistryHeaderSchema.safeParse(header).success).toBe(true)
   })
 })

@@ -169,6 +169,16 @@ Copy from `${CLAUDE_PLUGIN_ROOT}/templates/design/` into the host project,
 filling every `{{…}}` slot per `skills/setup-design/templates-reference.md`:
 `vrt-walker/`, `spec-diff-walker/spec-diff.walker.spec-diff.js`,
 `gate-wiring.md`, `config.example.json` → `design/config.json` — always.
+`config.example.json` seeds `design.componentCategories` with the thin default
+`["primitive", "composite"]` (design-memory-placement.md A1) — a project with
+real domain groupings (e.g. argo-v2's `rail`/`controls`/`status`/
+`foundation-atoms`) sets its own list here instead. Validate it with
+`validateComponentCategories` from `figma-design-kit/component-categories`
+before writing: a non-empty array of unique, non-empty strings, or refuse to
+proceed and report why. This is the enum `figma-create`'s placement step and
+`figma-audit`'s reconcile sweep both validate a category against — see
+`templates/design/file-structure.md`.
+
 Then assemble `tier0-audit.js` (into `design/`, so
 `figma-audit`/`figma-sync`/`figma-create` read the project's own assembled
 copy rather than the plugin template): replace its

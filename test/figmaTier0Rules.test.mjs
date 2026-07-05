@@ -63,6 +63,10 @@ describe('unboundTypeViolation', () => {
     const node = { fontName: { family: 'Inter' }, boundVariables: { fontSize: { id: '1:2' } } }
     expect(unboundTypeViolation(node)).toBeNull()
   })
+  it('passes a text node styled with a shared text style, even with no bound fontSize', () => {
+    const node = { fontName: { family: 'Inter' }, boundVariables: {}, textStyleId: 'S:abc123' }
+    expect(unboundTypeViolation(node)).toBeNull()
+  })
 })
 
 describe('missingAutoLayoutViolation', () => {

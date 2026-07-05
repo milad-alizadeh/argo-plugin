@@ -43,8 +43,18 @@ export function unboundRadiusViolation(node) {
   return null
 }
 
+/**
+ * Passes a text node bound directly to a fontSize variable OR carrying a
+ * shared text style (the pack's own text-styling convention) — `textStyleId`
+ * is `figma.mixed` (an object) when mixed across a range, and `''` when
+ * unset, so only a non-empty string counts as "styled" (fix: 2026-07,
+ * closed a 45-hit false-positive class on a properly text-styled sheet).
+ */
 export function unboundTypeViolation(node) {
-  if ('fontName' in node && !node.boundVariables?.fontSize) {
+  if (!('fontName' in node)) return null
+  const hasBoundFontSize = Boolean(node.boundVariables?.fontSize)
+  const hasTextStyle = typeof node.textStyleId === 'string' && node.textStyleId !== ''
+  if (!hasBoundFontSize && !hasTextStyle) {
     return { rule: 'unbound-type', detail: 'text node font size has no bound variable' }
   }
   return null

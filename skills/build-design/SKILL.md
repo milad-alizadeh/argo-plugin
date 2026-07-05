@@ -99,9 +99,41 @@ one human seam: sanity-check the deferral ledger (a session that hits UNACCOUNTE
 must STOP and surface — it may not self-defer to dodge the gate; deferrals are a
 frozen PLANNING output, read-only at verify time).
 
+## Two-phase orchestration (DEFAULT — the efficient shape)
+For a wave/batch of screens, do NOT build each screen end-to-end in isolation —
+that re-pays the composite-build cost per screen. Instead:
+
+1. **Composite front-load (SERIAL).** Build every NEW/EXTEND/RECONCILE composite a
+   wave needs FIRST, in a few serial sessions (one writer — two sessions must
+   never author the same NEW master). Each base master a wave touches must be
+   `audit-clean` in `registry.json` before the wave starts. This amortizes the
+   ~30–50k per-session context tax and banks the shared components once.
+2. **Compose fan-out (PARALLEL, ~3-wide).** Once a wave's composites are banked,
+   screens only place instances on their OWN frames — no shared master mutation,
+   so parallel compose is collision-free with no lock needed. Serialize ONLY the
+   P6 registry/receipt commit through the single on-device writer (integrator).
+
+Front-loading is the dominant token lever (composition-dominant screens cost
+~75k, not ~300k); parallelism is a wall-time bonus, not the strategy.
+
+## Cost discipline (hard rules)
+- **`get_metadata` is reserved for P1 freeze and the independent P5 verify ONLY.**
+  P3/P4 read the committed contract JSON + the component-resolution manifest —
+  NEVER re-pull the tree "to check structure" (the single largest redundant spend).
+- **Pre-seed the component-resolution manifest** (region/composite → kit node id +
+  variant + REUSE/EXTEND/NEW verdict, generated from INVENTORY + registry) into
+  every designer session. Resolve by lookup; fire live `search_design_system` only
+  on a genuine miss (D01 burned 2 wrong kit-Switch matches solving this blind).
+- **Tier the verifier.** Run the deterministic region-contract coverage gate on
+  EVERY screen (near-free, hard). Spawn the adversarial design-verifier ONLY for
+  screens with a NEW composite or high PRD-REQ density — a pure recompose of
+  banked instances passes on the deterministic gate alone. Never cut the visual
+  self-review round (that's the anti-under-build teeth).
+- **Author tier-0-compliant up front** (naming / Semantic binding / auto-layout)
+  rather than create→audit→fix→re-audit round-trips.
+
 ## Session shape & recovery
-One long-lived session per screen, sequential across a wave; fan-out only along
-BUILD-ORDER's shared-composite graph with a claim/lock so two sessions can't both
-build the same NEW composite. Durable on-disk state (contracts, dispositions,
-receipts, registry, progress doc) + the Figma file survive an interruption;
+Durable on-disk state (contracts, dispositions, receipts, registry, progress doc)
++ the Figma file survive an interruption; wrap each designer session in
+`orchestrate`'s bounded-retry loop so a crash restarts ONE screen, not the batch;
 rate-limit recovery inherits `orchestrate` §4.

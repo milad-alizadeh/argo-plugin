@@ -22,11 +22,9 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { makeBlock } from './lib/gate-block.mjs'
 
-function block(reason) {
-  process.stderr.write(`Design guard: BLOCKED — ${reason}\n`)
-  process.exit(2)
-}
+const block = makeBlock('Design guard')
 
 function resolveRepoRoot(cwd) {
   try {

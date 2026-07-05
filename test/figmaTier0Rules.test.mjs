@@ -129,6 +129,11 @@ describe('kitInstanceOverrideViolation', () => {
     expect(kitInstanceOverrideViolation(node)).toBeNull()
   })
 
+  it('passes a styledTextSegments override — Figma files sanctioned text recolors under this field, not fills (observed live)', () => {
+    const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['styledTextSegments'] }
+    expect(kitInstanceOverrideViolation(node)).toBeNull()
+  })
+
   // Whitelist, not blacklist (user ruling 2026-07-05, VERY IMPORTANT): kit
   // instances are never edited AT ALL — only size and color are legal.
   it('flags a remote kit instance overriding anything beyond size/color (e.g. strokeWeight)', () => {
@@ -322,6 +327,15 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
     const node = {
       layoutMode: 'NONE',
       gapAndPadding: [{ field: 'itemSpacing', value: 7, bound: false }]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+  })
+
+  it('ignores INSTANCE nodes themselves — their own gap/padding mirrors the component definition (kit tw/gap on the boundary node observed live)', () => {
+    const node = {
+      type: 'INSTANCE',
+      layoutMode: 'HORIZONTAL',
+      gapAndPadding: [{ field: 'itemSpacing', value: 8, bound: true, collectionName: 'tw/gap' }]
     }
     expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
   })

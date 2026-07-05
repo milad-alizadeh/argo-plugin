@@ -136,7 +136,8 @@ const ALLOWED_KIT_INSTANCE_OVERRIDES = [
   'componentProperties', // variant/prop switching is what instances are for
   'componentPropertyReferences',
   'mainComponent', // instance swap
-  'characters' // text CONTENT is usage, not styling — labeling a kit Switch/Breadcrumb is sanctioned
+  'characters', // text CONTENT is usage, not styling — labeling a kit Switch/Breadcrumb is sanctioned
+  'styledTextSegments' // Figma files sanctioned text recolors (bound-variable fills on TEXT) here, not under 'fills'
 ]
 
 export function kitInstanceOverrideViolation(node) {
@@ -238,7 +239,11 @@ export function gapPaddingSpacingViolations(node, _spacingScale) {
   // bind the kit's own spacing collections (e.g. tw/gap) — not ours to
   // rebind; flagging them made pristine kit instances fail the hard gate.
   if (node.insideInstance) return []
-  if (node.layoutMode === 'NONE' || node.type === 'COMPONENT_SET') return []
+  // INSTANCE nodes' own gap/padding mirrors their component definition —
+  // locally-authored components are audited at the definition; kit instances'
+  // boundary nodes carry the kit's own bindings (tw/gap observed live).
+  if (node.layoutMode === 'NONE' || node.type === 'COMPONENT_SET' || node.type === 'INSTANCE')
+    return []
   const violations = []
   for (const entry of node.gapAndPadding ?? []) {
     const { field, value, bound, collectionName } = entry

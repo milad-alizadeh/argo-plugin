@@ -5,8 +5,10 @@
   "license": "MIT",
   "type": "module",
   "main": "index.js",
+  "sideEffects": false,
   "exports": {
-    ".": "./index.js"
+    ".": "./index.js",
+    "./tier0-rules": "./tier0-rules.js"
   },
   "files": [
     "index.js",

@@ -40,8 +40,9 @@ import {
   modeCopyViolations,
   implicitLineHeightViolation,
   storyUrlScopeViolation,
-  gapPaddingSpacingViolations
-} from 'figma-design-kit'
+  gapPaddingSpacingViolations,
+  isNamedAuditTarget
+} from 'figma-design-kit/tier0-rules'
 
 const SEMANTIC_COLLECTION_NAME = '{{SEMANTIC_COLLECTION_NAME}}'
 
@@ -152,8 +153,11 @@ async function runTier0Audit(options = {}) {
   const semanticModes = await collectSemanticModeNames()
 
   if (componentNames?.length) {
+    // Dynamic-page mode requires every page loaded before figma.root.findAll
+    // can see nodes outside the currently-open page.
+    await figma.loadAllPagesAsync()
     for (const name of componentNames) {
-      const matches = figma.root.findAll((n) => n.name === name && (n.type === 'COMPONENT' || n.type === 'COMPONENT_SET'))
+      const matches = figma.root.findAll((n) => isNamedAuditTarget(n, name))
       for (const match of matches) await walk(match, { hard: true, spacingScale, semanticModes }, violations)
     }
   } else {

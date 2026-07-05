@@ -36,18 +36,58 @@ export function unboundStrokeViolations(node) {
   return violations
 }
 
+const PER_CORNER_RADIUS_FIELDS = ['topLeftRadius', 'topRightRadius', 'bottomLeftRadius', 'bottomRightRadius']
+
+/**
+ * A `cornerRadius` of 0 (or absent) carries no radius design intent, so it's
+ * never flagged — every plain frame defaults to 0. A radius counts as bound
+ * either via the uniform `boundVariables.cornerRadius`, or via all four
+ * per-corner fields being bound (the only bindable radius fields on many
+ * node types) — fix: 2026-07, closed a 71-hit false-positive class. A
+ * COMPONENT_SET container node is skipped entirely: Figma gives every
+ * combineAsVariants container a default cornerRadius of 5 (the purple
+ * dashed editor chrome), which is not a design surface and can't
+ * meaningfully bind a token.
+ */
 export function unboundRadiusViolation(node) {
-  if ('cornerRadius' in node && typeof node.cornerRadius === 'number' && !node.boundVariables?.cornerRadius) {
-    return { rule: 'unbound-radius', detail: 'cornerRadius has no bound variable' }
+  if (node.type === 'COMPONENT_SET') return null
+  if (!('cornerRadius' in node) || typeof node.cornerRadius !== 'number' || node.cornerRadius === 0) return null
+  const bound = node.boundVariables ?? {}
+  const boundUniform = Boolean(bound.cornerRadius)
+  const boundPerCorner = PER_CORNER_RADIUS_FIELDS.every((field) => Boolean(bound[field]))
+  if (boundUniform || boundPerCorner) return null
+  return { rule: 'unbound-radius', detail: 'cornerRadius has no bound variable' }
+}
+
+/**
+ * Passes a text node bound directly to a fontSize variable OR carrying a
+ * shared text style (the pack's own text-styling convention) — `textStyleId`
+ * is `figma.mixed` (an object) when mixed across a range, and `''` when
+ * unset, so only a non-empty string counts as "styled" (fix: 2026-07,
+ * closed a 45-hit false-positive class on a properly text-styled sheet).
+ */
+export function unboundTypeViolation(node) {
+  if (!('fontName' in node)) return null
+  const hasBoundFontSize = Boolean(node.boundVariables?.fontSize)
+  const hasTextStyle = typeof node.textStyleId === 'string' && node.textStyleId !== ''
+  if (!hasBoundFontSize && !hasTextStyle) {
+    return { rule: 'unbound-type', detail: 'text node font size has no bound variable' }
   }
   return null
 }
 
-export function unboundTypeViolation(node) {
-  if ('fontName' in node && !node.boundVariables?.fontSize) {
-    return { rule: 'unbound-type', detail: 'text node font size has no bound variable' }
-  }
-  return null
+const NAMED_AUDIT_TARGET_TYPES = new Set(['COMPONENT', 'COMPONENT_SET', 'FRAME', 'SECTION'])
+
+/**
+ * Named-component audit matching predicate (figma-audit's hard-gate mode).
+ * A named audit must be able to target SCREENS and foundation frames, not
+ * only components — those are FRAME/SECTION nodes, which a
+ * COMPONENT/COMPONENT_SET-only match silently misses (fix: 2026-07, closed
+ * a false-pass where a named audit of a frame returned zero matches instead
+ * of walking it).
+ */
+export function isNamedAuditTarget(node, name) {
+  return node.name === name && NAMED_AUDIT_TARGET_TYPES.has(node.type)
 }
 
 export function missingAutoLayoutViolation(node) {

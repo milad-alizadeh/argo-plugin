@@ -11,7 +11,8 @@ import {
   modeCopyViolations,
   implicitLineHeightViolation,
   storyUrlScopeViolation,
-  gapPaddingSpacingViolations
+  gapPaddingSpacingViolations,
+  isNamedAuditTarget
 } from '../packages/figma-design-kit/tier0-rules.js'
 
 describe('unboundFillViolations', () => {
@@ -52,6 +53,33 @@ describe('unboundRadiusViolation', () => {
   it('passes a node with no cornerRadius', () => {
     expect(unboundRadiusViolation({})).toBeNull()
   })
+  it('passes a default cornerRadius of 0 with no radius design intent', () => {
+    const node = { cornerRadius: 0, boundVariables: {} }
+    expect(unboundRadiusViolation(node)).toBeNull()
+  })
+  it('passes a cornerRadius bound entirely via per-corner fields', () => {
+    const node = {
+      cornerRadius: 8,
+      boundVariables: {
+        topLeftRadius: { id: '1:1' },
+        topRightRadius: { id: '1:2' },
+        bottomLeftRadius: { id: '1:3' },
+        bottomRightRadius: { id: '1:4' }
+      }
+    }
+    expect(unboundRadiusViolation(node)).toBeNull()
+  })
+  it('passes a COMPONENT_SET container node regardless of its default editor-chrome cornerRadius', () => {
+    const node = { type: 'COMPONENT_SET', cornerRadius: 5, boundVariables: {} }
+    expect(unboundRadiusViolation(node)).toBeNull()
+  })
+  it('flags a cornerRadius with only some per-corner fields bound', () => {
+    const node = {
+      cornerRadius: 8,
+      boundVariables: { topLeftRadius: { id: '1:1' } }
+    }
+    expect(unboundRadiusViolation(node)).toEqual({ rule: 'unbound-radius', detail: 'cornerRadius has no bound variable' })
+  })
 })
 
 describe('unboundTypeViolation', () => {
@@ -61,6 +89,10 @@ describe('unboundTypeViolation', () => {
   })
   it('passes a text node with a bound fontSize', () => {
     const node = { fontName: { family: 'Inter' }, boundVariables: { fontSize: { id: '1:2' } } }
+    expect(unboundTypeViolation(node)).toBeNull()
+  })
+  it('passes a text node styled with a shared text style, even with no bound fontSize', () => {
+    const node = { fontName: { family: 'Inter' }, boundVariables: {}, textStyleId: 'S:abc123' }
     expect(unboundTypeViolation(node)).toBeNull()
   })
 })
@@ -185,6 +217,15 @@ describe('storyUrlScopeViolation (D1)', () => {
   })
   it('ignores a component with no storyUrl', () => {
     expect(storyUrlScopeViolation({ type: 'COMPONENT' })).toBeNull()
+  })
+})
+
+describe('isNamedAuditTarget', () => {
+  it('matches a top-level FRAME by name (a screen or foundation frame)', () => {
+    expect(isNamedAuditTarget({ name: 'foundations/sticker-sheet', type: 'FRAME' }, 'foundations/sticker-sheet')).toBe(true)
+  })
+  it('does not match a same-named node of a non-matchable type', () => {
+    expect(isNamedAuditTarget({ name: 'Button', type: 'TEXT' }, 'Button')).toBe(false)
   })
 })
 

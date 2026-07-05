@@ -175,9 +175,30 @@ copy rather than the plugin template): replace its
 `// {{RECIPE_TIER0_CHECKS}}` marker line verbatim with the chosen recipe's
 `design-source/tier0-recipe-checks.js` file content (the splice point is at
 module top level, so the recipe file's own `import`s survive intact) —
-the installed file is the ONE assembled canonical script (F12/X3), with no
-unresolved marker left behind. For a `baseSource: none` recipe with no
+`design/tier0-audit.js` is the ONE assembled canonical **module** (F12/X3),
+with no unresolved marker left behind. For a `baseSource: none` recipe with no
 checks file, delete the marker line instead of leaving it unresolved.
+
+**This assembled module still can't run in `use_figma`** — Figma's Plugin
+API sandbox takes one self-contained script with NO module resolution, and
+the assembled module's `import`s (from the vendored `figma-design-kit`/
+`figma-design-kit-shadcn-tailwind` packages and the recipe's own
+`./kit-patches.json`) can never resolve there. Two installed artifacts, not
+one: `design/tier0-audit.js` stays the readable/diffable assembled module
+(re-derived by this step and by `design-upgrade`, importable by tooling
+outside the sandbox); a second, **transient, generated** file,
+`design/tier0-audit.bundle.js`, is what actually gets pasted into
+`use_figma` — regenerate it any time via `bundleTier0Audit` from
+`${CLAUDE_PLUGIN_ROOT}/scripts/assemble-tier0-audit.mjs`, never hand-edit it.
+That function shells out to `bun build --bundle --format=esm` from a temp
+file inside `design/` (so the recipe's relative `./kit-patches.json` import
+resolves exactly as it does from the real installed location), then
+verifies the result is actually sandbox-runnable: zero `import`/`export`
+statements left, and under `use_figma`'s 50,000-char cap. Bundling via the
+barrel `figma-design-kit`/`figma-design-kit-shadcn-tailwind` entrypoints
+pulls in `zod` (~120KB, unused by the tier-0 rules) and blows that cap —
+this is why `tier0-audit.js` and `tier0-recipe-checks.js` import from the
+`/tier0-rules` subpath directly, not the package root; keep it that way.
 Install the
 chosen recipe's remaining templates per their `templates-reference.md`
 install-when conditions: `design-source/base-congruence.walker.spec-diff.js`

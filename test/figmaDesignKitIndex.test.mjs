@@ -13,6 +13,7 @@ describe('figma-design-kit package entrypoint', () => {
     expect(figmaDesignKit.StoryMapEntrySchema).toBeDefined()
     expect(typeof figmaDesignKit.checkWaiver).toBe('function')
     expect(typeof figmaDesignKit.invalidateWaivers).toBe('function')
+    expect(typeof figmaDesignKit.isNamedAuditTarget).toBe('function')
   })
 
   it('no longer exports the external-kit-recipe-only schemas from the mechanism entrypoint', () => {

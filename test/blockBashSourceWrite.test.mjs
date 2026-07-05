@@ -40,6 +40,14 @@ describe('block-bash-source-write — closes the shell-write subset of the guard
     expect((await runHook(bashInput('cp /tmp/staged.rs src/lib/parser.rs'))).code).toBe(2)
   })
 
+  // R8: "never patch the bundled audit locally" is enforced by this same
+  // guard, since design/tier0-audit.js is a plain .js source file in a
+  // non-exempt path — no separate hook needed.
+  it('BLOCK: shell-writing the assembled tier-0 audit script (R8 never-patch-locally)', async () => {
+    const r = await runHook(bashInput("cat > design/tier0-audit.js <<'EOF'\nexport default 1\nEOF"))
+    expect(r.code).toBe(2)
+  })
+
   it('BLOCK: interpreter one-liner writing a source file (node -e writeFileSync)', async () => {
     expect(
       (await runHook(bashInput(`node -e "require('fs').writeFileSync('src/gen.ts','export {}')"`))).code,

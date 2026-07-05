@@ -13,6 +13,11 @@
  */
 
 export function unboundFillViolations(node) {
+  // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
+  // kit internals bind the kit's own color collections — not ours to
+  // rebind; flagging them made a pristine kit instance (e.g. Switch) fail
+  // the hard gate on its own internal frames.
+  if (node.insideInstance) return []
   const violations = []
   if ('fills' in node && Array.isArray(node.fills)) {
     for (const fill of node.fills) {
@@ -25,6 +30,10 @@ export function unboundFillViolations(node) {
 }
 
 export function unboundStrokeViolations(node) {
+  // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
+  // kit internals bind the kit's own color collections — not ours to
+  // rebind; see unboundFillViolations for the same reasoning.
+  if (node.insideInstance) return []
   const violations = []
   if ('strokes' in node && Array.isArray(node.strokes)) {
     for (const stroke of node.strokes) {
@@ -50,6 +59,9 @@ const PER_CORNER_RADIUS_FIELDS = ['topLeftRadius', 'topRightRadius', 'bottomLeft
  * meaningfully bind a token.
  */
 export function unboundRadiusViolation(node) {
+  // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
+  // kit internals bind the kit's own radius collections — not ours to rebind.
+  if (node.insideInstance) return null
   if (node.type === 'COMPONENT_SET') return null
   if (!('cornerRadius' in node) || typeof node.cornerRadius !== 'number' || node.cornerRadius === 0) return null
   const bound = node.boundVariables ?? {}
@@ -67,6 +79,9 @@ export function unboundRadiusViolation(node) {
  * closed a 45-hit false-positive class on a properly text-styled sheet).
  */
 export function unboundTypeViolation(node) {
+  // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
+  // kit internals bind the kit's own type collections — not ours to rebind.
+  if (node.insideInstance) return null
   if (!('fontName' in node)) return null
   const hasBoundFontSize = Boolean(node.boundVariables?.fontSize)
   const hasTextStyle = typeof node.textStyleId === 'string' && node.textStyleId !== ''
@@ -91,6 +106,9 @@ export function isNamedAuditTarget(node, name) {
 }
 
 export function missingAutoLayoutViolation(node) {
+  // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
+  // kit internals structure their own layout — not ours to Auto-Layout.
+  if (node.insideInstance) return null
   // INSTANCE nodes are exempt (revised 2026-07-05): an instance's layoutMode
   // mirrors its main component — locally-authored components are already
   // audited at their definition, and kit-library instances (single-vector
@@ -273,6 +291,24 @@ export function strokeScaleViolation({ instanceSize, nativeSize, resolvedStrokeW
     }
   }
   return null
+}
+
+/**
+ * R8 mechanical false-positive discriminator: a violation on a node that
+ * resolves to a kit main component (a remote instance, or a node inside
+ * one) whose only overrides are size/fill/stroke is presumptively a GATE
+ * BUG, not a real hygiene defect — the designer never touched anything else
+ * on that node. Tagging is mechanical (never self-graded by the agent
+ * reporting it), and does NOT license detaching or editing kit internals
+ * (agents/designer.md ICONS section states that loudly).
+ */
+const POSSIBLE_FALSE_POSITIVE_OVERRIDE_FIELDS = ['width', 'height', 'fills', 'strokes', 'fillStyleId', 'strokeStyleId']
+
+export function possibleGateFalsePositiveTag(node) {
+  if (!node.isRemoteInstance && !node.insideInstance) return false
+  const overridden = node.overriddenFields ?? []
+  if (overridden.length === 0) return false
+  return overridden.every((f) => POSSIBLE_FALSE_POSITIVE_OVERRIDE_FIELDS.includes(f))
 }
 
 export function gapPaddingSpacingViolations(node, _spacingScale) {

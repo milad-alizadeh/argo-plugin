@@ -32,6 +32,28 @@
       "children": []
     },
     {
+      "id": "1:210",
+      "type": "INSTANCE",
+      "name": "Switch",
+      "isRemoteInstance": true,
+      "hasMainComponent": true,
+      "overriddenFields": ["componentProperties"],
+      "children": [
+        {
+          "id": "1:211",
+          "type": "FRAME",
+          "name": "Knob",
+          "insideInstance": true,
+          "layoutMode": "NONE",
+          "cornerRadius": 999,
+          "boundVariables": {},
+          "fills": [{ "type": "SOLID", "boundVariables": {} }],
+          "strokes": [{ "type": "SOLID", "boundVariables": {} }],
+          "children": []
+        }
+      ]
+    },
+    {
       "id": "1:300",
       "type": "COMPONENT",
       "name": "Card",

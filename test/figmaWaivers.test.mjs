@@ -43,4 +43,15 @@ describe('invalidateWaivers', () => {
     expect(valid).toEqual([baseWaiver])
     expect(invalidated).toEqual([otherWaiver])
   })
+
+  // kit-awareness coexistence: a kit-shadow waiver has no sourceVersion field
+  // (it isn't about design-source drift), so it must never be invalidated by
+  // this sourceVersion check — the tier-0 D15/D23 waiver shape and the
+  // kit-awareness waiver shape coexist in the same design/waivers.json array.
+  it('never invalidates a kit-shadow waiver — it has no sourceVersion to compare', () => {
+    const kitShadowWaiver = { type: 'kit-shadow', component: 'Collapsible', kitCandidate: 'Collapsible', reason: 'needs a custom trigger icon' }
+    const { valid, invalidated } = invalidateWaivers([baseWaiver, kitShadowWaiver], 'v99')
+    expect(valid).toEqual([kitShadowWaiver])
+    expect(invalidated).toEqual([baseWaiver])
+  })
 })

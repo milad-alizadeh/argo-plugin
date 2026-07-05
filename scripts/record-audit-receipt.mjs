@@ -15,6 +15,32 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { writeDesignJson } from './write-design-json.mjs'
+import { findKitNameCollisions } from '../packages/figma-design-kit/kit-inventory.js'
+
+/**
+ * kit-awareness (kit-awareness.md §"Enforcement"): reads the three optional,
+ * project-committed files a collision check needs and folds any unwaived
+ * match into the receipt's violationCount — riding the existing
+ * design-guard-stop.mjs rail rather than a new hook (the Figma sandbox can't
+ * read a committed file or call `search_design_system`). Every input is
+ * optional and fails open (absent/unreadable/malformed ⇒ ignored, never
+ * thrown, never a fabricated violation).
+ */
+function readOptionalJson(path) {
+  if (!existsSync(path)) return undefined
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'))
+  } catch {
+    return undefined
+  }
+}
+
+function countKitNameCollisions(componentNames, cwd) {
+  const inventory = readOptionalJson(join(cwd, 'design', 'kit-inventory.json'))
+  const registry = readOptionalJson(join(cwd, 'design', 'registry.json'))
+  const waivers = readOptionalJson(join(cwd, 'design', 'waivers.json'))
+  return findKitNameCollisions(componentNames, { inventory, registry, waivers }).length
+}
 
 /**
  * `writeCounterAtAudit` is read from `.argo/design-guard.json`'s current
@@ -36,10 +62,12 @@ export function recordAuditReceipt({ componentNames = [], violations = [] } = {}
     }
   }
 
+  const kitNameCollisionCount = countKitNameCollisions(componentNames, cwd)
+
   const receipt = {
     timestamp: now,
     componentNames,
-    violationCount: violations.length,
+    violationCount: violations.length + kitNameCollisionCount,
     writeCounterAtAudit
   }
 

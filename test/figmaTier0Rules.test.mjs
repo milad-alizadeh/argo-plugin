@@ -15,7 +15,8 @@ import {
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
   isNamedAuditTarget,
-  strokeScaleViolation
+  strokeScaleViolation,
+  possibleGateFalsePositiveTag
 } from '../packages/figma-design-kit/tier0-rules.js'
 
 describe('unboundFillViolations', () => {
@@ -31,6 +32,10 @@ describe('unboundFillViolations', () => {
     const node = { fills: [{ type: 'GRADIENT_LINEAR', boundVariables: {} }] }
     expect(unboundFillViolations(node)).toEqual([])
   })
+  it('ignores nodes inside a library instance — kit internals bind their own kit collections', () => {
+    const node = { fills: [{ type: 'SOLID', boundVariables: {} }], insideInstance: true }
+    expect(unboundFillViolations(node)).toEqual([])
+  })
 })
 
 describe('unboundStrokeViolations', () => {
@@ -40,6 +45,10 @@ describe('unboundStrokeViolations', () => {
   })
   it('passes a solid stroke with a bound color variable', () => {
     const node = { strokes: [{ type: 'SOLID', boundVariables: { color: { id: '1:2' } } }] }
+    expect(unboundStrokeViolations(node)).toEqual([])
+  })
+  it('ignores nodes inside a library instance — kit internals bind their own kit collections', () => {
+    const node = { strokes: [{ type: 'SOLID', boundVariables: {} }], insideInstance: true }
     expect(unboundStrokeViolations(node)).toEqual([])
   })
 })
@@ -83,6 +92,10 @@ describe('unboundRadiusViolation', () => {
     }
     expect(unboundRadiusViolation(node)).toEqual({ rule: 'unbound-radius', detail: 'cornerRadius has no bound variable' })
   })
+  it('passes a node inside a library instance — kit internals bind their own kit collections', () => {
+    const node = { cornerRadius: 8, boundVariables: {}, insideInstance: true }
+    expect(unboundRadiusViolation(node)).toBeNull()
+  })
 })
 
 describe('unboundTypeViolation', () => {
@@ -98,6 +111,10 @@ describe('unboundTypeViolation', () => {
     const node = { fontName: { family: 'Inter' }, boundVariables: {}, textStyleId: 'S:abc123' }
     expect(unboundTypeViolation(node)).toBeNull()
   })
+  it('passes a text node inside a library instance — kit internals bind their own kit collections', () => {
+    const node = { fontName: { family: 'Inter' }, boundVariables: {}, insideInstance: true }
+    expect(unboundTypeViolation(node)).toBeNull()
+  })
 })
 
 describe('missingAutoLayoutViolation', () => {
@@ -111,6 +128,10 @@ describe('missingAutoLayoutViolation', () => {
   })
   it('ignores non-frame-like node types', () => {
     expect(missingAutoLayoutViolation({ type: 'TEXT', layoutMode: 'NONE' })).toBeNull()
+  })
+  it('passes a frame-like node inside a library instance — kit internals structure their own layout', () => {
+    const node = { type: 'FRAME', layoutMode: 'NONE', insideInstance: true }
+    expect(missingAutoLayoutViolation(node)).toBeNull()
   })
 })
 
@@ -316,6 +337,23 @@ describe('strokeScaleViolation (NEW-3)', () => {
       rule: 'stroke-scale-mismatch',
       detail: "resolved strokeWeight 2 does not track the instance's rescale ratio (expected ~1.17) — the icon was likely resized, not rescaled proportionally"
     })
+  })
+})
+
+describe('possibleGateFalsePositiveTag (R8)', () => {
+  it('tags a remote kit instance whose only overrides are size/fill/stroke', () => {
+    const node = { isRemoteInstance: true, overriddenFields: ['width', 'height', 'fills'] }
+    expect(possibleGateFalsePositiveTag(node)).toBe(true)
+  })
+
+  it('does not tag a node that is neither a remote instance nor inside one', () => {
+    const node = { isRemoteInstance: false, insideInstance: false, overriddenFields: ['fills'] }
+    expect(possibleGateFalsePositiveTag(node)).toBe(false)
+  })
+
+  it('does not tag a remote instance whose overrides include a non-size/fill/stroke field', () => {
+    const node = { isRemoteInstance: true, overriddenFields: ['fills', 'cornerRadius'] }
+    expect(possibleGateFalsePositiveTag(node)).toBe(false)
   })
 })
 

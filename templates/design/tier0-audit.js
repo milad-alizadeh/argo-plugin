@@ -44,7 +44,8 @@ import {
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
   isNamedAuditTarget,
-  strokeScaleViolation
+  strokeScaleViolation,
+  possibleGateFalsePositiveTag
 } from 'figma-design-kit/tier0-rules'
 
 const SEMANTIC_COLLECTION_NAME = '{{SEMANTIC_COLLECTION_NAME}}'
@@ -54,18 +55,52 @@ const SEMANTIC_COLLECTION_NAME = '{{SEMANTIC_COLLECTION_NAME}}'
 async function auditNode(node, { hard, spacingScale, semanticModes, insideInstance = false }) {
   const violations = []
 
+  // Fetched early (rather than inside the INSTANCE-only block below) so the
+  // R8 false-positive tag can see it before any violation is reported.
+  const main = node.type === 'INSTANCE' ? await node.getMainComponentAsync() : null
+  const overriddenFields = (node.overrides ?? []).flatMap((o) => o.overriddenFields ?? [])
+
+  // R8: a node that resolves to a kit main component (a remote instance, or
+  // a node inside one) whose only overrides are size/fill/stroke is
+  // presumptively a GATE BUG, not a real hygiene defect — tag every
+  // violation reported for it `possible-gate-false-positive` so the
+  // designer/reviewer never has to self-grade that judgment (agents/
+  // designer.md's ICONS section states this never licenses detaching).
+  const falsePositiveTag = possibleGateFalsePositiveTag({
+    isRemoteInstance: Boolean(main?.remote),
+    insideInstance,
+    overriddenFields
+  })
   const report = (rule, detail) => {
-    violations.push({ severity: hard ? 'hard' : 'advisory', rule, nodeId: node.id, nodeName: node.name, detail })
+    violations.push({
+      severity: hard ? 'hard' : 'advisory',
+      rule,
+      nodeId: node.id,
+      nodeName: node.name,
+      detail,
+      ...(falsePositiveTag ? { tag: 'possible-gate-false-positive — does NOT license detaching' } : {})
+    })
   }
 
-  for (const v of unboundFillViolations(node)) report(v.rule, v.detail)
-  for (const v of unboundStrokeViolations(node)) report(v.rule, v.detail)
-  const radius = unboundRadiusViolation(node)
+  // Rule functions that read `node.insideInstance` (the kit-internals
+  // exemption, 2026-07-05) need it MARSHALED onto the node they're called
+  // with — `insideInstance` is an opts-only value the real Plugin-API node
+  // never carries as a property. `nodeCtx` prototype-delegates to the real
+  // node (so every existing property/getter access on it still works) and
+  // adds `insideInstance` on top. Fix (live D01 build): unbound-fill/stroke/
+  // radius/type and missing-auto-layout were previously called with the bare
+  // node, so this exemption silently never fired for them, and a pristine
+  // kit instance (e.g. Switch) hard-failed on its own internal frames.
+  const nodeCtx = Object.assign(Object.create(node), { insideInstance })
+
+  for (const v of unboundFillViolations(nodeCtx)) report(v.rule, v.detail)
+  for (const v of unboundStrokeViolations(nodeCtx)) report(v.rule, v.detail)
+  const radius = unboundRadiusViolation(nodeCtx)
   if (radius) report(radius.rule, radius.detail)
-  const type = unboundTypeViolation(node)
+  const type = unboundTypeViolation(nodeCtx)
   if (type) report(type.rule, type.detail)
 
-  const autoLayout = missingAutoLayoutViolation(node)
+  const autoLayout = missingAutoLayoutViolation(nodeCtx)
   if (autoLayout) report(autoLayout.rule, autoLayout.detail)
 
   const handDrawnIcon = handDrawnIconViolation({ type: node.type, insideInstance })
@@ -80,20 +115,19 @@ async function auditNode(node, { hard, spacingScale, semanticModes, insideInstan
       if (!(field in node)) continue
       gapAndPadding.push(await marshalGapPaddingField(node, field))
     }
-    for (const v of gapPaddingSpacingViolations({ type: node.type, layoutMode: node.layoutMode, gapAndPadding }, spacingScale)) {
+    for (const v of gapPaddingSpacingViolations({ type: node.type, layoutMode: node.layoutMode, gapAndPadding, insideInstance }, spacingScale)) {
       report(v.rule, v.detail)
     }
   }
 
   if (node.type === 'INSTANCE') {
-    const main = await node.getMainComponentAsync()
     const detached = detachedInstanceViolation({ type: node.type, hasMainComponent: Boolean(main) })
     if (detached) report(detached.rule, detached.detail)
 
     const kitOverride = kitInstanceOverrideViolation({
       type: node.type,
       isRemoteInstance: Boolean(main?.remote),
-      overriddenFields: (node.overrides ?? []).flatMap((o) => o.overriddenFields ?? [])
+      overriddenFields
     })
     if (kitOverride) report(kitOverride.rule, kitOverride.detail)
 
@@ -106,7 +140,7 @@ async function auditNode(node, { hard, spacingScale, semanticModes, insideInstan
     }
   }
 
-  const nonSemanticName = nonSemanticNameViolation(node)
+  const nonSemanticName = nonSemanticNameViolation(nodeCtx)
   if (nonSemanticName) report(nonSemanticName.rule, nonSemanticName.detail)
 
   for (const v of variantNamingViolations(node)) report(v.rule, v.detail)

@@ -1,0 +1,11 @@
+{
+  "screen": "cockpit-shell",
+  "figmaFileVersion": "42",
+  "builtRegions": [
+    { "name": "AppShell", "path": "AppShell", "isInstance": true, "instanceOf": "AppShell" },
+    { "name": "Header", "path": "AppShell/Header", "isInstance": true, "instanceOf": "Header" },
+    { "name": "MultiProjectSwitcher", "path": "AppShell/Header/MultiProjectSwitcher", "isInstance": true, "instanceOf": "MultiProjectSwitcher" },
+    { "name": "SessionRail", "path": "AppShell/SessionRail", "isInstance": true, "instanceOf": "SessionRail" },
+    { "name": "Stage", "path": "AppShell/Stage", "isInstance": true, "instanceOf": "Stage" }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "screen": "cockpit-shell",
+  "wireframeNodeId": "26:3",
+  "figmaFileVersion": "42",
+  "regions": [
+    { "name": "AppShell", "path": "AppShell", "depth": 0, "children": ["Header", "SessionRail", "Stage"] },
+    { "name": "Header", "path": "AppShell/Header", "depth": 1, "children": ["MultiProjectSwitcher"] },
+    { "name": "SessionRail", "path": "AppShell/SessionRail", "depth": 1, "children": [] },
+    { "name": "MultiProjectSwitcher", "path": "AppShell/Header/MultiProjectSwitcher", "depth": 2, "children": [] },
+    { "name": "Stage", "path": "AppShell/Stage", "depth": 1, "children": ["BuildSpine", "DiffPanel", "LensBar", "VoiceSwitch"] },
+    { "name": "BuildSpine", "path": "AppShell/Stage/BuildSpine", "depth": 2, "children": [] },
+    { "name": "DiffPanel", "path": "AppShell/Stage/DiffPanel", "depth": 2, "children": [] },
+    { "name": "LensBar", "path": "AppShell/Stage/LensBar", "depth": 2, "children": [] },
+    { "name": "VoiceSwitch", "path": "AppShell/Stage/VoiceSwitch", "depth": 2, "children": [] }
+  ]
+}

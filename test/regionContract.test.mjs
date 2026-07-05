@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { classifyCoverage, summarize, reconcileBrief } from '../packages/figma-design-kit/region-contract.js'
+import d01Contract from './fixtures/d01-wireframe-contract.json' with { type: 'json' }
+import d01ShippedShell from './fixtures/d01-shipped-shell-built.json' with { type: 'json' }
 
 describe('classifyCoverage', () => {
   it('classifies a contract region as present when matched by a registry-backed instance', () => {
@@ -118,5 +120,32 @@ describe('reconcileBrief (P2 pre-Figma lint: every contract region needs a dispo
     const dispositions = [{ region: 'BuildSpine', disposition: 'built-here', component: 'BuildSpine', verdict: 'NEW' }]
 
     expect(reconcileBrief(contract, dispositions)).toEqual({ ok: false, unaccounted: ['DiffPanel'] })
+  })
+})
+
+describe('D01 regression (the gate this mechanism exists to catch)', () => {
+  it('flags UNACCOUNTED>=3 and clean:false for the shipped-shell built tree that dropped D01\'s richer wireframe regions', () => {
+    const classification = classifyCoverage(d01Contract, d01ShippedShell.builtRegions, [])
+    const summary = summarize(classification)
+
+    expect(summary.UNACCOUNTED.length).toBeGreaterThanOrEqual(3)
+    expect(summary.UNACCOUNTED).toEqual(expect.arrayContaining(['BuildSpine', 'DiffPanel', 'LensBar', 'VoiceSwitch']))
+    expect(summary.clean).toBe(false)
+  })
+
+  it('is clean when the built tree covers every D01 contract region as a registry-backed instance', () => {
+    const fullBuiltRegions = d01Contract.regions.map((region) => ({
+      name: region.name,
+      path: region.path,
+      isInstance: true,
+      instanceOf: region.name
+    }))
+
+    const classification = classifyCoverage(d01Contract, fullBuiltRegions, [])
+    const summary = summarize(classification)
+
+    expect(summary.clean).toBe(true)
+    expect(summary.UNACCOUNTED).toEqual([])
+    expect(summary.MISSING).toEqual([])
   })
 })

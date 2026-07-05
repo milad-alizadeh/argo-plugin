@@ -120,7 +120,12 @@ mechanisms close those gaps without new tooling.
 - **Design-run scorecard.** Alongside the build scorecard (§6 below), report
   per design run: round-trips per component, wasted rounds (a fix that
   re-triggered the same violation), and gate false positives hit (count of
-  `possible-gate-false-positive`-tagged violations reported).
+  `possible-gate-false-positive`-tagged violations reported). For a screen built
+  through `/argo:build-design`, ALSO report its completeness scorecard: regions
+  covered / deferred / **UNACCOUNTED (must be 0 to land)** / MISSING, PRD
+  requirements present / **absent (must be 0)**, dishonest deferrals, and
+  anti-recreation collisions — a screen with UNACCOUNTED>0 or absent>0 is FAILED
+  regardless of tier-0.
 - **Dropped:** seed-injection of a node-id context pack at spawn time —
   deferred until a companion artifact for it is designed; the near-term
   cold-start cost is covered by the registry/kit-inventory read-order in

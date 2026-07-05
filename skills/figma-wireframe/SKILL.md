@@ -24,6 +24,19 @@ spec itself. Before wireframing any screen, read its brief (host repo, e.g.
 - Realize the brief's **Flow / IA**: which screen this flows to/from, what each
   affordance triggers. The brief pins the flow; the wireframe shows it.
 
+**Ground in the PRD, don't just echo the brief (the circularity fix).** The
+brief is a *projection* of the feature's PRD onto this screen. Before laying out,
+read the PRD (`.claude/prds/<feature>.md`) and cross-check its `Visible in
+build?` requirements for this screen (via the feature→screen matrix). If a PRD
+requirement — a state (empty/loading/error), a cardinality (3 projects), an
+affordance — is NOT expressed by a region the brief lists, the wireframe must
+add that region (and flag the brief gap), NOT quietly narrow to the brief. This
+is what keeps the wireframe an **independent, product-grounded completeness
+source** rather than a 1:1 brief echo: downstream, `build-design` freezes this
+wireframe into the structural region-contract, and a contract that merely mirrors
+the brief makes the completeness gate circular theater. The wireframe is allowed
+to be richer than the brief; it must never be poorer than the PRD.
+
 **No brief, no wireframe.** If a screen has no brief, stop and author the brief
 first (or record an explicit decision to skip it for a trivial variation of an
 already-briefed screen). A wireframe drawn without a brief is exactly the

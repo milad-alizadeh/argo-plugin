@@ -44,12 +44,16 @@ to reconcile just one surface.
 - **Agents** (`agents/`) — full lifecycle roles, invoked on demand:
   `product → scaffolder → planner → builder → reviewer → debugger`, plus
   `auditor` (whole-codebase health), `integrator` (lands work / PRs / docs
-  sync), and `designer` (executes the Figma-to-code design pack's skills inside
-  a live Figma file). `product` sits at the very top of the loop — it turns a
+  sync), `designer` (executes the Figma-to-code design pack's skills inside
+  a live Figma file), and `design-verifier` (independent, adversarial
+  completeness check on a built screen — the P5 gate of `/argo:build-design`).
+  `product` sits at the very top of the loop — it turns a
   raw feature idea into a lightweight, grounded PRD (the durable WHAT/WHY) that
   every stage after it cites.
-- **Skills** (`skills/`) — on-demand disciplines and methodology, twenty-one:
-  `write-prd` (product intent at the top of the loop), `engineering-principles`,
+- **Skills** (`skills/`) — on-demand disciplines and methodology, twenty-two:
+  `write-prd` (product intent at the top of the loop), `build-design` (the
+  design analog of build-plan — contract-gated hands-off screen build),
+  `engineering-principles`,
   `test-first`, `build-plan`, `root-cause`,
   `grill-me`, `spike`, `scaffold`, `session-handoff`, `finish-branch`,
   `author-skill`, `setup-claude`, `update`, `orchestrate`, and the Figma-to-code

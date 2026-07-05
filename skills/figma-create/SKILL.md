@@ -114,9 +114,13 @@ file → skip; never invent one.
   inline in the screen. The **component-first screen path** below sequences
   this: build the brief's `composite` regions before the screen so it composes
   from instances. Inlining a `composite` as loose structure is the
-  reskin-the-wireframe smell the path exists to prevent — advisory this round
-  (the authoritative decomposition gate is deferred; see the path below), not
-  yet a hard gate.
+  reskin-the-wireframe smell the path exists to prevent. At compose time run the
+  **advisory** coverage diff (`region-contract.js` against the built tree) as a
+  self-check. The **authoritative** completeness gate now lives in
+  `/argo:build-design` P5 (receipt-based coverage gate + isolated
+  design-verifier, where `present` requires a registry-backed instance so
+  coverage can't be met by tracing boxes) — a screen built outside that flow is
+  only advisory here.
 - **No variant clipping after `combineAsVariants`** (live defect, 2026-07-05:
   status-pill labels observed truncated — "needs inpu", "interrupte").
   `combineAsVariants` can leave individual variants stretched to a frozen set

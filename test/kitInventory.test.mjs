@@ -22,8 +22,22 @@ describe('findKitNameCollisions', () => {
     expect(findKitNameCollisions(['Collapsible'], {})).toEqual([])
   })
 
-  it('flags a name that shadows an existing registry (project-owned) component too', () => {
-    const registry = { components: { StatusPill: { nodeId: '1:1' } } }
-    expect(findKitNameCollisions(['status-pill'], { registry })).toEqual(['status-pill'])
+  it('flags a DIFFERENT name that shadows an existing registry (project-owned) component', () => {
+    // 'status-pill-compact' contains registry key 'status-pill' but is not it —
+    // a genuine duplicate-in-the-making; exact-equal names are the self case below.
+    const registry = { components: { 'status-pill': { nodeId: '1:1' } } }
+    expect(findKitNameCollisions(['status-pill-compact'], { registry })).toEqual([
+      'status-pill-compact'
+    ])
+  })
+
+  // Self-shadow exclusion (council ruling, 2026-07-05): figma-create upserts
+  // every component into the registry, so its own next audit would collide
+  // with itself and block every re-audit forever. An EXACT normalized name
+  // match against a registry key is the component itself being re-audited —
+  // never a collision; only a different name that substring-matches flags.
+  it('does not flag a component re-audit against its own registry entry (exact-name self match)', () => {
+    const registry = { components: { 'status-pill': { nodeId: '1:1' } } }
+    expect(findKitNameCollisions(['status-pill'], { registry })).toEqual([])
   })
 })

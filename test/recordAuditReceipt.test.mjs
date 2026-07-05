@@ -18,6 +18,29 @@ describe('recordAuditReceipt', () => {
     }
   })
 
+  // Council ruling Q7 (overnight review, 2026-07-05): the receipt is
+  // HARD-only — advisory findings live in the sweep report, never in
+  // violationCount, or an advisory-only run blocks the stop gate (the D05
+  // red-gate incident: 3 advisory stroke-scale hits ended the night red).
+  it('excludes advisory-severity findings from violationCount (hard-only receipt)', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-receipt-'))
+    try {
+      const receipt = recordAuditReceipt(
+        {
+          componentNames: ['Button'],
+          violations: [
+            { severity: 'advisory', rule: 'stroke-scale-mismatch', detail: 'x' },
+            { severity: 'hard', rule: 'unbound-fill', detail: 'y' }
+          ]
+        },
+        { cwd, now: 123 }
+      )
+      expect(receipt.violationCount).toBe(1)
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
   it('folds an unwaived kit-name-collision into violationCount (kit-awareness)', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-receipt-'))
     try {

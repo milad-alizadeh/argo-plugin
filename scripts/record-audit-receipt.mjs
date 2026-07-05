@@ -64,10 +64,15 @@ export function recordAuditReceipt({ componentNames = [], violations = [] } = {}
 
   const kitNameCollisionCount = countKitNameCollisions(componentNames, cwd)
 
+  // HARD-only (council ruling Q7, 2026-07-05): advisory findings belong to
+  // the sweep report, never the receipt — counting them blocked a clean run
+  // on advisory-only stroke-scale hits (the D05 red-gate incident).
+  const hardViolations = violations.filter((v) => v?.severity !== 'advisory')
+
   const receipt = {
     timestamp: now,
     componentNames,
-    violationCount: violations.length + kitNameCollisionCount,
+    violationCount: hardViolations.length + kitNameCollisionCount,
     writeCounterAtAudit
   }
 

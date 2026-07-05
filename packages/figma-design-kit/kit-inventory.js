@@ -51,7 +51,13 @@ export function findKitNameCollisions(componentNames, { inventory, registry, wai
   for (const name of componentNames ?? []) {
     const normalized = normalizeComponentName(name)
     if (waivedNames.has(normalized)) continue
-    if (matchesAny(normalized, kitNames) || matchesAny(normalized, registryNames)) collisions.push(name)
+    // Self-shadow exclusion (council ruling, 2026-07-05): an EXACT normalized
+    // match against a registry key is the component itself being re-audited —
+    // figma-create upserts every component, so without this every re-audit
+    // would collide with its own entry and block forever. Only a DIFFERENT
+    // name that substring-matches a registry entry flags.
+    const registryOthers = registryNames.filter((candidate) => candidate !== normalized)
+    if (matchesAny(normalized, kitNames) || matchesAny(normalized, registryOthers)) collisions.push(name)
   }
   return collisions
 }

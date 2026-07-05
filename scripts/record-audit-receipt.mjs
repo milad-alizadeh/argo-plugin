@@ -12,8 +12,9 @@
  * '<json>'`, where `<json>` is `{ componentNames, violations }`.
  */
 
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { writeDesignJson } from './write-design-json.mjs'
 
 /**
  * `writeCounterAtAudit` is read from `.argo/design-guard.json`'s current
@@ -42,8 +43,7 @@ export function recordAuditReceipt({ componentNames = [], violations = [] } = {}
     writeCounterAtAudit
   }
 
-  mkdirSync(join(cwd, 'design'), { recursive: true })
-  writeFileSync(join(cwd, 'design', 'audit-receipt.json'), JSON.stringify(receipt, null, 2))
+  writeDesignJson(cwd, 'audit-receipt.json', receipt)
   return receipt
 }
 

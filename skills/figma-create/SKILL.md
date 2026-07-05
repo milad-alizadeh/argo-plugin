@@ -45,6 +45,13 @@ node creation, variable binding, and variant-set assembly.
   the component first via this same flow — don't invent one-off styling
   inline in the screen.
 
+## Where things go
+
+Page placement follows `templates/design/file-structure.md`, the canonical
+file-organization convention: components (and their mode copies) go on the
+`Custom Components` page; screens go on their `D<NN> <group>` page, mirroring
+the `W<NN> <group>` wireframe page of the same group 1:1.
+
 ## Procedure
 
 1. Create the component/screen per the rules above.

@@ -43,13 +43,16 @@ to reconcile just one surface.
 
 - **Agents** (`agents/`) — full lifecycle roles, invoked on demand:
   `scaffolder → planner → builder → reviewer → debugger`, plus `auditor`
-  (whole-codebase health) and `integrator` (lands work / PRs / docs sync).
-- **Skills** (`skills/`) — on-demand disciplines and methodology, nineteen:
+  (whole-codebase health), `integrator` (lands work / PRs / docs sync), and
+  `designer` (executes the Figma-to-code design pack's skills inside a live
+  Figma file).
+- **Skills** (`skills/`) — on-demand disciplines and methodology, twenty:
   `engineering-principles`, `test-first`, `build-plan`, `root-cause`,
   `grill-me`, `spike`, `scaffold`, `session-handoff`, `finish-branch`,
   `author-skill`, `setup-claude`, `update`, `orchestrate`, and the Figma-to-code
   design pack — `setup-design`, `figma-audit`, `figma-sync`, `figma-create`,
-  `figma-to-code`, `design-upgrade`. The design pack is shaped as a
+  `figma-wireframe`, `figma-to-code`, `design-upgrade`. The design pack is
+  shaped as a
   provider-neutral **mechanism** (tiered gates, the `figma-design-kit`
   package) plus swappable **recipes** under `templates/design/recipes/`
   that own everything design-source- and code-target-specific (kit sync,

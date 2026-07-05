@@ -67,6 +67,13 @@ file → skip; never invent one.
   (fills/strokes bound to a Semantic token). Anything else hard-fails the
   gate. No suitable icon in the kit → pick the closest and flag it in the
   report; do not invent one.
+- **Icons inside components are SLOTS, not hard-placed glyphs** (2026-07-05):
+  when a component you author contains an icon, expose it as an
+  INSTANCE_SWAP component property (`addComponentProperty('icon',
+  'INSTANCE_SWAP', <defaultIconId>)` + `componentPropertyReferences` on the
+  instance) so consumers switch the glyph per usage without editing the
+  component. A fixed decorative glyph that consumers must never change is
+  the only exception, and the report must say so explicitly.
 - **Prefer kit components over custom builds**: before authoring any
   component, check whether the kit already ships it (Switch, Badge, etc.) —
   a custom component is justified ONLY by something the kit doesn't have.

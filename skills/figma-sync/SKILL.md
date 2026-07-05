@@ -58,6 +58,14 @@ Builds on `figma:figma-use`.
 9. **Commit** every artifact above as one commit (or a small, clearly-scoped
    set) — this is what makes downstream gates deterministic (§4's artifact
    discipline: gates only ever compare committed artifacts).
+10. **Kit-inventory staleness check (read-only, never a write).**
+    `design/kit-inventory.json` is owned by `design-upgrade` (whole-file
+    recapture on kit swap) and seeded by `setup-design` — this skill syncs
+    the PROJECT file, not the kit library, and has no trigger to mutate the
+    roster. If it exists, compare the live kit library's version against its
+    `kitSourceVersion` and **warn** on drift (advisory only — the
+    kit-name-collision gate already fails open on a stale/absent inventory).
+    Never re-dump or otherwise write `kit-inventory.json` from this skill.
 
 ## Fail loud, never silently skip
 

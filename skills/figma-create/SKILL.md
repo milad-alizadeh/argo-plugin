@@ -78,6 +78,34 @@ file → skip; never invent one.
   component, check whether the kit already ships it (Switch, Badge, etc.) —
   a custom component is justified ONLY by something the kit doesn't have.
   Using a kit component means using it as-is, not wrapping it for styling.
+  **Check before you build (kit-awareness) is how this is actually done —
+  mandatory, not a suggestion:**
+  1. At task start, read `design/kit-inventory.json` once (~40 lines) for
+     browse-awareness of the kit's roster (icons collapse to one family
+     row — search the kit icon page live for a specific glyph, never
+     enumerate).
+  2. On deciding to build: match the intended component against inventory
+     **names and aliases** (e.g. `chip`/`tag`/`pill` → `Badge`,
+     `accordion`/`disclosure` → `Collapsible`). A match → **live-confirm**
+     its key and variant props via `search_design_system`/`get_metadata`
+     before importing (`importComponentByKeyAsync`) — inventory names are
+     browse hints only; keys are always resolved live, never trusted from
+     the committed file.
+  3. **Stop-the-line (R8):** if live confirmation or import of a chosen kit
+     component fails, **stop and report** — never fall back to building a
+     custom component to route around a broken import; that recreates the
+     exact duplication this check exists to prevent.
+  4. The run report MUST carry a **reuse-check line**: `reusing kit/X` |
+     `extending kit/X by composition` | `closest kit matches A, B —
+     insufficient because <concrete reason>, building custom`. This is the
+     soft complement to the hard `kit-name-collision` gate (below) — it
+     covers the extension-by-composition case the gate can't see.
+  A name that shadows an existing kit or `design/registry.json` component
+  with no clearing waiver is a **hard gate**, not just a report line:
+  `record-audit-receipt.mjs` folds an unwaived `kit-name-collision` into
+  `violationCount`, which `design-guard-stop.mjs` already blocks on. Clear a
+  deliberate exception with a `{ type: 'kit-shadow', component, kitCandidate,
+  reason }` entry in `design/waivers.json` — never by loosening the check.
 - **Screens are composition, not generation** (design doc §6b): a screen
   frame may only contain instances of library/project components + layout
   containers — no loose rectangles/text with raw styles. If an instance

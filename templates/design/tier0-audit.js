@@ -74,7 +74,7 @@ async function auditNode(node, { hard, spacingScale, semanticModes }) {
       if (!(field in node)) continue
       gapAndPadding.push(await marshalGapPaddingField(node, field))
     }
-    for (const v of gapPaddingSpacingViolations({ layoutMode: node.layoutMode, gapAndPadding }, spacingScale)) {
+    for (const v of gapPaddingSpacingViolations({ type: node.type, layoutMode: node.layoutMode, gapAndPadding }, spacingScale)) {
       report(v.rule, v.detail)
     }
   }
@@ -194,12 +194,13 @@ async function collectModifiedKitCopyNodes() {
 }
 
 /**
- * D24's scale values come from the project file's local Primitives
- * collection at audit time (Decision 2, semantic-seeding.md) — not a config
- * constant, so this is a live lookup, same shape as collectModifiedKitCopyNodes.
- * Returns [] if no Primitives collection exists yet (unseeded project): the
- * rule then flags every unbound gap/padding value as off-scale rather than
- * throwing — a loud, honest audit failure instead of a crash.
+ * Retained for signature compatibility with gapPaddingSpacingViolations,
+ * which no longer consumes a spacing scale (D24, revised 2026-07-05: every
+ * non-zero gap/padding field must be bound, so there is no more on-scale/
+ * off-scale literal distinction to check against). Still a live lookup of
+ * the project file's local Primitives collection, same shape as
+ * collectModifiedKitCopyNodes; returns [] if no Primitives collection exists
+ * yet (unseeded project).
  */
 async function collectPrimitivesSpacingScale() {
   const collections = await figma.variables.getLocalVariableCollectionsAsync()

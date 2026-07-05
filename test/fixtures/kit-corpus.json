@@ -1,0 +1,102 @@
+{
+  "capturedFrom": "seeded-from-live-observations-2026-07-05, re-capture via scripts/capture-kit-corpus.mjs",
+  "semanticModes": ["Light", "Dark"],
+  "pristine": [
+    {
+      "id": "1:100",
+      "type": "INSTANCE",
+      "name": "Icon/Info",
+      "isRemoteInstance": true,
+      "hasMainComponent": true,
+      "overriddenFields": ["strokeWeight", "width", "height"],
+      "width": 14,
+      "height": 14,
+      "strokeWeight": 1.1666666666666667,
+      "iconStrokeScale": {
+        "instanceSize": 14,
+        "nativeSize": 24,
+        "baseStrokeWeight": 2,
+        "resolvedStrokeWeight": 1.1666666666666667
+      },
+      "children": []
+    },
+    {
+      "id": "1:200",
+      "type": "INSTANCE",
+      "name": "Breadcrumb",
+      "isRemoteInstance": true,
+      "hasMainComponent": true,
+      "overriddenFields": ["characters", "styledTextSegments"],
+      "layoutMode": "HORIZONTAL",
+      "gapAndPadding": [{ "field": "itemSpacing", "value": 8, "bound": true, "collectionName": "tw/gap" }],
+      "children": []
+    },
+    {
+      "id": "1:300",
+      "type": "COMPONENT",
+      "name": "Card",
+      "layoutMode": "VERTICAL",
+      "cornerRadius": 8,
+      "boundVariables": { "cornerRadius": { "id": "v1" } },
+      "fills": [{ "type": "SOLID", "boundVariables": { "color": { "id": "v2" } } }],
+      "strokes": [{ "type": "SOLID", "boundVariables": { "color": { "id": "v3" } } }],
+      "gapAndPadding": [
+        { "field": "itemSpacing", "value": 16, "bound": true, "collectionName": "Primitives" },
+        { "field": "paddingLeft", "value": 16, "bound": true, "collectionName": "Primitives" },
+        { "field": "paddingRight", "value": 16, "bound": true, "collectionName": "Primitives" },
+        { "field": "paddingTop", "value": 16, "bound": true, "collectionName": "Primitives" },
+        { "field": "paddingBottom", "value": 16, "bound": true, "collectionName": "Primitives" }
+      ],
+      "siblings": [{ "name": "Card (Dark)", "explicitVariableModes": { "Semantic": "dark-mode-id" } }],
+      "children": [
+        {
+          "id": "1:301",
+          "type": "TEXT",
+          "name": "Title",
+          "fontName": { "family": "Inter" },
+          "boundVariables": { "fontSize": { "id": "v4" } },
+          "lineHeight": { "unit": "PIXELS", "value": 20 },
+          "children": []
+        }
+      ]
+    }
+  ],
+  "inverse": {
+    "detached-instance": {
+      "id": "1:400",
+      "type": "INSTANCE",
+      "name": "Icon/Detached",
+      "isRemoteInstance": true,
+      "hasMainComponent": false,
+      "overriddenFields": [],
+      "children": []
+    },
+    "kit-instance-override": {
+      "id": "1:401",
+      "type": "INSTANCE",
+      "name": "Icon/Warning",
+      "isRemoteInstance": true,
+      "hasMainComponent": true,
+      "overriddenFields": ["effects"],
+      "children": []
+    },
+    "stroke-scale-mismatch": {
+      "id": "1:402",
+      "type": "INSTANCE",
+      "name": "Icon/Alert",
+      "isRemoteInstance": true,
+      "hasMainComponent": true,
+      "overriddenFields": ["width", "height"],
+      "width": 14,
+      "height": 14,
+      "strokeWeight": 2,
+      "iconStrokeScale": {
+        "instanceSize": 14,
+        "nativeSize": 24,
+        "baseStrokeWeight": 2,
+        "resolvedStrokeWeight": 2
+      },
+      "children": []
+    }
+  }
+}

@@ -43,7 +43,8 @@ import {
   implicitLineHeightViolation,
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
-  isNamedAuditTarget
+  isNamedAuditTarget,
+  strokeScaleViolation
 } from 'figma-design-kit/tier0-rules'
 
 const SEMANTIC_COLLECTION_NAME = '{{SEMANTIC_COLLECTION_NAME}}'
@@ -95,6 +96,14 @@ async function auditNode(node, { hard, spacingScale, semanticModes, insideInstan
       overriddenFields: (node.overrides ?? []).flatMap((o) => o.overriddenFields ?? [])
     })
     if (kitOverride) report(kitOverride.rule, kitOverride.detail)
+
+    if (main?.remote) {
+      const strokeScaleShape = marshalIconStrokeScale(node, main)
+      if (strokeScaleShape) {
+        const strokeScale = strokeScaleViolation(strokeScaleShape)
+        if (strokeScale) report(strokeScale.rule, strokeScale.detail)
+      }
+    }
   }
 
   const nonSemanticName = nonSemanticNameViolation(node)
@@ -137,6 +146,25 @@ async function auditNode(node, { hard, spacingScale, semanticModes, insideInstan
   }
 
   return violations
+}
+
+/**
+ * Marshals the plain shape `strokeScaleViolation` (NEW-3) checks over, for an
+ * icon-like remote instance: a component whose main is a single-VECTOR
+ * component (a lucide icon — a frame wrapping exactly one VECTOR child,
+ * `layoutMode: 'NONE'`, observed live). Returns null for any remote instance
+ * that doesn't match that shape (a non-icon kit component) — the caller only
+ * runs the rule when this returns a shape.
+ */
+function marshalIconStrokeScale(node, main) {
+  const vectorChildren = (main.children ?? []).filter((c) => c.type === 'VECTOR')
+  if ((main.children ?? []).length !== 1 || vectorChildren.length !== 1) return null
+  const vector = vectorChildren[0]
+  const baseStrokeWeight = vector.strokeWeight
+  const resolvedStrokeWeight = typeof node.strokeWeight === 'number' ? node.strokeWeight : vector.strokeWeight
+  if (typeof baseStrokeWeight !== 'number' || typeof resolvedStrokeWeight !== 'number') return null
+  if (typeof main.width !== 'number' || typeof node.width !== 'number') return null
+  return { instanceSize: node.width, nativeSize: main.width, resolvedStrokeWeight, baseStrokeWeight }
 }
 
 /**

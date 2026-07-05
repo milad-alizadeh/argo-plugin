@@ -22,6 +22,11 @@ node creation, variable binding, and variant-set assembly.
   binds the project's Semantic collection — never a Primitive directly
   (§8's library-source distinction), never a literal.
 - **Auto Layout** on every frame-like container — no absolute positioning.
+  Every non-zero gap/padding field (`itemSpacing`, `paddingLeft/Right/Top/
+  Bottom`) must be BOUND to a spacing variable — Primitives `spacing/*`, or a
+  Semantic spacing token where one exists (e.g. `spacing/page-inline`) (D24,
+  revised 2026-07-05). Never leave spacing as a literal, on-scale or not —
+  binding is the only legal authoring state.
 - **Semantic names** — never Figma's auto-generated `Frame 12`/`Rectangle 4`
   defaults.
 - **D18 variant naming** — component property `Size` → prop `size`;

@@ -26,7 +26,11 @@ naming (`Size`→`size`, Title-Case→lowercase), missing or incorrect mode copy
 for **components only** (D11, generalized to mode copies, 2026-07-05: one
 copy per Semantic-collection mode beyond the default; a single-mode
 collection passes vacuously, zero copies required), explicit line-height
-(D20), node-scoped story URLs (`?node-id=`, D1/C13).
+(D20), node-scoped story URLs (`?node-id=`, D1/C13), unbound Auto Layout
+gap/padding (D24, revised 2026-07-05: every non-zero `itemSpacing`/padding
+field must be bound to a Primitives or Semantic spacing variable — unbound
+literals, on-scale or not, are violations; a binding to a variable outside
+those two collections is also a violation).
 
 **Recipe checks (installed recipe only):** for `shadcn-tailwind-external-kit`
 — non-Semantic bindings (distinguished by library source, §8),

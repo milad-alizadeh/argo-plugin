@@ -11,7 +11,8 @@ import {
   modeCopyViolations,
   implicitLineHeightViolation,
   storyUrlScopeViolation,
-  gapPaddingSpacingViolations
+  gapPaddingSpacingViolations,
+  isNamedAuditTarget
 } from '../packages/figma-design-kit/tier0-rules.js'
 
 describe('unboundFillViolations', () => {
@@ -212,6 +213,15 @@ describe('storyUrlScopeViolation (D1)', () => {
   })
   it('ignores a component with no storyUrl', () => {
     expect(storyUrlScopeViolation({ type: 'COMPONENT' })).toBeNull()
+  })
+})
+
+describe('isNamedAuditTarget', () => {
+  it('matches a top-level FRAME by name (a screen or foundation frame)', () => {
+    expect(isNamedAuditTarget({ name: 'foundations/sticker-sheet', type: 'FRAME' }, 'foundations/sticker-sheet')).toBe(true)
+  })
+  it('does not match a same-named node of a non-matchable type', () => {
+    expect(isNamedAuditTarget({ name: 'Button', type: 'TEXT' }, 'Button')).toBe(false)
   })
 })
 

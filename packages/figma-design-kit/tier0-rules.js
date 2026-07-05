@@ -71,6 +71,20 @@ export function unboundTypeViolation(node) {
   return null
 }
 
+const NAMED_AUDIT_TARGET_TYPES = new Set(['COMPONENT', 'COMPONENT_SET', 'FRAME', 'SECTION'])
+
+/**
+ * Named-component audit matching predicate (figma-audit's hard-gate mode).
+ * A named audit must be able to target SCREENS and foundation frames, not
+ * only components — those are FRAME/SECTION nodes, which a
+ * COMPONENT/COMPONENT_SET-only match silently misses (fix: 2026-07, closed
+ * a false-pass where a named audit of a frame returned zero matches instead
+ * of walking it).
+ */
+export function isNamedAuditTarget(node, name) {
+  return node.name === name && NAMED_AUDIT_TARGET_TYPES.has(node.type)
+}
+
 export function missingAutoLayoutViolation(node) {
   if ((node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') && node.layoutMode === 'NONE') {
     return { rule: 'missing-auto-layout', detail: 'frame-like node has no Auto Layout' }

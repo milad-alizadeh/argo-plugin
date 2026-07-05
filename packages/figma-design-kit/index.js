@@ -14,5 +14,6 @@ export {
   modeCopyViolations,
   implicitLineHeightViolation,
   storyUrlScopeViolation,
-  gapPaddingSpacingViolations
+  gapPaddingSpacingViolations,
+  isNamedAuditTarget
 } from './tier0-rules.js'

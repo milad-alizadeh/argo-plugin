@@ -12,8 +12,16 @@
  * boxes (the anti-recreation coupling the spec calls out).
  */
 
+/**
+ * C3a fix: matches by full path, not bare name — `flattenToRegions`
+ * deliberately promotes a repeated composite (e.g. `PanelHead`) once per
+ * occurrence under different parents, and a bare-name match let ONE built
+ * instance satisfy every contract row sharing that name, regardless of
+ * which parent it actually lived under. Path is the ancestry-qualified
+ * identity both sides of the diff already carry.
+ */
 function findBuiltMatch(region, builtRegions) {
-  return builtRegions.find((built) => built.name === region.name)
+  return builtRegions.find((built) => built.path === region.path)
 }
 
 /**

@@ -98,6 +98,30 @@ describe('classifyCoverage', () => {
   })
 })
 
+describe('classifyCoverage (C3a: path-aware matching — a repeated name under different parents cannot be satisfied by one shared instance)', () => {
+  it('does not let a single built instance under PanelA satisfy the same-named region under PanelB', () => {
+    const contract = {
+      screen: 'cockpit-shell',
+      wireframeNodeId: '26:3',
+      figmaFileVersion: '1',
+      regions: [
+        { name: 'PanelHead', path: 'Stage/PanelA/PanelHead', depth: 3, children: [] },
+        { name: 'PanelHead', path: 'Stage/PanelB/PanelHead', depth: 3, children: [] }
+      ]
+    }
+    // Only PanelA's PanelHead was actually built — PanelB's is a name-only
+    // collision with the built tree, which findBuiltMatch must not conflate.
+    const builtRegions = [{ name: 'PanelHead', path: 'Stage/PanelA/PanelHead', isInstance: true, instanceOf: 'PanelHead' }]
+
+    const classification = classifyCoverage(contract, builtRegions, [])
+
+    expect(classification).toEqual([
+      { name: 'PanelHead', path: 'Stage/PanelA/PanelHead', status: 'present' },
+      { name: 'PanelHead', path: 'Stage/PanelB/PanelHead', status: 'UNACCOUNTED' }
+    ])
+  })
+})
+
 describe('summarize', () => {
   it('is clean when there are no UNACCOUNTED or MISSING regions', () => {
     const classification = [

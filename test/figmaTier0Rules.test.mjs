@@ -14,7 +14,8 @@ import {
   implicitLineHeightViolation,
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
-  isNamedAuditTarget
+  isNamedAuditTarget,
+  strokeScaleViolation
 } from '../packages/figma-design-kit/tier0-rules.js'
 
 describe('unboundFillViolations', () => {
@@ -136,22 +137,26 @@ describe('kitInstanceOverrideViolation', () => {
 
   // Denylist, not whitelist (R10 reframe, 2026-07-05): the false-positive
   // economics of a hard gate demand a denylist of the specific illegal edits
-  // (geometry/stroke-weight-family/corner-radius/effects), not an allowlist
-  // that needs emergency same-day growth every time a legitimate override
-  // (e.g. characters, styledTextSegments) is discovered.
-  it('flags a remote kit instance overriding a strokeWeight-family field', () => {
+  // (geometry/corner-radius/effects), not an allowlist that needs emergency
+  // same-day growth every time a legitimate override is discovered.
+  //
+  // CARVE-OUT (live-file correction, 2026-07-05): strokeWeight is
+  // deliberately NOT in this denylist. Figma records a proportional icon
+  // rescale (the sanctioned fix for the R6/NEW-3 stroke-distortion gotcha)
+  // as a strokeWeight override on the instance — argo-v2's live library
+  // carries strokeWeight overrides on every correctly-rescaled icon.
+  // strokeWeight legality is owned solely by the NEW-3
+  // `strokeScaleViolation` proportionality rule, not this override check.
+  it('passes a strokeWeight override — legality is owned by NEW-3, not this rule', () => {
     const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['fills', 'strokeWeight'] }
-    expect(kitInstanceOverrideViolation(node)).toEqual({
-      rule: 'kit-instance-override',
-      detail: 'kit instance overrides "strokeWeight" — vector/stroke-weight/corner-radius/effects edits on kit internals are never legal'
-    })
+    expect(kitInstanceOverrideViolation(node)).toBeNull()
   })
 
   it('flags a remote kit instance overriding vectorPaths (geometry)', () => {
     const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['vectorPaths'] }
     expect(kitInstanceOverrideViolation(node)).toEqual({
       rule: 'kit-instance-override',
-      detail: 'kit instance overrides "vectorPaths" — vector/stroke-weight/corner-radius/effects edits on kit internals are never legal'
+      detail: 'kit instance overrides "vectorPaths" — geometry/corner-radius/effects edits on kit internals are never legal'
     })
   })
 
@@ -159,7 +164,7 @@ describe('kitInstanceOverrideViolation', () => {
     const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['cornerRadius'] }
     expect(kitInstanceOverrideViolation(node)).toEqual({
       rule: 'kit-instance-override',
-      detail: 'kit instance overrides "cornerRadius" — vector/stroke-weight/corner-radius/effects edits on kit internals are never legal'
+      detail: 'kit instance overrides "cornerRadius" — geometry/corner-radius/effects edits on kit internals are never legal'
     })
   })
 
@@ -167,7 +172,7 @@ describe('kitInstanceOverrideViolation', () => {
     const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['effects'] }
     expect(kitInstanceOverrideViolation(node)).toEqual({
       rule: 'kit-instance-override',
-      detail: 'kit instance overrides "effects" — vector/stroke-weight/corner-radius/effects edits on kit internals are never legal'
+      detail: 'kit instance overrides "effects" — geometry/corner-radius/effects edits on kit internals are never legal'
     })
   })
 
@@ -296,6 +301,21 @@ describe('isNamedAuditTarget', () => {
   })
   it('does not match a same-named node of a non-matchable type', () => {
     expect(isNamedAuditTarget({ name: 'Button', type: 'TEXT' }, 'Button')).toBe(false)
+  })
+})
+
+describe('strokeScaleViolation (NEW-3)', () => {
+  it('passes a properly proportionally-rescaled icon instance (within ±15% tolerance)', () => {
+    const node = { instanceSize: 14, nativeSize: 24, baseStrokeWeight: 2, resolvedStrokeWeight: 14 / 24 * 2 }
+    expect(strokeScaleViolation(node)).toBeNull()
+  })
+
+  it('flags a width/height-resized icon whose stroke weight was left unscaled (#4)', () => {
+    const node = { instanceSize: 14, nativeSize: 24, baseStrokeWeight: 2, resolvedStrokeWeight: 2 }
+    expect(strokeScaleViolation(node)).toEqual({
+      rule: 'stroke-scale-mismatch',
+      detail: "resolved strokeWeight 2 does not track the instance's rescale ratio (expected ~1.17) — the icon was likely resized, not rescaled proportionally"
+    })
   })
 })
 

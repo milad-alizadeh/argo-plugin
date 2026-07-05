@@ -120,8 +120,19 @@ export function handDrawnIconViolation(node) {
  * same-day growth to add `characters` + `styledTextSegments` — a hard gate's
  * false-positive/false-negative costs are asymmetric (detach-and-edit-icons
  * vs. one visual-review catch), so it fails OPEN: an override outside this
- * list (e.g. `rotation`) passes, and only vector geometry, the
- * strokeWeight family, the cornerRadius family, and `effects` hard-fail.
+ * list (e.g. `rotation`, `boundVariables`) passes, and only vector geometry,
+ * the cornerRadius family, and `effects` hard-fail here.
+ *
+ * CARVE-OUT (live-file correction, 2026-07-05): `strokeWeight` (and its
+ * per-side/join/cap siblings) is deliberately NOT in this denylist. Figma
+ * records a proportional icon rescale — the sanctioned fix for the R6/NEW-3
+ * stroke-distortion gotcha — as a `strokeWeight` override on the instance;
+ * argo-v2's live library carries that override on every correctly-rescaled
+ * icon. Denying it unconditionally would hard-fail every correctly-rescaled
+ * icon, recreating the exact false-positive disaster R10 exists to prevent.
+ * strokeWeight legality is owned solely by `strokeScaleViolation` (NEW-3)'s
+ * proportionality check, never this override list.
+ *
  * The walker marshals `isRemoteInstance` from getMainComponentAsync().remote
  * and `overriddenFields` from InstanceNode.overrides.
  */
@@ -130,17 +141,6 @@ const DENIED_KIT_INSTANCE_OVERRIDE_FIELDS = [
   'vectorPaths',
   'vectorNetwork',
   'relativeTransform',
-  // strokeWeight family
-  'strokeWeight',
-  'strokeTopWeight',
-  'strokeBottomWeight',
-  'strokeLeftWeight',
-  'strokeRightWeight',
-  'strokeAlign',
-  'strokeCap',
-  'strokeJoin',
-  'strokeMiterLimit',
-  'dashPattern',
   // cornerRadius family
   'cornerRadius',
   'topLeftRadius',
@@ -158,7 +158,7 @@ export function kitInstanceOverrideViolation(node) {
   if (hit) {
     return {
       rule: 'kit-instance-override',
-      detail: `kit instance overrides "${hit}" — vector/stroke-weight/corner-radius/effects edits on kit internals are never legal`
+      detail: `kit instance overrides "${hit}" — geometry/corner-radius/effects edits on kit internals are never legal`
     }
   }
   return null
@@ -246,6 +246,35 @@ export function storyUrlScopeViolation(node) {
  * into a bound-here-literal-there mix. COMPONENT_SET containers are skipped —
  * their gap/padding is Figma's variant-grid chrome, not a design value.
  */
+const STROKE_SCALE_TOLERANCE = 0.15
+
+/**
+ * NEW-3 (promoted out of R6/R3, 2026-07-05): flags an icon-like remote
+ * instance (a lucide icon — a 24x24 frame wrapping one VECTOR at
+ * strokeWeight 2, per the observed live shape) whose resolved strokeWeight
+ * doesn't track its rescale ratio — the walker marshals the plain shape
+ * `{ instanceSize, nativeSize, resolvedStrokeWeight, baseStrokeWeight }`
+ * (icon-like = a remote instance whose main component is a single-VECTOR
+ * component). The ratio only holds when the instance was rescaled
+ * proportionally (Figma's sanctioned "Scale" tool on the instance); a
+ * width/height-only resize leaves the original stroke weight in place,
+ * producing a visually chunky/thin glyph (#4). ±15% tolerance absorbs
+ * legitimate rounding to a whole-pixel stroke weight.
+ */
+export function strokeScaleViolation({ instanceSize, nativeSize, resolvedStrokeWeight, baseStrokeWeight }) {
+  if (!nativeSize) return null
+  const expected = baseStrokeWeight * (instanceSize / nativeSize)
+  if (expected === 0) return null
+  const ratio = resolvedStrokeWeight / expected
+  if (ratio < 1 - STROKE_SCALE_TOLERANCE || ratio > 1 + STROKE_SCALE_TOLERANCE) {
+    return {
+      rule: 'stroke-scale-mismatch',
+      detail: `resolved strokeWeight ${resolvedStrokeWeight} does not track the instance's rescale ratio (expected ~${expected.toFixed(2)}) — the icon was likely resized, not rescaled proportionally`
+    }
+  }
+  return null
+}
+
 export function gapPaddingSpacingViolations(node, _spacingScale) {
   // Nodes inside a library instance are exempt (2026-07-05): kit internals
   // bind the kit's own spacing collections (e.g. tw/gap) — not ours to

@@ -46,6 +46,33 @@ describe('classifyCoverage', () => {
     expect(classification).toEqual([{ name: 'LensBar', path: 'LensBar', status: 'MISSING' }])
   })
 
+  it('exempts layout regions from the instance requirement — a matched container is present without isInstance', () => {
+    const contract = {
+      screen: 'cockpit-shell',
+      wireframeNodeId: '26:3',
+      figmaFileVersion: '1',
+      regions: [
+        { name: 'Stage', path: 'Stage', depth: 1, kind: 'layout', children: [] },
+        { name: 'TerminalPanel', path: 'TerminalPanel', depth: 2, children: [] }
+      ]
+    }
+    const builtRegions = [
+      { name: 'Stage', path: 'Stage', isInstance: false },
+      { name: 'TerminalPanel', path: 'TerminalPanel', isInstance: true, instanceOf: 'TerminalPanel' }
+    ]
+    const dispositions = [
+      { region: 'Stage', disposition: 'built-here', component: '(layout)', verdict: 'REUSE' },
+      { region: 'TerminalPanel', disposition: 'built-here', component: 'TerminalPanel', verdict: 'RECONCILE' }
+    ]
+
+    const classification = classifyCoverage(contract, builtRegions, dispositions)
+
+    expect(classification).toEqual([
+      { name: 'Stage', path: 'Stage', status: 'present' },
+      { name: 'TerminalPanel', path: 'TerminalPanel', status: 'present' }
+    ])
+  })
+
   it('classifies a region with a deferred-to-<target> disposition as deferred', () => {
     const contract = {
       screen: 'cockpit-shell',

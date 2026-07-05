@@ -33,6 +33,14 @@ export function classifyCoverage(contract, builtRegions = [], dispositions = [])
       return { name: region.name, path: region.path, status: 'present' }
     }
 
+    // Layout containers (Stage, Main, topbar) are frames, not registry-backed
+    // instances — they hold instances, they aren't one. A present matching
+    // container satisfies them; the instance requirement applies only to
+    // composites (the anti-recreation coupling is about components, not layout).
+    if (region.kind === 'layout' && match) {
+      return { name: region.name, path: region.path, status: 'present' }
+    }
+
     const disposition = findDisposition(region, dispositions)
     if (disposition && disposition.disposition.startsWith('deferred-to-')) {
       return { name: region.name, path: region.path, status: 'deferred' }

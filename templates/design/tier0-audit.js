@@ -100,10 +100,22 @@ async function auditNode(node, { hard, spacingScale, semanticModes }) {
   const lineHeight = implicitLineHeightViolation(node)
   if (lineHeight) report(lineHeight.rule, lineHeight.detail)
 
-  if (node.type === 'COMPONENT' && node.getPluginDataKeys().includes('storyUrl')) {
-    const storyUrl = node.getPluginData('storyUrl')
-    const storyScope = storyUrlScopeViolation({ type: node.type, storyUrl })
-    if (storyScope) report(storyScope.rule, storyScope.detail)
+  // getPluginData/getPluginDataKeys are unavailable in the use_figma sandbox
+  // (private-plugin-only API) — storyUrl lives in shared plugin data, with a
+  // guarded private-data fallback for files stamped by older syncs.
+  if (node.type === 'COMPONENT') {
+    let storyUrl = node.getSharedPluginData('argo', 'storyUrl')
+    if (!storyUrl) {
+      try {
+        storyUrl = node.getPluginDataKeys().includes('storyUrl') ? node.getPluginData('storyUrl') : ''
+      } catch {
+        storyUrl = ''
+      }
+    }
+    if (storyUrl) {
+      const storyScope = storyUrlScopeViolation({ type: node.type, storyUrl })
+      if (storyScope) report(storyScope.rule, storyScope.detail)
+    }
   }
 
   // Recipe-owned per-node checks (e.g. non-semantic-binding, retired-file-key-binding)
@@ -154,8 +166,14 @@ async function runTier0Audit(options = {}) {
 
   if (componentNames?.length) {
     // Dynamic-page mode requires every page loaded before figma.root.findAll
-    // can see nodes outside the currently-open page.
-    await figma.loadAllPagesAsync()
+    // can see nodes outside the currently-open page. loadAllPagesAsync is not
+    // available in the use_figma sandbox — fall back to already-loaded pages
+    // (callers there run the audit from the page the components live on).
+    try {
+      await figma.loadAllPagesAsync()
+    } catch {
+      /* sandbox: figma.root.findAll sees only loaded pages */
+    }
     for (const name of componentNames) {
       const matches = figma.root.findAll((n) => isNamedAuditTarget(n, name))
       for (const match of matches) await walk(match, { hard: true, spacingScale, semanticModes }, violations)

@@ -157,7 +157,7 @@ export function implicitLineHeightViolation(node) {
   return null
 }
 
-/** node.storyUrl is resolved by the walker from node.getPluginData('storyUrl'). */
+/** node.storyUrl is resolved by the walker from shared plugin data (namespace 'argo', key 'storyUrl'); private plugin data is a legacy fallback. */
 export function storyUrlScopeViolation(node) {
   if (node.type === 'COMPONENT' && node.storyUrl && !node.storyUrl.includes('node-id=')) {
     return { rule: 'non-node-scoped-story-url', detail: `storyUrl "${node.storyUrl}" is not node-scoped` }

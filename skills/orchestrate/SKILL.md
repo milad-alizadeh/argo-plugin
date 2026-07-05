@@ -73,7 +73,50 @@ running agent with "Rate limited" — it is not a usage limit and not fatal:
 - Tell resumed builders: "if rate-limited again, wait 120s between retries
   rather than dying."
 
-## 5. Score every run — dogfooding is the point
+## 5. Design fan-out (NEW-A)
+
+Supervising a fleet of `designer` agents (figma-create/figma-audit/
+figma-wireframe runs) follows the same "someone must watch it" contract as a
+build, with design-specific mechanics — the main session improvised this
+once and produced real defects (a spawned sub-fleet, a token-burning
+idle-wait on a gate false positive, a rejected component patch); these three
+mechanisms close those gaps without new tooling.
+
+- **Flat fan-out.** Spawn each `designer` directly from the main session, one
+  per component — never route a designer's output through another designer
+  (mirrors the builder no-wrapper rule in §1). The leaf rule itself lives in
+  `agents/designer.md` (R1) and is backstopped by a hook there; this section
+  only states the supervisor's obligation.
+- **Two feedback lanes (R9).** Classify every ruling into exactly one lane
+  the moment it's known:
+  - **Stop-the-line** — a gate bug (a violation tagged
+    `possible-gate-false-positive`) or icon mutilation (a detach, an edited
+    kit internal). Fires immediately: pause that component's work, do not
+    let the designer idle-wait for a fix (R1/R8) — redirect it to other
+    scoped work instead.
+  - **Refinement** — spacing/mood/material critique with no gate
+    implication. Queues to the NEXT montage checkpoint (R3) rather than
+    interrupting mid-build; deliver the queued set as **one numbered list**
+    with the standing "act and continue, don't acknowledge" rider — medium
+    agents drop items from prose paragraphs but apply numbered lists.
+- **Pending-rulings buffer (R10).** Every ruling — from either lane — is a
+  candidate for `aesthetic-profile.md` (a DO/DON'T entry, mandatory,
+  auto-discovered) and, where a measurable proxy exists (a px gap, a ratio,
+  an alignment delta), a tier-0-rule task. The **orchestrator** writes the
+  ruling into the profile (and opens the tier-0 task where checkable)
+  **before spawning the next dependent designer** — a chat-only ruling that
+  hasn't been drained into the profile does not authorize that spawn. Any
+  minted gate rule must pass the R7 fixture suite before shipping.
+- **Design-run scorecard.** Alongside the build scorecard (§6 below), report
+  per design run: round-trips per component, wasted rounds (a fix that
+  re-triggered the same violation), and gate false positives hit (count of
+  `possible-gate-false-positive`-tagged violations reported).
+- **Dropped:** seed-injection of a node-id context pack at spawn time —
+  deferred until a companion artifact for it is designed; the near-term
+  cold-start cost is covered by the registry/kit-inventory read-order in
+  `agents/designer.md` and `skills/figma-create/SKILL.md`.
+
+## 6. Score every run — dogfooding is the point
 
 After each build, report a short scorecard, not a metrics wall: spec adherence
 (red-first honored, reviews run, gates never bypassed, progress doc current),

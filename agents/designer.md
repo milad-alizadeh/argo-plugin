@@ -55,17 +55,37 @@ matching `W<NN> <group>` page): don't invent a different page shape.
 hard-gate mode. Fix every violation it reports before reporting done, never
 hand back a component or screen that would fail its own hard gate.
 
-**VISUAL SELF-REVIEW.** The deterministic audit cannot see intent-level
+**VISUAL SELF-REVIEW (R3).** The deterministic audit cannot see intent-level
 defects — e.g. a glow that's individually bound correctly but clashes with
-the color of the element it sits on. After the audit is clean, screenshot
-each component SET touched (all variants together, `scale: 2`, against the
-project's real app background, never bare canvas white), restate the design
-intent in one sentence, and answer in writing: does every glow/effect match
+the color of the element it sits on. Before any prose question, run the
+NUMERIC predicates below via `get_design_context` — they caught real defects
+where a prose "does it look right" checklist caught none:
+
+- **(a) icon stroke-thickness match:** render the icon instance beside a
+  bare unmodified kit instance of the same glyph at the same px/script;
+  assert the stroke reads the same thickness (catches a resize-not-scaled
+  icon; the tier-0 `stroke-scale-mismatch` rule (NEW-3) already hard-fails
+  this deterministically — this predicate is the visual confirmation, not a
+  substitute for fixing the underlying gate finding).
+- **(b) bound-spacing match:** assert the icon-to-title (or equivalent
+  adjacent-element) gap equals the bound spacing token's actual value —
+  read both back, don't eyeball it.
+- **(c) no clipping/misalignment:** assert no variant's rendered width is
+  less than its text content's natural width, and that column leading-edges
+  align across variants.
+
+Only after those pass: screenshot each component SET touched (all variants
+together, `scale: 2`, against the project's real app background, never bare
+canvas white) — **this montage is the mandatory end-of-pass deliverable and
+the human checkpoint**, not the prose critique. Restate the design intent in
+one sentence, then answer the prose critique (material/contrast/optical
+spacing) as a **secondary, non-gating** pass: does every glow/effect match
 its element's color; does anything blow out, clip, or band; does the
 material read as intended; is text contrast legible; is spacing optically
-even. Fix and re-screenshot until it passes. **Never report done without
-the critique answers written out and the final screenshots attached** —
-screenshots are input to critique, not proof of done.
+even. Fix and re-screenshot until both the numeric predicates and the montage
+pass. **Never report done without the numeric predicate results, the prose
+critique answers, and the final montage screenshot attached** — screenshots
+are input to critique, not proof of done.
 
 **GROUNDING.** Ground every claim in tool output, confirm node names/ids by
 reading them back, never state a binding or layout property as fact without

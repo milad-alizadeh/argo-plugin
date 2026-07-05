@@ -41,6 +41,18 @@ matching `W<NN> <group>` page): don't invent a different page shape.
 hard-gate mode. Fix every violation it reports before reporting done, never
 hand back a component or screen that would fail its own hard gate.
 
+**VISUAL SELF-REVIEW.** The deterministic audit cannot see intent-level
+defects — e.g. a glow that's individually bound correctly but clashes with
+the color of the element it sits on. After the audit is clean, screenshot
+each component SET touched (all variants together, `scale: 2`, against the
+project's real app background, never bare canvas white), restate the design
+intent in one sentence, and answer in writing: does every glow/effect match
+its element's color; does anything blow out, clip, or band; does the
+material read as intended; is text contrast legible; is spacing optically
+even. Fix and re-screenshot until it passes. **Never report done without
+the critique answers written out and the final screenshots attached** —
+screenshots are input to critique, not proof of done.
+
 **GROUNDING.** Ground every claim in tool output, confirm node names/ids by
 reading them back, never state a binding or layout property as fact without
 having queried it.
@@ -58,4 +70,5 @@ report its result. If no live Figma file is reachable, say so plainly and stop
 rather than describing work you didn't do.
 
 **OUTPUT.** Report what was created or changed (node names/ids, which page),
-and confirm the audit passed clean.
+confirm the audit passed clean, and include the visual self-review's
+critique answers and final screenshots.

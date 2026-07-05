@@ -15,12 +15,16 @@ exists. "This is too simple to need a design" is itself a claim — grill it
 ## Two entry modes
 
 - **Existing plan/design** → interrogate it (the rules below).
-- **Blank slate** (an idea, no doc) → co-create the design: explore what exists
-  in the codebase first → questions one at a time (rules below) → sketch 2-3
-  approaches with trade-offs and a recommendation → write a sectioned design
-  doc (problem, chosen approach, rejected alternatives + why, open risks) →
-  self-review it against the answers given → user reviews → hand off to
-  `argo:planner` for the implementation plan.
+- **Blank slate** (an idea, no doc) → explore what exists in the codebase first,
+  then fork on altitude: if the idea is **feature-level** (a coherent unit of
+  user value spanning more than a trivial change), stop and hand off to
+  `argo:product` / `write-prd` — that owns product-bet divergence and the PRD;
+  don't sketch competing product options or write a rival design doc here.
+  Otherwise (a technical/design decision below feature altitude) co-create the
+  design: questions one at a time (rules below) → sketch 2-3 approaches with
+  trade-offs and a recommendation → write a sectioned design doc (problem, chosen
+  approach, rejected alternatives + why, open risks) → self-review against the
+  answers → user reviews → hand off to `argo:planner` for the implementation plan.
 
 Interview the user relentlessly about every aspect of this plan until you reach
 a shared understanding. Walk down each branch of the design tree, resolving

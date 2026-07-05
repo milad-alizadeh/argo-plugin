@@ -10,13 +10,18 @@ matrix.
 It carries what a wireframe and a plan both assume but neither states: *what this
 feature must do and why*, written as **checkable requirements** so a downstream
 verifier can rule each one present or absent without seeing the author's
-reasoning. Keep it tight — a spec, not an essay.
+reasoning. Keep it tight — a spec, not an essay. It grows by splitting into a new
+PRD when the feature outgrows one sentence of "Why now", not by padding.
 
 Copy the sections below verbatim; fill them for the feature. Delete this header.
 
 ---
 
 ## Feature
+
+**Status:** draft | ready | superseded
+<!-- draft while Open product questions has unresolved items; ready once
+resolved; superseded when a newer PRD replaces this one. -->
 
 One sentence: the user, their problem, the outcome this feature delivers.
 
@@ -25,57 +30,91 @@ deliberately does NOT cover.
 
 ## Why now / the core bet
 
-Two or three sentences: the user need and the bet this feature makes. What
-becomes true for the user that isn't true today. If it fails, which assumption
-was wrong.
+Two or three sentences: the user need and the bet this feature makes — what
+becomes true for the user that isn't true today, and which assumption, if wrong,
+sinks it.
+
+**Options considered:** one line per rejected direction + why it lost (so a
+deliberate scope cut isn't later misread as a missing requirement).
+
+<!-- If this bet is unvalidated, say so — consider /argo:spike to test the
+riskiest assumption before committing. -->
 
 ## Grounding — what already exists
 
-The existing capabilities/surfaces this feature builds on or changes, each with a
-citation (`ARCHITECTURE.md`, a prior PRD, a real surface/component). A requirement
-that ignores these is a defect. Name what is reused vs net-new at the product
-level.
+Narrative: the existing capabilities/surfaces this feature builds on or changes,
+each with a citation (`ARCHITECTURE.md`, a prior PRD, committed inventory/
+reconciliation docs, graphify). Product altitude only — never Figma/code
+component names (component-level reuse is hard-gated later in build-design).
+
+**Reuse ledger:**
+
+| Existing capability / surface | Source (citation) | This feature reuses it as… |
+| ----------------------------- | ----------------- | -------------------------- |
+| …                             | …                 | composes / extends / n/a   |
+
+**Net-new (justify each):** the product-altitude capabilities this feature adds
+that don't exist today, one line of justification each.
+
+<!-- This ledger is product-altitude grounding evidence, not the anti-recreation
+enforcement mechanism — that hard gate lives in build-design against the live
+component inventory. -->
 
 ## Requirements
 
-Each requirement is a capability the feature MUST deliver. Stable id, one-line
-statement, and an observable acceptance condition.
+Each requirement is a capability the feature MUST deliver: a slug-prefixed stable
+id, a one-line statement, an observable acceptance condition, and where it's
+checked. **Enumerate every non-happy-path state (empty / loading / error /
+permission / edge / zero-and-many) as its own requirement row** — states are the
+completeness a downstream gate can't invent, and they belong in the contract
+(this table), not in Scope.
 
-| ID  | Requirement (must deliver…)            | Acceptance (proven when…)                       |
-| --- | -------------------------------------- | ----------------------------------------------- |
-| R1  | …                                      | …                                               |
-| R2  | …                                      | …                                               |
+| ID          | Requirement (must deliver…)          | Acceptance (proven when…)                                   | Visible in build? |
+| ----------- | ------------------------------------ | ----------------------------------------------------------- | ----------------- |
+| CONCIERGE-R1 | …                                   | …                                                           | yes / no / partial |
+| CONCIERGE-R2 | Empty-state shown when list has 0    | renders <empty component> with CTA, not a blank container   | yes               |
 
-No vague requirements ("feels responsive", "handle edge cases"). If it isn't
-observable, make it so or drop it.
+- **Slug-prefix** the ids with the PRD's filename slug so they're citable across
+  PRDs. No vague requirements ("feels responsive", "handle edge cases") — make it
+  observable or drop it.
+- **Prefer one verifiable condition per requirement.** If a requirement bundles
+  independently-failable checks, split into `R3a` / `R3b` so a verifier can cite
+  which failed.
+- **Visible in build?** routes each requirement to the right adversarial checker
+  (`no` = the reviewer's job, not the screenshot-only design-verifier) — a
+  routing hint, not a claim the verifier ingests PRD text today (that wiring is
+  build-design P5).
 
 ## Feature → screen matrix
 
-Which surface(s) realize each requirement. A requirement mapped to nothing is out
-of scope or a missing screen — resolve it here.
+One disposition per requirement — this is checkable (every REQ-ID has exactly one
+non-empty disposition; a dangling requirement is a defect):
 
-| Requirement | Screen / surface        |
-| ----------- | ----------------------- |
-| R1          | …                       |
-| R2          | …                       |
+| Requirement  | Disposition                                              |
+| ------------ | -------------------------------------------------------- |
+| CONCIERGE-R1 | covered-by: <screen/surface list>                        |
+| CONCIERGE-R2 | deferred: <reason> · or · open: <question>               |
+
+Single-surface shortcut: "Single surface: <screen> — R1, R2, R3 all realized
+here" (still name every REQ-ID).
 
 ## Scope
 
 - **In (this version):** the requirements above, bounded.
 - **Out (deferred):** each with a one-line reason.
-- **Cardinality & states that matter:** counts and the empty / loading / error /
-  edge states design must cover (these are completeness the downstream gate can't
-  invent — state them or they won't be built).
 
 ## Open product questions
 
 Load-bearing product decisions still unresolved (answer A vs B changes *what*
-gets built). Resolve with the user before the design/plan stages consume this —
-do not park them for a downstream stage to silently assume.
+gets built). Gates `Status: ready` — resolve with the user before the
+design/plan stages consume this. Do not park them for a downstream stage to
+silently assume.
 
 ## Handoff
 
 - **Design branch:** wireframe (optional) → `figma-create`; the screen briefs
-  project this doc's matrix columns; the design-verifier checks these
-  requirements as the semantic completeness contract.
+  project this doc's matrix columns. The design-verifier is intended to check
+  these requirements as the semantic completeness contract — this depends on
+  build-design P5 ingesting the REQ-ID column (tracked in
+  `build-design-workflow.md`); until then the reviewer carries it.
 - **Code branch:** `argo:planner` → `build-plan`, citing these requirements.

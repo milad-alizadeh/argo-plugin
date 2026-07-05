@@ -82,6 +82,16 @@ once and produced real defects (a spawned sub-fleet, a token-burning
 idle-wait on a gate false positive, a rejected component patch); these three
 mechanisms close those gaps without new tooling.
 
+- **Brief before wireframe, component before screen (ordering the supervisor
+  enforces).** A screen's product brief (`design/briefs/<screen>.md`,
+  `templates/design/screen-brief.md`) is authored and settled BEFORE its
+  wireframe is spawned — a wireframe with no brief is the reskin-the-wireframe
+  failure this pipeline exists to kill, so don't spawn one. Then, for hi-fi:
+  every `composite` a screen's brief names is built + registered as its own
+  audited component BEFORE the screen that consumes it is assembled. Sequence
+  the fan-out that way — component runs first, the screen-composition run last,
+  reading the now-existing components as instances. A screen run spawned before
+  its components exist will trace the wireframe; don't spawn it early.
 - **Flat fan-out.** Spawn each `designer` directly from the main session, one
   per component — never route a designer's output through another designer
   (mirrors the builder no-wrapper rule in §1). The leaf rule itself lives in

@@ -10,6 +10,30 @@ deterministic gate compares against (design-pack plan §4) — no gate ever
 talks to Figma directly, including during hands-off `build-plan` runs (C6).
 Builds on `figma:figma-use`.
 
+**Three-class source of truth (design-first, corrected).** Not everything in the
+product surface is Figma-authored — classify each region before you dump, using
+the host project's reuse authority (its reconciliation doc); never infer the
+class from the node alone:
+
+1. **Base-kit primitives** (shadcn — Button, Switch, Badge, Dialog, Sonner…):
+   **code is the source of truth**, the Figma kit mirrors it, and the tier-0
+   kit-congruence gate holds it honest. Step 3's base-component spec dump reads
+   the mirror for gate fixtures — it is not a source-of-truth flip.
+2. **Existing product composites** (e.g. `SessionTerminalView`/TerminalPanel,
+   `RosterRow`/SessionCard, `RosterView`/Rail, the activity feed, settings,
+   usage — anything already implemented in code): **code is the source of
+   truth**. Design-reconcile refreshes the visual language ONLY; the component
+   boundary and behavior stay code-owned and are **never regenerated from
+   Figma**. A region carrying a `RECONCILE` verdict is a Figma mirror for design
+   reference — `figma-to-code` **never queues it for generation**.
+3. **Net-new composites + screen composition**: **Figma is the source of
+   truth** — genuinely design-first. This skill dumps these into artifacts and
+   `figma-to-code` implements them, with code retaining downstream veto (Figma
+   has no compiler).
+
+Never invert class 1 or 2 to Figma-truth — that discards the shadcn vendoring,
+the congruence gate, and the code-owned behavior of components that already run.
+
 ## Procedure
 
 1. **Audit first (hard gate, D8).** Call `figma-audit` on the components

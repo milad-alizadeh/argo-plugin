@@ -26,6 +26,14 @@ interactively.
   not: either the component doesn't exist in Figma yet (build it first via
   `figma-create`, then sync via `figma-sync`) or it was never synced (run
   `figma-sync`) — don't invent a mapping here.
+- **Never generate a code-owned composite** (`figma-sync`'s three-class model,
+  class 2 — an existing product composite carrying a `RECONCILE` verdict in the
+  host's reuse authority: `SessionTerminalView`/TerminalPanel, `RosterRow`/
+  SessionCard, the activity feed, settings, usage, …). Its Figma entry is a
+  design-reference mirror; the code boundary + behavior are code-owned and must
+  never be regenerated from Figma. Only class-3 net-new composites and screen
+  composition are generated here. If a target resolves to a `RECONCILE` region,
+  stop and skip it — the design refresh is applied to the existing code by hand.
 - **Never uses live MCP access during a hands-off `build-plan` run** (C6):
   all design context — tokens, specs, screenshots per variant×mode — comes
   from the **committed** artifacts `figma-sync` already wrote. If a needed

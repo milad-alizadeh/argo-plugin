@@ -9,6 +9,27 @@ Authors lo-fi wireframes to a fixed shape so they read the same across every
 project, and stay obviously separate from hi-fi design work. Builds on
 `figma:figma-use` for node creation.
 
+## The screen brief is the spec — read it first
+
+A wireframe is a lo-fi **layout expression of a screen's brief**, never the
+spec itself. Before wireframing any screen, read its brief (host repo, e.g.
+`apps/desktop/design/briefs/<screen>.md`, format in
+`templates/design/screen-brief.md`):
+
+- Lay out exactly the regions the brief's **Regions → component map** lists,
+  in that order — a `composite` region is one greybox block labelled with the
+  component's name (`RailSessionCard`), a `layout` region is its container.
+  Wireframe the region NAMES from the brief, so the decomposition survives into
+  hi-fi instead of being re-inferred from anonymous boxes.
+- Realize the brief's **Flow / IA**: which screen this flows to/from, what each
+  affordance triggers. The brief pins the flow; the wireframe shows it.
+
+**No brief, no wireframe.** If a screen has no brief, stop and author the brief
+first (or record an explicit decision to skip it for a trivial variation of an
+already-briefed screen). A wireframe drawn without a brief is exactly the
+failure this guards against: a layout with no product intent, which hi-fi then
+traces.
+
 ## What a wireframe is (and isn't)
 
 Wireframes are **layout and information design only**: what's on the screen,
@@ -64,13 +85,17 @@ the fixed palette above, never bound to the Semantic collection.
 
 ## Procedure
 
-1. Confirm the surface group and its `W<NN>` page per `file-structure.md`
+1. **Read the screen brief** (`design/briefs/<screen>.md`) — no brief, stop and
+   author it first. The brief's region map and flow are what you lay out.
+2. Confirm the surface group and its `W<NN>` page per `file-structure.md`
    (create the page if it doesn't exist yet).
-2. Build each concern as its own `WF / <area> · <focus>` frame, grayscale
+3. Build each concern as its own `WF / <area> · <focus>` frame, grayscale
    only, Auto Layout, using the legend's vocabulary for any labeled state.
-3. Lay frames out horizontally with 200-240px gutters; split to a new
+   Label each region with its brief name; keep a `composite` region as one
+   named block, not a pre-decomposed pile of atoms.
+4. Lay frames out horizontally with 200-240px gutters; split to a new
    `W<NN>` page once a page passes roughly seven frames.
-4. When iterating, change one thing, delete superseded frames, never keep
+5. When iterating, change one thing, delete superseded frames, never keep
    both.
 
 ## Verification

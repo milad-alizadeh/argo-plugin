@@ -111,7 +111,12 @@ file → skip; never invent one.
   containers — no loose rectangles/text with raw styles. If an instance
   needed for the screen doesn't exist yet as a component, stop and build
   the component first via this same flow — don't invent one-off styling
-  inline in the screen.
+  inline in the screen. The **component-first screen path** below sequences
+  this: build the brief's `composite` regions before the screen so it composes
+  from instances. Inlining a `composite` as loose structure is the
+  reskin-the-wireframe smell the path exists to prevent — advisory this round
+  (the authoritative decomposition gate is deferred; see the path below), not
+  yet a hard gate.
 - **No variant clipping after `combineAsVariants`** (live defect, 2026-07-05:
   status-pill labels observed truncated — "needs inpu", "interrupte").
   `combineAsVariants` can leave individual variants stretched to a frozen set
@@ -172,6 +177,51 @@ file → skip; never invent one.
     on a kit INSTANCE (mode copies use it on locally-authored components
     only, per D11); if it already happened, recreate the instance —
     clearing the value does not clear the override history.**
+
+## Component-first screen path (the screen brief is a required input)
+
+A screen is **built from its brief, not traced from its wireframe**. The
+wireframe is a lo-fi layout reference; the brief (host repo, e.g.
+`apps/desktop/design/briefs/<screen>.md`, format in
+`templates/design/screen-brief.md`) is the spec that names which regions are
+reusable components. Read it before touching the screen — **no brief, stop and
+say so**, never infer the decomposition from the wireframe's grey boxes (that
+IS the reskin-the-wireframe failure this path exists to kill).
+
+Build in this order, every time:
+
+1. **Inventory.** From the brief's *Regions → component map*, list every
+   `composite` region (and every `composite` sub-part under *Component
+   sub-parts*). These are the components the screen is made of.
+2. **Build + register each composite FIRST**, before any screen assembly. Each
+   goes through this skill's full component flow — authoring rules, self-audit
+   hard gate, visual self-review, registry upsert — and lands on the
+   `Custom Components` page. A composite that already exists (in
+   `design/registry.json` or the kit) is reused as-is, not rebuilt. Only once
+   every `composite` the brief names exists as an audited component do you move
+   on. Prefer kit components for any region that maps to one (kit-awareness
+   above); a `composite` is justified only by structure the kit doesn't ship.
+3. **Compose the screen** on its `D<NN>` page purely from those component
+   INSTANCES + `layout` containers (Auto Layout, bound spacing). A region the
+   brief tagged `composite` SHOULD appear as an instance of the matching
+   component; inlining it as a loose container full of atoms is the
+   reskin-the-wireframe smell to avoid. A region tagged `layout` is the only
+   thing meant to be a bare Auto-Layout container.
+
+The point of building components first is that the screen becomes a thin
+composition sheet — if you find yourself styling anything directly on the
+screen frame beyond `layout` containers, a composite is missing: go back to
+step 2.
+
+**What is enforced this round vs. advisory.** Brief-compliance (every
+`composite` region resolving to an instance) is **advisory** for now — the
+authoritative decomposition gate (Option C, a repo-side brief↔screen check)
+is deferred until its machine-readable brief schema + `story-map` region→
+instance mapping land. The ONE hard check that ships now is
+**anti-recreation**: a NEW component name that collides with an existing
+component — or a known alias in the host's reuse authority — is rejected. Never
+build a second component for something that already exists under another name;
+reuse or extend it instead.
 
 ## Where things go
 
@@ -240,7 +290,10 @@ of re-bundling per audit.
 
 ## Procedure
 
-1. Create the component/screen per the rules above.
+1. Create the component/screen per the rules above. **For a screen, follow the
+   component-first screen path** — read the brief, build + audit every
+   `composite` it names first, then compose the screen from those instances.
+   Each component built along the way runs steps 2-4 below on its own.
 2. Call `figma-audit` on the new component(s) — named-component mode, hard
    gate.
 3. **Fix every violation it reports before reporting done.** This is the

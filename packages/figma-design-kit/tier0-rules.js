@@ -135,7 +135,8 @@ const ALLOWED_KIT_INSTANCE_OVERRIDES = [
   'strokeStyleId',
   'componentProperties', // variant/prop switching is what instances are for
   'componentPropertyReferences',
-  'mainComponent' // instance swap
+  'mainComponent', // instance swap
+  'characters' // text CONTENT is usage, not styling — labeling a kit Switch/Breadcrumb is sanctioned
 ]
 
 export function kitInstanceOverrideViolation(node) {
@@ -159,6 +160,10 @@ export function detachedInstanceViolation(node) {
 }
 
 export function nonSemanticNameViolation(node) {
+  // Nodes inside a library instance are exempt (2026-07-05): kit internals
+  // carry the kit's own auto-names and are not ours to rename — flagging
+  // them made pristine kit instances fail the hard gate.
+  if (node.insideInstance) return null
   if (/^(Frame|Group|Rectangle|Ellipse|Text|Vector)\s?\d*$/.test(node.name)) {
     return { rule: 'non-semantic-name', detail: `node name "${node.name}" looks auto-generated, not semantic` }
   }
@@ -229,6 +234,10 @@ export function storyUrlScopeViolation(node) {
  * their gap/padding is Figma's variant-grid chrome, not a design value.
  */
 export function gapPaddingSpacingViolations(node, _spacingScale) {
+  // Nodes inside a library instance are exempt (2026-07-05): kit internals
+  // bind the kit's own spacing collections (e.g. tw/gap) — not ours to
+  // rebind; flagging them made pristine kit instances fail the hard gate.
+  if (node.insideInstance) return []
   if (node.layoutMode === 'NONE' || node.type === 'COMPONENT_SET') return []
   const violations = []
   for (const entry of node.gapAndPadding ?? []) {

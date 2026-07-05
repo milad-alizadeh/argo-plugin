@@ -124,6 +124,11 @@ describe('handDrawnIconViolation', () => {
 })
 
 describe('kitInstanceOverrideViolation', () => {
+  it('passes a text-content (characters) override — labeling a kit component is sanctioned usage', () => {
+    const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['characters'] }
+    expect(kitInstanceOverrideViolation(node)).toBeNull()
+  })
+
   // Whitelist, not blacklist (user ruling 2026-07-05, VERY IMPORTANT): kit
   // instances are never edited AT ALL — only size and color are legal.
   it('flags a remote kit instance overriding anything beyond size/color (e.g. strokeWeight)', () => {
@@ -146,6 +151,10 @@ describe('detachedInstanceViolation', () => {
 })
 
 describe('nonSemanticNameViolation', () => {
+  it('ignores auto-generated names inside a library instance — kit internals are not ours to rename', () => {
+    expect(nonSemanticNameViolation({ name: 'Vector', insideInstance: true })).toBeNull()
+  })
+
   it('flags an auto-generated default name', () => {
     expect(nonSemanticNameViolation({ name: 'Rectangle 12' })).toEqual({
       rule: 'non-semantic-name',
@@ -313,6 +322,15 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
     const node = {
       layoutMode: 'NONE',
       gapAndPadding: [{ field: 'itemSpacing', value: 7, bound: false }]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+  })
+
+  it('ignores nodes inside a library instance — kit internals bind the kit\'s own spacing collections', () => {
+    const node = {
+      layoutMode: 'HORIZONTAL',
+      insideInstance: true,
+      gapAndPadding: [{ field: 'itemSpacing', value: 7, bound: true, collectionName: 'tw/gap' }]
     }
     expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
   })

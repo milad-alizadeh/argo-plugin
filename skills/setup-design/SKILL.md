@@ -343,7 +343,7 @@ copy to track edits against — skip both files entirely. Leave `tokens.json`,
 `specs/`, `screenshots/`, `story-map.json` for `figma-sync` to populate on
 first sync regardless of recipe.
 
-## 7b. Alias parity — Storybook and every walker project must resolve app code
+## 7b. Alias + CSS pipeline parity — Storybook and every walker project must resolve AND style app code
 
 Story files import app components, and app components import through the
 host's source aliases (vite `resolve.alias` / tsconfig `paths`, e.g.
@@ -355,11 +355,37 @@ spec-diff projects inherit it), and the vrt config's `{{SOURCE_ALIASES}}`
 slot. Missing any one of these fails only at story-run time with
 `Failed to resolve import "<alias>/..."` — catch it here, not in Phase D.
 
+**The CSS pipeline needs the identical treatment, and its failure mode is
+worse: silent, not a thrown error.** Skip it and every component renders
+completely unstyled — but every story test, spec-diff todo, and VRT todo
+still PASSES, because none of them assert on computed styles by default; the
+walkers only prove a component mounted without throwing, not that it looks
+like anything (see §8 step 6, the check that actually catches this).
+
+This skill stays codeTarget-agnostic: it does not itself know what CSS tool
+a given recipe uses or how to wire it. **The chosen recipe's own
+`code-target/css-pipeline.md`** (installed alongside its other
+`code-target/` templates, same dispatch pattern as `token-writer.md`) states
+the concrete tool for its `codeTarget` (e.g. this pack's only current recipe,
+`shadcn-tailwind-external-kit`, targets Tailwind's Vite plugin), how to
+detect it in the host's own bundler config, and which docs to WebSearch
+before wiring it into `.storybook/main.ts`'s `viteFinal`, the vrt config's
+`{{CSS_PLUGIN_IMPORT}}`/`{{CSS_PLUGIN_CALL}}` slots, and any other separate
+Vite config that renders app components directly. Follow that doc here — do
+not invent the plugin/config shape from training-data memory (same
+anti-spiral rule this skill already applies to shadcn's install command in
+§2); a future non-Tailwind recipe supplies its own doc and this section does
+not change.
+
 ## 8. Prove the pipeline with a smoke story — run it, don't offer it
 
 The install is not done until one real component story has rendered and all
-three walker layers have run against it. This is what proves the pack is
-ready for `figma-to-code` to start writing components and tests.
+three walker layers have run against it, AND it has been visually confirmed
+to actually look like something — not just "the test suite is green." A
+green suite proves the component mounted; it does NOT prove it's styled (see
+§7b's observed CSS-pipeline gap, which every one of these tests passed
+straight through). This is what proves the pack is ready for
+`figma-to-code` to start writing components and tests.
 
 1. **Pick a smoke component**: the vendored base library's simplest component
    (e.g. shadcn `Button`) or, under `baseSource: none`, any existing small
@@ -379,6 +405,41 @@ ready for `figma-to-code` to start writing components and tests.
    config change, the storybook project can fail once with `Failed to fetch
    dynamically imported module … sb-vitest/deps/…` (Vite dep-optimizer race).
    Re-run once before diagnosing anything.
+5. **Actually boot `storybook dev`** (the real dev-server command the user
+   will run day to day, e.g. `bun run storybook`), poll it (`curl` the port)
+   until it answers 200, and confirm it stays up — a static
+   `build-storybook` alone doesn't prove the dev server itself starts cleanly
+   (different code path, same config).
+6. **Render the smoke story in a REAL browser and screenshot it — this is
+   the step that actually catches §7b's failure mode.** Story-test passes
+   and todo-pass suites are necessary but not sufficient; only a rendered
+   pixel check catches "mounted but invisible." Use Playwright directly
+   (`bunx playwright screenshot` or a short throwaway script — the project
+   already depends on `playwright` via the VRT walker) against either the
+   running dev server or a `build-storybook` static serve, navigating to
+   `<url>/iframe.html?id=<story-id>&viewMode=story`:
+   - **Don't rely on the `claude-in-chrome` browser tool for this** — that
+     extension drives a separate Chrome instance that may not share a
+     network namespace with a locally-bound dev-server port (observed:
+     `localhost`/`127.0.0.1` both resolved to `chrome-error://chromewebdata/`
+     while `curl` on the same host succeeded). Playwright's own bundled
+     Chromium runs in-process and doesn't have this gap.
+   - Take the screenshot, then **assert on computed style, not just
+     "a PNG exists"**: pull the smoke component's root element via
+     `page.evaluate` and check `getComputedStyle` — background-color isn't
+     `rgba(0, 0, 0, 0)` (or whatever the story's variant expects), width/height
+     aren't `0`, and any color/token-driven property resolves to a real value
+     rather than a CSS custom-property fallback or `initial`. This is exactly
+     the check that would have failed against the unstyled build in §7b's
+     observed bug, where every class was present on the element but resolved
+     to nothing because the stylesheet never generated the rules.
+   - Compare the screenshot to what the component's variant SHOULD look like
+     (e.g. a filled button has a visible fill, an outline button has a visible
+     border) — a blank or unstyled render fails this step even if every
+     automated assertion above passed. If it fails, this is the point to
+     re-open §7b (CSS pipeline parity) before declaring the install done —
+     don't report success and leave the gap for `figma-to-code` to discover
+     later.
 
 Separately, offer to run `/argo:figma-audit` as a Figma-side smoke check —
 never run that one silently; the user may not have a Figma file connected

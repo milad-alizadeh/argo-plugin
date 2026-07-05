@@ -10,6 +10,8 @@ import { defineConfig } from 'vitest/config'
  * any of them is a re-baselining operation (a distinct, single-commit
  * change with a gestalt spot-check), never an incidental drift.
  */
+// {{CSS_PLUGIN_IMPORT}} e.g.: import tailwindcss from '@tailwindcss/vite'
+
 export default defineConfig({
   resolve: {
     // Mirror the host app's source aliases (vite config / tsconfig paths) —
@@ -20,6 +22,13 @@ export default defineConfig({
       // (import { resolve } from 'path' when filling this in)
     }
   },
+  // Mirror the host app's CSS pipeline plugin (SKILL §7b) — without it every
+  // component mounts with zero styling, and nothing here throws: the render
+  // "succeeds" with an invisible component. Distinct failure mode from the
+  // alias gap above, and it fails silently instead of loudly.
+  plugins: [
+    // {{CSS_PLUGIN_CALL}} e.g.: tailwindcss()
+  ],
   test: {
     name: 'vrt',
     include: ['{{VRT_WALKER_DIR}}/**/*.vrt.{{EXT}}'],

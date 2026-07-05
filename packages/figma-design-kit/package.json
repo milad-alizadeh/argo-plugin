@@ -9,7 +9,8 @@
   "exports": {
     ".": "./index.js",
     "./recipes/external-kit": "./recipes/external-kit.js",
-    "./tier0-rules": "./tier0-rules.js"
+    "./tier0-rules": "./tier0-rules.js",
+    "./region-contract": "./region-contract.js"
   },
   "files": [
     "index.js",
@@ -18,6 +19,7 @@
     "schemas.js",
     "waivers.js",
     "tier0-rules.js",
+    "region-contract.js",
     "recipes/external-kit.js"
   ],
   "keywords": [

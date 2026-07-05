@@ -30,37 +30,63 @@ function countNames(node, counts) {
 }
 
 /**
- * C1's flattening rule (build-design-workflow.md / the D01 fix): a node
- * becomes a first-class `regions` row iff it is an instance boundary
- * (`type === 'INSTANCE'`), an auto-layout container boundary (`layoutMode`
- * set to anything but `'NONE'`), OR its name repeats more than once anywhere
- * in the tree (the same composite reused under different parents). Every
- * other node stays documentation-only — its name lands in its parent's
- * `children` array and nothing else. This is the only thing that stops
- * ~40% of named nodes silently escaping coverage (D01).
+ * C1's flattening rule (build-design-workflow.md / the D01 fix): a node is
+ * promoted to a first-class regions/builtRegions row iff it is an instance
+ * boundary (`type === 'INSTANCE'`), an auto-layout container boundary
+ * (`layoutMode` set to anything but `'NONE'`), OR its name repeats more than
+ * once anywhere in the tree (the same composite reused under different
+ * parents). Every other node stays documentation-only. Shared by
+ * `flattenToRegions` (wireframe contract) and `buildBuiltRegions` (built
+ * screen) so both sides of the coverage diff agree on what counts as a
+ * region — the only thing that stops ~40% of named nodes silently escaping
+ * coverage (D01).
  * @param {{name: string, type?: string, layoutMode?: string, children?: object[]}} tree
+ * @returns {{node: object, path: string, depth: number, isInstance: boolean, isAutoLayoutContainer: boolean}[]}
  */
-export function flattenToRegions(tree) {
+function promoteNodes(tree) {
   const nameCounts = countNames(tree, new Map())
-  const regions = []
+  const promoted = []
 
   function visit(node, path, depth) {
     const isInstance = node.type === 'INSTANCE'
     const isAutoLayoutContainer = Boolean(node.layoutMode) && node.layoutMode !== 'NONE'
     const repeatsAcrossComposites = (nameCounts.get(node.name) ?? 0) > 1
-    const promoted = isInstance || isAutoLayoutContainer || repeatsAcrossComposites
 
-    if (promoted) {
-      const region = { name: node.name, path, depth, children: (node.children ?? []).map((c) => c.name) }
-      if (isAutoLayoutContainer && !isInstance) region.kind = 'layout'
-      regions.push(region)
+    if (isInstance || isAutoLayoutContainer || repeatsAcrossComposites) {
+      promoted.push({ node, path, depth, isInstance, isAutoLayoutContainer })
     }
 
     for (const child of node.children ?? []) visit(child, `${path}/${child.name}`, depth + 1)
   }
 
   visit(tree, tree.name, 0)
-  return regions
+  return promoted
+}
+
+/**
+ * @param {{name: string, type?: string, layoutMode?: string, children?: object[]}} tree
+ */
+export function flattenToRegions(tree) {
+  return promoteNodes(tree).map(({ node, path, depth, isInstance, isAutoLayoutContainer }) => {
+    const region = { name: node.name, path, depth, children: (node.children ?? []).map((c) => c.name) }
+    if (isAutoLayoutContainer && !isInstance) region.kind = 'layout'
+    return region
+  })
+}
+
+/**
+ * P1 extract step, built-screen side: the same promotion rule applied to a
+ * BUILT screen's `get_metadata` dump, emitting the `isInstance`/`instanceOf`
+ * fields `classifyCoverage` needs — `instanceOf` is the promoted node's
+ * `componentName` when it is a registry-backed instance.
+ * @param {{name: string, type?: string, layoutMode?: string, componentName?: string, children?: object[]}} tree
+ */
+export function buildBuiltRegions(tree) {
+  return promoteNodes(tree).map(({ node, path, isInstance }) => {
+    const builtRegion = { name: node.name, path, isInstance }
+    if (isInstance) builtRegion.instanceOf = node.componentName
+    return builtRegion
+  })
 }
 
 function findDisposition(region, dispositions) {

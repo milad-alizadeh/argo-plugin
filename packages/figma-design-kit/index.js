@@ -2,7 +2,14 @@ export { compareColor, comparePxInteger, compareHugDimension, srgbToOklch, oklch
 export { convertLineHeight, convertLetterSpacing, resolveBoxModel } from './conversion-table.js'
 export { WaiverSchema, StoryMapEntrySchema } from './schemas.js'
 export { checkWaiver, invalidateWaivers } from './waivers.js'
-export { classifyCoverage, summarize, reconcileBrief, flattenToRegions, buildRegionContract } from './region-contract.js'
+export {
+  classifyCoverage,
+  summarize,
+  reconcileBrief,
+  flattenToRegions,
+  buildRegionContract,
+  buildBuiltRegions
+} from './region-contract.js'
 export {
   unboundFillViolations,
   unboundStrokeViolations,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { classifyCoverage, summarize, reconcileBrief, buildRegionContract } from '../packages/figma-design-kit/region-contract.js'
+import { classifyCoverage, summarize, reconcileBrief, buildRegionContract, buildBuiltRegions } from '../packages/figma-design-kit/region-contract.js'
 import d01Contract from './fixtures/d01-wireframe-contract.json' with { type: 'json' }
 import d01ShippedShell from './fixtures/d01-shipped-shell-built.json' with { type: 'json' }
 
@@ -162,6 +162,14 @@ describe('buildRegionContract (P1 extract: wraps flattenToRegions with the scree
       figmaFileVersion: '42',
       regions: [{ name: 'BuildSpine', path: 'BuildSpine', depth: 0, children: [] }]
     })
+  })
+})
+
+describe('buildBuiltRegions (C1: same promotion rule applied to a BUILT-screen metadata dump)', () => {
+  it('emits isInstance + instanceOf for a promoted instance node', () => {
+    const tree = { name: 'BuildSpine', type: 'INSTANCE', componentName: 'BuildSpine', children: [] }
+
+    expect(buildBuiltRegions(tree)).toEqual([{ name: 'BuildSpine', path: 'BuildSpine', isInstance: true, instanceOf: 'BuildSpine' }])
   })
 })
 

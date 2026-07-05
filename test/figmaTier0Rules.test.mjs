@@ -8,7 +8,7 @@ import {
   detachedInstanceViolation,
   nonSemanticNameViolation,
   variantNamingViolations,
-  darkCopyViolation,
+  modeCopyViolations,
   implicitLineHeightViolation,
   storyUrlScopeViolation,
   gapPaddingSpacingViolations
@@ -117,29 +117,44 @@ describe('variantNamingViolations', () => {
   })
 })
 
-describe('darkCopyViolation (D11)', () => {
-  it('flags a component with no adjacent dark-mode copy', () => {
+describe('modeCopyViolations (D11, generalized to mode copies)', () => {
+  it('flags a component with no adjacent copy for a non-default mode', () => {
     const node = { type: 'COMPONENT', name: 'Button', siblings: [] }
-    expect(darkCopyViolation(node, 'Semantic')).toEqual({ rule: 'missing-dark-copy', detail: 'component has no adjacent dark-mode instance copy (D11)' })
+    expect(modeCopyViolations(node, 'Semantic', ['Light', 'Dark'])).toEqual([
+      { rule: 'missing-mode-copy', detail: 'component has no adjacent "Dark" mode instance copy (D11)' }
+    ])
   })
-  it('flags a dark copy that does not explicitly set the Semantic mode', () => {
+  it('flags a mode copy that does not explicitly set the Semantic mode', () => {
     const node = {
       type: 'COMPONENT',
       name: 'Button',
       siblings: [{ name: 'Button (Dark)', explicitVariableModes: {} }]
     }
-    expect(darkCopyViolation(node, 'Semantic')).toEqual({
-      rule: 'incorrect-dark-copy',
-      detail: 'dark copy does not set the Semantic collection mode explicitly'
-    })
+    expect(modeCopyViolations(node, 'Semantic', ['Light', 'Dark'])).toEqual([
+      { rule: 'incorrect-mode-copy', detail: '"Dark" mode copy does not set the Semantic collection mode explicitly' }
+    ])
   })
-  it('passes a correctly-configured dark copy', () => {
+  it('passes a correctly-configured mode copy', () => {
     const node = {
       type: 'COMPONENT',
       name: 'Button',
       siblings: [{ name: 'Button (Dark)', explicitVariableModes: { Semantic: 'dark-mode-id' } }]
     }
-    expect(darkCopyViolation(node, 'Semantic')).toBeNull()
+    expect(modeCopyViolations(node, 'Semantic', ['Light', 'Dark'])).toEqual([])
+  })
+  it('requires zero copies for a single-mode Semantic collection', () => {
+    const node = { type: 'COMPONENT', name: 'Button', siblings: [] }
+    expect(modeCopyViolations(node, 'Semantic', ['Dark'])).toEqual([])
+  })
+  it('flags one violation per missing non-default mode copy, beyond the default', () => {
+    const node = { type: 'COMPONENT', name: 'Button', siblings: [] }
+    expect(modeCopyViolations(node, 'Semantic', ['Light', 'Dark', 'High Contrast'])).toEqual([
+      { rule: 'missing-mode-copy', detail: 'component has no adjacent "Dark" mode instance copy (D11)' },
+      { rule: 'missing-mode-copy', detail: 'component has no adjacent "High Contrast" mode instance copy (D11)' }
+    ])
+  })
+  it('ignores non-component/component-set node types', () => {
+    expect(modeCopyViolations({ type: 'FRAME', name: 'Screen', siblings: [] }, 'Semantic', ['Light', 'Dark'])).toEqual([])
   })
 })
 

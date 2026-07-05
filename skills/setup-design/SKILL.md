@@ -29,14 +29,18 @@ doesn't use it.
 
 AskUserQuestion, single question: "Is this Figma file on a Professional plan
 or higher?" **Why this gate exists (F10):** below Professional, variable
-collections are capped at **one mode**, which blocks the Light+Dark Semantic
-collection this pack's D10/D11 rules depend on — so this gate applies to
-**every** recipe, not just `external-library`; `external-library` additionally
-needs library publishing (a separate Professional-plan-gated feature). Do
-**not** cite the Variables REST API as a workaround — the pipeline explicitly
-rejected it as Enterprise-gated; nothing in this pack depends on it. If no:
-**stop** with the same clear-explanation pattern as §0a — this is a hard
-prerequisite, checked early (D23).
+collections are capped at **one mode**, which today's only recipe
+(`shadcn-tailwind-external-kit`) needs library publishing for regardless — a
+separate Professional-plan-gated feature, so this gate applies to every
+project run through this skill. Note (D11, generalized to mode copies,
+2026-07-05): a single-mode Semantic collection is a legal project shape on
+its own — it just means the project has zero mode copies to maintain — so
+this gate's mode cap is no longer, by itself, a hard blocker for D10/D11; it
+remains a hard prerequisite here only because of the library-publishing
+requirement above. Do **not** cite the Variables REST API as a workaround —
+the pipeline explicitly rejected it as Enterprise-gated; nothing in this pack
+depends on it. If no: **stop** with the same clear-explanation pattern as
+§0a — this is a hard prerequisite, checked early (D23).
 
 ## 0c. Recipe selection
 

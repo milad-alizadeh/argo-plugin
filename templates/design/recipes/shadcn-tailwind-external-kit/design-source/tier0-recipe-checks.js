@@ -19,7 +19,7 @@ import {
   nonSemanticBindingViolation,
   retiredFileKeyBindingViolation,
   kitPatchesConformanceViolations
-} from 'figma-design-kit-shadcn-tailwind'
+} from 'figma-design-kit-shadcn-tailwind/tier0-rules'
 import kitPatches from './kit-patches.json'
 
 const KIT_LIBRARY_FILE_KEY = '{{KIT_LIBRARY_FILE_KEY}}'

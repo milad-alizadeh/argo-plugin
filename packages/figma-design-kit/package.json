@@ -5,9 +5,11 @@
   "license": "MIT",
   "type": "module",
   "main": "index.js",
+  "sideEffects": false,
   "exports": {
     ".": "./index.js",
-    "./recipes/external-kit": "./recipes/external-kit.js"
+    "./recipes/external-kit": "./recipes/external-kit.js",
+    "./tier0-rules": "./tier0-rules.js"
   },
   "files": [
     "index.js",

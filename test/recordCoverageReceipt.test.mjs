@@ -24,7 +24,7 @@ describe('buildCoverageReceipt (P5 compose-time coverage receipt shape)', () => 
       producedBy: 'design-verifier',
       figmaFileVersion: '42',
       timestamp: 123,
-      summary: { present: ['BuildSpine'], deferred: [], UNACCOUNTED: [], MISSING: [], clean: true },
+      summary: { present: ['BuildSpine'], deferred: [], UNACCOUNTED: [], MISSING: [], warnings: [], clean: true },
       clean: true
     })
   })

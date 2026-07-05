@@ -102,16 +102,54 @@ function findDisposition(region, dispositions) {
 }
 
 /**
+ * C3b (design-pipeline-efficiency-ruling.md): recurses ONE level into a
+ * matched instance and WARNS (never a hard fail — `clean` stays governed by
+ * UNACCOUNTED/MISSING alone) when a declared child (`region.children`) was
+ * never actually built under it — a hollow card that scored `present` only
+ * because the instance boundary itself existed.
+ * @param {{path: string, children?: string[]}} region
+ * @param {{path: string}[]} builtRegions
+ */
+function hollowChildWarning(region, builtRegions) {
+  const builtPaths = new Set(builtRegions.map((b) => b.path))
+  const missingChildren = (region.children ?? []).filter((name) => !builtPaths.has(`${region.path}/${name}`))
+  if (missingChildren.length === 0) return undefined
+  return `hollow instance — declared child(ren) not built: ${missingChildren.join(', ')}`
+}
+
+/**
  * @param {{screen: string, wireframeNodeId: string, figmaFileVersion: string,
  *          regions: {name: string, path: string, depth: number, children: unknown[]}[]}} contract
  * @param {{name: string, path: string, isInstance?: boolean, instanceOf?: string}[]} builtRegions
  * @param {{region: string, disposition: string}[]} dispositions
  */
+/**
+ * C3b: WARN when the built count of direct children under a region's path
+ * is below its declared `cardinality` (a list container — e.g. FindingsList
+ * — that expects N repeated composites but only got fewer built).
+ * @param {{path: string, cardinality?: number}} region
+ * @param {{path: string}[]} builtRegions
+ */
+function cardinalityWarning(region, builtRegions) {
+  if (typeof region.cardinality !== 'number') return undefined
+  const prefix = `${region.path}/`
+  const directChildCount = builtRegions.filter((b) => b.path.startsWith(prefix) && !b.path.slice(prefix.length).includes('/')).length
+  if (directChildCount >= region.cardinality) return undefined
+  return `cardinality ${directChildCount} built, expected ${region.cardinality}`
+}
+
+function presentResult(region, builtRegions) {
+  const result = { name: region.name, path: region.path, status: 'present' }
+  const warning = hollowChildWarning(region, builtRegions) ?? cardinalityWarning(region, builtRegions)
+  if (warning) result.warning = warning
+  return result
+}
+
 export function classifyCoverage(contract, builtRegions = [], dispositions = []) {
   return contract.regions.map((region) => {
     const match = findBuiltMatch(region, builtRegions)
     if (match && match.isInstance) {
-      return { name: region.name, path: region.path, status: 'present' }
+      return presentResult(region, builtRegions)
     }
 
     // Layout containers (Stage, Main, topbar) are frames, not registry-backed
@@ -119,7 +157,7 @@ export function classifyCoverage(contract, builtRegions = [], dispositions = [])
     // container satisfies them; the instance requirement applies only to
     // composites (the anti-recreation coupling is about components, not layout).
     if (region.kind === 'layout' && match) {
-      return { name: region.name, path: region.path, status: 'present' }
+      return presentResult(region, builtRegions)
     }
 
     const disposition = findDisposition(region, dispositions)
@@ -139,18 +177,25 @@ export function classifyCoverage(contract, builtRegions = [], dispositions = [])
 /**
  * Groups a `classifyCoverage` result by status. `clean` is the D01 gate
  * number of record: UNACCOUNTED must be 0 to land, MISSING equally so —
- * `present`/`deferred` alone don't prove completeness.
- * @param {{name: string, path: string, status: string}[]} classification
+ * `present`/`deferred` alone don't prove completeness. C3b's hollow-
+ * instance/cardinality WARNs are surfaced separately (`warnings`) and never
+ * affect `clean` — they flag a real build gap without hard-failing a commit
+ * that landed a instance boundary but not yet its full contents.
+ * @param {{name: string, path: string, status: string, warning?: string}[]} classification
  */
 export function summarize(classification) {
   const byStatus = (status) => classification.filter((r) => r.status === status).map((r) => r.name)
   const UNACCOUNTED = byStatus('UNACCOUNTED')
   const MISSING = byStatus('MISSING')
+  const warnings = classification
+    .filter((r) => r.warning)
+    .map((r) => ({ name: r.name, path: r.path, warning: r.warning }))
   return {
     present: byStatus('present'),
     deferred: byStatus('deferred'),
     UNACCOUNTED,
     MISSING,
+    warnings,
     clean: UNACCOUNTED.length === 0 && MISSING.length === 0
   }
 }

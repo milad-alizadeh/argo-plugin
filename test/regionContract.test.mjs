@@ -122,6 +122,51 @@ describe('classifyCoverage (C3a: path-aware matching — a repeated name under d
   })
 })
 
+describe('classifyCoverage (C3b: cardinality + declared children are WARN, not a hard fail — a hollow instance still scores present)', () => {
+  it('warns when a declared child is absent from the built tree (hollow instance)', () => {
+    const contract = {
+      screen: 'cockpit-shell',
+      wireframeNodeId: '26:3',
+      figmaFileVersion: '1',
+      regions: [{ name: 'ProfileCard', path: 'ProfileCard', depth: 1, children: ['Avatar', 'Name'] }]
+    }
+    // ProfileCard itself was built as an instance, but neither declared
+    // child (Avatar, Name) was actually placed inside it — a hollow card.
+    const builtRegions = [{ name: 'ProfileCard', path: 'ProfileCard', isInstance: true, instanceOf: 'ProfileCard' }]
+
+    const classification = classifyCoverage(contract, builtRegions, [])
+
+    expect(classification).toEqual([
+      {
+        name: 'ProfileCard',
+        path: 'ProfileCard',
+        status: 'present',
+        warning: 'hollow instance — declared child(ren) not built: Avatar, Name'
+      }
+    ])
+  })
+
+  it('warns when the built count under a region is below its declared cardinality', () => {
+    const contract = {
+      screen: 'cockpit-shell',
+      wireframeNodeId: '26:3',
+      figmaFileVersion: '1',
+      regions: [{ name: 'FindingsList', path: 'FindingsList', depth: 1, cardinality: 3, children: [] }]
+    }
+    const builtRegions = [
+      { name: 'FindingsList', path: 'FindingsList', isInstance: true, instanceOf: 'FindingsList' },
+      { name: 'FindingCard', path: 'FindingsList/FindingCard-1', isInstance: true, instanceOf: 'FindingCard' },
+      { name: 'FindingCard', path: 'FindingsList/FindingCard-2', isInstance: true, instanceOf: 'FindingCard' }
+    ]
+
+    const classification = classifyCoverage(contract, builtRegions, [])
+
+    expect(classification).toEqual([
+      { name: 'FindingsList', path: 'FindingsList', status: 'present', warning: 'cardinality 2 built, expected 3' }
+    ])
+  })
+})
+
 describe('summarize', () => {
   it('is clean when there are no UNACCOUNTED or MISSING regions', () => {
     const classification = [
@@ -134,6 +179,7 @@ describe('summarize', () => {
       deferred: ['VoiceSwitch'],
       UNACCOUNTED: [],
       MISSING: [],
+      warnings: [],
       clean: true
     })
   })
@@ -150,7 +196,24 @@ describe('summarize', () => {
       deferred: [],
       UNACCOUNTED: ['DiffPanel'],
       MISSING: ['LensBar'],
+      warnings: [],
       clean: false
+    })
+  })
+
+  it('surfaces C3b warnings (hollow instance / cardinality) without changing clean semantics', () => {
+    const classification = [
+      { name: 'BuildSpine', path: 'BuildSpine', status: 'present' },
+      { name: 'ProfileCard', path: 'ProfileCard', status: 'present', warning: 'hollow instance — declared child(ren) not built: Avatar' }
+    ]
+
+    expect(summarize(classification)).toEqual({
+      present: ['BuildSpine', 'ProfileCard'],
+      deferred: [],
+      UNACCOUNTED: [],
+      MISSING: [],
+      warnings: [{ name: 'ProfileCard', path: 'ProfileCard', warning: 'hollow instance — declared child(ren) not built: Avatar' }],
+      clean: true
     })
   })
 })

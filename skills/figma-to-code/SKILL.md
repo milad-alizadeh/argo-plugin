@@ -9,6 +9,17 @@ Generates working component code from a **synced** Figma design, then proves
 it via the tiered acceptance gates — in the specific order D22 requires,
 never baseline-then-review.
 
+**LLM self-checks are advisory only — deterministic gate receipts are the
+only accepted proof.** Reading the spec-diff walker's output and concluding
+"it passed" is a self-check, not proof; the same trust boundary the
+red-proof/trust gates apply to test runs applies here to design gates. Every
+tier below that can write a machine-checkable receipt does so, and
+`hooks/design-commit-gate.mjs` enforces it at commit time — a commit
+touching `design/config.json`'s `componentsPath` with no fresh, passing
+`design/spec-diff-receipt.json` is blocked (exit 2), independent of any
+build-mode gating, whether this skill runs inside a gated build or
+interactively.
+
 ## Preconditions
 
 - `design/story-map.json` must have an entry for the target component. If
@@ -41,6 +52,16 @@ never baseline-then-review.
    it's off entirely under `baseSource: none` (mirrors `gate-wiring.md`'s
    tier-1b conditional note, Slice 5). Fix any drift the comparator reports
    before moving on.
+   **Then record the receipt** — the walker's exit code is the only accepted
+   proof this tier passed, never your own reading of its output: run
+   `node ${CLAUDE_PLUGIN_ROOT}/scripts/record-spec-diff-receipt.mjs --
+   <the project's spec-diff test command>` (e.g. `npx vitest run
+   design/spec-diff-walker`), which executes the command, writes
+   `design/spec-diff-receipt.json` (`{ recordedAt, exitCode }`) from its REAL
+   exit code, and re-exits with that same code. `design-commit-gate.mjs`
+   requires this receipt to be fresh (within 10 minutes) and `exitCode: 0`
+   before it will let a commit touching `componentsPath` land — re-run it
+   immediately before committing, not once at the start of the session.
 4. **Tier 2 — gestalt acceptance, D22 ordering.** Compare each story's
    rendered screenshot against the **committed** reference screenshot
    (light↔light, dark↔dark) and record a **structured PASS/FAIL verdict

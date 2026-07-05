@@ -44,6 +44,24 @@ node creation, variable binding, and variant-set assembly.
   needed for the screen doesn't exist yet as a component, stop and build
   the component first via this same flow — don't invent one-off styling
   inline in the screen.
+- **No variant clipping after `combineAsVariants`** (live defect, 2026-07-05:
+  status-pill labels observed truncated — "needs inpu", "interrupte").
+  `combineAsVariants` can leave individual variants stretched to a frozen set
+  width, clipping their text content. After combining variants AND applying
+  Auto Layout to the resulting set: re-assert `layoutSizingHorizontal` /
+  `layoutSizingVertical = 'HUG'` on **every variant**, and
+  `primaryAxisSizingMode` / `counterAxisSizingMode = 'AUTO'` on the **set**
+  itself. Then verify no variant clips: compare each variant's rendered
+  width against its text content's natural width (e.g. via
+  `get_screenshot`/`get_design_context` per variant) before reporting done.
+  Kept as an **authoring rule, not a tier-0 mechanism rule** — detecting
+  actual clipping deterministically would need live text-measurement (glyph
+  metrics at audit time), which the Plugin API doesn't expose as a plain
+  sizing-mode predicate. The candidate signature (a text child under a
+  FILL-stretched ancestor at the set boundary) also describes many
+  correctly-sized components, so a sizing-mode-only check would carry a high
+  false-positive rate without per-node rendered-width comparison, an
+  expense tier-0's cheap-check contract doesn't allow.
 
 ## Where things go
 

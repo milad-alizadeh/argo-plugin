@@ -86,6 +86,19 @@ none at all.
    `hard` violation: **fail loud** — list every violation with its
    `nodeId`/`nodeName`/`rule`/`detail`, and do not report success. For an
    advisory sweep: summarize counts by rule, list the worst offenders.
+5. **Record the receipt — mandatory for a named audit, the deterministic
+   proof design-guard-stop.mjs checks before a session can end.** Immediately
+   after `use_figma` returns the violations array, run
+   `node ${CLAUDE_PLUGIN_ROOT}/scripts/record-audit-receipt.mjs --record
+   '{"componentNames":[...],"violations":[...]}'`, passing the EXACT array
+   `use_figma` returned (never hand-authored, never summarized) alongside the
+   `componentNames` this run audited. This writes `design/audit-receipt.json`
+   — `{ timestamp, componentNames, violationCount, writeCounterAtAudit }` —
+   which only counts as clean when `violationCount` is 0 and
+   `writeCounterAtAudit` matches `.argo/design-guard.json`'s current write
+   count (no Figma writes happened after this audit ran). Never report the
+   audit as "done" on your own narration — the receipt is the only accepted
+   proof; `design-guard-stop.mjs` blocks the session end otherwise.
 
 ## Cannot be tested outside Figma
 

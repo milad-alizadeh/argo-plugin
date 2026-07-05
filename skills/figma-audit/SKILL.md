@@ -14,9 +14,9 @@ the installed recipe's `tier0-recipe-checks.js` spliced into its
 report, never two separately-executed audit scripts.
 
 **Mandatory prerequisite:** load `figma:figma-use` first — this skill's every
-check runs by executing `templates/design/tier0-audit.js` inside Figma's
-Plugin API sandbox via `use_figma`; skipping that skill causes the usual
-hard-to-debug `use_figma` failures.
+check runs by executing a **bundled** copy of `templates/design/tier0-audit.js`
+inside Figma's Plugin API sandbox via `use_figma`; skipping that skill causes
+the usual hard-to-debug `use_figma` failures.
 
 ## What it checks (figma-to-code-pipeline.md §5 tier 0)
 
@@ -38,9 +38,13 @@ none at all.
 ## Two modes
 
 1. **Named-component audit (hard gate, D8)** — when called with specific
-   component names (by `figma-sync`, `figma-create`, or the user), any
-   violation on those components **fails loud**. This is the mode other
-   skills depend on — never soften it to advisory.
+   names (by `figma-sync`, `figma-create`, or the user), any violation on
+   those nodes **fails loud**. Matches by name against COMPONENT,
+   COMPONENT_SET, FRAME, and SECTION nodes — not components only, so a
+   SCREEN or foundation frame (e.g. `foundations/sticker-sheet`) can be
+   named-audited too, which `figma-create`'s own flow requires as a hard
+   gate. This is the mode other skills depend on — never soften it to
+   advisory.
 2. **File-wide sweep (advisory)** — when run standalone with no component
    names, walks every top-level frame on every page and reports violations
    as **advisory** findings (un-synced frames, stray hygiene issues) — it
@@ -62,6 +66,20 @@ none at all.
    available, or ask the user. Never run the mechanism script alone and
    call it complete — a recipe's checks are part of the canonical audit,
    not an optional extra.
+2a. **Bundle it before execution — never paste the assembled module into
+   `use_figma` as-is.** The assembled module's top-level `import`s (from the
+   vendored `figma-design-kit`/`figma-design-kit-shadcn-tailwind` packages
+   and the recipe's `./kit-patches.json`) cannot resolve inside the sandbox —
+   there is no module resolution there, only one self-contained script.
+   Run `bundleTier0Audit` from `${CLAUDE_PLUGIN_ROOT}/scripts/assemble-tier0-audit.mjs`
+   against the assembled source, with `cwd` set to the directory the module
+   was assembled into (so the recipe's relative `./kit-patches.json` import
+   resolves) — it shells out to `bun build --bundle --format=esm`, restores
+   the mechanism's bare-completion-value ending (a naive tree-shake would
+   otherwise discard the whole audit body as "unused"), and verifies the
+   result has zero `import`/`export` statements and is under `use_figma`'s
+   50,000-char cap. Paste THAT bundled output into `use_figma`, never the
+   source module.
 3. Execute it via `use_figma`, passing `{ componentNames: [...] }` for a
    named audit or `{}` for a file-wide sweep.
 4. Report violations grouped by `severity`. For a named audit with any

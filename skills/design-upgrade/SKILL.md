@@ -59,6 +59,14 @@ either-side-only bump.
    and fresh freshness metadata (file version/lastModified/sync timestamp,
    D4), validated against `figma-design-kit`'s `recipes/external-kit`-subpath
    `KitLockSchema`.
+8. **Recapture `design/kit-inventory.json`.** This skill is the SOLE writer
+   of the kit-awareness browse catalog (kit-awareness.md) — the roster is a
+   pure function of `kitLibraryFileKey` + kit version, and this is the only
+   event that changes either. Whole-file rewrite via
+   `buildKitInventory`/`scripts/capture-kit-inventory.mjs`, re-stamping
+   `kitSourceVersion`/`capturedAt`. Preserve and extend the existing
+   `aliases[]` map rather than dropping it (aliases are curated, not
+   auto-derivable from the kit itself).
 
 ## Why this order matters
 

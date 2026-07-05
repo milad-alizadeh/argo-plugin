@@ -249,6 +249,26 @@ Report the created/skipped summary verbatim to the user. This step only ever
 CREATES/imports — it never deletes or renames an existing variable, so
 re-running `setup-design` on an already-seeded file is always safe.
 
+## 4b. Seed `design/kit-inventory.json` (kit-awareness)
+
+Gated the same as §4a (an external-kit recipe with both file keys filled) —
+without a kit library there's no roster to capture. This is the SAME capture
+routine `design-upgrade` re-runs on a kit swap, invoked here at t=0:
+
+1. Marshal the kit library's component roster live (name, type, purpose;
+   icons collapse to one `{ family: 'lucide/*', count, note }` row, never an
+   enumerated list) and shape it via `buildKitInventory`
+   (`scripts/capture-kit-inventory.mjs`).
+2. Seed the starter alias map for common shadcn collisions alongside each
+   matched component: `switch`/`toggle`, `badge`/`chip`/`tag`/`pill`,
+   `collapsible`/`accordion`/`disclosure`, `dialog`/`modal`,
+   `tabs`/`segmented`.
+3. Add `design/kit-inventory.json` to `config.json._meta.managedFiles`.
+4. **Refuse to hand off to `figma-create` if this file is missing** once
+   an external-kit recipe is installed — the check-before-you-build flow
+   (`figma-create/SKILL.md`) depends on it; report the gap and stop rather
+   than silently letting the first `figma-create` run fly blind.
+
 ## 5. Vendor the figma-design-kit package(s) — relative dep, never an absolute plugin-cache path
 
 `figma-design-kit` is imported **by bare name** from the spec-diff/VRT walker

@@ -43,9 +43,14 @@ const PER_CORNER_RADIUS_FIELDS = ['topLeftRadius', 'topRightRadius', 'bottomLeft
  * never flagged — every plain frame defaults to 0. A radius counts as bound
  * either via the uniform `boundVariables.cornerRadius`, or via all four
  * per-corner fields being bound (the only bindable radius fields on many
- * node types) — fix: 2026-07, closed a 71-hit false-positive class.
+ * node types) — fix: 2026-07, closed a 71-hit false-positive class. A
+ * COMPONENT_SET container node is skipped entirely: Figma gives every
+ * combineAsVariants container a default cornerRadius of 5 (the purple
+ * dashed editor chrome), which is not a design surface and can't
+ * meaningfully bind a token.
  */
 export function unboundRadiusViolation(node) {
+  if (node.type === 'COMPONENT_SET') return null
   if (!('cornerRadius' in node) || typeof node.cornerRadius !== 'number' || node.cornerRadius === 0) return null
   const bound = node.boundVariables ?? {}
   const boundUniform = Boolean(bound.cornerRadius)

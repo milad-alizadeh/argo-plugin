@@ -69,6 +69,10 @@ describe('unboundRadiusViolation', () => {
     }
     expect(unboundRadiusViolation(node)).toBeNull()
   })
+  it('passes a COMPONENT_SET container node regardless of its default editor-chrome cornerRadius', () => {
+    const node = { type: 'COMPONENT_SET', cornerRadius: 5, boundVariables: {} }
+    expect(unboundRadiusViolation(node)).toBeNull()
+  })
   it('flags a cornerRadius with only some per-corner fields bound', () => {
     const node = {
       cornerRadius: 8,

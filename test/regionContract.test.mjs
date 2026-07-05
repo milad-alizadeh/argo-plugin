@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { classifyCoverage, summarize, reconcileBrief } from '../packages/figma-design-kit/region-contract.js'
+import { classifyCoverage, summarize, reconcileBrief, buildRegionContract } from '../packages/figma-design-kit/region-contract.js'
 import d01Contract from './fixtures/d01-wireframe-contract.json' with { type: 'json' }
 import d01ShippedShell from './fixtures/d01-shipped-shell-built.json' with { type: 'json' }
 
@@ -147,6 +147,21 @@ describe('reconcileBrief (P2 pre-Figma lint: every contract region needs a dispo
     const dispositions = [{ region: 'BuildSpine', disposition: 'built-here', component: 'BuildSpine', verdict: 'NEW' }]
 
     expect(reconcileBrief(contract, dispositions)).toEqual({ ok: false, unaccounted: ['DiffPanel'] })
+  })
+})
+
+describe('buildRegionContract (P1 extract: wraps flattenToRegions with the screen/wireframeNodeId/figmaFileVersion envelope)', () => {
+  it('wraps flattenToRegions output with the contract envelope fields', () => {
+    const tree = { name: 'BuildSpine', type: 'INSTANCE', children: [] }
+
+    const contract = buildRegionContract(tree, { screen: 'cockpit-shell', wireframeNodeId: '26:3', figmaFileVersion: '42' })
+
+    expect(contract).toEqual({
+      screen: 'cockpit-shell',
+      wireframeNodeId: '26:3',
+      figmaFileVersion: '42',
+      regions: [{ name: 'BuildSpine', path: 'BuildSpine', depth: 0, children: [] }]
+    })
   })
 })
 

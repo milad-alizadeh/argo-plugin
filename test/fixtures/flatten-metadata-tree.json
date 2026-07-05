@@ -1,0 +1,42 @@
+{
+  "id": "1:1",
+  "name": "AppShell",
+  "type": "FRAME",
+  "layoutMode": "VERTICAL",
+  "children": [
+    {
+      "id": "1:2",
+      "name": "Header",
+      "type": "INSTANCE",
+      "componentName": "Header",
+      "children": [
+        { "id": "1:3", "name": "Logo", "type": "TEXT", "children": [] }
+      ]
+    },
+    {
+      "id": "1:4",
+      "name": "Stage",
+      "type": "FRAME",
+      "layoutMode": "HORIZONTAL",
+      "children": [
+        {
+          "id": "1:5",
+          "name": "PanelA",
+          "type": "FRAME",
+          "children": [
+            { "id": "1:6", "name": "PanelHead", "type": "INSTANCE", "componentName": "PanelHead", "children": [] }
+          ]
+        },
+        {
+          "id": "1:7",
+          "name": "PanelB",
+          "type": "FRAME",
+          "children": [
+            { "id": "1:8", "name": "PanelHead", "type": "INSTANCE", "componentName": "PanelHead", "children": [] }
+          ]
+        },
+        { "id": "1:9", "name": "Label", "type": "TEXT", "children": [] }
+      ]
+    }
+  ]
+}

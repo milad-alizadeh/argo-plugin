@@ -16,6 +16,53 @@ function findBuiltMatch(region, builtRegions) {
   return builtRegions.find((built) => built.name === region.name)
 }
 
+/**
+ * Counts every occurrence of each node name across the whole metadata tree
+ * (root included) — the load-bearing signal for the "repeats across
+ * composites" promotion rule below.
+ * @param {{name: string, children?: object[]}} node
+ * @param {Map<string, number>} counts
+ */
+function countNames(node, counts) {
+  counts.set(node.name, (counts.get(node.name) ?? 0) + 1)
+  for (const child of node.children ?? []) countNames(child, counts)
+  return counts
+}
+
+/**
+ * C1's flattening rule (build-design-workflow.md / the D01 fix): a node
+ * becomes a first-class `regions` row iff it is an instance boundary
+ * (`type === 'INSTANCE'`), an auto-layout container boundary (`layoutMode`
+ * set to anything but `'NONE'`), OR its name repeats more than once anywhere
+ * in the tree (the same composite reused under different parents). Every
+ * other node stays documentation-only — its name lands in its parent's
+ * `children` array and nothing else. This is the only thing that stops
+ * ~40% of named nodes silently escaping coverage (D01).
+ * @param {{name: string, type?: string, layoutMode?: string, children?: object[]}} tree
+ */
+export function flattenToRegions(tree) {
+  const nameCounts = countNames(tree, new Map())
+  const regions = []
+
+  function visit(node, path, depth) {
+    const isInstance = node.type === 'INSTANCE'
+    const isAutoLayoutContainer = Boolean(node.layoutMode) && node.layoutMode !== 'NONE'
+    const repeatsAcrossComposites = (nameCounts.get(node.name) ?? 0) > 1
+    const promoted = isInstance || isAutoLayoutContainer || repeatsAcrossComposites
+
+    if (promoted) {
+      const region = { name: node.name, path, depth, children: (node.children ?? []).map((c) => c.name) }
+      if (isAutoLayoutContainer && !isInstance) region.kind = 'layout'
+      regions.push(region)
+    }
+
+    for (const child of node.children ?? []) visit(child, `${path}/${child.name}`, depth + 1)
+  }
+
+  visit(tree, tree.name, 0)
+  return regions
+}
+
 function findDisposition(region, dispositions) {
   return dispositions.find((row) => row.region === region.name)
 }
@@ -72,6 +119,19 @@ export function summarize(classification) {
     MISSING,
     clean: UNACCOUNTED.length === 0 && MISSING.length === 0
   }
+}
+
+/**
+ * P1 extract step (build-design-workflow.md, C1 fix): wraps `flattenToRegions`
+ * with the frozen contract envelope
+ * (`{screen, wireframeNodeId, figmaFileVersion, regions}`). The CLI wrapper
+ * (`scripts/extract-region-contract.mjs`) is fs/argv glue only — this is the
+ * pure, unit-tested shape function.
+ * @param {object} tree normalized metadata tree
+ * @param {{screen: string, wireframeNodeId: string, figmaFileVersion: string}} meta
+ */
+export function buildRegionContract(tree, { screen, wireframeNodeId, figmaFileVersion }) {
+  return { screen, wireframeNodeId, figmaFileVersion, regions: flattenToRegions(tree) }
 }
 
 /**

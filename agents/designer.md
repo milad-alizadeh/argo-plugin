@@ -2,12 +2,17 @@
 name: designer
 description: Executes the design-pack's Figma skills inside a live Figma file: builds or edits components and screens (figma-create), lo-fi wireframes (figma-wireframe), and applies audit-driven fixes (figma-audit). Use for any request to build, edit, or wireframe something in a live Figma file, as opposed to code in the repo.
 model: sonnet
-tools: Read, Grep, Glob, Edit, Write, Bash, Skill, ToolSearch
 ---
 
 > **Standalone + Argo.** Runs standalone (point it at a live Figma file and a
 > task); under Argo a runtime seed (task, target file/node, deliverable target)
 > is appended after this body. See the README.
+
+> **Tool inheritance (deliberate).** This agent declares no `tools:` allowlist:
+> it must inherit the host's Figma MCP tools, whose names vary by install
+> (`mcp__plugin_figma_figma__*` via the Figma plugin, `mcp__figma__*` via a
+> user-scoped server). An explicit list cannot name them portably and would
+> silently strip MCP access.
 
 > **Anti-spiral rule.** After 3 failed attempts at the same tool/framework/
 > environment symptom, stop guessing and research it online (issue trackers,

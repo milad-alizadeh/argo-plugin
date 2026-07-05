@@ -1,5 +1,5 @@
 {
-  "description": "Argo guardrails — block destructive git + pipe-to-shell before they run, gate build-mode commits on machine-checkable receipts (red-proof + launch evidence), and auto-format files as they're written.",
+  "description": "Argo guardrails — block destructive git + pipe-to-shell before they run, gate build-mode commits on machine-checkable receipts (red-proof + launch evidence), gate design-pack sessions on tier-0 audit receipts (design-guard, armed by design/config.json alone, independent of build-mode), and auto-format files as they're written.",
   "hooks": {
     "PreToolUse": [
       {
@@ -68,6 +68,38 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/test-smell.mjs\"",
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__plugin_figma_figma__use_figma",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/design-guard-record.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/design-guard-stop.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/design-guard-stop.mjs\"",
+            "timeout": 5
           }
         ]
       }

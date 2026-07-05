@@ -58,7 +58,11 @@ async function auditNode(node, { hard, spacingScale, semanticModes, insideInstan
   // Fetched early (rather than inside the INSTANCE-only block below) so the
   // R8 false-positive tag can see it before any violation is reported.
   const main = node.type === 'INSTANCE' ? await node.getMainComponentAsync() : null
-  const overriddenFields = (node.overrides ?? []).flatMap((o) => o.overriddenFields ?? [])
+  // `overrides` exists only on INSTANCE nodes — reading it on any other type
+  // throws in the use_figma sandbox (confirmed live 2026-07-05: crashed every
+  // named audit of a COMPONENT_SET).
+  const overriddenFields =
+    node.type === 'INSTANCE' ? (node.overrides ?? []).flatMap((o) => o.overriddenFields ?? []) : []
 
   // R8: a node that resolves to a kit main component (a remote instance, or
   // a node inside one) whose only overrides are size/fill/stroke is
@@ -91,7 +95,13 @@ async function auditNode(node, { hard, spacingScale, semanticModes, insideInstan
   // radius/type and missing-auto-layout were previously called with the bare
   // node, so this exemption silently never fired for them, and a pristine
   // kit instance (e.g. Switch) hard-failed on its own internal frames.
-  const nodeCtx = Object.assign(Object.create(node), { insideInstance })
+  // A get-only Proxy, NOT Object.create/assign — the sandbox node is itself
+  // a Proxy whose set trap rejects unknown properties even via a derived
+  // object (confirmed live 2026-07-05, threw on COMPONENT_SET). Rule
+  // functions only ever READ nodeCtx.
+  const nodeCtx = new Proxy(node, {
+    get: (target, prop) => (prop === 'insideInstance' ? insideInstance : target[prop])
+  })
 
   for (const v of unboundFillViolations(nodeCtx)) report(v.rule, v.detail)
   for (const v of unboundStrokeViolations(nodeCtx)) report(v.rule, v.detail)
@@ -132,10 +142,25 @@ async function auditNode(node, { hard, spacingScale, semanticModes, insideInstan
     if (kitOverride) report(kitOverride.rule, kitOverride.detail)
 
     if (main?.remote) {
-      const strokeScaleShape = marshalIconStrokeScale(node, main)
-      if (strokeScaleShape) {
-        const strokeScale = strokeScaleViolation(strokeScaleShape)
-        if (strokeScale) report(strokeScale.rule, strokeScale.detail)
+      // ADVISORY + top-level only (demoted 2026-07-05 after the first live
+      // sweep): nested kit-icon instances inside kit/authored instances
+      // re-flag the same glyph at every nesting level with unreliable
+      // native-size readings — per R10's false-positive economics this rule
+      // stays advisory until the corpus calibrates it; it never hard-fails.
+      if (!insideInstance) {
+        const strokeScaleShape = marshalIconStrokeScale(node, main)
+        if (strokeScaleShape) {
+          const strokeScale = strokeScaleViolation(strokeScaleShape)
+          if (strokeScale) {
+            violations.push({
+              severity: 'advisory',
+              rule: strokeScale.rule,
+              nodeId: node.id,
+              nodeName: node.name,
+              detail: strokeScale.detail
+            })
+          }
+        }
       }
     }
   }

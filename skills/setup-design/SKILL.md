@@ -343,11 +343,46 @@ copy to track edits against — skip both files entirely. Leave `tokens.json`,
 `specs/`, `screenshots/`, `story-map.json` for `figma-sync` to populate on
 first sync regardless of recipe.
 
-## 8. Offer a smoke check
+## 7b. Alias parity — Storybook and every walker project must resolve app code
 
-After install, offer to run `/argo:figma-audit` as a smoke check (it depends
-on Slice 11 already existing) — never run it silently; the user may not
-have a Figma file connected yet.
+Story files import app components, and app components import through the
+host's source aliases (vite `resolve.alias` / tsconfig `paths`, e.g.
+`@renderer`, `@/`). Storybook's Vite server and each Vitest browser project
+are SEPARATE Vite configs that inherit none of that. Detect the host app's
+aliases and mirror them into ALL of: `.storybook/main.ts` (via `viteFinal` +
+`mergeConfig`), the main vitest config's `resolve.alias` (the storybook and
+spec-diff projects inherit it), and the vrt config's `{{SOURCE_ALIASES}}`
+slot. Missing any one of these fails only at story-run time with
+`Failed to resolve import "<alias>/..."` — catch it here, not in Phase D.
+
+## 8. Prove the pipeline with a smoke story — run it, don't offer it
+
+The install is not done until one real component story has rendered and all
+three walker layers have run against it. This is what proves the pack is
+ready for `figma-to-code` to start writing components and tests.
+
+1. **Pick a smoke component**: the vendored base library's simplest component
+   (e.g. shadcn `Button`) or, under `baseSource: none`, any existing small
+   presentational component. Only if the project has zero renderable
+   components, create a trivial one for this purpose.
+2. **Write its `.stories.tsx`** next to it (2–3 variants, plain args). This
+   story is a permanent installed artifact — record it in `_meta.managedFiles`;
+   it later doubles as the base-congruence smoke story.
+3. **Run all three layers and require these exact outcomes:**
+   - storybook project (`vitest run --project storybook`): every story test
+     PASSES — a real browser render of the component.
+   - spec-diff project: dormant todo-pass (`N todo`), NOT `No test found in
+     suite` failures — that error means the walkers predate the empty-suite
+     guard; re-derive them from the current templates.
+   - `test:vrt`: dormant todo-pass the same way.
+4. **Known first-run flake:** immediately after a Storybook cache clear or
+   config change, the storybook project can fail once with `Failed to fetch
+   dynamically imported module … sb-vitest/deps/…` (Vite dep-optimizer race).
+   Re-run once before diagnosing anything.
+
+Separately, offer to run `/argo:figma-audit` as a Figma-side smoke check —
+never run that one silently; the user may not have a Figma file connected
+yet.
 
 ## 9. Report — and stamp `_meta`
 

@@ -21,8 +21,18 @@ for (const [storyFile, storyModule] of Object.entries(allStories)) {
   const composed = composeStories(storyModule)
   const componentSpec = specsByComponent[storyFile]
 
+  const covered = Object.entries(composed).filter(
+    ([storyName]) => componentSpec?.variants?.[storyName]
+  )
+
   describe(`spec-diff: ${storyFile}`, () => {
-    for (const [storyName, Story] of Object.entries(composed)) {
+    // A story with no committed spec is dormant, not broken — an empty
+    // describe (zero its) is a Vitest failure, so emit an explicit todo.
+    if (covered.length === 0) {
+      it.todo(`no committed spec for ${storyFile} yet — figma-sync dumps design/specs entries`)
+      return
+    }
+    for (const [storyName, Story] of covered) {
       const variantSpec = componentSpec?.variants?.[storyName]
       if (!variantSpec) continue
 

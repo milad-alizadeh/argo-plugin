@@ -44,7 +44,20 @@ for (const [storyFile, storyModule] of Object.entries(baseSmokeStories)) {
   const composed = composeStories(storyModule)
   const kitSpec = kitSpecsByComponent[storyFile]
 
+  const coveredPairs = Object.keys(composed).flatMap((storyName) =>
+    STATES.filter((state) => kitSpec?.variants?.[storyName]?.states?.[state]).map((state) => [
+      storyName,
+      state
+    ])
+  )
+
   describe(`base-congruence: ${storyFile}`, () => {
+    // A smoke story with no dumped kit spec is dormant, not broken — an
+    // empty describe (zero its) is a Vitest failure, so emit an explicit todo.
+    if (coveredPairs.length === 0) {
+      it.todo(`no dumped kit spec for ${storyFile} yet — figma-sync fills design/specs/kit`)
+      return
+    }
     for (const [storyName] of Object.entries(composed)) {
       for (const state of STATES) {
         const stateSpec = kitSpec?.variants?.[storyName]?.states?.[state]

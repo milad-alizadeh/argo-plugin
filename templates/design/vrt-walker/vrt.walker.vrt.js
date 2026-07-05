@@ -13,10 +13,19 @@ import * as allStories from '{{STORIES_GLOB_OR_INDEX}}'
  * baseline unattended in a hands-off build — see /argo:figma-to-code, which
  * owns that ordering.
  */
+// D22 ordering: baselines only exist after a recorded tier-2 gestalt PASS.
+// Stories with no committed baseline are dormant todos, not failures — and
+// the toMatchScreenshot matcher may not be registered until then either.
+const committedBaselines = Object.keys(import.meta.glob('{{BASELINES_GLOB}}'))
+
 for (const [storyFile, storyModule] of Object.entries(allStories)) {
   const composed = composeStories(storyModule)
 
   describe(`vrt: ${storyFile}`, () => {
+    if (committedBaselines.length === 0) {
+      it.todo(`stories exist but no committed baseline for ${storyFile} yet`)
+      return
+    }
     for (const [storyName, Story] of Object.entries(composed)) {
       for (const mode of ['light', 'dark']) {
         it(`${storyName} (${mode}) matches its committed baseline`, async () => {

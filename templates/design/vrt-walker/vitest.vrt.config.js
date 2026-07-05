@@ -11,6 +11,15 @@ import { defineConfig } from 'vitest/config'
  * change with a gestalt spot-check), never an incidental drift.
  */
 export default defineConfig({
+  resolve: {
+    // Mirror the host app's source aliases (vite config / tsconfig paths) —
+    // this project imports story files that import app code; without the
+    // aliases every story import fails to resolve here.
+    alias: {
+      // {{SOURCE_ALIASES}} e.g.: '@renderer': resolve(__dirname, 'src/renderer/src')
+      // (import { resolve } from 'path' when filling this in)
+    }
+  },
   test: {
     name: 'vrt',
     include: ['{{VRT_WALKER_DIR}}/**/*.vrt.{{EXT}}'],

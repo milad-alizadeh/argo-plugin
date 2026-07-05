@@ -46,4 +46,28 @@ describe('design-commit-gate — commit-scoped, armed by design/config.json alon
     expect(r.code).toBe(2)
     expect(r.stderr).toMatch(/no spec-diff receipt/)
   })
+
+  it('PASS: staged file under componentsPath with a fresh, passing spec-diff receipt', async () => {
+    mkdirSync(join(cwd, 'design'), { recursive: true })
+    writeFileSync(join(cwd, 'design', 'config.json'), JSON.stringify({ componentsPath: 'src/components' }))
+    writeFileSync(join(cwd, 'design', 'spec-diff-receipt.json'), JSON.stringify({ recordedAt: Date.now(), exitCode: 0 }))
+    execFileSync('git', ['-C', cwd, 'init', '-q'])
+    mkdirSync(join(cwd, 'src', 'components'), { recursive: true })
+    writeFileSync(join(cwd, 'src', 'components', 'Button.tsx'), 'export const Button = () => null')
+    execFileSync('git', ['-C', cwd, 'add', 'src/components/Button.tsx'])
+    expect((await runGate(commitInput(cwd))).code).toBe(0)
+  })
+
+  it('BLOCK: spec-diff receipt exists but exitCode is non-zero (drift found)', async () => {
+    mkdirSync(join(cwd, 'design'), { recursive: true })
+    writeFileSync(join(cwd, 'design', 'config.json'), JSON.stringify({ componentsPath: 'src/components' }))
+    writeFileSync(join(cwd, 'design', 'spec-diff-receipt.json'), JSON.stringify({ recordedAt: Date.now(), exitCode: 1 }))
+    execFileSync('git', ['-C', cwd, 'init', '-q'])
+    mkdirSync(join(cwd, 'src', 'components'), { recursive: true })
+    writeFileSync(join(cwd, 'src', 'components', 'Button.tsx'), 'export const Button = () => null')
+    execFileSync('git', ['-C', cwd, 'add', 'src/components/Button.tsx'])
+    const r = await runGate(commitInput(cwd))
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/exited non-zero/)
+  })
 })

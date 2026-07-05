@@ -59,4 +59,8 @@ const receiptPath = join(cwd, 'design', 'spec-diff-receipt.json')
 if (!existsSync(receiptPath))
   block(`commit touches "${componentsPath}" with no spec-diff receipt — run the spec-diff walker (record-spec-diff-receipt.mjs) first`)
 
+const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'))
+if (typeof receipt.exitCode !== 'number' || receipt.exitCode !== 0)
+  block(`spec-diff walker exited non-zero (exitCode ${receipt?.exitCode}) — fix the drift and re-run`)
+
 process.exit(0)

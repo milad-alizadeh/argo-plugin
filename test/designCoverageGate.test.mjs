@@ -47,4 +47,12 @@ describe('evaluateCoverageReceipt (design-coverage-gate.mjs decision predicate)'
 
     expect(result.ok).toBe(false)
   })
+
+  it('rejects a stale receipt from a DIFFERENT screen than the one being committed (C2: top silent-failure risk)', () => {
+    const receipt = { screen: 'other-screen', producedBy: 'design-verifier', figmaFileVersion: '42', timestamp: 1000, clean: true }
+
+    const result = evaluateCoverageReceipt(receipt, { expectedScreen: 'cockpit-shell', contractFigmaFileVersion: '42', now: 1000 })
+
+    expect(result.ok).toBe(false)
+  })
 })

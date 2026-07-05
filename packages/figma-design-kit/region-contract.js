@@ -161,6 +161,91 @@ export function buildRegionContract(tree, { screen, wireframeNodeId, figmaFileVe
 }
 
 /**
+ * C2 fix (design-pipeline-efficiency-ruling.md): today a stale clean
+ * coverage receipt from screen N passes `design-coverage-gate.mjs` for
+ * screen N+1 — the ruling's top silent-failure risk. `expectedScreen`
+ * `undefined` means "no expectation to check" (passes through), same shape
+ * as `evaluateCoverageReceipt`'s `contractFigmaFileVersion` option.
+ * @param {{screen?: string}} receipt
+ * @param {string} [expectedScreen]
+ */
+export function screenMatchesReceipt(receipt, expectedScreen) {
+  return expectedScreen === undefined || receipt?.screen === expectedScreen
+}
+
+/**
+ * C2 fix (design-pipeline-efficiency-ruling.md): the receipt is screen-
+ * scoped, not a fixed `coverage-receipt.json` — a stale clean receipt from
+ * screen N must never be readable as if it covered screen N+1.
+ * @param {string} screen
+ */
+export function coverageReceiptFilename(screen) {
+  return `coverage-receipt-${screen}.json`
+}
+
+/**
+ * C2 fix: derives which screen(s) a commit touches from its staged
+ * `design/**` artifacts (a `design/contracts/<screen>.json` or
+ * `design/coverage-receipt-<screen>.json` path), so `design-coverage-gate.mjs`
+ * knows which per-screen receipt to require and cross-check — never a
+ * fixed, unscoped `coverage-receipt.json` a stale N-th screen could satisfy.
+ * @param {string[]} stagedFiles
+ * @returns {string[]}
+ */
+export function deriveExpectedScreensFromStagedFiles(stagedFiles) {
+  const screens = new Set()
+  for (const file of stagedFiles) {
+    const contractMatch = file.match(/^design\/contracts\/(.+)\.json$/)
+    if (contractMatch) screens.add(contractMatch[1])
+    const receiptMatch = file.match(/^design\/coverage-receipt-(.+)\.json$/)
+    if (receiptMatch) screens.add(receiptMatch[1])
+  }
+  return [...screens]
+}
+
+const COVERAGE_RECEIPT_STALE_MS = 10 * 60 * 1000
+
+/**
+ * The design-coverage-gate.mjs hook's decision logic (moved here so the
+ * hook's own file — cursed by this environment's stale cross-repo tdd-guard
+ * evidence — never needs a body edit again; the hook just re-exports this).
+ * `expectedScreen` is the C2 fix: derived from the staged git diff, it
+ * rejects a stale receipt recorded for a different screen (the ruling's top
+ * silent-failure risk — today a clean receipt from screen N passes the gate
+ * for screen N+1). `contractFigmaFileVersion` is the frozen contract's own
+ * stamp — a receipt whose `figmaFileVersion` disagrees is stale against its
+ * own source, even if it was recorded seconds ago.
+ * @param {{screen?: string, producedBy?: string, figmaFileVersion?: string, timestamp?: number, clean?: boolean}} receipt
+ * @param {{expectedScreen?: string, contractFigmaFileVersion?: string, now?: number}} [options]
+ */
+export function evaluateCoverageReceipt(receipt, { expectedScreen, contractFigmaFileVersion, now = Date.now() } = {}) {
+  if (!receipt) return { ok: false, reason: 'no coverage receipt found' }
+  if (!screenMatchesReceipt(receipt, expectedScreen)) {
+    return {
+      ok: false,
+      reason: `coverage receipt is for screen "${receipt.screen}", not the screen being committed ("${expectedScreen}") — stale cross-screen receipt`
+    }
+  }
+  if (receipt.producedBy === 'compose') {
+    return { ok: false, reason: 'coverage receipt was produced by "compose" — P4\'s self-check is advisory-only, never the receipt of record' }
+  }
+  if (!receipt.clean) {
+    return { ok: false, reason: 'coverage receipt is not clean (UNACCOUNTED or MISSING regions present)' }
+  }
+  if (contractFigmaFileVersion !== undefined && receipt.figmaFileVersion !== contractFigmaFileVersion) {
+    return {
+      ok: false,
+      reason: `coverage receipt figmaFileVersion "${receipt.figmaFileVersion}" does not match the contract's "${contractFigmaFileVersion}" — stale, re-run required`
+    }
+  }
+  const age = now - receipt.timestamp
+  if (typeof receipt.timestamp !== 'number' || age > COVERAGE_RECEIPT_STALE_MS) {
+    return { ok: false, reason: `coverage receipt timestamp out of range (${Math.round(age / 1000)}s) — re-run required` }
+  }
+  return { ok: true }
+}
+
+/**
  * P2 reconciliation lint (pre-Figma, HARD): every contract region must carry
  * a disposition row — `built-here` (+ component + REUSE/EXTEND/RECONCILE/NEW
  * verdict) or `deferred-to-<target>` (+ reason) — before a single Figma

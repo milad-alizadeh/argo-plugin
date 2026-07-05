@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { classifyCoverage, summarize, reconcileBrief, buildRegionContract, buildBuiltRegions } from '../packages/figma-design-kit/region-contract.js'
+import {
+  classifyCoverage,
+  summarize,
+  reconcileBrief,
+  buildRegionContract,
+  buildBuiltRegions,
+  screenMatchesReceipt,
+  evaluateCoverageReceipt,
+  coverageReceiptFilename,
+  deriveExpectedScreensFromStagedFiles
+} from '../packages/figma-design-kit/region-contract.js'
 import d01Contract from './fixtures/d01-wireframe-contract.json' with { type: 'json' }
 import d01ShippedShell from './fixtures/d01-shipped-shell-built.json' with { type: 'json' }
 
@@ -170,6 +180,36 @@ describe('buildBuiltRegions (C1: same promotion rule applied to a BUILT-screen m
     const tree = { name: 'BuildSpine', type: 'INSTANCE', componentName: 'BuildSpine', children: [] }
 
     expect(buildBuiltRegions(tree)).toEqual([{ name: 'BuildSpine', path: 'BuildSpine', isInstance: true, instanceOf: 'BuildSpine' }])
+  })
+})
+
+describe('screenMatchesReceipt (C2: screen cross-check the coverage gate uses to reject a stale other-screen receipt)', () => {
+  it('rejects a receipt whose screen does not match the screen being committed', () => {
+    expect(screenMatchesReceipt({ screen: 'other-screen' }, 'cockpit-shell')).toBe(false)
+  })
+})
+
+describe('evaluateCoverageReceipt (moved here from hooks/design-coverage-gate.mjs so C2 wiring edits land in a reliably-editable module)', () => {
+  it('rejects a receipt whose screen does not match the screen being committed', () => {
+    const receipt = { screen: 'other-screen', producedBy: 'design-verifier', figmaFileVersion: '42', timestamp: 1000, clean: true }
+
+    const result = evaluateCoverageReceipt(receipt, { expectedScreen: 'cockpit-shell', contractFigmaFileVersion: '42', now: 1000 })
+
+    expect(result.ok).toBe(false)
+  })
+})
+
+describe('coverageReceiptFilename (C2: screen-scope the receipt path, moved here alongside evaluateCoverageReceipt)', () => {
+  it('names the receipt file after the screen, not a fixed coverage-receipt.json', () => {
+    expect(coverageReceiptFilename('cockpit-shell')).toBe('coverage-receipt-cockpit-shell.json')
+  })
+})
+
+describe('deriveExpectedScreensFromStagedFiles (C2: which screen(s) a commit touches, from its staged design/** artifacts)', () => {
+  it('derives the screen name from a staged per-screen coverage-receipt path', () => {
+    const stagedFiles = ['design/coverage-receipt-cockpit-shell.json', 'src/renderer/src/components/BuildSpine.tsx']
+
+    expect(deriveExpectedScreensFromStagedFiles(stagedFiles)).toEqual(['cockpit-shell'])
   })
 })
 

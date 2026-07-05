@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildCoverageReceipt } from '../scripts/record-coverage-receipt.mjs'
+import { buildCoverageReceipt, coverageReceiptFilename } from '../scripts/record-coverage-receipt.mjs'
 
 describe('buildCoverageReceipt (P5 compose-time coverage receipt shape)', () => {
   it('stamps a clean receipt from a fully-instanced built tree', () => {
@@ -41,5 +41,11 @@ describe('buildCoverageReceipt (P5 compose-time coverage receipt shape)', () => 
 
     expect(receipt.clean).toBe(false)
     expect(receipt.summary.UNACCOUNTED).toEqual(['DiffPanel'])
+  })
+})
+
+describe('coverageReceiptFilename (C2: screen-scope the receipt path)', () => {
+  it('names the receipt file after the screen, not a fixed coverage-receipt.json', () => {
+    expect(coverageReceiptFilename('cockpit-shell')).toBe('coverage-receipt-cockpit-shell.json')
   })
 })

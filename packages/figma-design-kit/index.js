@@ -8,7 +8,11 @@ export {
   reconcileBrief,
   flattenToRegions,
   buildRegionContract,
-  buildBuiltRegions
+  buildBuiltRegions,
+  screenMatchesReceipt,
+  evaluateCoverageReceipt,
+  coverageReceiptFilename,
+  deriveExpectedScreensFromStagedFiles
 } from './region-contract.js'
 export {
   unboundFillViolations,

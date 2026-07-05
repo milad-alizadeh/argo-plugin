@@ -166,28 +166,31 @@ export function storyUrlScopeViolation(node) {
 }
 
 /**
- * spacingScale values and collection membership are resolved by the walker;
- * this function is pure over the marshaled shape (D24). Legal states for a
- * gap/padding field: bound to a Semantic spacing variable, or an unbound
- * literal that is a member of the Primitives spacing scale. A direct binding
- * to a Primitives variable is not legal — D24 names only the two cases above.
+ * Collection membership is resolved by the walker; this function is pure over
+ * the marshaled shape (D24, revised 2026-07-05). The single legal state for a
+ * non-zero gap/padding field: bound to a spacing variable in the Primitives or
+ * Semantic collection. Unbound literals — on-scale or not — are violations:
+ * binding makes off-scale unrepresentable (you can only bind a token that
+ * exists) and leaves exactly one authoring convention, so files can't drift
+ * into a bound-here-literal-there mix. COMPONENT_SET containers are skipped —
+ * their gap/padding is Figma's variant-grid chrome, not a design value.
  */
-export function gapPaddingSpacingViolations(node, spacingScale) {
-  if (node.layoutMode === 'NONE') return []
+export function gapPaddingSpacingViolations(node, _spacingScale) {
+  if (node.layoutMode === 'NONE' || node.type === 'COMPONENT_SET') return []
   const violations = []
   for (const entry of node.gapAndPadding ?? []) {
     const { field, value, bound, collectionName } = entry
-    if (bound) {
-      if (collectionName !== 'Semantic') {
+    if (!bound) {
+      if (value !== 0) {
         violations.push({
-          rule: 'gap-padding-non-semantic-binding',
-          detail: `${field} is bound to a non-Semantic variable ("${collectionName}"); D24 requires a Semantic spacing variable or an on-scale literal`
+          rule: 'gap-padding-unbound',
+          detail: `${field} value ${value} is an unbound literal; D24 requires binding a Primitives or Semantic spacing variable`
         })
       }
-    } else if (!spacingScale.includes(value)) {
+    } else if (collectionName !== 'Semantic' && collectionName !== 'Primitives') {
       violations.push({
-        rule: 'gap-padding-off-scale',
-        detail: `${field} value ${value} is not on the Primitives spacing scale and is not bound to a Semantic spacing variable (D24)`
+        rule: 'gap-padding-foreign-binding',
+        detail: `${field} is bound to a variable outside the project collections ("${collectionName}"); D24 requires a Primitives or Semantic spacing variable`
       })
     }
   }

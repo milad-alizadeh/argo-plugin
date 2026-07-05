@@ -241,4 +241,55 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
       { rule: 'gap-padding-unbound', detail: 'itemSpacing value 8 is an unbound literal; D24 requires binding a Primitives or Semantic spacing variable' }
     ])
   })
+
+  it('passes an unbound zero literal', () => {
+    const node = {
+      layoutMode: 'HORIZONTAL',
+      gapAndPadding: [{ field: 'paddingTop', value: 0, bound: false }]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+  })
+
+  it('passes a value bound to the Primitives collection', () => {
+    const node = {
+      layoutMode: 'HORIZONTAL',
+      gapAndPadding: [{ field: 'paddingLeft', value: 24, bound: true, collectionName: 'Primitives' }]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+  })
+
+  it('passes a value bound to the Semantic collection', () => {
+    const node = {
+      layoutMode: 'HORIZONTAL',
+      gapAndPadding: [{ field: 'paddingLeft', value: 24, bound: true, collectionName: 'Semantic' }]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+  })
+
+  it('flags a value bound to a collection outside Primitives/Semantic', () => {
+    const node = {
+      layoutMode: 'HORIZONTAL',
+      gapAndPadding: [{ field: 'paddingLeft', value: 24, bound: true, collectionName: 'Kit' }]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([
+      { rule: 'gap-padding-foreign-binding', detail: 'paddingLeft is bound to a variable outside the project collections ("Kit"); D24 requires a Primitives or Semantic spacing variable' }
+    ])
+  })
+
+  it('ignores COMPONENT_SET container nodes regardless of gapAndPadding contents', () => {
+    const node = {
+      type: 'COMPONENT_SET',
+      layoutMode: 'HORIZONTAL',
+      gapAndPadding: [{ field: 'itemSpacing', value: 7, bound: false }]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+  })
+
+  it('ignores nodes with layoutMode NONE regardless of gapAndPadding contents', () => {
+    const node = {
+      layoutMode: 'NONE',
+      gapAndPadding: [{ field: 'itemSpacing', value: 7, bound: false }]
+    }
+    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+  })
 })

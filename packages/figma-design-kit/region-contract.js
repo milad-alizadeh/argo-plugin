@@ -299,6 +299,30 @@ export function evaluateCoverageReceipt(receipt, { expectedScreen, contractFigma
 }
 
 /**
+ * C3c fix (design-pipeline-efficiency-ruling.md): P1 freeze lint — a
+ * contract's region set or per-region fields (name/path/depth/kind/
+ * cardinality/children) may not drift between two committed versions
+ * unless `figmaFileVersion` is bumped alongside them. Without this, a
+ * silent region-set edit (e.g. loosening `Stage`/`topbar`/`main` to
+ * `kind: 'layout'` in the same commit that grades against it) passes
+ * unnoticed — the exact a63c7cc regression the ruling calls out.
+ * `previous` may be `undefined`/`null` (first-ever freeze — nothing to
+ * compare against).
+ * @param {object|undefined|null} previous
+ * @param {object} next
+ */
+export function lintContractFreeze(previous, next) {
+  if (!previous) return { ok: true }
+  if (previous.figmaFileVersion !== next.figmaFileVersion) return { ok: true }
+  const drifted = JSON.stringify(previous.regions) !== JSON.stringify(next.regions)
+  if (!drifted) return { ok: true }
+  return {
+    ok: false,
+    reason: `contract regions drifted for screen "${next.screen}" without a figmaFileVersion bump (still "${next.figmaFileVersion}")`
+  }
+}
+
+/**
  * P2 reconciliation lint (pre-Figma, HARD): every contract region must carry
  * a disposition row — `built-here` (+ component + REUSE/EXTEND/RECONCILE/NEW
  * verdict) or `deferred-to-<target>` (+ reason) — before a single Figma

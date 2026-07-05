@@ -12,7 +12,8 @@ export {
   screenMatchesReceipt,
   evaluateCoverageReceipt,
   coverageReceiptFilename,
-  deriveExpectedScreensFromStagedFiles
+  deriveExpectedScreensFromStagedFiles,
+  lintContractFreeze
 } from './region-contract.js'
 export {
   unboundFillViolations,

@@ -8,7 +8,8 @@ import {
   screenMatchesReceipt,
   evaluateCoverageReceipt,
   coverageReceiptFilename,
-  deriveExpectedScreensFromStagedFiles
+  deriveExpectedScreensFromStagedFiles,
+  lintContractFreeze
 } from '../packages/figma-design-kit/region-contract.js'
 import d01Contract from './fixtures/d01-wireframe-contract.json' with { type: 'json' }
 import d01ShippedShell from './fixtures/d01-shipped-shell-built.json' with { type: 'json' }
@@ -297,6 +298,42 @@ describe('deriveExpectedScreensFromStagedFiles (C2: which screen(s) a commit tou
     const stagedFiles = ['design/coverage-receipt-cockpit-shell.json', 'src/renderer/src/components/BuildSpine.tsx']
 
     expect(deriveExpectedScreensFromStagedFiles(stagedFiles)).toEqual(['cockpit-shell'])
+  })
+})
+
+describe('lintContractFreeze (C3c: P1 freeze lint — a contract commit may not drift without a figmaFileVersion bump)', () => {
+  it('rejects a region-set drift when figmaFileVersion is unchanged', () => {
+    const previous = {
+      screen: 'cockpit-shell',
+      wireframeNodeId: '26:3',
+      figmaFileVersion: '42',
+      regions: [{ name: 'Stage', path: 'Stage', depth: 0, kind: 'layout', children: [] }]
+    }
+    const next = {
+      screen: 'cockpit-shell',
+      wireframeNodeId: '26:3',
+      figmaFileVersion: '42',
+      regions: [{ name: 'Stage', path: 'Stage', depth: 0, children: [] }]
+    }
+
+    expect(lintContractFreeze(previous, next).ok).toBe(false)
+  })
+
+  it('allows the same drift when figmaFileVersion is bumped alongside it', () => {
+    const previous = {
+      screen: 'cockpit-shell',
+      wireframeNodeId: '26:3',
+      figmaFileVersion: '42',
+      regions: [{ name: 'Stage', path: 'Stage', depth: 0, kind: 'layout', children: [] }]
+    }
+    const next = {
+      screen: 'cockpit-shell',
+      wireframeNodeId: '26:3',
+      figmaFileVersion: '43',
+      regions: [{ name: 'Stage', path: 'Stage', depth: 0, children: [] }]
+    }
+
+    expect(lintContractFreeze(previous, next).ok).toBe(true)
   })
 })
 

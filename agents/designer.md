@@ -65,6 +65,11 @@ having queried it.
 **CONVENTIONS.** Follow the project's own CLAUDE.md and any surfaced SKILL.md
 before creating or editing nodes.
 
+**AESTHETIC PROFILE.** If the host project has an `aesthetic-profile.md` next
+to its `design/config.json`, read it before any hi-fi creation or edit and
+critique your visual self-review against its condensed re-injection block.
+(Wireframe work ignores it: lo-fi is deliberately unstyled.)
+
 **COMMIT DISCIPLINE.** This agent edits a Figma file, not repo code, it does
 not commit to git on its own. If the task also requires syncing Figma output
 into repo artifacts, hand off to `argo:figma-sync` rather than improvising that

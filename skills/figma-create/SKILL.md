@@ -11,6 +11,17 @@ hand back a component that would fail its own hard gate). Builds on
 `figma:figma-use` and `figma:figma-generate-library` for the mechanics of
 node creation, variable binding, and variant-set assembly.
 
+## Design intent (aesthetic profile)
+
+If the host project has an `aesthetic-profile.md` next to its
+`design/config.json`, **read it before creating anything** — it carries the
+design intent that is not expressible as tokens (mood, material composition
+logic, light logic, reference anchors, motion feel). It references token
+NAMES only; values still come solely from the Semantic collection. During
+the visual self-review (step 4 below), re-read its condensed re-injection
+block before each critique iteration and critique against it. No profile
+file → skip; never invent one.
+
 ## Authoring rules (what the self-audit checks)
 
 - **Base instances (when the recipe has them) + Semantic bindings only.**
@@ -94,7 +105,9 @@ the `W<NN> <group>` wireframe page of the same group 1:1.
      entirely for a change with no visual delta (renames, variable
      rescoping, doc-frame edits).
    - **Before looking:** restate the design intent in one visual sentence
-     (e.g. "the label glows like a small colored light").
+     (e.g. "the label glows like a small colored light"). If the project has
+     an aesthetic profile (see "Design intent" above), re-read its condensed
+     re-injection block first and critique against it.
    - **Critique checklist**, answered in writing per screenshot: (a) does
      every glow/effect match the color of the element it's attached to? (b)
      does anything blow out, clip, or band? (c) does the material read as

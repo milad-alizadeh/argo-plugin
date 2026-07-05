@@ -36,7 +36,10 @@ interactively.
 1. **Read committed context.** `design/story-map.json` for the
    component→story→import/prop mapping, `design/specs/<Component>.json`
    for per-variant×mode metrics, `design/screenshots/<Component>/*` for the
-   reference screenshots.
+   reference screenshots. If the project has an `aesthetic-profile.md` next
+   to `design/config.json`, read it too — it carries the non-tokenizable
+   design intent (material logic, light logic, motion feel) the generated
+   code must honor with the token names it cites.
 2. **Generate through the normal test-first loop** (this project's existing
    `test-first` skill) — the component's *behavior* (props, state,
    interactions) gets ordinary red/green tests same as any other code; the

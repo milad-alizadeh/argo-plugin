@@ -54,6 +54,23 @@ file → skip; never invent one.
   NOT get this** — a screen's non-default-mode rendering is a
   `figma-sync`-time capture artifact, never a hand-maintained duplicate
   frame.
+- **Icons come from the design system, used AS-IS** (2026-07-05, backed by
+  the tier-0 `hand-drawn-icon` + `kit-instance-override` hard rules): every
+  icon is an INSTANCE of the kit library's icon components (discover via
+  `search_design_system` or the kit's icon page; import via
+  `importComponentByKeyAsync`). NEVER draw an icon as ad-hoc vectors, never
+  redraw one, never edit stroke weight or internal geometry, and — the
+  observed failure mode — NEVER rebind an icon's INTERNAL properties to
+  Primitives/Semantic tokens to satisfy the binding rules: kit internals
+  keep their own remote kit bindings, which the audit accepts. The ONLY
+  legal touches are the instance's size and its top-level color
+  (fills/strokes bound to a Semantic token). Anything else hard-fails the
+  gate. No suitable icon in the kit → pick the closest and flag it in the
+  report; do not invent one.
+- **Prefer kit components over custom builds**: before authoring any
+  component, check whether the kit already ships it (Switch, Badge, etc.) —
+  a custom component is justified ONLY by something the kit doesn't have.
+  Using a kit component means using it as-is, not wrapping it for styling.
 - **Screens are composition, not generation** (design doc §6b): a screen
   frame may only contain instances of library/project components + layout
   containers — no loose rectangles/text with raw styles. If an instance
@@ -85,6 +102,19 @@ Page placement follows `templates/design/file-structure.md`, the canonical
 file-organization convention: components (and their mode copies) go on the
 `Custom Components` page; screens go on their `D<NN> <group>` page, mirroring
 the `W<NN> <group>` wireframe page of the same group 1:1.
+
+## Efficiency (round-trips are the cost driver)
+
+Each `use_figma` call is a full MCP round trip — observed live runs spent
+most of their wall-clock on call COUNT, not call size. Batch up to the
+10-logical-operation limit: build a whole variant (or several small
+variants) per call, never one property per call. Capture verification
+screenshots inline (`await node.screenshot()`) in the same call as the last
+fix instead of separate `get_screenshot` round trips. Cap the visual
+self-review at two fix→re-shoot iterations unless the critique found a
+concrete defect. Reuse `design/tier0-audit.bundle.js` if it exists and is
+current (the assembler skips rebuilds when the source hash matches) instead
+of re-bundling per audit.
 
 ## Procedure
 

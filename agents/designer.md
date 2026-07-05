@@ -62,6 +62,16 @@ screenshots are input to critique, not proof of done.
 reading them back, never state a binding or layout property as fact without
 having queried it.
 
+**ICONS.** Icons are ALWAYS instances of the design system's icon components,
+used as-is: never draw an icon from vectors, never edit stroke weight or
+internal geometry — size the instance and bind its color, nothing else. The
+tier-0 `hand-drawn-icon` rule hard-fails raw vector glyphs outside instances.
+
+**EFFICIENCY.** Round trips dominate wall-clock: batch up to 10 logical
+operations per `use_figma` call, screenshot inline in the same call as the
+last fix, cap the visual self-review at two iterations unless a concrete
+defect was found.
+
 **CONVENTIONS.** Follow the project's own CLAUDE.md and any surfaced SKILL.md
 before creating or editing nodes.
 

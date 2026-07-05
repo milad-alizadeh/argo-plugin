@@ -5,6 +5,8 @@ import {
   unboundRadiusViolation,
   unboundTypeViolation,
   missingAutoLayoutViolation,
+  handDrawnIconViolation,
+  kitInstanceOverrideViolation,
   detachedInstanceViolation,
   nonSemanticNameViolation,
   variantNamingViolations,
@@ -108,6 +110,28 @@ describe('missingAutoLayoutViolation', () => {
   })
   it('ignores non-frame-like node types', () => {
     expect(missingAutoLayoutViolation({ type: 'TEXT', layoutMode: 'NONE' })).toBeNull()
+  })
+})
+
+describe('handDrawnIconViolation', () => {
+  it('flags a raw VECTOR glyph outside any library instance', () => {
+    const node = { type: 'VECTOR', insideInstance: false }
+    expect(handDrawnIconViolation(node)).toEqual({
+      rule: 'hand-drawn-icon',
+      detail: "raw vector glyph outside any library instance — use the design system's icon components"
+    })
+  })
+})
+
+describe('kitInstanceOverrideViolation', () => {
+  // Whitelist, not blacklist (user ruling 2026-07-05, VERY IMPORTANT): kit
+  // instances are never edited AT ALL — only size and color are legal.
+  it('flags a remote kit instance overriding anything beyond size/color (e.g. strokeWeight)', () => {
+    const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['fills', 'strokeWeight'] }
+    expect(kitInstanceOverrideViolation(node)).toEqual({
+      rule: 'kit-instance-override',
+      detail: 'kit instance overrides "strokeWeight" — kit components are used as-is; only size and color may change'
+    })
   })
 })
 

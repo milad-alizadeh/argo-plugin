@@ -17,7 +17,9 @@
  * script) — THAT file's content is what actually gets pasted into `use_figma`.
  */
 import { spawnSync } from 'node:child_process'
-import { writeFileSync, readFileSync, rmSync } from 'node:fs'
+import { writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { dirname } from 'node:path'
 import { join } from 'node:path'
 
 const RECIPE_CHECKS_MARKER = '// {{RECIPE_TIER0_CHECKS}}'
@@ -95,6 +97,27 @@ function restoreCompletionExpression(bundled) {
  * actually sandbox-runnable: zero `import`/`export` statements, under
  * `maxChars` (use_figma's 50,000-char cap).
  */
+/**
+ * Cached wrapper around bundleTier0Audit: reads the assembled module at
+ * `sourcePath`, bundles into `bundlePath`, and skips the (slow) bun-build
+ * when a sidecar hash proves the source is unchanged — designer agents
+ * re-audit many times per task; only the first bundle should pay.
+ */
+export function bundleTier0AuditToFile(sourcePath, bundlePath, opts = {}) {
+  const source = readFileSync(sourcePath, 'utf8')
+  const hash = createHash('sha256').update(source).digest('hex')
+  const hashPath = `${bundlePath}.hash`
+
+  if (existsSync(bundlePath) && existsSync(hashPath) && readFileSync(hashPath, 'utf8').trim() === hash) {
+    return { bundled: readFileSync(bundlePath, 'utf8'), cached: true }
+  }
+
+  const bundled = bundleTier0Audit(source, { cwd: dirname(sourcePath), ...opts })
+  writeFileSync(bundlePath, bundled, 'utf8')
+  writeFileSync(hashPath, hash, 'utf8')
+  return { bundled, cached: false }
+}
+
 export function bundleTier0Audit(assembledSource, { cwd, maxChars = 50000 } = {}) {
   if (!cwd) throw new Error('bundleTier0Audit: cwd is required (relative imports resolve against it)')
 

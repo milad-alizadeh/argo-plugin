@@ -91,8 +91,61 @@ export function isNamedAuditTarget(node, name) {
 }
 
 export function missingAutoLayoutViolation(node) {
-  if ((node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') && node.layoutMode === 'NONE') {
+  // INSTANCE nodes are exempt (revised 2026-07-05): an instance's layoutMode
+  // mirrors its main component — locally-authored components are already
+  // audited at their definition, and kit-library instances (single-vector
+  // icon leaves especially) structurally cannot have Auto Layout enabled on
+  // the instance. Flagging them forced authors to detach kit instances to
+  // pass the gate, losing swap/update propagation.
+  if ((node.type === 'FRAME' || node.type === 'COMPONENT') && node.layoutMode === 'NONE') {
     return { rule: 'missing-auto-layout', detail: 'frame-like node has no Auto Layout' }
+  }
+  return null
+}
+
+export function handDrawnIconViolation(node) {
+  if (node.type === 'VECTOR' && !node.insideInstance) {
+    return {
+      rule: 'hand-drawn-icon',
+      detail: "raw vector glyph outside any library instance — use the design system's icon components"
+    }
+  }
+  return null
+}
+
+/**
+ * Kit components are used AS-IS (2026-07-05, user ruling, VERY IMPORTANT):
+ * the only legal per-instance touches are size and color — a WHITELIST, not
+ * a stroke blacklist, because the observed failure mode was agents "fixing"
+ * icon internals (rebinding to Primitives, retouching geometry) to satisfy
+ * other audit rules. Any other override on a remote (kit-library) instance
+ * is a hard violation. The walker marshals `isRemoteInstance` from
+ * getMainComponentAsync().remote and `overriddenFields` from
+ * InstanceNode.overrides.
+ */
+const ALLOWED_KIT_INSTANCE_OVERRIDES = [
+  'name',
+  'visible',
+  'opacity',
+  'width',
+  'height',
+  'fills', // color only — recoloring a glyph/surface via bound variable
+  'strokes', // color only — same
+  'fillStyleId',
+  'strokeStyleId',
+  'componentProperties', // variant/prop switching is what instances are for
+  'componentPropertyReferences',
+  'mainComponent' // instance swap
+]
+
+export function kitInstanceOverrideViolation(node) {
+  if (node.type !== 'INSTANCE' || !node.isRemoteInstance) return null
+  const hit = (node.overriddenFields ?? []).find((f) => !ALLOWED_KIT_INSTANCE_OVERRIDES.includes(f))
+  if (hit) {
+    return {
+      rule: 'kit-instance-override',
+      detail: `kit instance overrides "${hit}" — kit components are used as-is; only size and color may change`
+    }
   }
   return null
 }

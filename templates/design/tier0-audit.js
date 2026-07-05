@@ -34,6 +34,8 @@ import {
   unboundRadiusViolation,
   unboundTypeViolation,
   missingAutoLayoutViolation,
+  handDrawnIconViolation,
+  kitInstanceOverrideViolation,
   detachedInstanceViolation,
   nonSemanticNameViolation,
   variantNamingViolations,
@@ -48,7 +50,7 @@ const SEMANTIC_COLLECTION_NAME = '{{SEMANTIC_COLLECTION_NAME}}'
 
 // {{RECIPE_TIER0_CHECKS}}
 
-async function auditNode(node, { hard, spacingScale, semanticModes }) {
+async function auditNode(node, { hard, spacingScale, semanticModes, insideInstance = false }) {
   const violations = []
 
   const report = (rule, detail) => {
@@ -64,6 +66,9 @@ async function auditNode(node, { hard, spacingScale, semanticModes }) {
 
   const autoLayout = missingAutoLayoutViolation(node)
   if (autoLayout) report(autoLayout.rule, autoLayout.detail)
+
+  const handDrawnIcon = handDrawnIconViolation({ type: node.type, insideInstance })
+  if (handDrawnIcon) report(handDrawnIcon.rule, handDrawnIcon.detail)
 
   if ('layoutMode' in node) {
     const gapAndPadding = []
@@ -83,6 +88,13 @@ async function auditNode(node, { hard, spacingScale, semanticModes }) {
     const main = await node.getMainComponentAsync()
     const detached = detachedInstanceViolation({ type: node.type, hasMainComponent: Boolean(main) })
     if (detached) report(detached.rule, detached.detail)
+
+    const kitOverride = kitInstanceOverrideViolation({
+      type: node.type,
+      isRemoteInstance: Boolean(main?.remote),
+      overriddenFields: (node.overrides ?? []).flatMap((o) => o.overriddenFields ?? [])
+    })
+    if (kitOverride) report(kitOverride.rule, kitOverride.detail)
   }
 
   const nonSemanticName = nonSemanticNameViolation(node)
@@ -149,7 +161,9 @@ async function marshalGapPaddingField(node, field) {
 async function walk(node, opts, out) {
   out.push(...(await auditNode(node, opts)))
   if ('children' in node) {
-    for (const child of node.children) await walk(child, opts, out)
+    const childOpts =
+      node.type === 'INSTANCE' && !opts.insideInstance ? { ...opts, insideInstance: true } : opts
+    for (const child of node.children) await walk(child, childOpts, out)
   }
 }
 

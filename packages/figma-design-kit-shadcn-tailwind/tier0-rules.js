@@ -8,10 +8,19 @@
 
 /**
  * Relocated from templates/design/tier0-audit.js (was inline, kit-coupled).
- * A bound variable is either kit-sourced (its key resolves to the kit library
- * file) or bound to the project's actual Semantic collection by name —
- * anything else (including a local Primitives-collection binding) is a
- * non-Semantic binding outside the kit library.
+ * A bound variable is either kit-sourced or bound to the project's actual
+ * Semantic collection by name — anything else (including a local
+ * Primitives-collection binding) is a non-Semantic binding.
+ *
+ * Kit-sourced detection (revised 2026-07-05): a remote Variable's `key` is a
+ * plain 40-char hash with NO file-key prefix — live verification showed
+ * `key.startsWith(fileKey)` never matches, which failed every legitimate kit
+ * icon binding and forced instance detaching. The precise membership test is
+ * against `kitVariableKeys`, the kit's variable-key manifest (kit.lock,
+ * recorded at sync/seed time from importVariableByKeyAsync's own keys). When
+ * no manifest exists yet (pre-first-sync), any remote binding counts as
+ * kit-sourced — the design pack's model permits exactly one subscribed
+ * library, so remote ⇒ kit until a manifest can say otherwise.
  *
  * `variable.collectionName` — NOT presence of a variableCollectionId — is
  * the deciding field: live-Figma verification (Slice 14) confirmed that
@@ -19,8 +28,9 @@
  * bound directly to a local Primitives variable also has a
  * variableCollectionId and would incorrectly pass.
  */
-export function nonSemanticBindingViolation(variable, kitLibraryFileKey, semanticCollectionName = 'Semantic') {
-  const isKitSourced = Boolean(variable.remote && variable.key?.startsWith(kitLibraryFileKey))
+export function nonSemanticBindingViolation(variable, kitVariableKeys = null, semanticCollectionName = 'Semantic') {
+  const manifest = Array.isArray(kitVariableKeys) && kitVariableKeys.length > 0 ? kitVariableKeys : null
+  const isKitSourced = Boolean(variable.remote && (!manifest || manifest.includes(variable.key)))
   const isSemantic = !isKitSourced && variable.collectionName === semanticCollectionName
   if (!isKitSourced && !isSemantic) {
     return {
@@ -33,13 +43,13 @@ export function nonSemanticBindingViolation(variable, kitLibraryFileKey, semanti
 
 /**
  * New (closes the design-upgrade/SKILL.md:23-29 doc/code gap): flags a bound
- * variable whose key resolves to a retired kit library file key, not the
- * current one — a Library Swap left over a stale binding.
+ * variable left stale by a Library Swap. Matches by exact retired VARIABLE
+ * key (recorded by design-upgrade at swap time from the outgoing kit.lock) —
+ * file-key prefix matching never worked; see nonSemanticBindingViolation.
  */
-export function retiredFileKeyBindingViolation(variable, retiredLibraryFileKeys = []) {
-  const retiredKey = retiredLibraryFileKeys.find((key) => variable.key?.startsWith(key))
-  if (retiredKey) {
-    return { rule: 'retired-file-key-binding', detail: `bound variable resolves to a retired kit library file key "${retiredKey}"` }
+export function retiredFileKeyBindingViolation(variable, retiredVariableKeys = []) {
+  if (variable.key && retiredVariableKeys.includes(variable.key)) {
+    return { rule: 'retired-file-key-binding', detail: `bound variable "${variable.key}" belongs to a retired kit library version` }
   }
   return null
 }

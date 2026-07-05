@@ -47,17 +47,19 @@ describe('nonSemanticBindingViolation', () => {
 })
 
 describe('retiredFileKeyBindingViolation', () => {
-  it('flags a variable bound to a retired kit library file key', () => {
-    const variable = { remote: true, key: 'old-kit-key:1:2' }
-    expect(retiredFileKeyBindingViolation(variable, ['old-kit-key'])).toEqual({
+  // Real variable keys are plain hashes with no file-key prefix (2026-07-05):
+  // retirement matches by exact variable key recorded at Library Swap time.
+  it('flags a variable whose exact key is in the retired variable key list', () => {
+    const variable = { remote: true, key: 'old-kit-variable-key-hash' }
+    expect(retiredFileKeyBindingViolation(variable, ['old-kit-variable-key-hash'])).toEqual({
       rule: 'retired-file-key-binding',
-      detail: 'bound variable resolves to a retired kit library file key "old-kit-key"'
+      detail: 'bound variable "old-kit-variable-key-hash" belongs to a retired kit library version'
     })
   })
 
   it('passes a variable bound to the current kit key', () => {
-    const variable = { remote: true, key: 'current-kit-key:1:2' }
-    expect(retiredFileKeyBindingViolation(variable, ['old-kit-key'])).toBeNull()
+    const variable = { remote: true, key: 'current-kit-variable-key-hash' }
+    expect(retiredFileKeyBindingViolation(variable, ['old-kit-variable-key-hash'])).toBeNull()
   })
 
   it('passes when there are no retired keys', () => {

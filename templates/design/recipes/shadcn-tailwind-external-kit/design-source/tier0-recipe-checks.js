@@ -8,11 +8,13 @@
  * file's own `import`s survive intact) — the host project always runs ONE
  * assembled canonical script (X3/F12), never this file separately.
  *
- * {{KIT_LIBRARY_FILE_KEY}} — the published kit library's Figma file key, used
- *   to distinguish kit-sourced variables from project-local ones.
- * {{RETIRED_KIT_LIBRARY_FILE_KEYS_JSON}} — a JSON array literal (e.g. `[]` or
- *   `["oldKey123"]`) of previously-swapped-out kit library file keys still
- *   worth flagging stale bindings against.
+ * {{KIT_VARIABLE_KEYS_JSON}} — JSON array of the kit's variable keys (from
+ *   kit.lock, recorded at sync/seed time). `[]` until the first sync — the
+ *   rule then treats any remote binding as kit-sourced (single-subscribed-
+ *   library model). Real variable keys are plain hashes; file-key prefix
+ *   matching never worked (revised 2026-07-05).
+ * {{RETIRED_KIT_VARIABLE_KEYS_JSON}} — JSON array of variable keys retired by
+ *   a Library Swap (recorded by design-upgrade from the outgoing kit.lock).
  */
 
 import {
@@ -22,8 +24,8 @@ import {
 } from 'figma-design-kit-shadcn-tailwind/tier0-rules'
 import kitPatches from './kit-patches.json'
 
-const KIT_LIBRARY_FILE_KEY = '{{KIT_LIBRARY_FILE_KEY}}'
-const RETIRED_KIT_LIBRARY_FILE_KEYS = JSON.parse('{{RETIRED_KIT_LIBRARY_FILE_KEYS_JSON}}')
+const KIT_VARIABLE_KEYS = JSON.parse('{{KIT_VARIABLE_KEYS_JSON}}')
+const RETIRED_KIT_VARIABLE_KEYS = JSON.parse('{{RETIRED_KIT_VARIABLE_KEYS_JSON}}')
 // SEMANTIC_COLLECTION_NAME is declared above this file's splice point in the
 // assembled tier0-audit.js — same module scope, available here as a free variable.
 
@@ -63,10 +65,10 @@ async function runRecipeTier0Checks(node, { hard }) {
       key: variable.key,
       collectionName: collection?.name ?? null
     }
-    const nonSemantic = nonSemanticBindingViolation(marshaledVariable, KIT_LIBRARY_FILE_KEY, SEMANTIC_COLLECTION_NAME)
+    const nonSemantic = nonSemanticBindingViolation(marshaledVariable, KIT_VARIABLE_KEYS, SEMANTIC_COLLECTION_NAME)
     if (nonSemantic) report(nonSemantic.rule, nonSemantic.detail)
 
-    const retiredKey = retiredFileKeyBindingViolation(marshaledVariable, RETIRED_KIT_LIBRARY_FILE_KEYS)
+    const retiredKey = retiredFileKeyBindingViolation(marshaledVariable, RETIRED_KIT_VARIABLE_KEYS)
     if (retiredKey) report(retiredKey.rule, retiredKey.detail)
   }
 

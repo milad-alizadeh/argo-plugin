@@ -42,12 +42,15 @@ to reconcile just one surface.
 ## What ships active (loads when the plugin is enabled)
 
 - **Agents** (`agents/`) — full lifecycle roles, invoked on demand:
-  `scaffolder → planner → builder → reviewer → debugger`, plus `auditor`
-  (whole-codebase health), `integrator` (lands work / PRs / docs sync), and
-  `designer` (executes the Figma-to-code design pack's skills inside a live
-  Figma file).
-- **Skills** (`skills/`) — on-demand disciplines and methodology, twenty:
-  `engineering-principles`, `test-first`, `build-plan`, `root-cause`,
+  `product → scaffolder → planner → builder → reviewer → debugger`, plus
+  `auditor` (whole-codebase health), `integrator` (lands work / PRs / docs
+  sync), and `designer` (executes the Figma-to-code design pack's skills inside
+  a live Figma file). `product` sits at the very top of the loop — it turns a
+  raw feature idea into a lightweight, grounded PRD (the durable WHAT/WHY) that
+  every stage after it cites.
+- **Skills** (`skills/`) — on-demand disciplines and methodology, twenty-one:
+  `write-prd` (product intent at the top of the loop), `engineering-principles`,
+  `test-first`, `build-plan`, `root-cause`,
   `grill-me`, `spike`, `scaffold`, `session-handoff`, `finish-branch`,
   `author-skill`, `setup-claude`, `update`, `orchestrate`, and the Figma-to-code
   design pack — `setup-design`, `figma-audit`, `figma-sync`, `figma-create`,
@@ -140,7 +143,8 @@ gates, guards, and skills from a bare `claude` terminal in any project.
 3. Optional: if setup-claude wired tdd-guard, `tdd-guard off` / `tdd-guard on`
    toggle it mid-session. Either way, know that the commit gates block only
    during a gated build, never your everyday commits.
-4. The loop, in five lines: `/argo:scaffold` a new app · `/argo:grill-me` a
+4. The loop, in six lines: `argo:product` (`/argo:write-prd`) the WHAT/WHY ·
+   `/argo:scaffold` a new app · `/argo:grill-me` a
    design · `argo:planner` a plan · `/argo:build-plan` to build it hands-off ·
    `argo:reviewer` / `/argo:root-cause` / `argo:integrator` to review, debug,
    and land.

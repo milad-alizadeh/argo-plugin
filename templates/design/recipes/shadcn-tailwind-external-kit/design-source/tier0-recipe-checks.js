@@ -27,14 +27,20 @@ const RETIRED_KIT_LIBRARY_FILE_KEYS = JSON.parse('{{RETIRED_KIT_LIBRARY_FILE_KEY
 // SEMANTIC_COLLECTION_NAME is declared above this file's splice point in the
 // assembled tier0-audit.js — same module scope, available here as a free variable.
 
+// Gap/padding fields legally bind Primitives spacing variables (D24, revised
+// 2026-07-05) — they are governed by gapPaddingSpacingViolations, so exclude
+// them from this Semantic-only sweep.
+const SPACING_FIELDS = new Set(['itemSpacing', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'counterAxisSpacing'])
+
 async function runRecipeTier0Checks(node, { hard }) {
   const violations = []
   const report = (rule, detail) => {
     violations.push({ severity: hard ? 'hard' : 'advisory', rule, nodeId: node.id, nodeName: node.name, detail })
   }
 
-  const boundVars = node.boundVariables ? Object.values(node.boundVariables) : []
-  for (const bound of boundVars) {
+  const boundVars = node.boundVariables ? Object.entries(node.boundVariables) : []
+  for (const [fieldName, bound] of boundVars) {
+    if (SPACING_FIELDS.has(fieldName)) continue
     const alias = Array.isArray(bound) ? bound[0] : bound
     if (!alias?.id) continue
     const variable = await figma.variables.getVariableByIdAsync(alias.id)

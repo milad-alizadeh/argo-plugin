@@ -70,4 +70,20 @@ describe('design-commit-gate — commit-scoped, armed by design/config.json alon
     expect(r.code).toBe(2)
     expect(r.stderr).toMatch(/exited non-zero/)
   })
+
+  it('BLOCK: spec-diff receipt is stale (recorded long before this commit)', async () => {
+    mkdirSync(join(cwd, 'design'), { recursive: true })
+    writeFileSync(join(cwd, 'design', 'config.json'), JSON.stringify({ componentsPath: 'src/components' }))
+    writeFileSync(
+      join(cwd, 'design', 'spec-diff-receipt.json'),
+      JSON.stringify({ recordedAt: Date.now() - 30 * 60 * 1000, exitCode: 0 }),
+    )
+    execFileSync('git', ['-C', cwd, 'init', '-q'])
+    mkdirSync(join(cwd, 'src', 'components'), { recursive: true })
+    writeFileSync(join(cwd, 'src', 'components', 'Button.tsx'), 'export const Button = () => null')
+    execFileSync('git', ['-C', cwd, 'add', 'src/components/Button.tsx'])
+    const r = await runGate(commitInput(cwd))
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/timestamp out of range/)
+  })
 })

@@ -63,4 +63,7 @@ const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'))
 if (typeof receipt.exitCode !== 'number' || receipt.exitCode !== 0)
   block(`spec-diff walker exited non-zero (exitCode ${receipt?.exitCode}) — fix the drift and re-run`)
 
+const age = Date.now() - receipt.recordedAt
+if (age > 10 * 60 * 1000) block(`spec-diff receipt timestamp out of range (${Math.round(age / 1000)}s) — re-run required`)
+
 process.exit(0)

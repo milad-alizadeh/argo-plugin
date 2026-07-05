@@ -11,7 +11,7 @@ export {
   detachedInstanceViolation,
   nonSemanticNameViolation,
   variantNamingViolations,
-  darkCopyViolation,
+  modeCopyViolations,
   implicitLineHeightViolation,
   storyUrlScopeViolation,
   gapPaddingSpacingViolations

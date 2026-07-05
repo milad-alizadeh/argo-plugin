@@ -22,9 +22,11 @@ hard-to-debug `use_figma` failures.
 
 **Mechanism checks (every recipe):** unbound fills/strokes/radii/type,
 missing Auto Layout, detached instances, non-semantic names, D18 variant
-naming (`Size`→`size`, Title-Case→lowercase), missing or incorrect dark copy
-for **components only** (D11), explicit line-height (D20), node-scoped
-story URLs (`?node-id=`, D1/C13).
+naming (`Size`→`size`, Title-Case→lowercase), missing or incorrect mode copy
+for **components only** (D11, generalized to mode copies, 2026-07-05: one
+copy per Semantic-collection mode beyond the default; a single-mode
+collection passes vacuously, zero copies required), explicit line-height
+(D20), node-scoped story URLs (`?node-id=`, D1/C13).
 
 **Recipe checks (installed recipe only):** for `shadcn-tailwind-external-kit`
 — non-Semantic bindings (distinguished by library source, §8),

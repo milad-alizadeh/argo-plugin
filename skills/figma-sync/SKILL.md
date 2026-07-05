@@ -33,11 +33,13 @@ Builds on `figma:figma-use`.
    `StoryMapEntrySchema`'s sibling shape where applicable.
 4. **Capture reference screenshots.** Per variant×mode, into
    `design/screenshots/<Component>/<variant>.<mode>.png` — so tier 2 and
-   headless rebuilds never need live MCP access (C6). For the dark side:
-   **do not** duplicate the frame — temporarily flip
-   `explicitVariableModes` on the light frame to Dark, capture, then
-   **revert** (D11); screens never get a hand-maintained dark duplicate,
-   only components do.
+   headless rebuilds never need live MCP access (C6). For every non-default
+   Semantic mode: **do not** duplicate the frame — temporarily flip
+   `explicitVariableModes` on the default-mode frame to that mode, capture,
+   then **revert** (D11, generalized to mode copies, 2026-07-05); a
+   single-mode Semantic collection has no non-default mode to capture, so
+   this degenerates to today's single-capture behavior. Screens never get a
+   hand-maintained mode duplicate, only components do.
 5. **Export assets.** Icons/images via MCP asset tools (SVG optimized,
    `currentColor` where tokenized), committed alongside.
 6. **Build `story-map.json`.** Component key + node id → story id → import

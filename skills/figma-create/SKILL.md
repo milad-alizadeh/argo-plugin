@@ -1,6 +1,6 @@
 ---
 name: figma-create
-description: Create a new component or screen in Figma following the design pack's authoring conventions — base instances, Semantic bindings only, Auto Layout, semantic names, D18 variant naming, dark copy for components — then self-audit and fix violations before reporting done. Use when the user asks to design/create/mock up a new component or screen in Figma.
+description: Create a new component or screen in Figma following the design pack's authoring conventions — base instances, Semantic bindings only, Auto Layout, semantic names, D18 variant naming, mode copies for components — then self-audit and fix violations before reporting done. Use when the user asks to design/create/mock up a new component or screen in Figma.
 ---
 
 # figma-create
@@ -27,11 +27,17 @@ node creation, variable binding, and variant-set assembly.
 - **D18 variant naming** — component property `Size` → prop `size`;
   Title-Case variant values → lowercase literal unions. Mechanical, not
   judgment: name it this way from the start.
-- **Dark copy for components** (D11) — every component gets a visible
-  dark-mode instance copy directly beneath it, Semantic collection's mode
-  set to Dark via `explicitVariableModes`. **Screens do NOT get this** — a
-  screen's dark rendering is a `figma-sync`-time capture artifact, never a
-  hand-maintained duplicate frame.
+- **Mode copies for components** (D11, generalized to mode copies, 2026-07-05)
+  — every component gets one visible instance copy per mode of the project's
+  Semantic collection BEYOND the default mode. The component itself renders
+  in the default mode; each additional mode gets a copy directly beneath it,
+  named `<Component> (<Mode>)`, with the Semantic collection's mode set to
+  that mode via `explicitVariableModes`. A single-mode Semantic collection
+  (e.g. a dark-only project whose sole mode is "Dark") needs zero copies: no
+  hand-maintained duplicates at all until a second mode exists. **Screens do
+  NOT get this** — a screen's non-default-mode rendering is a
+  `figma-sync`-time capture artifact, never a hand-maintained duplicate
+  frame.
 - **Screens are composition, not generation** (design doc §6b): a screen
   frame may only contain instances of library/project components + layout
   containers — no loose rectangles/text with raw styles. If an instance

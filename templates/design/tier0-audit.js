@@ -37,7 +37,7 @@ import {
   detachedInstanceViolation,
   nonSemanticNameViolation,
   variantNamingViolations,
-  darkCopyViolation,
+  modeCopyViolations,
   implicitLineHeightViolation,
   storyUrlScopeViolation,
   gapPaddingSpacingViolations
@@ -47,7 +47,7 @@ const SEMANTIC_COLLECTION_NAME = '{{SEMANTIC_COLLECTION_NAME}}'
 
 // {{RECIPE_TIER0_CHECKS}}
 
-async function auditNode(node, { hard, spacingScale }) {
+async function auditNode(node, { hard, spacingScale, semanticModes }) {
   const violations = []
 
   const report = (rule, detail) => {
@@ -91,8 +91,9 @@ async function auditNode(node, { hard, spacingScale }) {
 
   if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') {
     const siblings = (node.parent?.children ?? []).filter((sibling) => sibling !== node)
-    const darkCopy = darkCopyViolation({ type: node.type, name: node.name, siblings }, SEMANTIC_COLLECTION_NAME)
-    if (darkCopy) report(darkCopy.rule, darkCopy.detail)
+    for (const v of modeCopyViolations({ type: node.type, name: node.name, siblings }, SEMANTIC_COLLECTION_NAME, semanticModes)) {
+      report(v.rule, v.detail)
+    }
   }
 
   const lineHeight = implicitLineHeightViolation(node)
@@ -148,15 +149,16 @@ async function runTier0Audit(options = {}) {
   const { componentNames } = options
   const violations = []
   const spacingScale = await collectPrimitivesSpacingScale()
+  const semanticModes = await collectSemanticModeNames()
 
   if (componentNames?.length) {
     for (const name of componentNames) {
       const matches = figma.root.findAll((n) => n.name === name && (n.type === 'COMPONENT' || n.type === 'COMPONENT_SET'))
-      for (const match of matches) await walk(match, { hard: true, spacingScale }, violations)
+      for (const match of matches) await walk(match, { hard: true, spacingScale, semanticModes }, violations)
     }
   } else {
     for (const page of figma.root.children) {
-      for (const topLevel of page.children) await walk(topLevel, { hard: false, spacingScale }, violations)
+      for (const topLevel of page.children) await walk(topLevel, { hard: false, spacingScale, semanticModes }, violations)
     }
   }
 
@@ -210,6 +212,21 @@ async function collectPrimitivesSpacingScale() {
     if (typeof value === 'number') values.push(value)
   }
   return values.sort((a, b) => a - b)
+}
+
+/**
+ * D11 (generalized to mode copies, 2026-07-05): the mode-copy count is
+ * DERIVED from the project's own Semantic collection at audit time, never a
+ * hardcoded "Light"/"Dark" pair — `modes[0]` is the default mode the
+ * component itself renders in; every mode after it needs a copy. Returns []
+ * if the Semantic collection doesn't exist yet (unseeded project), in which
+ * case `modeCopyViolations` no-ops (nothing to check yet).
+ */
+async function collectSemanticModeNames() {
+  const collections = await figma.variables.getLocalVariableCollectionsAsync()
+  const semantic = collections.find((c) => c.name === SEMANTIC_COLLECTION_NAME)
+  if (!semantic) return []
+  return semantic.modes.map((mode) => mode.name)
 }
 
 runTier0Audit

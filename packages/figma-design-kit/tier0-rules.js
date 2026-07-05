@@ -84,17 +84,30 @@ export function variantNamingViolations(node) {
   return violations
 }
 
-/** node.siblings is resolved by the walker from node.parent.children (excluding node itself). */
-export function darkCopyViolation(node, semanticCollectionName) {
-  if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return null
-  const darkCopy = (node.siblings ?? []).find((sibling) => sibling.name === `${node.name} (Dark)`)
-  if (!darkCopy) {
-    return { rule: 'missing-dark-copy', detail: 'component has no adjacent dark-mode instance copy (D11)' }
+/**
+ * D11 (generalized to mode copies, 2026-07-05): one visible instance copy per
+ * mode of the project Semantic collection BEYOND the default mode (the
+ * component itself renders in the default mode). `modes` is the Semantic
+ * collection's ordered mode-name list; `modes[0]` is the default and is
+ * skipped. A single-mode collection yields `modes.length === 1`, so this
+ * returns `[]` vacuously — a dark-only project has zero copies to maintain.
+ * node.siblings is resolved by the walker from node.parent.children (excluding
+ * node itself).
+ */
+export function modeCopyViolations(node, semanticCollectionName, modes) {
+  if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return []
+  const violations = []
+  for (const mode of (modes ?? []).slice(1)) {
+    const copy = (node.siblings ?? []).find((sibling) => sibling.name === `${node.name} (${mode})`)
+    if (!copy) {
+      violations.push({ rule: 'missing-mode-copy', detail: `component has no adjacent "${mode}" mode instance copy (D11)` })
+      continue
+    }
+    if (copy.explicitVariableModes?.[semanticCollectionName] == null) {
+      violations.push({ rule: 'incorrect-mode-copy', detail: `"${mode}" mode copy does not set the Semantic collection mode explicitly` })
+    }
   }
-  if (darkCopy.explicitVariableModes?.[semanticCollectionName] == null) {
-    return { rule: 'incorrect-dark-copy', detail: 'dark copy does not set the Semantic collection mode explicitly' }
-  }
-  return null
+  return violations
 }
 
 export function implicitLineHeightViolation(node) {

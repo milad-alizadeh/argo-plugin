@@ -18,7 +18,8 @@ import {
   strokeScaleViolation,
   possibleGateFalsePositiveTag,
   unsectionedComponentViolation,
-  missingComponentDescriptionViolation
+  missingComponentDescriptionViolation,
+  compositeRegionNamingViolation
 } from '../packages/figma-design-kit/tier0-rules.js'
 
 describe('unboundFillViolations', () => {
@@ -386,6 +387,26 @@ describe('missingComponentDescriptionViolation (Mechanism 3, advisory)', () => {
   it('passes a component with a description', () => {
     const node = { type: 'COMPONENT', name: 'Button', description: 'Primary call-to-action. Category: controls.' }
     expect(missingComponentDescriptionViolation(node)).toBeNull()
+  })
+})
+
+describe('compositeRegionNamingViolation (Option B, design-first-council-ruling.md Gate ruling, advisory)', () => {
+  it('flags a plain FRAME named after a known composite as a traced-not-composed smell', () => {
+    const node = { type: 'FRAME', name: 'RailSessionCard' }
+    expect(compositeRegionNamingViolation(node, ['RailSessionCard', 'RailHeader'])).toEqual({
+      rule: 'composite-region-traced-not-instance',
+      detail: 'frame "RailSessionCard" is named after a composite component but is a plain FRAME, not an INSTANCE — looks traced, not composed'
+    })
+  })
+
+  it('passes a proper INSTANCE named after a known composite', () => {
+    const node = { type: 'INSTANCE', name: 'RailSessionCard' }
+    expect(compositeRegionNamingViolation(node, ['RailSessionCard'])).toBeNull()
+  })
+
+  it('passes a FRAME whose name matches no known composite', () => {
+    const node = { type: 'FRAME', name: 'SessionList' }
+    expect(compositeRegionNamingViolation(node, ['RailSessionCard'])).toBeNull()
   })
 })
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { findKitNameCollisions } from '../packages/figma-design-kit/kit-inventory.js'
+import { findKitNameCollisions, findNewNameAliasCollision } from '../packages/figma-design-kit/kit-inventory.js'
 
 describe('findKitNameCollisions', () => {
   it('flags an authored component name that shadows a kit component with no clearing waiver', () => {
@@ -39,5 +39,24 @@ describe('findKitNameCollisions', () => {
   it('does not flag a component re-audit against its own registry entry (exact-name self match)', () => {
     const registry = { components: { 'status-pill': { nodeId: '1:1' } } }
     expect(findKitNameCollisions(['status-pill'], { registry })).toEqual([])
+  })
+})
+
+describe('findNewNameAliasCollision (anti-recreation backstop, design-first-council-ruling.md Gate ruling)', () => {
+  it('hard-fails a NEW name that collides with an existing alias (PromptCard ≈ AskRow)', () => {
+    const aliasMap = { components: [{ name: 'AskRow', aliases: ['PromptCard', 'InterruptCard'] }] }
+    expect(findNewNameAliasCollision('PromptCard', aliasMap)).toEqual({
+      rule: 'new-name-alias-collision',
+      detail: 'NEW name "PromptCard" collides with existing component "AskRow" — reuse or extend it instead of recreating it'
+    })
+  })
+
+  it('passes a genuinely novel NEW name', () => {
+    const aliasMap = { components: [{ name: 'AskRow', aliases: ['PromptCard', 'InterruptCard'] }] }
+    expect(findNewNameAliasCollision('DiffViewer', aliasMap)).toBeNull()
+  })
+
+  it('fails open (returns null) when the alias map is absent', () => {
+    expect(findNewNameAliasCollision('PromptCard', undefined)).toBeNull()
   })
 })

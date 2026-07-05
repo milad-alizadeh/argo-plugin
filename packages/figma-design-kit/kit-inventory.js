@@ -61,3 +61,33 @@ export function findKitNameCollisions(componentNames, { inventory, registry, wai
   }
   return collisions
 }
+
+/**
+ * Anti-recreation backstop (design-first-council-ruling.md Gate ruling): the
+ * ONE hard check promoted now — separate from findKitNameCollisions (which
+ * checks authored names against the KIT's own inventory + the live
+ * registry). `aliasMap` is the project's committed product-composite alias
+ * map (same `{ components: [{ name, aliases }] }` shape as the kit inventory
+ * — format documented in templates/design/component-aliases.example.json),
+ * the machine-readable counterpart to the prose COMPONENT-INVENTORY.md a
+ * repo can't lint against directly. A design brief tagging a component NEW
+ * must not collide, case-insensitively, with any canonical name or alias
+ * already in the map (e.g. "PromptCard" ≈ AskRow's alias) — exact match
+ * only, not findKitNameCollisions' substring fuzz: false positives here are
+ * cheap (rename or extend instead of recreating), so no waiver escape hatch
+ * is needed. Fails open (returns null) on an absent/malformed map — this
+ * check never fabricates a violation from missing data.
+ */
+export function findNewNameAliasCollision(newName, aliasMap) {
+  const normalized = normalizeComponentName(newName)
+  for (const entry of aliasMap?.components ?? []) {
+    const candidates = [entry.name, ...(entry.aliases ?? [])].map(normalizeComponentName)
+    if (candidates.includes(normalized)) {
+      return {
+        rule: 'new-name-alias-collision',
+        detail: `NEW name "${newName}" collides with existing component "${entry.name}" — reuse or extend it instead of recreating it`
+      }
+    }
+  }
+  return null
+}

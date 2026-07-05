@@ -339,6 +339,26 @@ export function missingComponentDescriptionViolation(node) {
   }
 }
 
+/**
+ * Option B (design-first-council-ruling.md Gate ruling, ADVISORY only): in a
+ * composed SCREEN, a node named after a known composite (`compositeNames` —
+ * the project's registered composite names, e.g. `design/registry.json`
+ * entries) that is a plain FRAME rather than an INSTANCE of that component is
+ * under-decomposition — a traced screen, not one composed from built
+ * components via figma-create's component-first screen path (#4). This is
+ * the under-decomposition catch the council promoted to advisory, NOT the
+ * hard authoritative decomposition gate (Option C), which is deferred until
+ * its brief/story-map schema lands — never wire this as a hard-fail.
+ */
+export function compositeRegionNamingViolation(node, compositeNames) {
+  if (node.type !== 'FRAME') return null
+  if (!(compositeNames ?? []).includes(node.name)) return null
+  return {
+    rule: 'composite-region-traced-not-instance',
+    detail: `frame "${node.name}" is named after a composite component but is a plain FRAME, not an INSTANCE — looks traced, not composed`
+  }
+}
+
 export function gapPaddingSpacingViolations(node, _spacingScale) {
   // Nodes inside a library instance are exempt (2026-07-05): kit internals
   // bind the kit's own spacing collections (e.g. tw/gap) — not ours to

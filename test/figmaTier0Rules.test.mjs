@@ -134,14 +134,46 @@ describe('kitInstanceOverrideViolation', () => {
     expect(kitInstanceOverrideViolation(node)).toBeNull()
   })
 
-  // Whitelist, not blacklist (user ruling 2026-07-05, VERY IMPORTANT): kit
-  // instances are never edited AT ALL — only size and color are legal.
-  it('flags a remote kit instance overriding anything beyond size/color (e.g. strokeWeight)', () => {
+  // Denylist, not whitelist (R10 reframe, 2026-07-05): the false-positive
+  // economics of a hard gate demand a denylist of the specific illegal edits
+  // (geometry/stroke-weight-family/corner-radius/effects), not an allowlist
+  // that needs emergency same-day growth every time a legitimate override
+  // (e.g. characters, styledTextSegments) is discovered.
+  it('flags a remote kit instance overriding a strokeWeight-family field', () => {
     const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['fills', 'strokeWeight'] }
     expect(kitInstanceOverrideViolation(node)).toEqual({
       rule: 'kit-instance-override',
-      detail: 'kit instance overrides "strokeWeight" — kit components are used as-is; only size and color may change'
+      detail: 'kit instance overrides "strokeWeight" — vector/stroke-weight/corner-radius/effects edits on kit internals are never legal'
     })
+  })
+
+  it('flags a remote kit instance overriding vectorPaths (geometry)', () => {
+    const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['vectorPaths'] }
+    expect(kitInstanceOverrideViolation(node)).toEqual({
+      rule: 'kit-instance-override',
+      detail: 'kit instance overrides "vectorPaths" — vector/stroke-weight/corner-radius/effects edits on kit internals are never legal'
+    })
+  })
+
+  it('flags a remote kit instance overriding cornerRadius', () => {
+    const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['cornerRadius'] }
+    expect(kitInstanceOverrideViolation(node)).toEqual({
+      rule: 'kit-instance-override',
+      detail: 'kit instance overrides "cornerRadius" — vector/stroke-weight/corner-radius/effects edits on kit internals are never legal'
+    })
+  })
+
+  it('flags a remote kit instance overriding effects', () => {
+    const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['effects'] }
+    expect(kitInstanceOverrideViolation(node)).toEqual({
+      rule: 'kit-instance-override',
+      detail: 'kit instance overrides "effects" — vector/stroke-weight/corner-radius/effects edits on kit internals are never legal'
+    })
+  })
+
+  it('passes an override outside the denylist (fails open by design)', () => {
+    const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['rotation'] }
+    expect(kitInstanceOverrideViolation(node)).toBeNull()
   })
 })
 

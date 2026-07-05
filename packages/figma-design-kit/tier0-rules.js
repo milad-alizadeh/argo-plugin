@@ -114,39 +114,51 @@ export function handDrawnIconViolation(node) {
 }
 
 /**
- * Kit components are used AS-IS (2026-07-05, user ruling, VERY IMPORTANT):
- * the only legal per-instance touches are size and color — a WHITELIST, not
- * a stroke blacklist, because the observed failure mode was agents "fixing"
- * icon internals (rebinding to Primitives, retouching geometry) to satisfy
- * other audit rules. Any other override on a remote (kit-library) instance
- * is a hard violation. The walker marshals `isRemoteInstance` from
- * getMainComponentAsync().remote and `overriddenFields` from
- * InstanceNode.overrides.
+ * Kit components are used AS-IS (R10 denylist reframe, 2026-07-05): a
+ * DENYLIST of the specific illegal edits a user named, not an allowlist.
+ * The allowlist form (`ALLOWED_KIT_INSTANCE_OVERRIDES`) needed emergency
+ * same-day growth to add `characters` + `styledTextSegments` — a hard gate's
+ * false-positive/false-negative costs are asymmetric (detach-and-edit-icons
+ * vs. one visual-review catch), so it fails OPEN: an override outside this
+ * list (e.g. `rotation`) passes, and only vector geometry, the
+ * strokeWeight family, the cornerRadius family, and `effects` hard-fail.
+ * The walker marshals `isRemoteInstance` from getMainComponentAsync().remote
+ * and `overriddenFields` from InstanceNode.overrides.
  */
-const ALLOWED_KIT_INSTANCE_OVERRIDES = [
-  'name',
-  'visible',
-  'opacity',
-  'width',
-  'height',
-  'fills', // color only — recoloring a glyph/surface via bound variable
-  'strokes', // color only — same
-  'fillStyleId',
-  'strokeStyleId',
-  'componentProperties', // variant/prop switching is what instances are for
-  'componentPropertyReferences',
-  'mainComponent', // instance swap
-  'characters', // text CONTENT is usage, not styling — labeling a kit Switch/Breadcrumb is sanctioned
-  'styledTextSegments' // Figma files sanctioned text recolors (bound-variable fills on TEXT) here, not under 'fills'
+const DENIED_KIT_INSTANCE_OVERRIDE_FIELDS = [
+  // geometry
+  'vectorPaths',
+  'vectorNetwork',
+  'relativeTransform',
+  // strokeWeight family
+  'strokeWeight',
+  'strokeTopWeight',
+  'strokeBottomWeight',
+  'strokeLeftWeight',
+  'strokeRightWeight',
+  'strokeAlign',
+  'strokeCap',
+  'strokeJoin',
+  'strokeMiterLimit',
+  'dashPattern',
+  // cornerRadius family
+  'cornerRadius',
+  'topLeftRadius',
+  'topRightRadius',
+  'bottomLeftRadius',
+  'bottomRightRadius',
+  'cornerSmoothing',
+  // effects
+  'effects'
 ]
 
 export function kitInstanceOverrideViolation(node) {
   if (node.type !== 'INSTANCE' || !node.isRemoteInstance) return null
-  const hit = (node.overriddenFields ?? []).find((f) => !ALLOWED_KIT_INSTANCE_OVERRIDES.includes(f))
+  const hit = (node.overriddenFields ?? []).find((f) => DENIED_KIT_INSTANCE_OVERRIDE_FIELDS.includes(f))
   if (hit) {
     return {
       rule: 'kit-instance-override',
-      detail: `kit instance overrides "${hit}" — kit components are used as-is; only size and color may change`
+      detail: `kit instance overrides "${hit}" — vector/stroke-weight/corner-radius/effects edits on kit internals are never legal`
     }
   }
   return null

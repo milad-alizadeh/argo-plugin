@@ -10,8 +10,9 @@
  * for screen N+1). Mirrors design-commit-gate.js's receipt-gate shape
  * exactly; this is the coverage half, not the spec-diff half.
  *
- * SELF-SCOPING: arms whenever `design/config.json` exists — same contract
- * as design-commit-gate.js, independent of `.argo/build-mode.json`.
+ * SELF-SCOPING: arms per-app from `.claude/argo.json`'s `design.<app>`
+ * blocks — same decision-8 dual-mode contract as design-commit-gate.js,
+ * independent of `.argo/build-mode.json`.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -45,6 +46,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const { evaluateCoverageReceipt, coverageReceiptFilename, deriveExpectedScreensFromStagedFiles } = await import(
     '../design-kit/region-contract.js'
   )
+  const { findArgoJson, armedDesignApps } = await import('../config/argo-json.js')
 
   const raw = await readStdin().catch(() => '')
   let hook
@@ -60,34 +62,40 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const cwd = hook?.cwd
   if (typeof cwd !== 'string' || cwd.length === 0) process.exit(0)
 
-  const designConfigPath = join(cwd, 'design', 'config.json')
-  if (!existsSync(designConfigPath)) process.exit(0) // no design pack — inert
+  const found = findArgoJson(cwd)
+  if (!found) process.exit(0) // no .claude/argo.json up the tree — inert
 
-  const config = JSON.parse(readFileSync(designConfigPath, 'utf8'))
-  const componentsPath = config?.componentsPath
+  let stagedFiles
+  try {
+    stagedFiles = execFileSync('git', ['-C', found.repoRoot, 'diff', '--cached', '--name-only'], { encoding: 'utf8' })
+      .split('\n')
+      .filter(Boolean)
+  } catch {
+    process.exit(0) // not a git repo — nothing staged to gate
+  }
 
-  const stagedFiles = execFileSync('git', ['-C', cwd, 'diff', '--cached', '--name-only'], { encoding: 'utf8' })
-    .split('\n')
-    .filter(Boolean)
-  const prefix = componentsPath.endsWith('/') ? componentsPath : `${componentsPath}/`
-  const touchesComponents = stagedFiles.some((f) => f === componentsPath || f.startsWith(prefix))
-  if (!touchesComponents) process.exit(0)
+  const armed = armedDesignApps(found, stagedFiles)
+  if (armed.length === 0) process.exit(0)
 
   const block = makeBlock('Design coverage gate')
 
-  const [expectedScreen] = deriveExpectedScreensFromStagedFiles(stagedFiles)
-  const receiptPath = join(cwd, 'design', coverageReceiptFilename(expectedScreen ?? ''))
-  if (!expectedScreen || !existsSync(receiptPath))
-    block('commit touches built component code with no matching per-screen coverage receipt — run record-coverage-receipt.mjs first')
+  for (const app of armed) {
+    // Screen derivation reads app-relative `design/**` paths, so a monorepo
+    // app's staged files are re-rooted to the app before the C2 cross-check.
+    const [expectedScreen] = deriveExpectedScreensFromStagedFiles(app.appRelativeStagedFiles)
+    const receiptPath = join(app.designDir, coverageReceiptFilename(expectedScreen ?? ''))
+    if (!expectedScreen || !existsSync(receiptPath))
+      block('commit touches built component code with no matching per-screen coverage receipt — run argo design record-coverage-receipt first')
 
-  const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'))
-  const contractPath = join(cwd, 'design', 'contracts', `${receipt.screen}.json`)
-  const contractFigmaFileVersion = existsSync(contractPath)
-    ? JSON.parse(readFileSync(contractPath, 'utf8'))?.figmaFileVersion
-    : undefined
+    const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'))
+    const contractPath = join(app.designDir, 'contracts', `${receipt.screen}.json`)
+    const contractFigmaFileVersion = existsSync(contractPath)
+      ? JSON.parse(readFileSync(contractPath, 'utf8'))?.figmaFileVersion
+      : undefined
 
-  const decision = evaluateCoverageReceipt(receipt, { expectedScreen, contractFigmaFileVersion })
-  if (!decision.ok) block(decision.reason)
+    const decision = evaluateCoverageReceipt(receipt, { expectedScreen, contractFigmaFileVersion })
+    if (!decision.ok) block(decision.reason)
+  }
 
   process.exit(0)
 }

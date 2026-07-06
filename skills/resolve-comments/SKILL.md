@@ -62,6 +62,15 @@ a comment programmatically. The convention that works around it:
 - The **human** clicks resolve on the `✅ Fixed` threads — that stays a human
   action by design (it's their confirmation the fix is right).
 
+**Keep replies terse — one line.** These are notifications the user skims on a
+pin, not a changelog. A fix reply is `✅ Fixed — <what changed>` in a single
+short clause (name the node/prop only when it disambiguates); no restating the
+comment, no rationale, no method narration, no before/after prose. A question is
+`❓ <the one specific question>` — the ambiguity and the options, nothing else.
+If a fix genuinely needs a caveat (a kit gap, a partial fix, a blast radius),
+that's a second short clause, not a paragraph. Rule of thumb: if the reply wraps
+past one line in the Figma pin, it's too long.
+
 The close-out gate is therefore **triage-completeness**, not resolution: every
 open thread the run saw must end carrying either a `✅ Fixed` reply or a `❓`
 question reply. A thread left with neither is an incomplete run.
@@ -136,12 +145,13 @@ when the user only wants one surface amended.
    file-level note: read the message, route by what it references, or ask.
 5. **Triage each thread, in place:**
    - **Clear and actionable** → apply the fix using the routed convention +
-     audit from the table. Then reply
-     `✅ Fixed — <one line: what changed, node names/ids, and for a master the
-     blast radius>` via the helper's `reply <fileKey> <commentId> <message>`.
-   - **Ambiguous / underspecified / structural master change** → reply a
-     **specific** question (not "can you clarify?" — name the exact ambiguity and
-     the options you see), and move on without editing.
+     audit from the table. Then reply one terse line (see "Keep replies terse"):
+     `✅ Fixed — <what changed>` via the helper's
+     `reply <fileKey> <commentId> <message>`. For a master, append the blast
+     radius as a short second clause, not a paragraph.
+   - **Ambiguous / underspecified / structural master change** → reply
+     `❓ <the one specific question>` (name the exact ambiguity + the options,
+     nothing else), and move on without editing.
 6. **Re-sweep** (`list` again). Because the helper filters out bot-authored
    comments, the re-sweep shows only threads still needing action — a clean way
    to confirm nothing was missed. Threads you answered with a question stay

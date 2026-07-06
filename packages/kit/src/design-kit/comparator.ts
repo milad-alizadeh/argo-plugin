@@ -1,25 +1,28 @@
 const DEFAULT_COLOR_EPSILON = 1
 
-function clamp01(v) {
+function clamp01(v: number): number {
   return Math.min(1, Math.max(0, v))
 }
 
-function to8Bit(v) {
+function to8Bit(v: number): number {
   return Math.round(clamp01(v) * 255)
 }
 
-function linearToSrgb(c) {
+function linearToSrgb(c: number): number {
   const clamped = clamp01(c)
   return clamped <= 0.0031308 ? clamped * 12.92 : 1.055 * Math.pow(clamped, 1 / 2.4) - 0.055
 }
 
-function srgbToLinear(c) {
+function srgbToLinear(c: number): number {
   return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
 }
 
+type Rgb = { r: number; g: number; b: number }
+type Oklch = { L: number; C: number; H: number }
+
 // Oklab/Oklch <-> sRGB per Björn Ottosson's reference matrices:
 // https://bottosson.github.io/posts/oklab/
-function oklchToSrgb(L, C, hueDegrees) {
+function oklchToSrgb(L: number, C: number, hueDegrees: number): Rgb {
   const hueRadians = (hueDegrees * Math.PI) / 180
   const a = C * Math.cos(hueRadians)
   const b = C * Math.sin(hueRadians)
@@ -43,7 +46,7 @@ function oklchToSrgb(L, C, hueDegrees) {
   }
 }
 
-function srgbToOklch({ r, g, b }) {
+function srgbToOklch({ r, g, b }: Rgb): Oklch {
   const rLinear = srgbToLinear(r)
   const gLinear = srgbToLinear(g)
   const bLinear = srgbToLinear(b)
@@ -63,7 +66,7 @@ function srgbToOklch({ r, g, b }) {
   return { L, C, H }
 }
 
-function parseHex(hex) {
+function parseHex(hex: string): Rgb {
   const clean = hex.replace('#', '')
   return {
     r: parseInt(clean.slice(0, 2), 16) / 255,
@@ -77,7 +80,7 @@ const OKLCH_PATTERN = new RegExp(
   `oklch\\(\\s*(${NUMBER_TOKEN})(%)?\\s+(${NUMBER_TOKEN})\\s+(${NUMBER_TOKEN})\\s*\\)`
 )
 
-function parseOklch(css) {
+function parseOklch(css: string): Rgb {
   const match = css.match(OKLCH_PATTERN)
   if (!match) throw new Error(`unrecognized oklch() syntax: ${css}`)
   const [, lightness, percentSign, chroma, hue] = match
@@ -87,7 +90,7 @@ function parseOklch(css) {
   return oklchToSrgb(L, parseFloat(chroma), parseFloat(hue))
 }
 
-function parseCssColor(css) {
+function parseCssColor(css: string): Rgb {
   const trimmed = css.trim()
   if (trimmed.startsWith('#')) return parseHex(trimmed)
   if (trimmed.startsWith('oklch(')) return parseOklch(trimmed)
@@ -98,7 +101,11 @@ function parseCssColor(css) {
  * Compares a Figma Plugin API color ({r,g,b,a} floats in [0,1]) against a
  * CSS color (hex or oklch()), both normalized to 8-bit sRGB per channel.
  */
-export function compareColor(figmaRGBA, cssColor, { epsilon = DEFAULT_COLOR_EPSILON } = {}) {
+export function compareColor(
+  figmaRGBA: { r: number; g: number; b: number; a?: number },
+  cssColor: string,
+  { epsilon = DEFAULT_COLOR_EPSILON }: { epsilon?: number } = {}
+) {
   const figma8 = {
     r: to8Bit(figmaRGBA.r),
     g: to8Bit(figmaRGBA.g),
@@ -118,13 +125,13 @@ export function compareColor(figmaRGBA, cssColor, { epsilon = DEFAULT_COLOR_EPSI
 }
 
 /** Byte-exact comparison for radius/spacing/border/font-size. */
-export function comparePxInteger(figmaValue, cssValue) {
+export function comparePxInteger(figmaValue: number, cssValue: number) {
   const delta = Math.abs(figmaValue - cssValue)
   return { pass: delta === 0, delta }
 }
 
 /** HUG dimensions get a stated tolerance; fixed dimensions pass tolerance=0 for an exact match. */
-export function compareHugDimension(figmaValue, renderedValue, tolerance = 0) {
+export function compareHugDimension(figmaValue: number, renderedValue: number, tolerance = 0) {
   const delta = Math.abs(figmaValue - renderedValue)
   return { pass: delta <= tolerance, delta, tolerance }
 }

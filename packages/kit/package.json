@@ -17,7 +17,7 @@
   "exports": {
     ".": "./src/index.js",
     "./design-kit": "./src/design-kit/index.js",
-    "./design-kit/tier0-rules": "./src/design-kit/tier0-rules.js",
+    "./design-kit/tier0-rules": "./src/design-kit/tier0-rules.ts",
     "./design-kit/tier0-audit": "./src/design-kit/tier0-audit.js",
     "./design-kit/region-contract": "./src/design-kit/region-contract.js",
     "./design-kit/xml-metadata-adapter": "./src/design-kit/xml-metadata-adapter.js",

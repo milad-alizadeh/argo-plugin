@@ -10,15 +10,23 @@
  * them, for checks that can fire more than once per node), or `null`/`[]` when
  * the node passes. Callers (the Plugin-API walker) attach severity/nodeId/
  * nodeName, which depend on audit context, not rule logic.
+ *
+ * Node/variable shapes here are walker-marshaled plain objects mirroring a
+ * subset of Figma's Plugin API node fields, not a modeled Figma type — kept
+ * as `any`-keyed records deliberately (this migration adds compile-time
+ * typing to the module's own logic, not a full Figma domain model).
  */
 
-export function unboundFillViolations(node) {
+export type Violation = { rule: string; detail: string }
+type AnyNode = Record<string, any>
+
+export function unboundFillViolations(node: AnyNode): Violation[] {
   // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
   // kit internals bind the kit's own color collections — not ours to
   // rebind; flagging them made a pristine kit instance (e.g. Switch) fail
   // the hard gate on its own internal frames.
   if (node.insideInstance) return []
-  const violations = []
+  const violations: Violation[] = []
   if ('fills' in node && Array.isArray(node.fills)) {
     for (const fill of node.fills) {
       if (fill.type === 'SOLID' && !fill.boundVariables?.color) {
@@ -29,12 +37,12 @@ export function unboundFillViolations(node) {
   return violations
 }
 
-export function unboundStrokeViolations(node) {
+export function unboundStrokeViolations(node: AnyNode): Violation[] {
   // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
   // kit internals bind the kit's own color collections — not ours to
   // rebind; see unboundFillViolations for the same reasoning.
   if (node.insideInstance) return []
-  const violations = []
+  const violations: Violation[] = []
   if ('strokes' in node && Array.isArray(node.strokes)) {
     for (const stroke of node.strokes) {
       if (stroke.type === 'SOLID' && !stroke.boundVariables?.color) {
@@ -58,7 +66,7 @@ const PER_CORNER_RADIUS_FIELDS = ['topLeftRadius', 'topRightRadius', 'bottomLeft
  * dashed editor chrome), which is not a design surface and can't
  * meaningfully bind a token.
  */
-export function unboundRadiusViolation(node) {
+export function unboundRadiusViolation(node: AnyNode): Violation | null {
   // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
   // kit internals bind the kit's own radius collections — not ours to rebind.
   if (node.insideInstance) return null
@@ -78,7 +86,7 @@ export function unboundRadiusViolation(node) {
  * unset, so only a non-empty string counts as "styled" (fix: 2026-07,
  * closed a 45-hit false-positive class on a properly text-styled sheet).
  */
-export function unboundTypeViolation(node) {
+export function unboundTypeViolation(node: AnyNode): Violation | null {
   // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
   // kit internals bind the kit's own type collections — not ours to rebind.
   if (node.insideInstance) return null
@@ -101,7 +109,7 @@ const NAMED_AUDIT_TARGET_TYPES = new Set(['COMPONENT', 'COMPONENT_SET', 'FRAME',
  * a false-pass where a named audit of a frame returned zero matches instead
  * of walking it).
  */
-export function isNamedAuditTarget(node, name) {
+export function isNamedAuditTarget(node: AnyNode, name: string): boolean {
   return node.name === name && NAMED_AUDIT_TARGET_TYPES.has(node.type)
 }
 
@@ -114,11 +122,11 @@ export function isNamedAuditTarget(node, name) {
  * page produce zero tier-0 violations at every severity — grayscale
  * unbound fills/strokes there are expected, not a defect.
  */
-export function isWireframePageName(name) {
+export function isWireframePageName(name: string): boolean {
   return /^W\d{2}(\b|\s)/.test(name) || name === 'Cover'
 }
 
-export function missingAutoLayoutViolation(node) {
+export function missingAutoLayoutViolation(node: AnyNode): Violation | null {
   // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
   // kit internals structure their own layout — not ours to Auto-Layout.
   if (node.insideInstance) return null
@@ -134,7 +142,7 @@ export function missingAutoLayoutViolation(node) {
   return null
 }
 
-export function handDrawnIconViolation(node) {
+export function handDrawnIconViolation(node: AnyNode): Violation | null {
   if (node.type === 'VECTOR' && !node.insideInstance) {
     return {
       rule: 'hand-drawn-icon',
@@ -183,9 +191,9 @@ const DENIED_KIT_INSTANCE_OVERRIDE_FIELDS = [
   'effects'
 ]
 
-export function kitInstanceOverrideViolation(node) {
+export function kitInstanceOverrideViolation(node: AnyNode): Violation | null {
   if (node.type !== 'INSTANCE' || !node.isRemoteInstance) return null
-  const hit = (node.overriddenFields ?? []).find((f) => DENIED_KIT_INSTANCE_OVERRIDE_FIELDS.includes(f))
+  const hit = (node.overriddenFields ?? []).find((f: string) => DENIED_KIT_INSTANCE_OVERRIDE_FIELDS.includes(f))
   if (hit) {
     return {
       rule: 'kit-instance-override',
@@ -196,14 +204,14 @@ export function kitInstanceOverrideViolation(node) {
 }
 
 /** node.hasMainComponent is resolved by the walker via node.getMainComponentAsync(). */
-export function detachedInstanceViolation(node) {
+export function detachedInstanceViolation(node: AnyNode): Violation | null {
   if (node.type === 'INSTANCE' && !node.hasMainComponent) {
     return { rule: 'detached-instance', detail: 'instance has no resolvable main component' }
   }
   return null
 }
 
-export function nonSemanticNameViolation(node) {
+export function nonSemanticNameViolation(node: AnyNode): Violation | null {
   // Nodes inside a library instance are exempt (2026-07-05): kit internals
   // carry the kit's own auto-names and are not ours to rename — flagging
   // them made pristine kit instances fail the hard gate.
@@ -214,8 +222,8 @@ export function nonSemanticNameViolation(node) {
   return null
 }
 
-export function variantNamingViolations(node) {
-  const violations = []
+export function variantNamingViolations(node: AnyNode): Violation[] {
+  const violations: Violation[] = []
   if (node.type === 'COMPONENT_SET') {
     for (const propName of Object.keys(node.componentPropertyDefinitions ?? {})) {
       if (propName[0] !== propName[0].toLowerCase()) {
@@ -236,11 +244,11 @@ export function variantNamingViolations(node) {
  * node.siblings is resolved by the walker from node.parent.children (excluding
  * node itself).
  */
-export function modeCopyViolations(node, semanticCollectionName, modes) {
+export function modeCopyViolations(node: AnyNode, semanticCollectionName: string, modes: string[]): Violation[] {
   if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return []
-  const violations = []
+  const violations: Violation[] = []
   for (const mode of (modes ?? []).slice(1)) {
-    const copy = (node.siblings ?? []).find((sibling) => sibling.name === `${node.name} (${mode})`)
+    const copy = (node.siblings ?? []).find((sibling: AnyNode) => sibling.name === `${node.name} (${mode})`)
     if (!copy) {
       violations.push({ rule: 'missing-mode-copy', detail: `component has no adjacent "${mode}" mode instance copy (D11)` })
       continue
@@ -252,7 +260,7 @@ export function modeCopyViolations(node, semanticCollectionName, modes) {
   return violations
 }
 
-export function implicitLineHeightViolation(node) {
+export function implicitLineHeightViolation(node: AnyNode): Violation | null {
   if ('lineHeight' in node && node.lineHeight?.unit === 'AUTO') {
     return { rule: 'implicit-line-height', detail: 'text node uses implicit AUTO line-height; must be explicit (D20)' }
   }
@@ -260,7 +268,7 @@ export function implicitLineHeightViolation(node) {
 }
 
 /** node.storyUrl is resolved by the walker from shared plugin data (namespace 'argo', key 'storyUrl'); private plugin data is a legacy fallback. */
-export function storyUrlScopeViolation(node) {
+export function storyUrlScopeViolation(node: AnyNode): Violation | null {
   if (node.type === 'COMPONENT' && node.storyUrl && !node.storyUrl.includes('node-id=')) {
     return { rule: 'non-node-scoped-story-url', detail: `storyUrl "${node.storyUrl}" is not node-scoped` }
   }
@@ -292,7 +300,17 @@ const STROKE_SCALE_TOLERANCE = 0.15
  * producing a visually chunky/thin glyph (#4). ±15% tolerance absorbs
  * legitimate rounding to a whole-pixel stroke weight.
  */
-export function strokeScaleViolation({ instanceSize, nativeSize, resolvedStrokeWeight, baseStrokeWeight }) {
+export function strokeScaleViolation({
+  instanceSize,
+  nativeSize,
+  resolvedStrokeWeight,
+  baseStrokeWeight
+}: {
+  instanceSize: number
+  nativeSize: number
+  resolvedStrokeWeight: number
+  baseStrokeWeight: number
+}): Violation | null {
   if (!nativeSize) return null
   const expected = baseStrokeWeight * (instanceSize / nativeSize)
   if (expected === 0) return null
@@ -317,11 +335,11 @@ export function strokeScaleViolation({ instanceSize, nativeSize, resolvedStrokeW
  */
 const POSSIBLE_FALSE_POSITIVE_OVERRIDE_FIELDS = ['width', 'height', 'fills', 'strokes', 'fillStyleId', 'strokeStyleId']
 
-export function possibleGateFalsePositiveTag(node) {
+export function possibleGateFalsePositiveTag(node: AnyNode): boolean {
   if (!node.isRemoteInstance && !node.insideInstance) return false
   const overridden = node.overriddenFields ?? []
   if (overridden.length === 0) return false
-  return overridden.every((f) => POSSIBLE_FALSE_POSITIVE_OVERRIDE_FIELDS.includes(f))
+  return overridden.every((f: string) => POSSIBLE_FALSE_POSITIVE_OVERRIDE_FIELDS.includes(f))
 }
 
 /**
@@ -333,7 +351,7 @@ export function possibleGateFalsePositiveTag(node) {
  * `insideCategoryShelf` is marshaled by the walker from the node's parent
  * chain against the configured `componentCategories` shelf frames.
  */
-export function unsectionedComponentViolation(node) {
+export function unsectionedComponentViolation(node: AnyNode): Violation | null {
   if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return null
   if (node.insideCategoryShelf) return null
   return {
@@ -343,7 +361,7 @@ export function unsectionedComponentViolation(node) {
 }
 
 /** Mechanism 3 (advisory): a component with no description misses the one place in-file facts (purpose + category) can't drift. Never blocks. */
-export function missingComponentDescriptionViolation(node) {
+export function missingComponentDescriptionViolation(node: AnyNode): Violation | null {
   if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return null
   if (node.description) return null
   return {
@@ -363,7 +381,7 @@ export function missingComponentDescriptionViolation(node) {
  * hard authoritative decomposition gate (Option C), which is deferred until
  * its brief/story-map schema lands — never wire this as a hard-fail.
  */
-export function compositeRegionNamingViolation(node, compositeNames) {
+export function compositeRegionNamingViolation(node: AnyNode, compositeNames: string[]): Violation | null {
   if (node.type !== 'FRAME') return null
   if (!(compositeNames ?? []).includes(node.name)) return null
   return {
@@ -372,7 +390,7 @@ export function compositeRegionNamingViolation(node, compositeNames) {
   }
 }
 
-export function gapPaddingSpacingViolations(node, _spacingScale) {
+export function gapPaddingSpacingViolations(node: AnyNode, _spacingScale?: unknown): Violation[] {
   // Nodes inside a library instance are exempt (2026-07-05): kit internals
   // bind the kit's own spacing collections (e.g. tw/gap) — not ours to
   // rebind; flagging them made pristine kit instances fail the hard gate.
@@ -382,7 +400,7 @@ export function gapPaddingSpacingViolations(node, _spacingScale) {
   // boundary nodes carry the kit's own bindings (tw/gap observed live).
   if (node.layoutMode === 'NONE' || node.type === 'COMPONENT_SET' || node.type === 'INSTANCE')
     return []
-  const violations = []
+  const violations: Violation[] = []
   for (const entry of node.gapAndPadding ?? []) {
     const { field, value, bound, collectionName } = entry
     if (!bound) {

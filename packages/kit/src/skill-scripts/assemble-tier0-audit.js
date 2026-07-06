@@ -146,3 +146,25 @@ export function bundleTier0Audit(assembledSource, { cwd, maxChars = 50000 } = {}
     rmSync(outPath, { force: true })
   }
 }
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const args = process.argv.slice(2)
+  const sourceIndex = args.indexOf('--source')
+  const outIndex = args.indexOf('--out')
+  const cwd = process.cwd()
+  const sourcePath = sourceIndex === -1 ? join(cwd, 'design', 'tier0-audit.js') : args[sourceIndex + 1]
+  const bundlePath = outIndex === -1 ? join(cwd, 'design', 'tier0-audit.bundle.js') : args[outIndex + 1]
+
+  if (!existsSync(sourcePath)) {
+    console.error(`assemble-tier0-audit: no assembled module at ${sourcePath} — run figma-audit/SKILL.md's assembly step first`)
+    process.exit(1)
+  }
+
+  try {
+    const { bundled, cached } = bundleTier0AuditToFile(sourcePath, bundlePath)
+    console.log(JSON.stringify({ bundlePath, chars: bundled.length, cached }))
+  } catch (err) {
+    console.error(`assemble-tier0-audit: ${err.message}`)
+    process.exit(1)
+  }
+}

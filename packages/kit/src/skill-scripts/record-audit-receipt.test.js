@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { execFileSync } from 'node:child_process'
 import { recordAuditReceipt } from './record-audit-receipt.js'
 
 describe('recordAuditReceipt', () => {
@@ -72,6 +73,33 @@ describe('recordAuditReceipt', () => {
       expect(receipt.violationCount).toBe(0)
     } finally {
       rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  // figma-audit dogfooding, 2026-07-06 (argo-v2 tier-0 sweep): a monorepo
+  // runs this from the app root (e.g. `apps/desktop`, per figma-audit/
+  // SKILL.md's documented cwd), but `.argo/design-guard.json` is repo-global
+  // and lives at the git toplevel, one or more levels above `cwd`. Reading
+  // the guard state relative to the SAME `cwd` used for `design/` silently
+  // missed the file, defaulting `writeCounterAtAudit` to 0 — which then
+  // could never match the real (non-zero) repo-global write count, leaving
+  // design-guard-stop.js permanently blocked. The fix is repo-root-aware.
+  it('reads .argo/design-guard.json from the git repo root, not the app-scoped cwd', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'tier0-audit-receipt-monorepo-'))
+    try {
+      execFileSync('git', ['-C', repoRoot, 'init', '-q'])
+      const appRoot = join(repoRoot, 'apps', 'desktop')
+      mkdirSync(appRoot, { recursive: true })
+      mkdirSync(join(repoRoot, '.argo'), { recursive: true })
+      writeFileSync(join(repoRoot, '.argo', 'design-guard.json'), JSON.stringify({ writeCount: 175 }))
+
+      const receipt = recordAuditReceipt({ componentNames: [], violations: [] }, { cwd: appRoot, now: 123 })
+
+      expect(receipt.writeCounterAtAudit).toBe(175)
+      const onDisk = JSON.parse(readFileSync(join(appRoot, 'design', 'audit-receipt.json'), 'utf8'))
+      expect(onDisk).toEqual(receipt)
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
     }
   })
 })

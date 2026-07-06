@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, mkdtempSync, writeFileSync, rmSync, mkdirSync, symlinkSync } from 'node:fs'
+import { readFileSync, mkdtempSync, writeFileSync, rmSync, mkdirSync, symlinkSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import {
   spliceRecipeChecks,
   fillSlots,
@@ -10,6 +12,7 @@ import {
 } from './assemble-tier0-audit.js'
 
 const PLUGIN_ROOT = join(import.meta.dirname, '..', '..', '..', '..')
+const CLI = fileURLToPath(new URL('./assemble-tier0-audit.js', import.meta.url))
 
 describe('spliceRecipeChecks', () => {
   it('replaces the marker line with the recipe checks source verbatim', () => {
@@ -85,6 +88,31 @@ describe('bundleTier0Audit (real assembly, real bun build — the actual Defect 
       // Option B): guards against the compositeRegionNamingViolation import
       // being tree-shaken away or never wired into the walker.
       expect(bundled).toContain('composite-region-traced-not-instance')
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+})
+
+// figma-audit dogfooding, 2026-07-06: this module exported bundleTier0Audit
+// etc. but had no `if (import.meta.url === ...)` CLI block — the ONLY
+// convention `argo design <verb>` (bin/argo.js's DESIGN_VERBS re-exec) can
+// invoke — so `argo design assemble-tier0-audit` silently did nothing.
+describe('CLI (argo design assemble-tier0-audit)', () => {
+  it('bundles design/tier0-audit.js into design/tier0-audit.bundle.js by default', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-cli-'))
+    try {
+      mkdirSync(join(cwd, 'design'), { recursive: true })
+      writeFileSync(join(cwd, 'design', 'tier0-audit.js'), 'const auditResult = { ok: true }\nauditResult\n', 'utf8')
+
+      const result = spawnSync('node', [CLI], { cwd, encoding: 'utf8' })
+
+      expect(result.status).toBe(0)
+      expect(existsSync(join(cwd, 'design', 'tier0-audit.bundle.js'))).toBe(true)
+      const printed = JSON.parse(result.stdout)
+      expect(printed.cached).toBe(false)
+      expect(printed.bundlePath.endsWith(join('design', 'tier0-audit.bundle.js'))).toBe(true)
+      expect(printed.chars).toBeGreaterThan(0)
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }

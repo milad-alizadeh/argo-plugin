@@ -20,20 +20,10 @@
 
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { execFileSync } from 'node:child_process'
 import { findArgoJson, setUpDesignApps } from '../config/argo-json.js'
+import { resolveRepoRoot } from '../lib/repo-root.js'
 
 const FIGMA_WRITE_TOOL = 'mcp__plugin_figma_figma__use_figma'
-
-function resolveRepoRoot(cwd) {
-  try {
-    const top = execFileSync('git', ['-C', cwd, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim()
-    if (top) return top
-  } catch {
-    /* not a git repo — fall back to cwd */
-  }
-  return cwd
-}
 
 function readStdin() {
   return new Promise((resolve) => {

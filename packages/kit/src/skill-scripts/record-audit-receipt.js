@@ -16,6 +16,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { writeDesignJson } from './lib/write-design-json.js'
 import { findKitNameCollisions } from '../design-kit/kit-inventory.js'
+import { resolveRepoRoot } from '../lib/repo-root.js'
 
 /**
  * kit-awareness (kit-awareness.md §"Enforcement"): reads the three optional,
@@ -46,13 +47,21 @@ function countKitNameCollisions(componentNames, cwd) {
  * `writeCounterAtAudit` is read from `.argo/design-guard.json`'s current
  * `writeCount` (0 if no Figma writes have ever been recorded) so
  * design-guard-stop.js can detect a write that happened after this audit
- * ran, and demand a re-audit.
+ * ran, and demand a re-audit. `.argo/design-guard.json` is repo-global and
+ * lives at the git toplevel — NOT necessarily `cwd`, which in a monorepo is
+ * the app root (e.g. `apps/desktop`, per figma-audit/SKILL.md's documented
+ * cwd, matching where `design/audit-receipt.json` itself must land for
+ * design-guard-stop.js to find it). Reading both off the same `cwd` silently
+ * missed the guard state in that layout, defaulting `writeCounterAtAudit`
+ * to 0 forever — resolveRepoRoot finds the real repo root for this one read
+ * while `cwd` keeps governing every app-scoped path (design/, kit-inventory,
+ * etc).
  */
 export function recordAuditReceipt({ componentNames = [], violations = [] } = {}, { cwd, now = Date.now() } = {}) {
   if (!cwd) throw new Error('recordAuditReceipt: cwd is required')
 
   let writeCounterAtAudit = 0
-  const guardStatePath = join(cwd, '.argo', 'design-guard.json')
+  const guardStatePath = join(resolveRepoRoot(cwd), '.argo', 'design-guard.json')
   if (existsSync(guardStatePath)) {
     try {
       const state = JSON.parse(readFileSync(guardStatePath, 'utf8'))

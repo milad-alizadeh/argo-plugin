@@ -37,21 +37,11 @@
 
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { execFileSync } from 'node:child_process'
 import { makeBlock } from './lib/gate-block.js'
 import { findArgoJson, setUpDesignApps } from '../config/argo-json.js'
+import { resolveRepoRoot } from '../lib/repo-root.js'
 
 const block = makeBlock('Design guard')
-
-function resolveRepoRoot(cwd) {
-  try {
-    const top = execFileSync('git', ['-C', cwd, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim()
-    if (top) return top
-  } catch {
-    /* not a git repo — fall back to cwd */
-  }
-  return cwd
-}
 
 function readStdin() {
   return new Promise((resolve) => {

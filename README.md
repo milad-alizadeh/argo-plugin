@@ -44,7 +44,7 @@ flowchart LR
 
     subgraph H [HANDOFF · design → repo]
         sync["figma-sync<br/>tokens · specs · story-map<br/>committed as data"]:::stage
-        f2c["figma-to-code<br/>generate through test-first"]:::stage
+        f2c["build-screen / figma-to-code<br/>component-first → compose, test-first"]:::stage
         tiers{"spec-diff → gestalt → baseline<br/>tiered acceptance, in order"}:::det
     end
     dv --> sync --> f2c --> tiers

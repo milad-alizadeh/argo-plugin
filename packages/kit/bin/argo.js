@@ -70,6 +70,7 @@ const DESIGN_VERBS = {
   'extract-built-regions': '../src/skill-scripts/extract-built-regions.js',
   'lint-contract-freeze': '../src/skill-scripts/lint-contract-freeze.js',
   'capture-kit-corpus': '../src/skill-scripts/capture-kit-corpus.js',
+  'emit-shims': '../src/skill-scripts/emit-shims.js',
 }
 
 function runDesignVerb(verb, args) {

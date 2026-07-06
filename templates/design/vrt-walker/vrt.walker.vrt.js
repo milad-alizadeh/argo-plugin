@@ -1,38 +1,16 @@
-import { describe, it, expect } from 'vitest'
-import { composeStories } from '{{STORYBOOK_TEST_PACKAGE}}'
-// {{...}} import path for the generated story index / a glob of *.stories.{{EXT}}
-import * as allStories from '{{STORIES_GLOB_OR_INDEX}}'
-
 /**
- * Tier-3 visual regression walker (D6): enumerates every story via
- * composeStories and asserts its render against the COMMITTED baseline
- * screenshot in design/screenshots/<Component>/<variant>.<mode>.png.
- *
- * Ordering is enforced by D22: baselines are only ever committed after a
- * recorded tier-2 gestalt PASS. This walker never writes a first-run
- * baseline unattended in a hands-off build — see /argo:figma-to-code, which
- * owns that ordering.
+ * Host-side VRT shim TEMPLATE (installed at `<app>/test/vrt/` — decision 14).
+ * THIN on purpose: already-imported glob maps go to the @argohq/kit/walkers
+ * factory, which owns the walk (D22 baseline counting, story×mode screenshot
+ * assertions) — a kit upgrade updates the gate logic without re-templating.
+ * Prefer generating this file with `argo design emit-shims` (reads
+ * .claude/argo.json design.<app>.walkers); the {{…}} slots exist for manual
+ * installs by the setup-design skill.
  */
-// D22 ordering: baselines only exist after a recorded tier-2 gestalt PASS.
-// Stories with no committed baseline are dormant todos, not failures — and
-// the toMatchScreenshot matcher may not be registered until then either.
-const committedBaselines = Object.keys(import.meta.glob('{{BASELINES_GLOB}}'))
+import { runVrtWalker } from '@argohq/kit/walkers'
+import { composeStories } from '{{STORYBOOK_TEST_PACKAGE}}'
 
-for (const [storyFile, storyModule] of Object.entries(allStories)) {
-  const composed = composeStories(storyModule)
+const stories = import.meta.glob('{{STORIES_GLOB}}', { eager: true })
+const committedBaselines = import.meta.glob('{{BASELINES_GLOB}}')
 
-  describe(`vrt: ${storyFile}`, () => {
-    if (committedBaselines.length === 0) {
-      it.todo(`stories exist but no committed baseline for ${storyFile} yet`)
-      return
-    }
-    for (const [storyName, Story] of Object.entries(composed)) {
-      for (const mode of ['light', 'dark']) {
-        it(`${storyName} (${mode}) matches its committed baseline`, async () => {
-          const { container } = await Story.run({ parameters: { theme: mode } })
-          await expect(container).toMatchScreenshot(`${storyFile}/${storyName}.${mode}.png`)
-        })
-      }
-    }
-  })
-}
+runVrtWalker({ stories, composeStories, committedBaselines })

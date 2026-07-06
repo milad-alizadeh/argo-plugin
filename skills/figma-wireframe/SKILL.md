@@ -65,6 +65,17 @@ Rules for kit use:
   they stay lo-fi kit-native.
 - A repeated element (a list of cards) is N instances of ONE kit component with a
   `state`/`variant` prop, never N detached copies.
+- **Never collapse a content region to a blank image/skeleton placeholder.** A
+  content pane the brief specifies internal structure for (a terminal, diff
+  viewer, document view, canvas panel, table) must be laid out with THAT
+  structure — its rows, headers, sub-regions, affordances — using kit
+  primitives, exactly like a list-shaped region. The kit's `Image`/`Skeleton`
+  box (the empty X-crossed placeholder) is ONLY for a genuinely opaque
+  media/thumbnail slot, never a stand-in for a content region that has a
+  specified layout. A wireframe exists to express information design; an X-box
+  conveys none, and hi-fi then traces a blank. A freeform/canvas-shaped pane is
+  NOT an excuse to skip this — decompose it into its brief-named sub-regions the
+  same way a row-shaped one decomposes into rows.
 - The kit is a wireframe library, NOT the design system. The brief's
   region→component map is the bridge from a `wf-card` instance to the real
   `SessionCard` at hi-fi time.

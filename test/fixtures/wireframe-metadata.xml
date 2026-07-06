@@ -1,0 +1,13 @@
+<frame id="372:85" name="WF / Shell · rail empty (ROSTER-R21)" x="1680" y="0" width="1440" height="900">
+  <frame id="372:86" name="MainRow" x="0" y="0" width="1440" height="844">
+    <frame id="372:87" name="Rail" x="0" y="0" width="300" height="844">
+      <frame id="372:109" name="EmptyState — zero projects (ROSTER-R21)" x="16" y="16" width="268" height="160">
+        <text id="372:110" name="No projects yet" x="84" y="13" width="100" height="24" />
+        <instance id="372:112" name="Button — New Project (ROSTER-R21 CTA)" x="71" y="95" width="126" height="52" />
+      </frame>
+    </frame>
+    <frame id="372:97" name="Stage" x="300" y="0" width="1140" height="844">
+      <instance id="372:100" name="TerminalPanel — focused build session (default Stage content)" x="24" y="119" width="1092" height="701" />
+    </frame>
+  </frame>
+</frame>

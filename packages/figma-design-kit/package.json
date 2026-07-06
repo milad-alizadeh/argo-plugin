@@ -10,7 +10,8 @@
     ".": "./index.js",
     "./recipes/external-kit": "./recipes/external-kit.js",
     "./tier0-rules": "./tier0-rules.js",
-    "./region-contract": "./region-contract.js"
+    "./region-contract": "./region-contract.js",
+    "./xml-metadata-adapter": "./xml-metadata-adapter.js"
   },
   "files": [
     "index.js",
@@ -20,6 +21,7 @@
     "waivers.js",
     "tier0-rules.js",
     "region-contract.js",
+    "xml-metadata-adapter.js",
     "recipes/external-kit.js"
   ],
   "keywords": [

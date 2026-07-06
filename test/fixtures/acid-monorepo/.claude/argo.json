@@ -1,0 +1,9 @@
+{
+  "landing": "pr",
+  "design": {
+    "apps/a": {
+      "root": "apps/a",
+      "componentsPath": "src/components"
+    }
+  }
+}

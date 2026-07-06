@@ -1,0 +1,9 @@
+{
+  "landing": "pr",
+  "design": {
+    ".": {
+      "root": ".",
+      "componentsPath": "src/components"
+    }
+  }
+}

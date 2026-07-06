@@ -2,6 +2,8 @@
 
 Branch: `worktree-kit-extraction` · Plan: `.claude/plans/kit-extraction-restructure.md`
 
+**Status: ALL 7 SLICES DONE + both amendment waves applied. Checkpoint review (after slice 3): FAIL→remediated (98df2eb). Final review (full branch): PASS, no merge-blocking findings. Handed to integrator (landing mode: merge).**
+
 | Slice | Status | Commit | Notes |
 |---|---|---|---|
 | 1 — kit skeleton + single-dispatch hooks + fail-closed test | done | 6e7d8b4 | fail-closed acid test red→green; 375 tests green; dispatcher spawns hook scripts as subprocesses (stdin replayed once per hook, short-circuit on first non-zero) |

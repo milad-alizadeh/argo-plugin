@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { findKitNameCollisions, findNewNameAliasCollision } from '../packages/figma-design-kit/kit-inventory.js'
+import { findKitNameCollisions, findNewNameAliasCollision, registryComponentNames } from '../packages/figma-design-kit/kit-inventory.js'
 
 describe('findKitNameCollisions', () => {
   it('flags an authored component name that shadows a kit component with no clearing waiver', () => {
@@ -58,5 +58,17 @@ describe('findNewNameAliasCollision (anti-recreation backstop, design-first-coun
 
   it('fails open (returns null) when the alias map is absent', () => {
     expect(findNewNameAliasCollision('PromptCard', undefined)).toBeNull()
+  })
+})
+
+describe('registryComponentNames (composite-name set for compositeRegionNamingViolation)', () => {
+  it('returns the registry entries\' keys', () => {
+    const registry = { components: { 'rail-session-card': { nodeId: '126:35' }, 'status-bar': { nodeId: '126:227' } } }
+    expect(registryComponentNames(registry)).toEqual(['rail-session-card', 'status-bar'])
+  })
+
+  it('fails open (returns []) when the registry is absent or malformed', () => {
+    expect(registryComponentNames(undefined)).toEqual([])
+    expect(registryComponentNames({ components: 'nope' })).toEqual([])
   })
 })

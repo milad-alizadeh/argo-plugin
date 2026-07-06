@@ -196,7 +196,9 @@ Build in this order, every time:
 
 1. **Inventory.** From the brief's *Regions → component map*, list every
    `composite` region (and every `composite` sub-part under *Component
-   sub-parts*). These are the components the screen is made of.
+   sub-parts*). These are the components the screen is made of. For each one
+   tagged NEW, run the anti-recreation check (below) against its proposed
+   name before building anything.
 2. **Build + register each composite FIRST**, before any screen assembly. Each
    goes through this skill's full component flow — authoring rules, self-audit
    hard gate, visual self-review, registry upsert — and lands on the
@@ -226,6 +228,21 @@ instance mapping land. The ONE hard check that ships now is
 component — or a known alias in the host's reuse authority — is rejected. Never
 build a second component for something that already exists under another name;
 reuse or extend it instead.
+
+**Anti-recreation check, mechanically (step 1 below, before building any NEW
+composite):** run `checkNewNameAliasCollision` from
+`${CLAUDE_PLUGIN_ROOT}/scripts/check-anti-recreation.mjs` with the proposed
+name and `{ cwd: <host project root> }` — it reads the host's
+`design/component-aliases.json` (seeded from `COMPONENT-INVENTORY.md`'s prose
+Aliases/synonyms column; format in
+`templates/design/component-aliases.example.json`) and hard-rejects a
+collision. Run this ONCE per NEW name, before any Figma write for it — never
+against an already-registered component's own name (the check has no
+self-exclusion, unlike the kit-name-collision check `record-audit-receipt.mjs`
+runs on every re-audit; it's designed for a one-off pre-authoring gate, not a
+repeat audit). A collision **stops the line** exactly like the kit-import
+failure above: report it and do not build the component; reuse or extend the
+colliding entry instead.
 
 ## Where things go
 

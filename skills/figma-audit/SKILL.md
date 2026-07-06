@@ -32,6 +32,14 @@ field must be bound to a Primitives or Semantic spacing variable — unbound
 literals, on-scale or not, are violations; a binding to a variable outside
 those two collections is also a violation).
 
+**Composite-naming check (Option B, design-first-council-ruling.md Gate
+ruling, advisory).** In a composed screen, a plain FRAME named after a
+registered composite (`design/registry.json`'s component keys) rather than an
+INSTANCE of it is under-decomposition — a traced screen, not one composed
+from built components. Always advisory, never the hard authoritative
+decomposition gate (Option C, deferred until its brief/story-map schema
+lands) — never wire it as a hard-fail.
+
 **Recipe checks (installed recipe only):** for `shadcn-tailwind-external-kit`
 — non-Semantic bindings (distinguished by library source, §8),
 retired-file-key bindings (a stale binding left over from a Library Swap),
@@ -104,8 +112,16 @@ none at all.
    result has zero `import`/`export` statements and is under `use_figma`'s
    50,000-char cap. Paste THAT bundled output into `use_figma`, never the
    source module.
-3. Execute it via `use_figma`, passing `{ componentNames: [...] }` for a
-   named audit or `{}` for a file-wide sweep.
+3. **Derive the composite-name set before calling `use_figma` — the sandbox
+   can't read a committed file itself.** Run `deriveTier0AuditOptions` from
+   `${CLAUDE_PLUGIN_ROOT}/scripts/prepare-tier0-audit-options.mjs` with
+   `{ cwd: <host project root>, componentNames: [...] }` (or `[]` for a
+   file-wide sweep) — it reads `design/registry.json` Node-side and returns
+   `{ componentNames, compositeNames }`, `compositeNames` being the registry's
+   component keys `compositeRegionNamingViolation` (Option B) checks a
+   screen's plain FRAMEs against. Execute the bundled script via `use_figma`,
+   passing THAT returned object as `runTier0Audit`'s options — never a
+   hand-authored `{ componentNames: [...] }` missing `compositeNames`.
 4. Report violations grouped by `severity`. For a named audit with any
    `hard` violation: **fail loud** — list every violation with its
    `nodeId`/`nodeName`/`rule`/`detail`, and do not report success. For an

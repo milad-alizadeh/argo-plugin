@@ -77,6 +77,12 @@ export function findKitNameCollisions(componentNames, { inventory, registry, wai
  * cheap (rename or extend instead of recreating), so no waiver escape hatch
  * is needed. Fails open (returns null) on an absent/malformed map — this
  * check never fabricates a violation from missing data.
+ *
+ * WARNING: unlike findKitNameCollisions, this has NO self-exclusion — an
+ * already-registered aliased name matches itself. It is a one-off PRE-AUTHORING
+ * check (call it on a NEW name before it enters the map); never fold it into a
+ * per-run/per-audit violation count (e.g. record-audit-receipt.mjs), or every
+ * re-audit of an already-registered component self-collides.
  */
 export function findNewNameAliasCollision(newName, aliasMap) {
   const normalized = normalizeComponentName(newName)
@@ -90,4 +96,16 @@ export function findNewNameAliasCollision(newName, aliasMap) {
     }
   }
   return null
+}
+
+/**
+ * The composite-name set `compositeRegionNamingViolation` (Option B) checks a
+ * screen's plain FRAMEs against — `design/registry.json`'s entries ARE the
+ * project's registered composite names, keyed by name. Fails open (returns
+ * []) on an absent/malformed registry, same contract as the other kit-
+ * awareness readers here.
+ */
+export function registryComponentNames(registry) {
+  const components = registry?.components && typeof registry.components === 'object' ? registry.components : {}
+  return Object.keys(components)
 }

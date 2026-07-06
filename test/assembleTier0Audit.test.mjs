@@ -85,6 +85,10 @@ describe('bundleTier0Audit (real assembly, real bun build — the actual Defect 
       // (a bare trailing identifier, not a call) reads as dead code to a
       // bundler — the real rule logic must still be present in the output.
       expect(bundled).toContain('unbound-radius')
+      // Anti-recreation gate (design-first-council-ruling.md Gate ruling,
+      // Option B): guards against the compositeRegionNamingViolation import
+      // being tree-shaken away or never wired into the walker.
+      expect(bundled).toContain('composite-region-traced-not-instance')
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }

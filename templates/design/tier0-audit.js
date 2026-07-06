@@ -45,14 +45,15 @@ import {
   gapPaddingSpacingViolations,
   isNamedAuditTarget,
   strokeScaleViolation,
-  possibleGateFalsePositiveTag
+  possibleGateFalsePositiveTag,
+  compositeRegionNamingViolation
 } from 'figma-design-kit/tier0-rules'
 
 const SEMANTIC_COLLECTION_NAME = '{{SEMANTIC_COLLECTION_NAME}}'
 
 // {{RECIPE_TIER0_CHECKS}}
 
-async function auditNode(node, { hard, spacingScale, semanticModes, insideInstance = false }) {
+async function auditNode(node, { hard, spacingScale, semanticModes, insideInstance = false, compositeNames = [] }) {
   const violations = []
 
   // Fetched early (rather than inside the INSTANCE-only block below) so the
@@ -168,6 +169,20 @@ async function auditNode(node, { hard, spacingScale, semanticModes, insideInstan
   const nonSemanticName = nonSemanticNameViolation(nodeCtx)
   if (nonSemanticName) report(nonSemanticName.rule, nonSemanticName.detail)
 
+  // Option B (design-first-council-ruling.md Gate ruling): ALWAYS advisory,
+  // regardless of `hard` — never promote this to the named-audit hard gate
+  // (that's Option C, deferred until its brief/story-map schema lands).
+  const compositeNaming = compositeRegionNamingViolation(node, compositeNames)
+  if (compositeNaming) {
+    violations.push({
+      severity: 'advisory',
+      rule: compositeNaming.rule,
+      nodeId: node.id,
+      nodeName: node.name,
+      detail: compositeNaming.detail
+    })
+  }
+
   for (const v of variantNamingViolations(node)) report(v.rule, v.detail)
 
   if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') {
@@ -255,12 +270,15 @@ async function walk(node, opts, out) {
 }
 
 /**
- * @param {{ componentNames?: string[] }} options - named components get a
- *   hard audit (D8, fails loud); omitted -> advisory file-wide sweep of
- *   un-synced frames.
+ * @param {{ componentNames?: string[], compositeNames?: string[] }} options -
+ *   named components get a hard audit (D8, fails loud); omitted -> advisory
+ *   file-wide sweep of un-synced frames. `compositeNames` — the project's
+ *   registered composite names (`design/registry.json`'s keys), derived
+ *   Node-side by `scripts/prepare-tier0-audit-options.mjs` before this call —
+ *   feeds `compositeRegionNamingViolation` (Option B, always advisory).
  */
 async function runTier0Audit(options = {}) {
-  const { componentNames } = options
+  const { componentNames, compositeNames = [] } = options
   const violations = []
   const spacingScale = await collectPrimitivesSpacingScale()
   const semanticModes = await collectSemanticModeNames()
@@ -277,11 +295,11 @@ async function runTier0Audit(options = {}) {
     }
     for (const name of componentNames) {
       const matches = figma.root.findAll((n) => isNamedAuditTarget(n, name))
-      for (const match of matches) await walk(match, { hard: true, spacingScale, semanticModes }, violations)
+      for (const match of matches) await walk(match, { hard: true, spacingScale, semanticModes, compositeNames }, violations)
     }
   } else {
     for (const page of figma.root.children) {
-      for (const topLevel of page.children) await walk(topLevel, { hard: false, spacingScale, semanticModes }, violations)
+      for (const topLevel of page.children) await walk(topLevel, { hard: false, spacingScale, semanticModes, compositeNames }, violations)
     }
   }
 

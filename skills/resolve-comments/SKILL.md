@@ -125,34 +125,68 @@ narrows it: `wireframe` (only `W##` pins), `design`/`screen` (only `D##`),
 `components` (only the component surface), or a page name / node id. Use this
 when the user only wants one surface amended.
 
-## Execution shape — analyze in parallel, write serially
+## Execution shape — one batched read, one inline pass, serial writes
 
 Do NOT process threads one-at-a-time end-to-end (classify → fix → audit →
-reply, per thread). Do NOT fan out the *writes* either. Split the run into a
-parallel read phase and a serial write phase:
+reply, per thread). And do **not** fan out subagents to analyze — an earlier
+design did, and it was the slow shape you saw: each subagent paid a `figma-use`
+cold start and made its own `use_figma` round trip just to resolve one pin's
+page. Once that read is batched (below), the residual analysis is pure reasoning
+over data already in hand — the cheap phase — while the expensive phase (Figma
+writes) is serial by hard constraint. Fanning out the cheap phase to funnel into
+a serial one buys nothing: its ceiling is one subagent per surface (≈3×) and it
+collapses toward 1× because comments cluster on `D##` screens. So: batch the
+read, analyze in a single inline pass, write serially.
 
-1. **Analyze (fan out, read-only).** After `list` returns the open threads,
-   dispatch a subagent per thread (or per surface batch) to do the read-only
-   work: resolve the pin's page, classify `W##`/`D##`/component, decide
-   fix-vs-question, and draft both the concrete edit and the one-line reply.
-   Each returns a structured item `{ commentId, nodeId, page, surface,
-   decision: 'fix'|'question', editPlan, replyText }`. This is where the
-   latency is and it is race-free — nothing writes.
-2. **Apply (single writer, serial).** One agent applies the drafted edits in
-   this order: `W##` wireframe fixes first (audit-exempt), then `D##` screens,
-   then component masters **last and strictly one at a time** (blast radius —
-   a master edit ripples to every instance, so two "disjoint" fixes can still
-   collide through a shared master). Then run **one** `figma-audit` over all
-   touched `D##`/component nodes and record **one** receipt.
-3. **Reply (may fan out again).** The `✅ Fixed` / `❓` REST posts are plain
-   HTTP with no Figma mutation, so they can go out in parallel at the end.
+1. **Resolve context — ONE batched, read-only `use_figma` call.** Collect every
+   non-null `nodeId` from `list` and run the canned resolver
+   (`scripts/resolve-context.js`) over all of them in a single call: prepend one
+   line defining the input (`const NODE_IDS = [ …ids… ]`) and pass the script
+   body **verbatim** — do not hand-author the resolution loop each run. It
+   returns `{ [nodeId]: { page, surface, nodeName, nodeType } }`, or
+   `{ [nodeId]: { error } }` per id, with three properties that matter:
+   - **Per-id isolation** — each id resolves in its own try/catch, so a pin on a
+     since-deleted or reworked node (the common case: feedback outlives the node)
+     degrades to `{ error }` for that one thread instead of failing the batch.
+   - **Deterministic surface classification baked in** — page name →
+     `wireframe` / `screen` / `master` / `file-note` / `unmatched` via the
+     routing table, so no model cycles and no subagent spent on a lookup.
+   - **Read-only, non-disruptive** — `getNodeByIdAsync` + a `.parent` walk only,
+     never `setCurrentPageAsync` (which would bump the design-guard write counter
+     and move the current page under a human viewing the live file). Works
+     whether or not the file is in dynamic-page mode.
+   Threads that come back `unmatched` (a page the table doesn't cover) or
+   `error` → treat as ambiguous: post a `❓`, never guess a surface. `file-note`
+   / null-`nodeId` pins → file-level notes (route by message, or ask).
+2. **Decide + draft — inline, single pass, always.** With page/surface/context
+   in hand, decide fix-vs-question and draft the concrete edit + the one-line
+   reply for every thread in **one** pass. No threshold, no subagent — this is
+   the only reasoning in the run and it is cheap now. If drafting a *precise*
+   edit for the fix-decisions needs live node detail (current fills, children,
+   variant structure), gather it in **one more** batched read-only `use_figma`
+   call over just that fix-subset — never a round trip per thread. Each item is
+   `{ commentId, nodeId, page, surface, decision: 'fix'|'question', editPlan,
+   replyText }`. Nothing writes in this phase.
+3. **Apply — single writer, serial.** Apply the drafted edits in this order:
+   `W##` wireframe fixes first (audit-exempt), then `D##` screens, then component
+   masters **last and strictly one at a time** (blast radius — a master edit
+   ripples to every instance, so two "disjoint" fixes can still collide through a
+   shared master; a single inline draft pass also keeps every master thread
+   visible to one reasoner, so no two conflicting master plans get drafted).
+   Then run **one** `figma-audit` over all touched `D##`/component nodes and
+   record **one** receipt.
+4. **Reply — parallel REST.** The `✅ Fixed` / `❓` posts are plain HTTP with no
+   Figma mutation, so fire them concurrently at the end. (Folding these into a
+   single `reply-batch` kit verb that posts in one process and returns a receipt
+   is the intended home once `figma-comments.ts` migrates into `@argohq/kit`.)
 
 **Why writes stay serial (non-negotiable).** `use_figma` writes to one live
 file, and every write bumps the repo-global `.argo/design-guard.json` counter.
 Fanning out writer subagents recreates the concurrent-write deadlock inside a
 single run: N agents mutating the same file and counter, none able to record a
-clean audit its siblings don't immediately invalidate. The parallelism win is
-entirely in the analysis; the write phase is inherently sequential.
+clean audit its siblings don't immediately invalidate. The write phase is
+inherently sequential; the only concurrency worth having is inside the read
+(one batched call) and the reply posts.
 
 ## Procedure
 
@@ -163,18 +197,26 @@ entirely in the analysis; the write phase is inherently sequential.
    pages.
 2. **Confirm the token** (env or `.argo/figma-token`). Missing → stop and ask.
 3. **Pull open threads:** run
-   `node ${CLAUDE_PLUGIN_ROOT}/skills/resolve-comments/scripts/figma-comments.mjs list <fileKey>`
+   `node ${CLAUDE_PLUGIN_ROOT}/skills/resolve-comments/scripts/figma-comments.ts list <fileKey>`
    from the repo root. It returns `{ me, openThreads }` — root threads that are
    unresolved and not authored by the bot (it filters own replies via `/v1/me`,
    so a re-sweep never re-triages your own `✅ Fixed`/question replies). If a
    scope argument was given, filter `openThreads` to it after classification.
-4. **Analyze every thread — fan out, read-only** (see "Execution shape").
-   Dispatch a subagent per thread (or per surface batch) to resolve its
-   `nodeId` to a page (Plugin API, above), read the page name → `W##` / `D##` /
-   component, decide fix-vs-question, and draft the concrete edit + the one-line
-   reply. A thread whose `nodeId` is null (a bare canvas-coordinate pin with no
-   node) → treat as a file-level note: read the message, route by what it
-   references, or ask. Nothing writes in this phase. Collect the drafted items.
+4. **Resolve context, then decide + draft** (see "Execution shape"). First run
+   **one** batched, read-only `use_figma` call over every non-null `nodeId`
+   using the canned resolver `scripts/resolve-context.js` (prepend
+   `const NODE_IDS = [ …ids… ]`, pass the body verbatim). It returns
+   `{ [nodeId]: { page, surface, nodeName, nodeType } | { error } }` per id —
+   per-id isolated, surface classified from the page name, never switching the
+   current page. Then decide fix-vs-question and draft the concrete edit +
+   one-line reply for every thread **inline, in a single pass** — no subagent,
+   no threshold. If a precise edit needs live node detail, gather it in one more
+   batched read-only call over just the fix-subset. Threads resolving to
+   `unmatched`/`error` (unknown page, missing node) or a null `nodeId` (bare
+   canvas pin) → treat as ambiguous/file-level: post a `❓` or route by the
+   message, never guess a surface. Nothing writes in this phase. Collect the
+   drafted items `{ commentId, nodeId, page, surface, decision, editPlan,
+   replyText }`.
 5. **Apply the fixes — single writer, serial** (see "Execution shape"),
    ordered `W##` → `D##` → masters (masters one at a time). For each:
    - **Clear and actionable** → apply the fix using the routed convention, then

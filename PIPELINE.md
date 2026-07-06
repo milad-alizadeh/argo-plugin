@@ -10,22 +10,26 @@ Each stage has one owner (a skill or agent), a defined input and output, and a
 gate that must pass before the next stage starts. Nothing downstream is built on
 an ungated upstream.
 
-```
- THOUGHT                                                              SHIPPED CODE
-   │                                                                       ▲
-   ▼                                                                       │
- ┌────────┐   ┌───────┐   ┌───────────┐  FREEZE  ┌──────────┐  HANDOFF  ┌────────────┐
- │  PRD   │─► │ brief │─► │ wireframe │══════════│  hi-fi   │═══════════│    code    │
- │product │   │(design│   │figma-     │ region-  │build-    │ figma-    │figma-to-   │
- │write-  │   │/briefs│   │wireframe  │ contract │design    │ sync →    │code →      │
- │prd     │   │)      │   │ (variants)│ (frozen) │+verifier │ story-map │test-first  │
- └────────┘   └───────┘   └───────────┘          └──────────┘           └────────────┘
-   WHAT/WHY    per-screen   lo-fi layout   structural   pixel design    real components
-              spec         (explore &     oracle       (component-      (behavior TDD'd,
-                           converge)                    first, gated)    tokens applied)
-      │            │            │                            │                 │
-   argo:        (author)   wireframe-                  design-           reviewer →
-   product                 verifier gate               verifier gate     integrator
+```mermaid
+flowchart LR
+    classDef stage fill:#1e293b,color:#fff,stroke:#475569
+    classDef seam fill:#0f766e,color:#fff,stroke:#115e59
+    classDef gate fill:#7c3aed,color:#fff,stroke:#5b21b6
+
+    thought([THOUGHT]) --> prd
+    prd["PRD<br/>product / write-prd<br/><i>WHAT & WHY</i>"]:::stage
+    brief["brief<br/>.claude/design/briefs/<br/><i>per-screen spec</i>"]:::stage
+    wf["wireframe<br/>figma-wireframe<br/><i>lo-fi, explore & converge</i>"]:::stage
+    wfv{"wireframe-verifier<br/>gate"}:::gate
+    freeze[["FREEZE<br/>region-contract<br/><i>structural oracle</i>"]]:::seam
+    hifi["hi-fi<br/>build-design<br/><i>pixel design, component-first</i>"]:::stage
+    dv{"design-verifier<br/>gate"}:::gate
+    handoff[["HANDOFF<br/>figma-sync<br/><i>story-map · tokens · specs</i>"]]:::seam
+    code["code<br/>figma-to-code → test-first<br/><i>behavior TDD'd, tokens applied</i>"]:::stage
+    rev{"reviewer →<br/>integrator"}:::gate
+    shipped([SHIPPED CODE])
+
+    prd --> brief --> wf --> wfv --> freeze --> hifi --> dv --> handoff --> code --> rev --> shipped
 ```
 
 ## The stages
@@ -91,14 +95,16 @@ You do **not** go back to wireframes for every change. Re-enter the pipeline at
 the level the change actually touches; the freeze is the pivot (structure above
 it, style below it).
 
-```
- PRD ──► brief ──► wireframe ──►[ FREEZE ]──► hi-fi ──► sync ──► code
-  │      └────── STRUCTURE ──────┘    │    └──────── STYLE ────────┘
-  │                                   │
-  └ product/scope     STRUCTURE change│    STYLE change
-    change             → re-wireframe, │    → edit hi-fi + tokens,
-                         re-freeze,    │      re-sync, regenerate;
-                         then hi-fi    │      do NOT re-wireframe
+```mermaid
+flowchart LR
+    classDef entry fill:#b45309,color:#fff,stroke:#92400e
+    classDef seam fill:#0f766e,color:#fff,stroke:#115e59
+
+    PRD --> brief --> wf[wireframe] --> FR[["FREEZE"]]:::seam --> hifi[hi-fi] --> sync --> code
+
+    scopeChange(["product / scope change"]):::entry -.-> PRD
+    structChange(["STRUCTURE change<br/>re-wireframe → re-freeze → hi-fi"]):::entry -.-> wf
+    styleChange(["STYLE change<br/>edit hi-fi + tokens → re-sync → regenerate<br/>do NOT re-wireframe"]):::entry -.-> hifi
 ```
 
 | What changed | Enters at | Re-wireframe? | Path |

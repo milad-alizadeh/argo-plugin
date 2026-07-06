@@ -23,6 +23,16 @@ spec itself. Before wireframing any screen, read its brief (host repo, e.g.
   hi-fi instead of being re-inferred from anonymous boxes.
 - Realize the brief's **Flow / IA**: which screen this flows to/from, what each
   affordance triggers. The brief pins the flow; the wireframe shows it.
+- **Realize the brief's Stage arrangement — do NOT default to a flat vertical
+  stack.** If the brief specifies a spatial backbone (master/detail, split,
+  canvas-dominant, dashboard grid), lay the regions out that way: a master column
+  beside a wide detail pane, a docked terminal, an addable side panel — not every
+  region stacked top-to-bottom in one column. A single flat column is the failure
+  mode where every screen collapses to an identical sidebar + stacked main; it is
+  only correct when the brief's arrangement genuinely IS a single surface (plain
+  chat, a document reader). If the brief has more than one content region and no
+  Stage-arrangement section, STOP and add it to the brief first (same rule as
+  "no brief, no wireframe").
 
 **Ground in the PRD, don't just echo the brief (the circularity fix).** The
 brief is a *projection* of the feature's PRD onto this screen. Before laying out,

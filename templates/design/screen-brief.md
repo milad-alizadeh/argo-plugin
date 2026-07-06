@@ -47,6 +47,29 @@ For each `composite` above, its internal parts and which of THOSE are
 themselves reusable composites (nesting is expected). This is what stops a
 composite from being built as one flat blob.
 
+## Stage arrangement
+
+**How the regions sit in space** — required for any screen with more than one
+content region, because a region map + flow does NOT imply a layout, and a
+wireframe drawn without this defaults to a single flat vertical column (every
+screen ends up looking like an identical sidebar + stacked main). State
+explicitly:
+
+- The **backbone**: master/detail two-pane · persistent split · canvas-dominant ·
+  single-surface · dashboard grid. Which region is the master (narrow primary),
+  which is the detail (wide, selection-driven), and what a selection in the
+  master does to the detail.
+- Where **ground truth** (terminal/transcript, if any) lives — inline, docked,
+  or full-surface.
+- What is **collapsible / resizable / addable** (side panels), and any
+  deliberate exception to the app's default grammar (e.g. a canvas that
+  dominates instead of sitting in the detail slot).
+
+If a project has a settled cross-screen spatial model, cite it here rather than
+re-deriving (e.g. Argo v2's `.claude/plans/stage-arrangement-decisions.md`). One
+paragraph or a small labelled ASCII sketch is enough — this is the spec a
+wireframe realizes, not prose.
+
 ---
 
 ## Filled example — `session-rail`

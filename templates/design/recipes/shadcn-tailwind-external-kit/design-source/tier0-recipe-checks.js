@@ -21,7 +21,7 @@ import {
   nonSemanticBindingViolation,
   retiredFileKeyBindingViolation,
   kitPatchesConformanceViolations
-} from 'figma-design-kit-shadcn-tailwind/tier0-rules'
+} from '@argohq/kit/design-kit/shadcn-tailwind/tier0-rules'
 import kitPatches from './kit-patches.json'
 
 const KIT_VARIABLE_KEYS = JSON.parse('{{KIT_VARIABLE_KEYS_JSON}}')

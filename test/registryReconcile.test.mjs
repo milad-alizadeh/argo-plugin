@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { reconcileRegistrySweep } from '../packages/figma-design-kit/registry-reconcile.js'
+import { reconcileRegistrySweep } from '../packages/kit/src/design-kit/registry-reconcile.js'
 
 describe('reconcileRegistrySweep (design-memory-placement.md A3, figma-audit sweep ride-along)', () => {
   it('flags a live component with no registry entry (registry-unregistered)', () => {

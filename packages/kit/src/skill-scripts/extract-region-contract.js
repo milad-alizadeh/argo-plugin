@@ -2,7 +2,7 @@
 /**
  * P1 extract CLI (build-design-workflow.md, C1 fix): fs/argv glue only —
  * the pure shape function (`buildRegionContract`, which wraps
- * `flattenToRegions`) lives in `packages/figma-design-kit/region-contract.js`
+ * `flattenToRegions`) lives in the kit's `design-kit/region-contract.js`
  * and is unit-tested there, off-Figma. This script never calls Figma itself;
  * the caller pipes the MCP `get_metadata` output in as either a normalized
  * JSON metadata tree (`{name, type, layoutMode?, children: [...]}`) or the
@@ -10,13 +10,13 @@
  * `parseMetadataXml`, the C1-gap ingest step) via a file arg or stdin.
  */
 import { readFileSync } from 'node:fs'
-import { buildRegionContract } from '../packages/figma-design-kit/region-contract.js'
-import { parseMetadataXml } from '../packages/figma-design-kit/xml-metadata-adapter.js'
+import { buildRegionContract } from '../design-kit/region-contract.js'
+import { parseMetadataXml } from '../design-kit/xml-metadata-adapter.js'
 
 const [treePath, screen, wireframeNodeId, figmaFileVersion] = process.argv.slice(2)
 if (!screen || !wireframeNodeId || !figmaFileVersion) {
   console.error(
-    'extract-region-contract: usage: node scripts/extract-region-contract.mjs <tree.json|tree.xml|-> <screen> <wireframeNodeId> <figmaFileVersion>'
+    'extract-region-contract: usage: argo design extract-region-contract <tree.json|tree.xml|-> <screen> <wireframeNodeId> <figmaFileVersion>'
   )
   process.exit(1)
 }

@@ -5,7 +5,7 @@
  * value verbatim** (even if it differs from the placeholder), and **never
  * delete** a key present on disk but absent from the shape (forward-compat for
  * recipe-specific fields). Nested objects merge per-key, not whole-object
- * replace. Pure — the skill does the fs read/write.
+ * replace. Pure — the caller does the fs read/write.
  *
  * @returns { merged, addedKeys } — addedKeys is a list of dot-paths added, for
  *   the update-mode skill to report to the user.

@@ -7,7 +7,7 @@
  * stop-the-line — never build a second component for something that
  * already exists under another name (`design/component-aliases.json`'s
  * canonical name or alias); reuse or extend it instead. Deliberately NOT
- * folded into `record-audit-receipt.mjs`'s per-run `violationCount` — that
+ * folded into `record-audit-receipt.js`'s per-run `violationCount` — that
  * flow re-checks the SAME `componentNames` on every re-audit of an already-
  * built component, which would self-collide against its own alias-map entry
  * (`findNewNameAliasCollision` has no self-exclusion, unlike
@@ -17,7 +17,7 @@
 
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { findNewNameAliasCollision } from '../packages/figma-design-kit/kit-inventory.js'
+import { findNewNameAliasCollision } from '../design-kit/kit-inventory.js'
 
 function readOptionalJson(path) {
   if (!existsSync(path)) return undefined
@@ -37,7 +37,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2)
   const nameIndex = args.indexOf('--name')
   if (nameIndex === -1 || !args[nameIndex + 1]) {
-    console.error('check-anti-recreation: usage: node scripts/check-anti-recreation.mjs --name "<NEW component name>"')
+    console.error('check-anti-recreation: usage: argo design check-anti-recreation --name "<NEW component name>"')
     process.exit(1)
   }
   const collision = checkNewNameAliasCollision(args[nameIndex + 1], { cwd: process.cwd() })

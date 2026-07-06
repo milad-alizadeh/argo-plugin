@@ -7,7 +7,7 @@
  * here. Pure logic (`lintRegionCoverage`) is a thin wrapper over
  * `reconcileBrief` in the kit module; this file's CLI entry point is just
  * fs + arg glue (unit-tested by convention only through the pure function,
- * same as record-spec-diff-receipt.mjs's CLI usage).
+ * same as record-spec-diff-receipt.js's CLI usage).
  *
  * ASSUMPTION (spec doesn't pin the disposition block's on-disk shape): the
  * brief's region-disposition rows live as committed JSON alongside the
@@ -18,7 +18,7 @@
  * receipt in this pack; editing screen-brief.md to author that block is a
  * separate, not-yet-built concern.
  */
-import { reconcileBrief } from '../packages/figma-design-kit/region-contract.js'
+import { reconcileBrief } from '../design-kit/region-contract.js'
 
 /**
  * @param {{regions: {name: string}[]}} contract
@@ -33,7 +33,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   const [contractPath, dispositionsPath] = process.argv.slice(2)
   if (!contractPath || !dispositionsPath) {
-    console.error('region-coverage: usage: node scripts/region-coverage.mjs <contract.json> <dispositions.json>')
+    console.error('region-coverage: usage: argo design region-coverage <contract.json> <dispositions.json>')
     process.exit(1)
   }
 

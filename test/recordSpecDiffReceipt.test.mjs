@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { recordSpecDiffReceipt } from '../scripts/record-spec-diff-receipt.mjs'
+import { recordSpecDiffReceipt } from '../packages/kit/src/skill-scripts/record-spec-diff-receipt.js'
 
 describe('recordSpecDiffReceipt', () => {
   it('returns a receipt shape with the exit code and timestamp', () => {

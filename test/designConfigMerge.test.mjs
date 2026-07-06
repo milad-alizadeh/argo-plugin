@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mergeConfigShape } from '../packages/design-config-merge/index.js'
+import { mergeConfigShape } from '../packages/kit/src/config/merge-config-shape.js'
 
 describe('mergeConfigShape', () => {
   it('adds a top-level key missing on disk, using the template placeholder', () => {

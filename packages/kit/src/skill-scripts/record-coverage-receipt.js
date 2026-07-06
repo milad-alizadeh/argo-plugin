@@ -5,17 +5,17 @@
  * against the frozen contract, and stamps
  * `design/coverage-receipt-<screen>.json` (C2 fix: screen-scoped, so a stale
  * clean receipt from screen N can never be read as if it covered screen
- * N+1) — the only thing `hooks/design-coverage-gate.mjs` trusts (never
+ * N+1) — the only thing the kit's design-coverage-gate trusts (never
  * Figma, so headless runs work). `buildCoverageReceipt` is the pure shape
  * function; the CLI entry point below is fs glue only, same split as
- * record-spec-diff-receipt.mjs.
+ * record-spec-diff-receipt.js.
  *
  * `producedBy` MUST be the identity of the run that produced the receipt
  * (e.g. `'design-verifier'`) — the gate hard-rejects `producedBy ===
  * 'compose'` (P4's self-check is advisory-only by spec, never the receipt
  * of record for the P5 commit gate).
  */
-import { classifyCoverage, summarize } from '../packages/figma-design-kit/region-contract.js'
+import { classifyCoverage, summarize } from '../design-kit/region-contract.js'
 
 /**
  * @param {{contract: object, builtRegions: object[], dispositions: object[],
@@ -33,17 +33,17 @@ export function buildCoverageReceipt({ contract, builtRegions, dispositions, pro
   }
 }
 
-export { coverageReceiptFilename } from '../packages/figma-design-kit/region-contract.js'
+export { coverageReceiptFilename } from '../design-kit/region-contract.js'
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const { readFileSync } = await import('node:fs')
-  const { writeDesignJson } = await import('./write-design-json.mjs')
-  const { coverageReceiptFilename } = await import('../packages/figma-design-kit/region-contract.js')
+  const { writeDesignJson } = await import('./lib/write-design-json.js')
+  const { coverageReceiptFilename } = await import('../design-kit/region-contract.js')
 
   const [contractPath, builtRegionsPath, dispositionsPath, producedBy] = process.argv.slice(2)
   if (!contractPath || !builtRegionsPath || !producedBy) {
     console.error(
-      'record-coverage-receipt: usage: node scripts/record-coverage-receipt.mjs <contract.json> <built-regions.json> <dispositions.json> <producedBy>'
+      'record-coverage-receipt: usage: argo design record-coverage-receipt <contract.json> <built-regions.json> <dispositions.json> <producedBy>'
     )
     process.exit(1)
   }

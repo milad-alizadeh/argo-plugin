@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { checkNewNameAliasCollision } from '../scripts/check-anti-recreation.mjs'
+import { checkNewNameAliasCollision } from '../packages/kit/src/skill-scripts/check-anti-recreation.js'
 
 describe('checkNewNameAliasCollision (figma-create brief-read flow — anti-recreation hard gate)', () => {
   it('hard-fails a NEW name that collides with design/component-aliases.json', () => {

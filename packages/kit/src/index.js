@@ -1,5 +1,6 @@
 /**
- * @argohq/kit root barrel. Slice 2 populates this with the design-kit and
- * skill-script surfaces; the hook gates are reached via `argo-hook`, not imports.
+ * @argohq/kit root barrel — re-exports the design-kit pure-logic surface.
+ * The hook gates are reached via `argo-hook`, the skill scripts via
+ * `argo design <verb>`; neither is an import surface.
  */
-export {}
+export * from './design-kit/index.js'

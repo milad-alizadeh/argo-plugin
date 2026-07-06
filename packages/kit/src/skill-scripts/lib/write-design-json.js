@@ -1,11 +1,12 @@
-#!/usr/bin/env node
 /**
  * Shared writer for design-guard's deterministic receipts (extracted from
- * record-audit-receipt.mjs, which already exercises this exact write shape
+ * record-audit-receipt.js, which already exercises this exact write shape
  * under test): writes a JSON file under the host project's `design/`
  * directory, creating it if needed. Both `recordAuditReceipt` and
  * `recordSpecDiffReceipt` persist their receipts through this one function
  * so there is a single place that owns the `design/<file>` write contract.
+ * Internal library — no CLI entry of its own (design-doc decision, resolved
+ * open question 2).
  */
 
 import { writeFileSync, mkdirSync, renameSync, readFileSync, existsSync } from 'node:fs'
@@ -29,7 +30,7 @@ export function writeDesignJson(cwd, filename, data) {
 
 /**
  * Schema-validate-or-rebuild read contract (design-memory-placement.md A4/
- * step 3, mirroring design-guard-record.mjs's corrupt-state recovery): on a
+ * step 3, mirroring design-guard-record.js's corrupt-state recovery): on a
  * missing file, a JSON parse failure, or (when `schema` is passed) a schema
  * validation failure, log an advisory to stderr and return `rebuild()`'s
  * result rather than throwing or crashing — this is a read-time recovery

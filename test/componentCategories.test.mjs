@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { DEFAULT_COMPONENT_CATEGORIES, resolveComponentCategories, validateComponentCategories } from '../packages/figma-design-kit/component-categories.js'
+import { DEFAULT_COMPONENT_CATEGORIES, resolveComponentCategories, validateComponentCategories } from '../packages/kit/src/design-kit/component-categories.js'
 
 describe('resolveComponentCategories', () => {
   it('falls back to the default thin enum when a project sets none', () => {

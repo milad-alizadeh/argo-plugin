@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { checkWaiver, invalidateWaivers } from '../packages/figma-design-kit/waivers.js'
+import { checkWaiver, invalidateWaivers } from '../packages/kit/src/design-kit/waivers.js'
 
 const baseWaiver = {
   component: 'Button',

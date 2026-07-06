@@ -4,8 +4,8 @@
  * Owned by /argo:figma-audit (X3) — /argo:figma-sync and /argo:figma-create
  * call this SAME script; do not fork a second copy. This is a thin Plugin-API
  * walker: it marshals live `figma.*` node/variable objects into plain-object
- * shapes and delegates the actual rule logic to `figma-design-kit`'s
- * unit-tested pure functions (packages/figma-design-kit/tier0-rules.js) — the
+ * shapes and delegates the actual rule logic to `@argohq/kit`'s
+ * unit-tested pure functions (@argohq/kit/design-kit/tier0-rules) — the
  * marshaling glue below still can't be unit-tested outside Figma, but the
  * rule logic it calls now can (see design-pack-recipes.md §2, decision B).
  *
@@ -47,7 +47,7 @@ import {
   strokeScaleViolation,
   possibleGateFalsePositiveTag,
   compositeRegionNamingViolation
-} from 'figma-design-kit/tier0-rules'
+} from '@argohq/kit/design-kit/tier0-rules'
 
 const SEMANTIC_COLLECTION_NAME = '{{SEMANTIC_COLLECTION_NAME}}'
 

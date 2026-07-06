@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { recordAuditReceipt } from '../scripts/record-audit-receipt.mjs'
+import { recordAuditReceipt } from '../packages/kit/src/skill-scripts/record-audit-receipt.js'
 
 describe('recordAuditReceipt', () => {
   it('writes design/audit-receipt.json with the violation count and timestamp', () => {

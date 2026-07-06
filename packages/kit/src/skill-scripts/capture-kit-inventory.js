@@ -2,7 +2,7 @@
 /**
  * Captures the kit-awareness browse catalog (design/kit-inventory.json,
  * kit-awareness.md §1) from a live Figma kit-library session — mirrors
- * capture-kit-corpus.mjs's split: a pure shaping function (unit-tested) plus
+ * capture-kit-corpus.js's split: a pure shaping function (unit-tested) plus
  * an untested `--record/--out` CLI entry that only persists what a live
  * `use_figma`/`search_design_system` pass already produced.
  *
@@ -48,7 +48,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const outIndex = args.indexOf('--out')
   if (recordIndex === -1 || outIndex === -1) {
     console.error(
-      'capture-kit-inventory: usage: node scripts/capture-kit-inventory.mjs --record ' +
+      'capture-kit-inventory: usage: argo design capture-kit-inventory --record ' +
         '\'{"components":[...],"icons":{...},"kitLibraryFileKey":"...","kitSourceVersion":"..."}\' --out <path>'
     )
     process.exit(1)

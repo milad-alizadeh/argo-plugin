@@ -9,13 +9,13 @@
  *
  * `buildKitCorpus` is the pure shaping function (unit-tested); the CLI usage
  * below is untested by convention — same posture as
- * `assemble-tier0-audit.mjs`'s `bundleTier0Audit` CLI entry and
- * `record-audit-receipt.mjs`'s `--record` usage: it only shapes/writes what a
+ * `assemble-tier0-audit.js`'s `bundleTier0Audit` CLI entry and
+ * `record-audit-receipt.js`'s `--record` usage: it only shapes/writes what a
  * live `use_figma` marshal already produced, never re-derives it.
  *
  * Usage (run from a live Figma session, after marshaling the kit's pristine
  * + inverse fixtures via `use_figma`):
- *   node scripts/capture-kit-corpus.mjs --record '<json>' --out test/fixtures/kit-corpus.json
+ *   argo design capture-kit-corpus --record '<json>' --out test/fixtures/kit-corpus.json
  * where `<json>` is `{ pristine: [...], inverse: {...}, semanticModes: [...] }`.
  *
  * Re-capture gated on kit upgrade (design-upgrade/D15) so the corpus tracks
@@ -40,7 +40,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const outIndex = args.indexOf('--out')
   if (recordIndex === -1 || outIndex === -1) {
     console.error(
-      'capture-kit-corpus: usage: node scripts/capture-kit-corpus.mjs --record \'{"pristine":[...],"inverse":{...},"semanticModes":[...]}\' --out <path>'
+      'capture-kit-corpus: usage: argo design capture-kit-corpus --record \'{"pristine":[...],"inverse":{...},"semanticModes":[...]}\' --out <path>'
     )
     process.exit(1)
   }

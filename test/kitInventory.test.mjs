@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { findKitNameCollisions, findNewNameAliasCollision, registryComponentNames } from '../packages/figma-design-kit/kit-inventory.js'
+import { findKitNameCollisions, findNewNameAliasCollision, registryComponentNames } from '../packages/kit/src/design-kit/kit-inventory.js'
 
 describe('findKitNameCollisions', () => {
   it('flags an authored component name that shadows a kit component with no clearing waiver', () => {

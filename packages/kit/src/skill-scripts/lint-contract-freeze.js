@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
  * P1 freeze lint CLI (C3c, design-pipeline-efficiency-ruling.md): fs/argv
- * glue only — the pure decision (`lintContractFreeze`) lives in
- * `packages/figma-design-kit/region-contract.js` and is unit-tested there.
- * Usage: node scripts/lint-contract-freeze.mjs <previous.json|-> <next.json>
+ * glue only — the pure decision (`lintContractFreeze`) lives in the kit's
+ * `design-kit/region-contract.js` and is unit-tested there.
+ * Usage: argo design lint-contract-freeze <previous.json|-> <next.json>
  * (previous may be omitted/absent for a first-ever freeze).
  */
 import { readFileSync, existsSync } from 'node:fs'
-import { lintContractFreeze } from '../packages/figma-design-kit/region-contract.js'
+import { lintContractFreeze } from '../design-kit/region-contract.js'
 
 const [previousPath, nextPath] = process.argv.slice(2)
 if (!nextPath) {
-  console.error('lint-contract-freeze: usage: node scripts/lint-contract-freeze.mjs <previous.json|-> <next.json>')
+  console.error('lint-contract-freeze: usage: argo design lint-contract-freeze <previous.json|-> <next.json>')
   process.exit(1)
 }
 

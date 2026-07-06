@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { flattenToRegions } from '../packages/figma-design-kit/region-contract.js'
+import { flattenToRegions } from '../packages/kit/src/design-kit/region-contract.js'
 import flattenFixture from './fixtures/flatten-metadata-tree.json' with { type: 'json' }
 
 describe('flattenToRegions (C1 promotion rule: instance / auto-layout / cross-composite repeat -> regions row, else documentation-only)', () => {

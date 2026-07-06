@@ -8,12 +8,12 @@
  * checks a screen's plain FRAMEs against. The sandbox can't read a committed
  * file itself (kit-awareness.md §"Enforcement"'s same constraint), so this
  * has to happen Node-side, before the call, exactly like
- * `record-audit-receipt.mjs`'s post-hoc reads of the same file.
+ * `record-audit-receipt.js`'s post-hoc reads of the same file.
  */
 
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { registryComponentNames } from '../packages/figma-design-kit/kit-inventory.js'
+import { registryComponentNames } from '../design-kit/kit-inventory.js'
 
 function readOptionalJson(path) {
   if (!existsSync(path)) return undefined

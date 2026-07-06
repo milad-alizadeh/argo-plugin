@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { WaiverSchema, StoryMapEntrySchema, RegistryEntrySchema, RegistryHeaderSchema } from '../packages/figma-design-kit/schemas.js'
-import { KitPatchSchema, KitLockSchema } from '../packages/figma-design-kit/recipes/external-kit.js'
+import { WaiverSchema, StoryMapEntrySchema, RegistryEntrySchema, RegistryHeaderSchema } from '../packages/kit/src/design-kit/schemas.js'
+import { KitPatchSchema, KitLockSchema } from '../packages/kit/src/design-kit/recipes/external-kit.js'
 
 describe('WaiverSchema', () => {
   const valid = {

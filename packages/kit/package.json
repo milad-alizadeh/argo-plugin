@@ -7,14 +7,24 @@
     "argo": "bin/argo.js"
   },
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./design-kit": "./src/design-kit/index.js",
+    "./design-kit/tier0-rules": "./src/design-kit/tier0-rules.js",
+    "./design-kit/region-contract": "./src/design-kit/region-contract.js",
+    "./design-kit/xml-metadata-adapter": "./src/design-kit/xml-metadata-adapter.js",
+    "./design-kit/recipes/external-kit": "./src/design-kit/recipes/external-kit.js",
+    "./design-kit/shadcn-tailwind": "./src/recipes/shadcn-tailwind/index.js",
+    "./design-kit/shadcn-tailwind/tier0-rules": "./src/recipes/shadcn-tailwind/tier0-rules.js",
+    "./reporters/playwright": "./src/reporters/playwright/index.js"
   },
   "files": [
     "bin",
     "src"
   ],
+  "sideEffects": false,
   "dependencies": {
-    "tdd-guard": "^1.7.0"
+    "tdd-guard": "^1.7.0",
+    "zod": "^3.23.8"
   },
   "peerDependencies": {
     "@playwright/test": "*"

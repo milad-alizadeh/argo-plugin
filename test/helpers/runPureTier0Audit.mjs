@@ -25,7 +25,7 @@ import {
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
   strokeScaleViolation
-} from '../../packages/figma-design-kit/tier0-rules.js'
+} from '../../packages/kit/src/design-kit/tier0-rules.js'
 
 const SEMANTIC_COLLECTION_NAME = 'Semantic'
 

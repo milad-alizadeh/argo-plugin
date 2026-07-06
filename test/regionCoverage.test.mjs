@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { lintRegionCoverage } from '../scripts/region-coverage.mjs'
+import { lintRegionCoverage } from '../packages/kit/src/skill-scripts/region-coverage.js'
 
 describe('lintRegionCoverage (P2 brief<->wireframe reconciliation lint, pre-Figma)', () => {
   it('is ok when every contract region has a disposition row', () => {

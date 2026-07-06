@@ -8,7 +8,7 @@ vi.mock('node:fs', async (importOriginal) => {
   return { ...actual, renameSync: vi.fn(actual.renameSync) }
 })
 
-const { writeDesignJson } = await import('../scripts/write-design-json.mjs')
+const { writeDesignJson } = await import('../packages/kit/src/skill-scripts/lib/write-design-json.js')
 const { renameSync: renameSpy } = await import('node:fs')
 
 describe('writeDesignJson (atomic temp-file+rename write)', () => {

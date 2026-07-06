@@ -7,7 +7,7 @@ import {
   fillSlots,
   bundleTier0Audit,
   bundleTier0AuditToFile
-} from '../scripts/assemble-tier0-audit.mjs'
+} from '../packages/kit/src/skill-scripts/assemble-tier0-audit.js'
 
 const PLUGIN_ROOT = join(import.meta.dirname, '..')
 
@@ -67,14 +67,10 @@ describe('bundleTier0Audit (real assembly, real bun build — the actual Defect 
 
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-assemble-'))
     writeFileSync(join(cwd, 'kit-patches.json'), '{}', 'utf8')
-    // Mirror a real vendored install (setup-design §5): both packages resolve
-    // as bare specifiers from node_modules alongside the assembled script.
-    mkdirSync(join(cwd, 'node_modules'), { recursive: true })
-    symlinkSync(join(PLUGIN_ROOT, 'packages/figma-design-kit'), join(cwd, 'node_modules/figma-design-kit'))
-    symlinkSync(
-      join(PLUGIN_ROOT, 'packages/figma-design-kit-shadcn-tailwind'),
-      join(cwd, 'node_modules/figma-design-kit-shadcn-tailwind')
-    )
+    // Mirror a real host install: @argohq/kit resolves as a bare specifier
+    // from node_modules alongside the assembled script, subpaths via exports.
+    mkdirSync(join(cwd, 'node_modules/@argohq'), { recursive: true })
+    symlinkSync(join(PLUGIN_ROOT, 'packages/kit'), join(cwd, 'node_modules/@argohq/kit'))
 
     try {
       const bundled = bundleTier0Audit(assembled, { cwd })

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { KitPatchSchema, KitLockSchema } from '../packages/figma-design-kit/recipes/external-kit.js'
+import { KitPatchSchema, KitLockSchema } from '../packages/kit/src/design-kit/recipes/external-kit.js'
 
 describe('figma-design-kit/recipes/external-kit subpath export', () => {
   it('exposes KitPatchSchema and KitLockSchema outside the mechanism entrypoint', () => {

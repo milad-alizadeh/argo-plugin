@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { convertLineHeight, convertLetterSpacing, resolveBoxModel } from '../packages/figma-design-kit/conversion-table.js'
+import { convertLineHeight, convertLetterSpacing, resolveBoxModel } from '../packages/kit/src/design-kit/conversion-table.js'
 
 describe('convertLineHeight', () => {
   it('converts PERCENT to a unitless CSS line-height', () => {

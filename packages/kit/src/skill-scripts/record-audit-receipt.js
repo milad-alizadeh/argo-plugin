@@ -1,27 +1,27 @@
 #!/usr/bin/env node
 /**
  * Writes `design/audit-receipt.json` — the deterministic proof
- * design-guard-stop.mjs checks before it lets a session end. Derived, never
+ * design-guard-stop.js checks before it lets a session end. Derived, never
  * hand-authored: this is the ONE place that turns a `use_figma`-returned
  * tier0-audit result (the `runTier0Audit` completion value, an array of
  * `{ severity, rule, nodeId, nodeName, detail }`) into the receipt shape.
  *
- * A sibling of assemble-tier0-audit.mjs (figma-audit/SKILL.md's procedure
+ * A sibling of assemble-tier0-audit.js (figma-audit/SKILL.md's procedure
  * documents this as its final step, run right after `use_figma` returns the
- * audit's violations array): `node scripts/record-audit-receipt.mjs --record
+ * audit's violations array): `argo design record-audit-receipt --record
  * '<json>'`, where `<json>` is `{ componentNames, violations }`.
  */
 
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { writeDesignJson } from './write-design-json.mjs'
-import { findKitNameCollisions } from '../packages/figma-design-kit/kit-inventory.js'
+import { writeDesignJson } from './lib/write-design-json.js'
+import { findKitNameCollisions } from '../design-kit/kit-inventory.js'
 
 /**
  * kit-awareness (kit-awareness.md §"Enforcement"): reads the three optional,
  * project-committed files a collision check needs and folds any unwaived
  * match into the receipt's violationCount — riding the existing
- * design-guard-stop.mjs rail rather than a new hook (the Figma sandbox can't
+ * design-guard-stop.js rail rather than a new hook (the Figma sandbox can't
  * read a committed file or call `search_design_system`). Every input is
  * optional and fails open (absent/unreadable/malformed ⇒ ignored, never
  * thrown, never a fabricated violation).
@@ -45,7 +45,7 @@ function countKitNameCollisions(componentNames, cwd) {
 /**
  * `writeCounterAtAudit` is read from `.argo/design-guard.json`'s current
  * `writeCount` (0 if no Figma writes have ever been recorded) so
- * design-guard-stop.mjs can detect a write that happened after this audit
+ * design-guard-stop.js can detect a write that happened after this audit
  * ran, and demand a re-audit.
  */
 export function recordAuditReceipt({ componentNames = [], violations = [] } = {}, { cwd, now = Date.now() } = {}) {
@@ -84,7 +84,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2)
   const recordIndex = args.indexOf('--record')
   if (recordIndex === -1) {
-    console.error('record-audit-receipt: usage: node scripts/record-audit-receipt.mjs --record \'{"componentNames":[...],"violations":[...]}\'')
+    console.error('record-audit-receipt: usage: argo design record-audit-receipt --record \'{"componentNames":[...],"violations":[...]}\'')
     process.exit(1)
   }
   const json = args[recordIndex + 1]

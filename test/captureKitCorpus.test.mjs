@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildKitCorpus } from '../scripts/capture-kit-corpus.mjs'
+import { buildKitCorpus } from '../packages/kit/src/skill-scripts/capture-kit-corpus.js'
 
 describe('buildKitCorpus', () => {
   it('shapes a corpus with a capturedFrom header, pristine, and inverse sets', () => {

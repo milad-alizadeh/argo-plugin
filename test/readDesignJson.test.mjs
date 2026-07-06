@@ -3,7 +3,7 @@ import { writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { z } from 'zod'
-import { readDesignJsonOrRebuild } from '../scripts/write-design-json.mjs'
+import { readDesignJsonOrRebuild } from '../packages/kit/src/skill-scripts/lib/write-design-json.js'
 
 describe('readDesignJsonOrRebuild (schema-validate-or-rebuild read contract)', () => {
   it('returns the parsed file when it is well-formed', () => {

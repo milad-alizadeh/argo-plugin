@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, it, expect } from 'vitest'
-import { parseMetadataXml } from '../packages/figma-design-kit/xml-metadata-adapter.js'
-import { flattenToRegions } from '../packages/figma-design-kit/region-contract.js'
+import { parseMetadataXml } from '../packages/kit/src/design-kit/xml-metadata-adapter.js'
+import { flattenToRegions } from '../packages/kit/src/design-kit/region-contract.js'
 
 const wireframeXmlPath = fileURLToPath(new URL('./fixtures/wireframe-metadata.xml', import.meta.url))
 

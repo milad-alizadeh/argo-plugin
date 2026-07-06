@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildCoverageReceipt, coverageReceiptFilename } from '../scripts/record-coverage-receipt.mjs'
+import { buildCoverageReceipt, coverageReceiptFilename } from '../packages/kit/src/skill-scripts/record-coverage-receipt.js'
 
 describe('buildCoverageReceipt (P5 compose-time coverage receipt shape)', () => {
   it('stamps a clean receipt from a fully-instanced built tree', () => {

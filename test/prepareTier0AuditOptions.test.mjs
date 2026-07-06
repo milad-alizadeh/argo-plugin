@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { deriveTier0AuditOptions } from '../scripts/prepare-tier0-audit-options.mjs'
+import { deriveTier0AuditOptions } from '../packages/kit/src/skill-scripts/prepare-tier0-audit-options.js'
 
 describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation gate wiring)', () => {
   it('reads design/registry.json and passes its component names as compositeNames', () => {

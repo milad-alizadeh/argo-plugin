@@ -30,7 +30,7 @@ export {
   evaluateCoverageReceipt,
   coverageReceiptFilename,
   deriveExpectedScreensFromStagedFiles
-} from '../../../figma-design-kit/region-contract.js'
+} from '../design-kit/region-contract.js'
 
 function readStdin() {
   return new Promise((resolve) => {
@@ -43,7 +43,7 @@ function readStdin() {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const { evaluateCoverageReceipt, coverageReceiptFilename, deriveExpectedScreensFromStagedFiles } = await import(
-    '../../../figma-design-kit/region-contract.js'
+    '../design-kit/region-contract.js'
   )
 
   const raw = await readStdin().catch(() => '')

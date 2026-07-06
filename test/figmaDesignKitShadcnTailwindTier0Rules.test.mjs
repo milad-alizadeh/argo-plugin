@@ -3,7 +3,7 @@ import {
   nonSemanticBindingViolation,
   retiredFileKeyBindingViolation,
   kitPatchesConformanceViolations
-} from '../packages/figma-design-kit-shadcn-tailwind/tier0-rules.js'
+} from '../packages/kit/src/recipes/shadcn-tailwind/tier0-rules.js'
 
 describe('nonSemanticBindingViolation', () => {
   const KIT_FILE_KEY = 'kit-file-key'

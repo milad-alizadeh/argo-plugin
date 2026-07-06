@@ -4,11 +4,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
-import { PlaywrightReporter } from '../reporters/tdd-guard-playwright/index.js'
+import { PlaywrightReporter } from '../packages/kit/src/reporters/playwright/index.js'
 
 // Validate against the real tdd-guard contract, resolved from the reporter's own deps.
 const requireFromReporter = createRequire(
-  fileURLToPath(new URL('../reporters/tdd-guard-playwright/index.js', import.meta.url)),
+  fileURLToPath(new URL('../packages/kit/src/reporters/playwright/index.js', import.meta.url)),
 )
 const { TestResultSchema, isTestPassing } = requireFromReporter(
   'tdd-guard/dist/contracts/schemas/reporterSchemas.js',

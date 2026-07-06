@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import * as figmaDesignKit from '../packages/figma-design-kit/index.js'
+import * as figmaDesignKit from '../packages/kit/src/design-kit/index.js'
 
 describe('figma-design-kit package entrypoint', () => {
   it('re-exports every mechanism module the package.json exports field promises', () => {

@@ -10,7 +10,7 @@ import {
   coverageReceiptFilename,
   deriveExpectedScreensFromStagedFiles,
   lintContractFreeze
-} from '../packages/figma-design-kit/region-contract.js'
+} from '../packages/kit/src/design-kit/region-contract.js'
 import d01Contract from './fixtures/d01-wireframe-contract.json' with { type: 'json' }
 import d01ShippedShell from './fixtures/d01-shipped-shell-built.json' with { type: 'json' }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildKitInventory } from '../scripts/capture-kit-inventory.mjs'
+import { buildKitInventory } from '../packages/kit/src/skill-scripts/capture-kit-inventory.js'
 
 describe('buildKitInventory', () => {
   it('shapes a header + components + icons, stripping any key/variantProps fields', () => {

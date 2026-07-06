@@ -54,6 +54,35 @@ async function runHookChain(event) {
   process.exit(0)
 }
 
+// `argo design <verb>` — each verb is a standalone skill-script module whose CLI
+// block reads process.argv; re-exec the module with the verb's own argv so the
+// scripts keep their `import.meta.url === file://argv[1]` guard semantics.
+const DESIGN_VERBS = {
+  'record-spec-diff-receipt': '../src/skill-scripts/record-spec-diff-receipt.js',
+  'check-anti-recreation': '../src/skill-scripts/check-anti-recreation.js',
+  'assemble-tier0-audit': '../src/skill-scripts/assemble-tier0-audit.js',
+  'prepare-tier0-audit-options': '../src/skill-scripts/prepare-tier0-audit-options.js',
+  'record-audit-receipt': '../src/skill-scripts/record-audit-receipt.js',
+  'capture-kit-inventory': '../src/skill-scripts/capture-kit-inventory.js',
+  'region-coverage': '../src/skill-scripts/region-coverage.js',
+  'record-coverage-receipt': '../src/skill-scripts/record-coverage-receipt.js',
+  'extract-region-contract': '../src/skill-scripts/extract-region-contract.js',
+  'extract-built-regions': '../src/skill-scripts/extract-built-regions.js',
+  'lint-contract-freeze': '../src/skill-scripts/lint-contract-freeze.js',
+  'capture-kit-corpus': '../src/skill-scripts/capture-kit-corpus.js',
+}
+
+function runDesignVerb(verb, args) {
+  const rel = DESIGN_VERBS[verb]
+  if (!rel) {
+    process.stderr.write(`argo design: unknown verb "${verb}" (known: ${Object.keys(DESIGN_VERBS).join(', ')})\n`)
+    process.exit(1)
+  }
+  const file = fileURLToPath(new URL(rel, import.meta.url))
+  const res = spawnSync(process.execPath, [file, ...args], { stdio: 'inherit' })
+  process.exit(res.status ?? 1)
+}
+
 const [cmd, ...rest] = process.argv.slice(2)
 
 switch (cmd) {
@@ -61,6 +90,8 @@ switch (cmd) {
     await runHookChain(rest[0])
     break
   case 'design':
+    runDesignVerb(rest[0], rest.slice(1))
+    break
   case 'init':
   case 'update':
   case 'doctor':

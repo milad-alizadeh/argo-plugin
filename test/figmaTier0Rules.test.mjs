@@ -20,7 +20,7 @@ import {
   unsectionedComponentViolation,
   missingComponentDescriptionViolation,
   compositeRegionNamingViolation
-} from '../packages/figma-design-kit/tier0-rules.js'
+} from '../packages/kit/src/design-kit/tier0-rules.js'
 
 describe('unboundFillViolations', () => {
   it('flags a solid fill with no bound color variable', () => {

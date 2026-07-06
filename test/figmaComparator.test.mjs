@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { compareColor, comparePxInteger, compareHugDimension, srgbToOklch } from '../packages/figma-design-kit/comparator.js'
+import { compareColor, comparePxInteger, compareHugDimension, srgbToOklch } from '../packages/kit/src/design-kit/comparator.js'
 
 describe('compareColor', () => {
   it('passes when figma and css colors are identical', () => {

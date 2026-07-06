@@ -214,6 +214,18 @@ One package, bin `argo`:
 swap to `^version`. Monorepo and single-repo hosts are both first-class (dual-mode
 acid suites run every gate against a fixture of each).
 
+**Source is TypeScript, compiled to `packages/kit/dist/`** (`tsc`, strict,
+NodeNext — see `.claude/plans/kit-typescript-migration.md`). `dist/` is
+**gitignored**, not committed: the sole consumer (argo-v2) resolves the kit via
+`bun link` (a symlink to this checkout), so it runs whatever `dist/` the checkout
+holds — committing the generated output only churned git. When working on
+`packages/kit`, run `bun run dev` (from `packages/kit`) to keep `dist/` rebuilding
+on save; `bun run build` is the one-shot equivalent. `dist/` is produced on a
+fresh install by the `prepare` script and shipped to npm via `files` +
+`prepublishOnly` (`publish.yml`). CI (`kit-ci.yml`) builds and runs the full suite
+on every push/PR. (Note: a cold marketplace install running `argo init` from the
+bundled checkout has no `dist/` until the published-kit switch lands — see the plan.)
+
 ## How opinionation is delivered (rules are inert until adapted)
 
 Claude Code has no plugin-level `rules/` mechanism, and always-on rules would

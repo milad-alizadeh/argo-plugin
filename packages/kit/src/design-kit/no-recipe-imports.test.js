@@ -13,7 +13,7 @@ const FORBIDDEN_PATTERNS = [
 
 function sourceFiles(dir) {
   return readdirSync(dir, { withFileTypes: true, recursive: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.js'))
+    .filter((entry) => entry.isFile() && (entry.name.endsWith('.js') || entry.name.endsWith('.ts')))
     .map((entry) => join(entry.parentPath ?? entry.path, entry.name))
 }
 

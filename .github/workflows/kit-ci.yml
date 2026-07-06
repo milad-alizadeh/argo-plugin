@@ -1,0 +1,32 @@
+# @argohq/kit CI — build + test on every push/PR. Replaces the old
+# kit-dist-parity gate: dist/ is no longer committed (gitignored — built
+# locally via `bun run dev`, shipped to npm via publish.yml), so there is
+# nothing to diff against a checked-in copy. Correctness is guarded by a clean
+# `tsc` build (strict) plus the full test suite running against that build —
+# several tests spawn the compiled CLI/hooks as real node subprocesses, so
+# `bun run build` MUST precede `bun run test`.
+name: kit-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Build packages/kit (strict tsc)
+        working-directory: packages/kit
+        run: bun run build
+      - name: Test
+        run: bun run test

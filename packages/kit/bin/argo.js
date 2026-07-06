@@ -20,14 +20,14 @@ import { fileURLToPath } from 'node:url'
 const HOOK_CHAINS = {
   // Order matches the pre-extraction hooks.json: red-proof → trust → design-commit → design-coverage.
   'bash-pretooluse': [
-    '../src/hooks/red-proof-gate.js',
-    '../src/hooks/trust-gate.js',
-    '../src/hooks/design-commit-gate.js',
-    '../src/hooks/design-coverage-gate.js',
+    '../dist/hooks/red-proof-gate.js',
+    '../dist/hooks/trust-gate.js',
+    '../dist/hooks/design-commit-gate.js',
+    '../dist/hooks/design-coverage-gate.js',
   ],
-  'post-edit-write': ['../src/hooks/format-on-write.js', '../src/hooks/test-smell.js'],
-  'design-guard-record': ['../src/hooks/design-guard-record.js'],
-  'design-guard-stop': ['../src/hooks/design-guard-stop.js'],
+  'post-edit-write': ['../dist/hooks/format-on-write.js', '../dist/hooks/test-smell.js'],
+  'design-guard-record': ['../dist/hooks/design-guard-record.js'],
+  'design-guard-stop': ['../dist/hooks/design-guard-stop.js'],
 }
 
 function readStdin() {
@@ -58,19 +58,19 @@ async function runHookChain(event) {
 // block reads process.argv; re-exec the module with the verb's own argv so the
 // scripts keep their `import.meta.url === file://argv[1]` guard semantics.
 const DESIGN_VERBS = {
-  'record-spec-diff-receipt': '../src/skill-scripts/record-spec-diff-receipt.js',
-  'check-anti-recreation': '../src/skill-scripts/check-anti-recreation.js',
-  'bundle-tier0-audit': '../src/skill-scripts/bundle-tier0-audit.js',
-  'prepare-tier0-audit-options': '../src/skill-scripts/prepare-tier0-audit-options.js',
-  'record-audit-receipt': '../src/skill-scripts/record-audit-receipt.js',
-  'capture-kit-inventory': '../src/skill-scripts/capture-kit-inventory.js',
-  'region-coverage': '../src/skill-scripts/region-coverage.js',
-  'record-coverage-receipt': '../src/skill-scripts/record-coverage-receipt.js',
-  'extract-region-contract': '../src/skill-scripts/extract-region-contract.js',
-  'extract-built-regions': '../src/skill-scripts/extract-built-regions.js',
-  'lint-contract-freeze': '../src/skill-scripts/lint-contract-freeze.js',
-  'capture-kit-corpus': '../src/skill-scripts/capture-kit-corpus.js',
-  'emit-shims': '../src/skill-scripts/emit-shims.js',
+  'record-spec-diff-receipt': '../dist/skill-scripts/record-spec-diff-receipt.js',
+  'check-anti-recreation': '../dist/skill-scripts/check-anti-recreation.js',
+  'bundle-tier0-audit': '../dist/skill-scripts/bundle-tier0-audit.js',
+  'prepare-tier0-audit-options': '../dist/skill-scripts/prepare-tier0-audit-options.js',
+  'record-audit-receipt': '../dist/skill-scripts/record-audit-receipt.js',
+  'capture-kit-inventory': '../dist/skill-scripts/capture-kit-inventory.js',
+  'region-coverage': '../dist/skill-scripts/region-coverage.js',
+  'record-coverage-receipt': '../dist/skill-scripts/record-coverage-receipt.js',
+  'extract-region-contract': '../dist/skill-scripts/extract-region-contract.js',
+  'extract-built-regions': '../dist/skill-scripts/extract-built-regions.js',
+  'lint-contract-freeze': '../dist/skill-scripts/lint-contract-freeze.js',
+  'capture-kit-corpus': '../dist/skill-scripts/capture-kit-corpus.js',
+  'emit-shims': '../dist/skill-scripts/emit-shims.js',
 }
 
 function runDesignVerb(verb, args) {
@@ -99,7 +99,7 @@ switch (cmd) {
     runDesignVerb(rest[0], rest.slice(1))
     break
   case 'init': {
-    const { runInit } = await import('../src/cli/init.js')
+    const { runInit } = await import('../dist/cli/init.js')
     const repo = flagValue(rest, '--marketplace-repo')
     const report = runInit({
       hostRoot: flagValue(rest, '--host-root') ?? process.cwd(),
@@ -109,13 +109,13 @@ switch (cmd) {
     break
   }
   case 'update': {
-    const { runUpdate } = await import('../src/cli/update.js')
+    const { runUpdate } = await import('../dist/cli/update.js')
     const report = runUpdate({ hostRoot: flagValue(rest, '--host-root') ?? process.cwd() })
     console.log(JSON.stringify(report))
     break
   }
   case 'doctor': {
-    const { runDoctor } = await import('../src/cli/doctor.js')
+    const { runDoctor } = await import('../dist/cli/doctor.js')
     const result = runDoctor({ pluginRoot: flagValue(rest, '--plugin-root') ?? process.env.CLAUDE_PLUGIN_ROOT })
     if (!result.ok) {
       process.stderr.write(`${result.reason}\n`)
@@ -129,7 +129,7 @@ switch (cmd) {
       process.stderr.write(`argo graph: unknown verb "${rest[0] ?? ''}" (known: refresh)\n`)
       process.exit(1)
     }
-    const { runGraphRefresh } = await import('../src/cli/graph-refresh.js')
+    const { runGraphRefresh } = await import('../dist/cli/graph-refresh.js')
     console.log(JSON.stringify(runGraphRefresh({ cwd: flagValue(rest, '--host-root') ?? process.cwd() })))
     break
   }

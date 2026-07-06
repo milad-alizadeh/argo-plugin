@@ -4,6 +4,14 @@ Opinionated but **non-breaking**: safe to drop into an existing project, an
 excellent default for a greenfield one, and as project-agnostic as possible.
 Works in any Claude Code project, **with or without** the Argo cockpit.
 
+## The end-to-end pipeline
+
+For the whole path a feature travels — **thought → PRD → brief → wireframe →
+freeze → hi-fi → sync → code → ship**, the two seams that join the design and
+code loops, and the "re-enter at the altitude of the change" rule for later
+edits — see **[PIPELINE.md](PIPELINE.md)**. It is the map of how every skill and
+agent below fits together.
+
 ## Install
 
 Add the marketplace and enable the plugin (per-project or globally):

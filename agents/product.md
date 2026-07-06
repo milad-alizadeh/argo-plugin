@@ -49,7 +49,7 @@ observable condition that proves it done), and a **Visible in build?** value
 contract, not a Scope bullet. Vague requirements ("should feel responsive",
 "handle edge cases") are FAILURES — the same bar the planner holds for plan
 steps. These requirements become the **semantic completeness contract** the
-design-verifier (once build-design P5 ingests them) and reviewer check
+design-verifier (once design-screen P5 ingests them) and reviewer check
 downstream, so they must be enumerable and unambiguous.
 
 **FEATURE → SCREEN MATRIX.** Give every requirement exactly one disposition:

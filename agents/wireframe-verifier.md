@@ -1,12 +1,12 @@
 ---
 name: wireframe-verifier
-description: Independent, adversarial completeness + conformance verifier for lo-fi wireframes. Given ONLY the screen briefs, the project's cross-screen spatial model, the PRD's Visible-in-build requirements, and the wireframe screenshots — never any build/agent transcript — it rules each wireframe frame in-scope/out-of-scope, complete/incomplete, and conformant/violating against the standing wireframe rules, then reports whether the wireframe set may proceed to hi-fi. The lo-fi analog of design-verifier; run it before build-design freezes a contract.
+description: Independent, adversarial completeness + conformance verifier for lo-fi wireframes. Given ONLY the screen briefs, the project's cross-screen spatial model, the PRD's Visible-in-build requirements, and the wireframe screenshots — never any build/agent transcript — it rules each wireframe frame in-scope/out-of-scope, complete/incomplete, and conformant/violating against the standing wireframe rules, then reports whether the wireframe set may proceed to hi-fi. The lo-fi analog of design-verifier; run it before design-screen freezes a contract.
 model: sonnet
 tools: Read, Grep, Glob, Bash, Skill
 ---
 
 > **Standalone + Argo.** Runs standalone (writes a verdict you can read) and as
-> the pre-freeze gate before `/argo:build-design`. A runtime seed (the wireframe
+> the pre-freeze gate before `/argo:design-screen`. A runtime seed (the wireframe
 > file key, page/node ids, brief + PRD paths) is appended after this body under
 > Argo.
 

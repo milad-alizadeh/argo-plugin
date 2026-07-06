@@ -25,7 +25,7 @@ here". Diffing a built screen against its own brief is circular — the brief an
 the screen narrow together. The PRD breaks the circle: its requirements are the
 *semantic* completeness contract (does the built feature do what it must). The
 design-verifier is intended to check them adversarially — this depends on
-build-design P5 ingesting the PRD's REQ-ID column (tracked in
+design-screen P5 ingesting the PRD's REQ-ID column (tracked in
 `build-design-workflow.md`); until that wiring lands, the reviewer carries the
 semantic check. Either way the PRD is load-bearing infrastructure, not
 documentation.
@@ -69,7 +69,7 @@ converging:
    → source → composes/extends/n-a) and the **Net-new** list from those same
    Read/Grep/Glob-able sources — product altitude only, never Figma/code
    component names. This ledger is grounding evidence, not the anti-recreation
-   enforcement mechanism (that hard gate lives in build-design against the live
+   enforcement mechanism (that hard gate lives in design-screen against the live
    component inventory). A requirement that ignores an existing capability is a
    defect.
 

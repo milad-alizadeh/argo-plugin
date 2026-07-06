@@ -45,7 +45,7 @@ riskiest assumption before committing. -->
 Narrative: the existing capabilities/surfaces this feature builds on or changes,
 each with a citation (`ARCHITECTURE.md`, a prior PRD, committed inventory/
 reconciliation docs, graphify). Product altitude only — never Figma/code
-component names (component-level reuse is hard-gated later in build-design).
+component names (component-level reuse is hard-gated later in design-screen).
 
 **Reuse ledger:**
 
@@ -57,7 +57,7 @@ component names (component-level reuse is hard-gated later in build-design).
 that don't exist today, one line of justification each.
 
 <!-- This ledger is product-altitude grounding evidence, not the anti-recreation
-enforcement mechanism — that hard gate lives in build-design against the live
+enforcement mechanism — that hard gate lives in design-screen against the live
 component inventory. -->
 
 ## Requirements
@@ -83,7 +83,7 @@ completeness a downstream gate can't invent, and they belong in the contract
 - **Visible in build?** routes each requirement to the right adversarial checker
   (`no` = the reviewer's job, not the screenshot-only design-verifier) — a
   routing hint, not a claim the verifier ingests PRD text today (that wiring is
-  build-design P5).
+  design-screen P5).
 
 ## Feature → screen matrix
 
@@ -115,6 +115,6 @@ silently assume.
 - **Design branch:** wireframe (optional) → `figma-create`; the screen briefs
   project this doc's matrix columns. The design-verifier is intended to check
   these requirements as the semantic completeness contract — this depends on
-  build-design P5 ingesting the REQ-ID column (tracked in
+  design-screen P5 ingesting the REQ-ID column (tracked in
   `build-design-workflow.md`); until then the reviewer carries it.
 - **Code branch:** `argo:planner` → `build-plan`, citing these requirements.

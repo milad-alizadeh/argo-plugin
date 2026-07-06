@@ -271,19 +271,20 @@ commit the graph.
   repo root (a single root build handles a real monorepo poorly, so split there).
 - **Install the templates** from `${CLAUDE_PLUGIN_ROOT}/templates/graphify/`: append
   `gitignore` to the project's `.gitignore` (commits `graph.json` + `GRAPH_REPORT.md`
-  + `.graphify_labels.json`, ignores `graph.html`/`cache/`/analysis), and copy
-  `refresh-graph.sh` into the project (e.g. `scripts/`). The script auto-discovers
+  + `.graphify_labels.json`, ignores `graph.html`/`cache/`/analysis). The refresh logic
+  itself ships in the kit as `argo graph refresh` — nothing to copy; it auto-discovers
   workspaces, so it serves monorepo and single-app unchanged.
 - **Single touchpoint, single writer = a `post-merge` git hook** (installed via
   `lefthook`), on-device. It fires **only when `main` integrates commits** (a merge or
-  `git pull`) — the one moment the graph should advance — and runs `refresh-graph.sh`:
-  `graphify update --force` + `graphify label --missing-only --backend=claude-cli`
-  (spawns on-device `claude` — subscription auth, **no API key**) + commit. The script
-  self-guards (main-only, skips worktrees), so worktree/feature-branch commits never
-  write the graph → no write-race. `post-merge` (not `post-commit`) means it never fires
-  on ordinary commits and can't recurse on its own graph commit. Must run where `claude`
-  is authenticated — **on-device, not headless CI**; without a backend, labels degrade to
-  `Community N` (no crash).
+  `git pull`) — the one moment the graph should advance — and runs `argo graph refresh`
+  (the `@argohq/kit` CLI): `graphify update --force` + `graphify label --missing-only
+  --backend=claude-cli` (spawns on-device `claude` — subscription auth, **no API key**)
+  + a pathspec-scoped commit. The verb self-guards (graphify-missing, main-only, skips
+  worktrees), so worktree/feature-branch commits never write the graph → no write-race.
+  `post-merge` (not `post-commit`) means it never fires on ordinary commits and can't
+  recurse on its own graph commit. Must run where `claude` is authenticated —
+  **on-device, not headless CI**; without a backend, labels degrade to `Community N`
+  (no crash).
 - **Worktrees never commit the graph** — they read main's (present + labeled
   instantly on checkout). An agent that wants its own in-flight code mapped runs a
   **local, uncommitted** `graphify update <ws>` (never staged) — so parallel

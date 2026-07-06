@@ -17,9 +17,9 @@ pre-commit:
 
 # Single touchpoint, single writer: graphify refreshes only when main integrates commits
 # (post-merge ONLY — a per-commit trigger is pure labeling latency). Guarded so projects
-# without graphify installed skip it silently; refresh-graph.sh also self-guards
-# (main-only, skips worktrees).
+# without the kit installed skip it silently; `argo graph refresh` also self-guards
+# (graphify-missing, main-only, skips worktrees).
 post-merge:
   jobs:
     - name: graphify-refresh
-      run: sh -c 'command -v graphify >/dev/null 2>&1 || exit 0; bash scripts/refresh-graph.sh'
+      run: sh -c 'test -x node_modules/.bin/argo || exit 0; node_modules/.bin/argo graph refresh'

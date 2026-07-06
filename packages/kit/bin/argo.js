@@ -123,9 +123,15 @@ switch (cmd) {
     console.log(`doctor: ok — designLibrary ${result.declared} === installed kit ${result.installed}`)
     break
   }
-  case 'graph':
-    process.stderr.write(`argo ${cmd}: not implemented yet\n`)
-    process.exit(1)
+  case 'graph': {
+    if (rest[0] !== 'refresh') {
+      process.stderr.write(`argo graph: unknown verb "${rest[0] ?? ''}" (known: refresh)\n`)
+      process.exit(1)
+    }
+    const { runGraphRefresh } = await import('../src/cli/graph-refresh.js')
+    console.log(JSON.stringify(runGraphRefresh({ cwd: flagValue(rest, '--host-root') ?? process.cwd() })))
+    break
+  }
   default:
     process.stderr.write('usage: argo <argo-hook|design|init|update|doctor|graph> ...\n')
     process.exit(cmd ? 1 : 0)

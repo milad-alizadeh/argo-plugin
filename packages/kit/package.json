@@ -6,6 +6,14 @@
   "bin": {
     "argo": "bin/argo.js"
   },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "prepublishOnly": "bun run build"
+  },
   "exports": {
     ".": "./src/index.js",
     "./design-kit": "./src/design-kit/index.js",
@@ -40,5 +48,10 @@
     "@playwright/test": {
       "optional": true
     }
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.1.0",
+    "typescript": "^6.0.3"
   }
 }

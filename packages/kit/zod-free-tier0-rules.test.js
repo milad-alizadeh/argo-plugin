@@ -25,7 +25,8 @@ describe('zod-free tier0-rules subpaths', () => {
   })
 
   it.each(SANDBOX_SUBPATHS)('bundling %s pulls in no zod', (subpath) => {
-    const entry = resolve(KIT_ROOT, pkg.exports[subpath])
+    const target = pkg.exports[subpath]
+    const entry = resolve(KIT_ROOT, typeof target === 'string' ? target : target.default)
     expect(existsSync(entry), `${entry} does not exist`).toBe(true)
     const outDir = mkdtempSync(join(tmpdir(), 'argo-zodfree-'))
     try {

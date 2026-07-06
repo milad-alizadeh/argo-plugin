@@ -113,10 +113,47 @@ master fix carries two extra obligations beyond a screen fix:
   Put the blast radius in the `✅ Fixed` reply so the user knows what moved.
 
 **Conservatism on masters.** Apply a clear master fix (with the hard audit +
-blast-radius report). But anything touching **variant structure** — adding/
-removing a variant, renaming a component property, `combineAsVariants` changes —
-is not auto-applied: post a question reply describing the proposed structural
-change and let the user confirm before you restructure a master.
+blast-radius report). But anything touching the **variant structure of an
+existing master** — adding/removing a variant, renaming a component property,
+`combineAsVariants` changes — is not auto-applied: post a question reply
+describing the proposed structural change and let the user confirm before you
+restructure a master. (Creating a *new* component is not this — see below.)
+
+## Componentization requests — "this should be a component"
+
+A frequent comment is not a fix *to* a node but a request to **turn a node into
+a component**: "this should be a component", "componentize this", "extract as a
+reusable component", "make this a shared/reusable component". These are
+**actionable fixes — do them. Never a silent drop, and don't reflexively defer
+them to a question.** The user is manually flagging under-decomposition (the same
+thing the advisory composite-naming check catches: a plain FRAME sitting where a
+built component belongs). Route them to `figma-create`'s component-authoring
+path, as a master write (so this runs in the masters slot of the serial apply —
+last, one at a time):
+
+1. **Create the component master** from the flagged node (or the smallest
+   subtree the comment scopes) under `figma-create`'s Authoring rules — variant
+   naming (D18), mode copies (D11), Semantic bindings, icons-as-instances — and
+   register it in `design/registry.json` (the incremental upsert `figma-create`
+   owns).
+2. **Replace the original with an instance** of the new master, so the screen is
+   composed from it rather than tracing it. If the comment implies several
+   occurrences, swap the ones the user pointed at and name any you left in the
+   reply.
+3. **Hard tier-0 named-component audit** on the new master (this is authoring —
+   the D8 hard gate applies), then record the receipt as any master write does.
+4. **Reply** `✅ Fixed — extracted <NodeName> into component "<Component>"
+   (registered, N instance(s) swapped)`, plus blast radius if it now ripples.
+
+**This is creation, not restructuring, so it is applied, not deferred.** The
+conservatism rule above defers changes to an *existing* master's variants;
+minting a *new* component from a frame is additive and is the entire point of the
+design system. Fall back to a `❓` only when the request is genuinely ambiguous —
+the component boundary is unclear (which subtree?), no name is given or obvious,
+or the pin sits on a `W##` wireframe page (lo-fi wireframes compose kit instances
+only and own no bespoke masters, so "make this a component" there needs the user
+to name the kit component they mean). Even then, post the `❓`; never drop the
+thread.
 
 ## Optional scope argument
 

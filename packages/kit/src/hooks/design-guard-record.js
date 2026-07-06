@@ -2,9 +2,10 @@
 /**
  * Design-guard record (PostToolUse on the Figma `use_figma` write tool).
  *
- * SELF-SCOPING: entirely inert unless `design/config.json` exists at the
- * session's git toplevel (the design pack marker, same contract session-
- * context.mjs's designSetupNudge already uses) — unlike the build-mode gates,
+ * SELF-SCOPING: entirely inert unless a `design.<app>` block in
+ * `.claude/argo.json` at the session's git toplevel carries a `recipe` (the
+ * design-pack-installed marker, same contract session-context.mjs's
+ * designSetupNudge uses) — unlike the build-mode gates,
  * this is NOT scoped to `.argo/build-mode.json`: a Figma write matters
  * whether or not a gated build is running, so it arms in every session type
  * a design pack is installed in.
@@ -20,6 +21,7 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { findArgoJson, setUpDesignApps } from '../config/argo-json.js'
 
 const FIGMA_WRITE_TOOL = 'mcp__plugin_figma_figma__use_figma'
 
@@ -56,8 +58,7 @@ const cwd = hook?.cwd
 if (typeof cwd !== 'string' || cwd.length === 0) process.exit(0)
 
 const repoRoot = resolveRepoRoot(cwd)
-const designConfigPath = join(repoRoot, 'design', 'config.json')
-if (!existsSync(designConfigPath)) process.exit(0) // design pack not installed — inert
+if (setUpDesignApps(findArgoJson(repoRoot)?.config).length === 0) process.exit(0) // design pack not installed — inert
 
 const statePath = join(repoRoot, '.argo', 'design-guard.json')
 let state = { writeCount: 0 }

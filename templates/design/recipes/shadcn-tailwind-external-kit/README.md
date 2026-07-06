@@ -1,4 +1,4 @@
-# Recipe: shadcn-tailwind-external-kit
+# Recipe: `shadcn-tailwind` (template dir `templates/design/recipes/shadcn-tailwind-external-kit/`)
 
 - **`baseSource`:** `external-library` — components vendor from a published
   shadcn kit library, kept in sync via `kit.lock`/`kit-patches.json` and the

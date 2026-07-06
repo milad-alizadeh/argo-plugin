@@ -21,8 +21,11 @@ const stopInput = (cwd, over = {}) =>
   JSON.stringify({ hook_event_name: 'Stop', cwd, ...over })
 
 function armDesignPack(cwd) {
-  mkdirSync(join(cwd, 'design'), { recursive: true })
-  writeFileSync(join(cwd, 'design', 'config.json'), JSON.stringify({ recipe: 'shadcn-tailwind-external-kit' }))
+  mkdirSync(join(cwd, '.claude'), { recursive: true })
+  writeFileSync(
+    join(cwd, '.claude', 'argo.json'),
+    JSON.stringify({ landing: 'pr', design: { '.': { root: '.', recipe: 'shadcn-tailwind' } } })
+  )
 }
 
 function writeGuardState(cwd, over = {}) {
@@ -43,7 +46,14 @@ describe('design-guard-stop — blocks Stop/SubagentStop on stale/missing audit 
   beforeEach(() => { cwd = mkdtempSync(join(tmpdir(), 'argo-designguard-stop-')) })
   afterEach(() => rmSync(cwd, { recursive: true, force: true }))
 
-  it('PASS: no design/config.json → inert (design pack never installed)', async () => {
+  it('PASS: no set-up design.<app> block in .claude/argo.json → inert (design pack never installed)', async () => {
+    expect((await runHook(stopInput(cwd))).code).toBe(0)
+  })
+
+  it('PASS: a legacy design/config.json alone does not arm it (no-legacy ruling)', async () => {
+    mkdirSync(join(cwd, 'design'), { recursive: true })
+    writeFileSync(join(cwd, 'design', 'config.json'), JSON.stringify({ recipe: 'shadcn-tailwind' }))
+    writeGuardState(cwd) // even with writes recorded, an un-set-up project never blocks
     expect((await runHook(stopInput(cwd))).code).toBe(0)
   })
 

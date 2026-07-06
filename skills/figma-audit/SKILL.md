@@ -40,7 +40,8 @@ from built components. Always advisory, never the hard authoritative
 decomposition gate (Option C, deferred until its brief/story-map schema
 lands) — never wire it as a hard-fail.
 
-**Recipe checks (installed recipe only):** for `shadcn-tailwind-external-kit`
+**Recipe checks (installed recipe only):** for `shadcn-tailwind` (template
+dir `templates/design/recipes/shadcn-tailwind-external-kit/`)
 — non-Semantic bindings (distinguished by library source, §8),
 retired-file-key bindings (a stale binding left over from a Library Swap),
 and edits to the kit copy not present in `design/kit-patches.json`. A
@@ -88,8 +89,8 @@ none at all.
 2. Locate the **assembled** `tier0-audit.js` — read it from the host
    project's `design/` dir if `setup-design` has already installed and
    assembled it there (mechanism + the installed recipe's
-   `tier0-recipe-checks.js` spliced in, all `{{…}}` slots filled from
-   `design/config.json`). If running before install (no host project has it
+   `tier0-recipe-checks.js` spliced in, all `{{…}}` slots filled from the
+   app's `design.<app>` block in `.claude/argo.json`). If running before install (no host project has it
    yet), assemble the same way ad hoc from the plugin's own template copies:
    splice `templates/design/recipes/<recipe>/design-source/tier0-recipe-checks.js`
    into the mechanism template's `// {{RECIPE_TIER0_CHECKS}}` marker,

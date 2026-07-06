@@ -10,7 +10,8 @@
  * rule logic it calls now can (see design-pack-recipes.md §2, decision B).
  *
  * {{SEMANTIC_COLLECTION_NAME}} — this project's Semantic variable collection
- *   name (e.g. "Semantic"), filled by /argo:setup-design from design/config.json.
+ *   name (e.g. "Semantic"), filled by /argo:setup-design from the app's
+ *   design.<app> block in .claude/argo.json.
  *
  * Reports violations as { severity: 'hard' | 'advisory', rule, nodeId, nodeName, detail }.
  * `hard` fails the calling skill loud (D8); `advisory` is a file-wide sweep

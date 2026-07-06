@@ -40,8 +40,9 @@ from:
   Component-only builds skip the wireframe and run PRD-semantic checks only.
 - **INVENTORY / RECONCILIATION / BUILD-ORDER** mounted **READ-ONLY** — the
   anti-recreation authority. The net-new budget is a ceiling only a human raises.
-- **design-guard armed** (`design/config.json` present, so the coverage +
-  commit gates fire) and a **design-verifier** available.
+- **design-guard armed** (the app's `design.<app>` block present in
+  `.claude/argo.json`, so the coverage + commit gates fire) and a
+  **design-verifier** available.
 - **Figma MCP reachable** (load tools via ToolSearch if deferred): `get_metadata`,
   `get_screenshot`, plus the create tools the designer uses.
 

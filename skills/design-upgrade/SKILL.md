@@ -6,8 +6,9 @@ description: The paired shadcn + Figma kit upgrade (D15) - manual shadcn merge, 
 # design-upgrade
 
 **Applies only to projects whose design source is an external kit library**
-(`design/config.json`'s `recipe`-selected `baseSource == "external-library"`).
-Read `design/config.json`'s `recipe` field first: if the installed recipe's
+(the `recipe`-selected `baseSource == "external-library"`, per the app's
+`design.<app>` block in `.claude/argo.json`).
+Read the design block's `recipe` field first: if the installed recipe's
 `baseSource` is not `external-library`, **stop** and state the alternative
 explicitly (D23):
 

@@ -127,8 +127,8 @@ defect was found.
 **CONVENTIONS.** Follow the project's own CLAUDE.md and any surfaced SKILL.md
 before creating or editing nodes.
 
-**AESTHETIC PROFILE.** If the host project has an `aesthetic-profile.md` next
-to its `design/config.json`, read it before any hi-fi creation or edit and
+**AESTHETIC PROFILE.** If the host project has an `aesthetic-profile.md` in
+its `design/` directory, read it before any hi-fi creation or edit and
 critique your visual self-review against its condensed re-injection block.
 (Wireframe work ignores it: lo-fi is deliberately unstyled.)
 

@@ -70,9 +70,10 @@ the congruence gate, and the code-owned behavior of components that already run.
    path → prop mapping (D1), validated against `figma-design-kit`'s
    `StoryMapEntrySchema`.
 7. **Follow the installed recipe's code-target token-writer doc**
-   (`design/config.json`'s `recipe` field selects which
-   `templates/design/recipes/<recipe>/code-target/token-writer.md` applies —
-   today that's `token-writer.md` for `shadcn-tailwind-external-kit`) to
+   (the `recipe` field in the app's `design.<app>` block in `.claude/argo.json`
+   selects which recipe's `code-target/token-writer.md` applies —
+   today that's `token-writer.md` for `shadcn-tailwind`, template dir
+   `templates/design/recipes/shadcn-tailwind-external-kit/`) to
    regenerate the generated token region in the project's `tokenFilePath`
    from the freshly dumped `tokens.json` — that doc names the ONE writer for
    that region (D19); never hand-edit it. A future non-Tailwind code-target

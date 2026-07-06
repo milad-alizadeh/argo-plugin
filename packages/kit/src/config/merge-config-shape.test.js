@@ -4,10 +4,10 @@ import { mergeConfigShape } from './merge-config-shape.js'
 describe('mergeConfigShape', () => {
   it('adds a top-level key missing on disk, using the template placeholder', () => {
     const shape = { recipe: '{{RECIPE_NAME}}', newTop: '{{NEW}}' }
-    const existing = { recipe: 'shadcn-tailwind-external-kit' }
+    const existing = { recipe: 'shadcn-tailwind' }
     const { merged, addedKeys } = mergeConfigShape(shape, existing)
     expect(merged.newTop).toBe('{{NEW}}')
-    expect(merged.recipe).toBe('shadcn-tailwind-external-kit') // preserved
+    expect(merged.recipe).toBe('shadcn-tailwind') // preserved
     expect(addedKeys).toContain('newTop')
   })
 

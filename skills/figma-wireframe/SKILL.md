@@ -55,7 +55,8 @@ traces.
 
 ## Use the project's wireframe kit (rough, not hand-drawn hi-fi)
 
-Read `design/config.json` → `figma.wireframeKitFileKey` FIRST. If set, that is a
+Read `figma.wireframeKitFileKey` from the app's `design.<app>` block in
+`.claude/argo.json` FIRST. If set, that is a
 lo-fi wireframe component library; **build regions by placing INSTANCES of its
 components**, not by hand-drawing frames. This is deliberate and it fixes two
 observed failures:
@@ -85,7 +86,7 @@ Rules for kit use:
   kit-native frame on the lo-fi palette — never an ad-hoc rectangle styled
   toward hi-fi. Same font, same container vocabulary, every frame, every page.
 - **ONE visual grammar everywhere — inherit it from the kit, don't invent it.**
-  The kit (whatever `design/config.json` → `figma.wireframeKitFileKey` points at —
+  The kit (whatever the design block's `figma.wireframeKitFileKey` points at —
   stay agnostic, name no kit and bake in NO kit-specific values) defines the
   corner radius, border weight/stroke style,
   type scale, and spacing rhythm. EVERY container you place — including any

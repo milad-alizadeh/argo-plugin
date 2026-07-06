@@ -48,7 +48,8 @@ Invoke `test:vrt` at:
   a test command, since it requires live Figma Plugin API access.
 - **Tier 4** (static lint) is enforced by this project's existing lint step
   (`{{LINT_CMD}}`) plus the design-pack's lint rule addition — see the
-  installed recipe's `code-target/lint/design-lint.md` (e.g.
+  installed recipe's `code-target/lint/design-lint.md` (e.g. the
+  `shadcn-tailwind` recipe's — template dir
   `templates/design/recipes/shadcn-tailwind-external-kit/code-target/lint/design-lint.md`).
   No separate wiring needed; it rides the lint job that's already a
   pre-commit gate.

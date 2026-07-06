@@ -2,6 +2,7 @@ export { compareColor, comparePxInteger, compareHugDimension, srgbToOklch, oklch
 export { convertLineHeight, convertLetterSpacing, resolveBoxModel } from './conversion-table.js'
 export { WaiverSchema, StoryMapEntrySchema } from './schemas.js'
 export { checkWaiver, invalidateWaivers } from './waivers.js'
+export { DEFAULT_COMPONENT_CATEGORIES, resolveComponentCategories, validateComponentCategories } from './component-categories.js'
 export {
   classifyCoverage,
   summarize,

@@ -6,8 +6,10 @@
  * the latest clean tier-0 audit receipt, and blocks the stop until the audit
  * gate is run.
  *
- * SELF-SCOPING: entirely inert unless `design/config.json` exists at the
- * session's git toplevel — NOT scoped to `.argo/build-mode.json`. Unlike
+ * SELF-SCOPING: entirely inert unless a `design.<app>` block in
+ * `.claude/argo.json` at the session's git toplevel carries a `recipe`
+ * (the design-pack-installed marker) — NOT scoped to
+ * `.argo/build-mode.json`. Unlike
  * red-proof/trust (gated-build-only, TDD-slice concerns), figma-to-code and
  * figma-create can legitimately run outside a gated build, and the
  * deterministic audit-receipt requirement must still be mandatory there. So
@@ -23,6 +25,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { makeBlock } from './lib/gate-block.js'
+import { findArgoJson, setUpDesignApps } from '../config/argo-json.js'
 
 const block = makeBlock('Design guard')
 
@@ -59,7 +62,7 @@ const cwd = hook?.cwd
 if (typeof cwd !== 'string' || cwd.length === 0) process.exit(0)
 
 const repoRoot = resolveRepoRoot(cwd)
-if (!existsSync(join(repoRoot, 'design', 'config.json'))) process.exit(0) // design pack not installed — inert
+if (setUpDesignApps(findArgoJson(repoRoot)?.config).length === 0) process.exit(0) // design pack not installed — inert
 
 const statePath = join(repoRoot, '.argo', 'design-guard.json')
 if (!existsSync(statePath)) process.exit(0) // no Figma writes ever recorded — nothing owed

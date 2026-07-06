@@ -29,8 +29,11 @@ const postToolUseInput = (cwd, over = {}) =>
   })
 
 function armDesignPack(cwd) {
-  mkdirSync(join(cwd, 'design'), { recursive: true })
-  writeFileSync(join(cwd, 'design', 'config.json'), JSON.stringify({ recipe: 'shadcn-tailwind-external-kit' }))
+  mkdirSync(join(cwd, '.claude'), { recursive: true })
+  writeFileSync(
+    join(cwd, '.claude', 'argo.json'),
+    JSON.stringify({ landing: 'pr', design: { '.': { root: '.', recipe: 'shadcn-tailwind' } } })
+  )
 }
 
 describe('design-guard-record — PostToolUse on the Figma use_figma tool', () => {
@@ -38,7 +41,15 @@ describe('design-guard-record — PostToolUse on the Figma use_figma tool', () =
   beforeEach(() => { cwd = mkdtempSync(join(tmpdir(), 'argo-designguard-')) })
   afterEach(() => rmSync(cwd, { recursive: true, force: true }))
 
-  it('PASS: no design/config.json → inert (design pack never installed)', async () => {
+  it('PASS: no set-up design.<app> block in .claude/argo.json → inert (design pack never installed)', async () => {
+    const r = await runHook(postToolUseInput(cwd))
+    expect(r.code).toBe(0)
+    expect(existsSync(join(cwd, '.argo', 'design-guard.json'))).toBe(false)
+  })
+
+  it('PASS: a legacy design/config.json alone does not arm it (no-legacy ruling)', async () => {
+    mkdirSync(join(cwd, 'design'), { recursive: true })
+    writeFileSync(join(cwd, 'design', 'config.json'), JSON.stringify({ recipe: 'shadcn-tailwind' }))
     const r = await runHook(postToolUseInput(cwd))
     expect(r.code).toBe(0)
     expect(existsSync(join(cwd, '.argo', 'design-guard.json'))).toBe(false)

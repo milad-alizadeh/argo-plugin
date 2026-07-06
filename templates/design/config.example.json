@@ -14,7 +14,8 @@
     "dpr": 1
   },
   "figma": {
-    "projectFileKey": "{{PROJECT_FILE_KEY}}"
+    "projectFileKey": "{{PROJECT_FILE_KEY}}",
+    "wireframeKitFileKey": "{{WIREFRAME_KIT_FILE_KEY}}"
   },
   "design": {
     "componentCategories": ["primitive", "composite"]

@@ -43,6 +43,38 @@ already-briefed screen). A wireframe drawn without a brief is exactly the
 failure this guards against: a layout with no product intent, which hi-fi then
 traces.
 
+## Use the project's wireframe kit (rough, not hand-drawn hi-fi)
+
+Read `design/config.json` → `figma.wireframeKitFileKey` FIRST. If set, that is a
+lo-fi wireframe component library; **build regions by placing INSTANCES of its
+components**, not by hand-drawing frames. This is deliberate and it fixes two
+observed failures:
+
+- **Stops wireframes drifting hi-fi.** A hand-drawn greybox tends to creep toward
+  a polished greyscale mock that hi-fi then traces 1:1. A rough-kit instance stays
+  visibly a wireframe — it reads as "not final," so nothing traces it.
+- **Kills the downstream inconsistency passes.** When every card/row/panel is an
+  instance of ONE kit component (variations = variant props), variants can't drift
+  into N hand-edited boxes that someone reconciles later. It also makes the
+  region decomposition survive into `build-design`'s region-contract cleanly
+  (named instance boundaries flatten to first-class regions).
+
+Rules for kit use:
+- Instance the kit's rough primitives; set text/labels to the brief's region
+  names. Do NOT restyle instances toward brand colors or bind Semantic tokens —
+  they stay lo-fi kit-native.
+- A repeated element (a list of cards) is N instances of ONE kit component with a
+  `state`/`variant` prop, never N detached copies.
+- The kit is a wireframe library, NOT the design system. The brief's
+  region→component map is the bridge from a `wf-card` instance to the real
+  `SessionCard` at hi-fi time.
+- **No kit configured** → fall back to hand-drawn greyboxes on the fixed lo-fi
+  palette below. Keep them deliberately rough (boxes + labels), never polished.
+
+Componentize on convergence, not during exploration: a first throwaway pass
+exploring a flow can be loose; the moment a screen's structure settles or an
+element repeats, express it as kit instances.
+
 ## What a wireframe is (and isn't)
 
 Wireframes are **layout and information design only**: what's on the screen,

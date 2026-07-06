@@ -17,6 +17,7 @@ import { join } from 'node:path'
 import { writeDesignJson } from './lib/write-design-json.js'
 import { findKitNameCollisions } from '../design-kit/kit-inventory.js'
 import { resolveRepoRoot } from '../lib/repo-root.js'
+import { appKeyForCwd, readSessionWriteCount, writeSessionReceiptEntry } from '../lib/session-guard.js'
 
 /**
  * kit-awareness (kit-awareness.md §"Enforcement"): reads the three optional,
@@ -59,51 +60,45 @@ function countKitNameCollisions(componentNames: string[], cwd: string): number {
  */
 export function recordAuditReceipt(
   { componentNames = [], violations = [] }: { componentNames?: string[]; violations?: { severity?: string }[] } = {},
-  { cwd, now = Date.now() }: { cwd: string; now?: number }
+  { cwd, now = Date.now(), sessionId = null }: { cwd: string; now?: number; sessionId?: string | null }
 ) {
   if (!cwd) throw new Error('recordAuditReceipt: cwd is required')
 
-  let writeCounterAtAudit = 0
-  // Per-session snapshot: each session's writeCount at audit time, keyed by
-  // session_id. design-guard-stop compares THIS session's live count against
-  // its snapshot here, so a concurrent design session advancing the repo-
-  // global counter no longer deadlocks a session whose own writes are audited
-  // (dogfood finding 2026-07-06). Empty on a legacy/sessionless guard state,
-  // where the stop gate falls back to the global writeCounterAtAudit.
-  let sessionWriteCountsAtAudit: Record<string, number> = {}
-  const guardStatePath = join(resolveRepoRoot(cwd), '.argo', 'design-guard.json')
-  if (existsSync(guardStatePath)) {
-    try {
-      const state = JSON.parse(readFileSync(guardStatePath, 'utf8'))
-      writeCounterAtAudit = typeof state.writeCount === 'number' ? state.writeCount : 0
-      const sessions = state.sessions
-      if (sessions && typeof sessions === 'object') {
-        for (const [sid, info] of Object.entries(sessions)) {
-          const wc = (info as { writeCount?: unknown })?.writeCount
-          if (typeof wc === 'number') sessionWriteCountsAtAudit[sid] = wc
-        }
-      }
-    } catch {
-      writeCounterAtAudit = 0 // corrupt state — this writer never blocks; the stop gate does
-      sessionWriteCountsAtAudit = {}
-    }
-  }
-
+  const repoRoot = resolveRepoRoot(cwd)
   const kitNameCollisionCount = countKitNameCollisions(componentNames, cwd)
 
   // HARD-only (council ruling Q7, 2026-07-05): advisory findings belong to
   // the sweep report, never the receipt — counting them blocked a clean run
   // on advisory-only stroke-scale hits (the D05 red-gate incident).
   const hardViolations = violations.filter((v) => v?.severity !== 'advisory')
+  const violationCount = hardViolations.length + kitNameCollisionCount
 
-  const receipt = {
-    timestamp: now,
-    componentNames,
-    violationCount: hardViolations.length + kitNameCollisionCount,
-    writeCounterAtAudit,
-    sessionWriteCountsAtAudit
+  // Per-session-design-gate.md: when this run is attributed to a session,
+  // record into that session's OWN receipt (`.argo/audit-receipts/<sid>.json`),
+  // keyed per app, stamped with the session's live write count. Nothing shared
+  // is touched, so a concurrent design session can neither clobber this receipt
+  // nor be blocked by it. `writeCountAtAudit` reads THIS session's per-session
+  // write-count file (0 if the record hook never saw a write for it).
+  if (sessionId) {
+    const liveWriteCount = readSessionWriteCount(repoRoot, sessionId) ?? 0
+    const appKey = appKeyForCwd(repoRoot, cwd)
+    return writeSessionReceiptEntry(repoRoot, sessionId, appKey, { componentNames, violationCount }, liveWriteCount, now)
   }
 
+  // Legacy sessionless path: the committed per-app `design/audit-receipt.json`,
+  // compared against the repo-global write counter by the stop gate's fallback.
+  let writeCounterAtAudit = 0
+  const guardStatePath = join(repoRoot, '.argo', 'design-guard.json')
+  if (existsSync(guardStatePath)) {
+    try {
+      const state = JSON.parse(readFileSync(guardStatePath, 'utf8'))
+      writeCounterAtAudit = typeof state.writeCount === 'number' ? state.writeCount : 0
+    } catch {
+      writeCounterAtAudit = 0 // corrupt state — this writer never blocks; the stop gate does
+    }
+  }
+
+  const receipt = { timestamp: now, componentNames, violationCount, writeCounterAtAudit }
   writeDesignJson(cwd, 'audit-receipt.json', receipt)
   return receipt
 }
@@ -127,6 +122,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.error('record-audit-receipt: --record argument is not valid JSON')
     process.exit(1)
   }
-  const receipt = recordAuditReceipt(parsed, { cwd: process.cwd() })
+  // The record/stop hooks key per-session state by the hook payload's
+  // `session_id`; the CLI has no payload, so it reads the same value from
+  // `CLAUDE_CODE_SESSION_ID` (verified equal to the payload id). Absent → the
+  // legacy committed-receipt path.
+  const envSession = process.env.CLAUDE_CODE_SESSION_ID
+  const sessionId = typeof envSession === 'string' && envSession.length > 0 ? envSession : null
+  const receipt = recordAuditReceipt(parsed, { cwd: process.cwd(), sessionId })
   console.log(JSON.stringify(receipt))
 }

@@ -43,6 +43,21 @@ function writeAuditReceipt(cwd: string, over: Record<string, unknown> = {}) {
   )
 }
 
+// Per-session gate state under `.argo/` (per-session-design-gate.md).
+function writeSessionState(cwd: string, sessionId: string, writeCount: number) {
+  mkdirSync(join(cwd, '.argo', 'design-guard'), { recursive: true })
+  writeFileSync(join(cwd, '.argo', 'design-guard', `${sessionId}.json`), JSON.stringify({ writeCount, lastWriteAt: Date.now() }))
+}
+
+function writeSessionReceipt(
+  cwd: string,
+  sessionId: string,
+  { writeCountAtAudit, apps = { '.': { componentNames: ['Button'], violationCount: 0 } } }: { writeCountAtAudit: number; apps?: Record<string, { componentNames: string[]; violationCount: number }> }
+) {
+  mkdirSync(join(cwd, '.argo', 'audit-receipts'), { recursive: true })
+  writeFileSync(join(cwd, '.argo', 'audit-receipts', `${sessionId}.json`), JSON.stringify({ timestamp: Date.now(), writeCountAtAudit, apps }))
+}
+
 function armDesignPackMonorepo(cwd: string, appRoot: string) {
   mkdirSync(join(cwd, '.claude'), { recursive: true })
   writeFileSync(
@@ -158,67 +173,66 @@ describe('design-guard-stop — blocks Stop/SubagentStop on stale/missing audit 
     expect(r.stderr).toMatch(/no audit receipt/)
   })
 
-  it('PASS: a bystander session with zero recorded writes is not blocked by another session\'s global writeCount', async () => {
+  // --- Per-session path (per-session-design-gate.md) ------------------------
+  // Every session is judged ONLY by its own `.argo/design-guard/<sid>.json`
+  // (write count) + `.argo/audit-receipts/<sid>.json` (audit result). No shared
+  // state to race, no cross-session hostage.
+  it('PASS: a session with no writes of its own is a bystander, whatever any other session did', async () => {
     armDesignPack(cwd)
-    writeGuardState(cwd, { sessions: { 'other-session': { writeCount: 1, lastWriteAt: Date.now() } } })
-    // no receipt exists at all, and global writeCount > 0 — would block under the old global-only logic
-    const r = await runHook(stopInput(cwd, { session_id: 'bystander-session' }))
+    writeSessionState(cwd, 'other', 4) // a concurrent session wrote a lot
+    writeGuardState(cwd, { writeCount: 9 }) // and a stale legacy shared counter exists
+    const r = await runHook(stopInput(cwd, { session_id: 'bystander' }))
     expect(r.code).toBe(0)
   })
 
-  it('BLOCK: a session that DID record writes is still gated on its own missing/stale receipt', async () => {
+  it('BLOCK: a session that recorded writes but has no receipt is gated on its own state', async () => {
     armDesignPack(cwd)
-    writeGuardState(cwd, { sessions: { 'writer-session': { writeCount: 1, lastWriteAt: Date.now() } } })
-    const r = await runHook(stopInput(cwd, { session_id: 'writer-session' }))
+    writeSessionState(cwd, 'mine', 2)
+    const r = await runHook(stopInput(cwd, { session_id: 'mine' }))
     expect(r.code).toBe(2)
     expect(r.stderr).toMatch(/no audit receipt/)
   })
 
-  it('BLOCK: missing session_id falls back to default-deny on the global counter (no free pass)', async () => {
+  it('PASS: this session fully audited, even while another session keeps writing (no shared-counter deadlock)', async () => {
     armDesignPack(cwd)
-    writeGuardState(cwd, { sessions: { 'some-other-session': { writeCount: 1, lastWriteAt: Date.now() } } })
-    const r = await runHook(stopInput(cwd)) // no session_id at all
-    expect(r.code).toBe(2)
-    expect(r.stderr).toMatch(/no audit receipt/)
-  })
-
-  // Concurrent-design-session deadlock (dogfood finding 2026-07-06): two
-  // sessions editing one Figma file share a repo-global writeCount. Comparing
-  // a receipt against that global counter means a session whose own writes
-  // are fully audited can never stop while ANOTHER session keeps writing. The
-  // fix: the receipt snapshots each session's write count, and the stop gate
-  // asks only whether THIS session wrote since its own audit.
-  it('PASS: this session fully audited, another session advanced the global counter after', async () => {
-    armDesignPack(cwd)
-    // this session (mine) made 3 writes; another session then made 2 more →
-    // global 5, but the receipt snapshotted mine at 3 (all audited).
-    writeGuardState(cwd, {
-      writeCount: 5,
-      sessions: { mine: { writeCount: 3, lastWriteAt: Date.now() }, other: { writeCount: 2, lastWriteAt: Date.now() } }
-    })
-    writeAuditReceipt(cwd, { writeCounterAtAudit: 3, sessionWriteCountsAtAudit: { mine: 3 } })
+    writeSessionState(cwd, 'mine', 3)
+    writeSessionState(cwd, 'other', 99) // concurrent writer races ahead — invisible to mine
+    writeSessionReceipt(cwd, 'mine', { writeCountAtAudit: 3 })
     expect((await runHook(stopInput(cwd, { session_id: 'mine' }))).code).toBe(0)
   })
 
-  it('BLOCK: this session wrote again after its own audit (session counter ahead of snapshot)', async () => {
+  it('BLOCK: this session wrote again after its own audit (live count ahead of receipt)', async () => {
     armDesignPack(cwd)
-    writeGuardState(cwd, {
-      writeCount: 6,
-      sessions: { mine: { writeCount: 4, lastWriteAt: Date.now() }, other: { writeCount: 2, lastWriteAt: Date.now() } }
-    })
-    // receipt snapshotted mine at 3, but mine is now 4 → I owe a re-audit.
-    writeAuditReceipt(cwd, { writeCounterAtAudit: 5, sessionWriteCountsAtAudit: { mine: 3, other: 2 } })
+    writeSessionState(cwd, 'mine', 4)
+    writeSessionReceipt(cwd, 'mine', { writeCountAtAudit: 3 })
     const r = await runHook(stopInput(cwd, { session_id: 'mine' }))
     expect(r.code).toBe(2)
     expect(r.stderr).toMatch(/after the last clean audit/)
   })
 
-  it('BLOCK (back-compat): a legacy receipt without a per-session snapshot falls back to the global counter', async () => {
+  it('BLOCK: this session\'s receipt is current but carries outstanding violations', async () => {
     armDesignPack(cwd)
-    writeGuardState(cwd, { writeCount: 5, sessions: { mine: { writeCount: 3, lastWriteAt: Date.now() } } })
-    writeAuditReceipt(cwd, { writeCounterAtAudit: 3 }) // no sessionWriteCountsAtAudit
+    writeSessionState(cwd, 'mine', 2)
+    writeSessionReceipt(cwd, 'mine', { writeCountAtAudit: 2, apps: { '.': { componentNames: ['Button'], violationCount: 3 } } })
     const r = await runHook(stopInput(cwd, { session_id: 'mine' }))
     expect(r.code).toBe(2)
-    expect(r.stderr).toMatch(/after the last clean audit/)
+    expect(r.stderr).toMatch(/violation/)
+  })
+
+  it('BLOCK (monorepo): session wrote but its receipt has no entry for a configured app', async () => {
+    armDesignPackMonorepo(cwd, 'apps/desktop')
+    writeSessionState(cwd, 'mine', 1)
+    writeSessionReceipt(cwd, 'mine', { writeCountAtAudit: 1, apps: {} }) // no apps/desktop entry
+    const r = await runHook(stopInput(cwd, { session_id: 'mine' }))
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/no audit/)
+  })
+
+  it('BLOCK: missing session_id falls back to default-deny on the legacy global counter', async () => {
+    armDesignPack(cwd)
+    writeGuardState(cwd) // legacy sessionless writes recorded, no receipt
+    const r = await runHook(stopInput(cwd)) // no session_id at all
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/no audit receipt/)
   })
 })

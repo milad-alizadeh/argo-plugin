@@ -15,24 +15,22 @@
  * deterministic audit-receipt requirement must still be mandatory there. So
  * this hook arms in every session type a design pack is installed in.
  *
- * Once armed: no recorded writes at all → nothing owed, pass. Any recorded
- * write with no receipt, a receipt with violationCount > 0, or a receipt
- * whose writeCounterAtAudit is stale (writes happened after the last clean
- * audit) → BLOCK, telling the agent to run the audit gate.
+ * PER-SESSION (per-session-design-gate.md): each session is judged ONLY by
+ * its own files — `.argo/design-guard/<sid>.json` (its write count) and
+ * `.argo/audit-receipts/<sid>.json` (its audit result). A session with no such
+ * file made no writes → bystander, pass. Otherwise: no receipt, a live write
+ * count ahead of the receipt's `writeCountAtAudit`, a configured app missing
+ * from the receipt, or a per-app violationCount > 0 → BLOCK. Another session's
+ * writes live in other files and are invisible here, so two design sessions on
+ * one Figma file never hold each other hostage. A Stop with no `session_id`, or
+ * a session with no per-session file, falls back to the legacy global counter +
+ * committed `design/audit-receipt.json` (default-deny).
  *
- * DEFERRAL (in-flight background work): `.argo/design-guard.json`'s
- * writeCount is repo-global, not session-scoped — a designer fan-out
- * (Task-tool subagent) still running writes to the same counter the parent
- * session's Stop hook reads. Without this, the parent could never end a
- * turn cleanly while that fan-out is mid-flight: any receipt it audits goes
- * stale the instant the subagent writes again. The Stop/SubagentStop hook
- * payload carries `background_tasks` (running/pending + backgrounded work
- * registered on this session — see the Claude Code hooks schema); when
- * non-empty, this hook defers rather than blocks, since the session is
- * about to pause for that work anyway, not actually end. Once nothing is
- * in flight, the next real Stop re-checks the receipt against the
- * up-to-date write counter — the gate is never actually bypassed, only
- * postponed past writes it isn't this hook's job to have caught yet.
+ * DEFERRAL (in-flight background work): the Stop/SubagentStop payload carries
+ * `background_tasks` (running/pending/backgrounded work on this session — see
+ * the Claude Code hooks schema); when non-empty, this hook defers (exit 0)
+ * rather than blocks, since the session is about to pause for that work, not
+ * end. The next real Stop re-checks — the gate is postponed, never bypassed.
  */
 
 import { readFileSync, existsSync } from 'node:fs'
@@ -40,6 +38,7 @@ import { join } from 'node:path'
 import { makeBlock } from './lib/gate-block.js'
 import { findArgoJson, setUpDesignApps } from '../config/argo-json.js'
 import { resolveRepoRoot } from '../lib/repo-root.js'
+import { appKeyForRoot, readSessionReceipt, readSessionWriteCount, pruneStaleSessionFiles } from '../lib/session-guard.js'
 
 const block = makeBlock('Design guard')
 
@@ -69,8 +68,53 @@ const repoRoot = resolveRepoRoot(cwd)
 const designApps = setUpDesignApps(findArgoJson(repoRoot)?.config)
 if (designApps.length === 0) process.exit(0) // design pack not installed — inert
 
+const backgroundTasks = Array.isArray(hook?.background_tasks) ? hook.background_tasks : []
+if (backgroundTasks.length > 0) process.exit(0) // in-flight subagent/workflow may still write Figma changes — defer, don't block
+
+const sessionId = typeof hook?.session_id === 'string' && hook.session_id.length > 0 ? hook.session_id : null
+
+// Best-effort GC of aged per-session files; must never block the gate.
+try {
+  pruneStaleSessionFiles(repoRoot, Date.now())
+} catch {
+  /* ignore */
+}
+
+// --- Per-session path (per-session-design-gate.md) --------------------------
+// When this session has its own write-count file, judge it ONLY against its
+// own state + receipt. Another session's writes are invisible here, so two
+// design sessions on one Figma file never hold each other hostage.
+if (sessionId) {
+  const liveCount = readSessionWriteCount(repoRoot, sessionId)
+  // A session is judged ONLY by its own per-session files. No file (or zero
+  // writes) → this session is a bystander, nothing owed — it is never dragged
+  // into another session's writes or the legacy global counter. A session that
+  // actually wrote always has a per-session file (the record hook writes one),
+  // so this can't be used to dodge a real debt.
+  if (liveCount === null || liveCount === 0) process.exit(0)
+
+  const receipt =
+    readSessionReceipt(repoRoot, sessionId) ??
+    block(`${liveCount} Figma write(s) in this session with no audit receipt — run /argo:figma-audit before stopping`)
+  if (typeof receipt.writeCountAtAudit !== 'number' || receipt.writeCountAtAudit !== liveCount)
+    block('Figma writes happened in this session after the last clean audit — re-run /argo:figma-audit before stopping')
+  const apps = (receipt.apps ?? {}) as Record<string, { componentNames?: string[]; violationCount?: number }>
+  for (const { block: designBlock } of designApps) {
+    const appKey = appKeyForRoot(designBlock.root)
+    const entry =
+      apps[appKey] ??
+      block(`Figma writes recorded with no audit for "${appKey}" in this session's receipt — run /argo:figma-audit before stopping`)
+    if (typeof entry.violationCount !== 'number' || entry.violationCount !== 0)
+      block(`last audit found ${entry.violationCount ?? 'unknown'} violation(s) in ${appKey} — fix and re-audit before stopping`)
+  }
+  process.exit(0)
+}
+
+// --- Legacy fallback --------------------------------------------------------
+// Sessions that wrote under the old shared-counter hook, or a payload with no
+// session_id. Default-deny against the repo-global counter + committed receipt.
 const statePath = join(repoRoot, '.argo', 'design-guard.json')
-if (!existsSync(statePath)) process.exit(0) // no Figma writes ever recorded — nothing owed
+if (!existsSync(statePath)) process.exit(0) // no legacy Figma writes recorded — nothing owed
 
 let state: any
 try {
@@ -81,25 +125,6 @@ try {
 const writeCount = typeof state.writeCount === 'number' ? state.writeCount : 0
 if (writeCount === 0) process.exit(0)
 
-const backgroundTasks = Array.isArray(hook?.background_tasks) ? hook.background_tasks : []
-if (backgroundTasks.length > 0) process.exit(0) // in-flight subagent/workflow may still write Figma changes — defer, don't block
-
-// Per-session attribution: `.argo/design-guard.json`'s writeCount is
-// repo-global, so a SEPARATE session's Figma writes must not block a
-// bystander session that made none itself. A missing session_id can't be
-// used to dodge the gate, so it falls back to the global (default-deny)
-// count below.
-const sessionId = typeof hook?.session_id === 'string' && hook.session_id.length > 0 ? hook.session_id : null
-let sessionWriteCount: number | null = null
-if (sessionId) {
-  const sessions = typeof state.sessions === 'object' && state.sessions !== null ? state.sessions : {}
-  sessionWriteCount = typeof sessions[sessionId]?.writeCount === 'number' ? sessions[sessionId].writeCount : 0
-  if (sessionWriteCount === 0) process.exit(0) // this session made zero Figma writes — nothing owed
-}
-
-// Receipts are installed per design app (root-relative, matching the
-// record-audit-receipt CLI's write location) — never at the repo root, so a
-// monorepo's app receipt is what the writer actually produces.
 for (const { block: designBlock } of designApps) {
   const appRoot = designBlock.root ?? '.'
   const receiptPath = join(repoRoot, appRoot, 'design', 'audit-receipt.json')
@@ -116,21 +141,8 @@ for (const { block: designBlock } of designApps) {
   if (typeof receipt.violationCount !== 'number' || receipt.violationCount !== 0)
     block(`last audit found ${receipt.violationCount ?? 'unknown'} violation(s) in ${appRoot} — fix and re-audit before stopping`)
 
-  // Per-session staleness (concurrent-design-session fix, 2026-07-06): when
-  // the receipt carries a per-session snapshot and this session's id is known,
-  // block only if THIS session wrote since its own audit — a DIFFERENT session
-  // advancing the repo-global writeCount must not hold this one hostage (that
-  // deadlocked any session with its own writes while a concurrent designer
-  // kept editing). Legacy receipts with no snapshot, or a missing session_id,
-  // fall back to the global comparison (default-deny).
-  const snapshot = receipt.sessionWriteCountsAtAudit
-  if (sessionId && sessionWriteCount !== null && snapshot && typeof snapshot === 'object') {
-    const auditedForSession = typeof snapshot[sessionId] === 'number' ? snapshot[sessionId] : 0
-    if (sessionWriteCount > auditedForSession)
-      block(`Figma writes happened in this session after the last clean audit in ${appRoot} — re-run /argo:figma-audit before stopping`)
-  } else if (receipt.writeCounterAtAudit !== writeCount) {
+  if (receipt.writeCounterAtAudit !== writeCount)
     block(`Figma writes happened after the last clean audit in ${appRoot} — re-run /argo:figma-audit before stopping`)
-  }
 }
 
 process.exit(0)

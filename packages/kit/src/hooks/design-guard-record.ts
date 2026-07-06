@@ -22,6 +22,7 @@ import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { findArgoJson, setUpDesignApps } from '../config/argo-json.js'
 import { resolveRepoRoot } from '../lib/repo-root.js'
+import { bumpSessionWriteCount } from '../lib/session-guard.js'
 
 const FIGMA_WRITE_TOOL = 'mcp__plugin_figma_figma__use_figma'
 
@@ -50,25 +51,30 @@ if (typeof cwd !== 'string' || cwd.length === 0) process.exit(0)
 const repoRoot = resolveRepoRoot(cwd)
 if (setUpDesignApps(findArgoJson(repoRoot)?.config).length === 0) process.exit(0) // design pack not installed — inert
 
-const statePath = join(repoRoot, '.argo', 'design-guard.json')
-let state: any = { writeCount: 0, sessions: {} }
-if (existsSync(statePath)) {
-  try {
-    state = JSON.parse(readFileSync(statePath, 'utf8'))
-  } catch {
-    state = { writeCount: 0, sessions: {} } // corrupt state — recover rather than crash
-  }
-}
-
-const sessions = typeof state.sessions === 'object' && state.sessions !== null ? state.sessions : {}
-const writeCount = (typeof state.writeCount === 'number' ? state.writeCount : 0) + 1
+// Per-session-design-gate.md: when the write is attributed to a session,
+// record it in that session's OWN file (`.argo/design-guard/<sid>.json`) and
+// touch nothing shared — this is what lets a concurrent design session write
+// the same file without a lost-update race or a receipt clobber. Only the
+// legacy sessionless path still mutates the shared `.argo/design-guard.json`
+// (kept so the stop gate's legacy fallback keeps gating those writes).
 const sessionId = typeof hook?.session_id === 'string' && hook.session_id.length > 0 ? hook.session_id : null
 if (sessionId) {
-  const prior = typeof sessions[sessionId]?.writeCount === 'number' ? sessions[sessionId].writeCount : 0
-  sessions[sessionId] = { writeCount: prior + 1, lastWriteAt: Date.now() }
+  bumpSessionWriteCount(repoRoot, sessionId, Date.now())
+} else {
+  const statePath = join(repoRoot, '.argo', 'design-guard.json')
+  let state: any = { writeCount: 0, sessions: {} }
+  if (existsSync(statePath)) {
+    try {
+      state = JSON.parse(readFileSync(statePath, 'utf8'))
+    } catch {
+      state = { writeCount: 0, sessions: {} } // corrupt state — recover rather than crash
+    }
+  }
+  const sessions = typeof state.sessions === 'object' && state.sessions !== null ? state.sessions : {}
+  const writeCount = (typeof state.writeCount === 'number' ? state.writeCount : 0) + 1
+  mkdirSync(join(repoRoot, '.argo'), { recursive: true })
+  writeFileSync(statePath, JSON.stringify({ writeCount, lastWriteAt: Date.now(), sessions }))
 }
-mkdirSync(join(repoRoot, '.argo'), { recursive: true })
-writeFileSync(statePath, JSON.stringify({ writeCount, lastWriteAt: Date.now(), sessions }))
 
 process.stdout.write(
   JSON.stringify({

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
@@ -103,29 +103,32 @@ describe('recordAuditReceipt', () => {
     }
   })
 
-  // Concurrent-design-session fix (2026-07-06): the receipt snapshots each
-  // session's write count so design-guard-stop can compare per-session rather
-  // than against the repo-global counter (which a concurrent session advances,
-  // deadlocking any session that itself wrote).
-  it('snapshots each session\'s write count from .argo/design-guard.json into sessionWriteCountsAtAudit', () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'tier0-audit-receipt-sessions-'))
+  // Per-session-design-gate.md: with a session id, the receipt is per-session
+  // and local (`.argo/audit-receipts/<sid>.json`), keyed per app and stamped
+  // with THIS session's live write count — never the committed per-app file,
+  // and never touching another session's state, so concurrent sessions can't
+  // clobber each other.
+  it('with a session id, writes a per-session receipt (apps + live write count), not the committed one', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'tier0-audit-receipt-persession-'))
     try {
       execFileSync('git', ['-C', repoRoot, 'init', '-q'])
       const appRoot = join(repoRoot, 'apps', 'desktop')
       mkdirSync(appRoot, { recursive: true })
-      mkdirSync(join(repoRoot, '.argo'), { recursive: true })
-      writeFileSync(
-        join(repoRoot, '.argo', 'design-guard.json'),
-        JSON.stringify({
-          writeCount: 12,
-          sessions: { mine: { writeCount: 7, lastWriteAt: 1 }, other: { writeCount: 5, lastWriteAt: 2 } }
-        })
+      // this session's own write-count file says it made 7 writes
+      mkdirSync(join(repoRoot, '.argo', 'design-guard'), { recursive: true })
+      writeFileSync(join(repoRoot, '.argo', 'design-guard', 'mine.json'), JSON.stringify({ writeCount: 7, lastWriteAt: 1 }))
+
+      const receipt: any = recordAuditReceipt(
+        { componentNames: ['Button'], violations: [] },
+        { cwd: appRoot, now: 123, sessionId: 'mine' }
       )
 
-      const receipt = recordAuditReceipt({ componentNames: [], violations: [] }, { cwd: appRoot, now: 123 })
-
-      expect(receipt.writeCounterAtAudit).toBe(12)
-      expect(receipt.sessionWriteCountsAtAudit).toEqual({ mine: 7, other: 5 })
+      expect(receipt.writeCountAtAudit).toBe(7)
+      expect(receipt.apps['apps/desktop']).toEqual({ componentNames: ['Button'], violationCount: 0 })
+      const onDisk = JSON.parse(readFileSync(join(repoRoot, '.argo', 'audit-receipts', 'mine.json'), 'utf8'))
+      expect(onDisk).toEqual(receipt)
+      // the committed per-app receipt is NOT written on the per-session path
+      expect(existsSync(join(appRoot, 'design', 'audit-receipt.json'))).toBe(false)
     } finally {
       rmSync(repoRoot, { recursive: true, force: true })
     }

@@ -137,6 +137,15 @@ never brand design:
   page per surface group, frames laid out horizontally with 200-240px
   gutters between them. When a page grows past roughly seven frames, split
   the group into a new `W<NN>` page rather than keep piling on.
+- **All wireframe components live on ONE dedicated components page**, never
+  scattered next to the frames that instance them. Keep a single `W00
+  Components` (or `WF · Components`) page holding every local master component
+  the wireframes use (panel headers, cards, spine rows, terminal, diff viewer,
+  stage header, etc.), laid out together so the whole lo-fi vocabulary is
+  visible in one place. Frames on the `W<NN>` pages carry only INSTANCES of
+  these masters. This is what makes the component set auditable at a glance and
+  keeps edits propagating from one obvious source — a master placed loose on a
+  frame page is a defect.
 
 ## Vocabulary discipline
 

@@ -40,7 +40,7 @@ describe('session-context — SessionStart way-of-working card', () => {
     for (const pointer of ['grill-me', 'build-plan', 'root-cause', 'graphify']) {
       expect(context).toContain(pointer)
     }
-    // Stack specifics belong to setup-claude's installed rules, never this card.
+    // Stack specifics belong to init's installed rules, never this card.
     for (const stackWord of ['bun ', 'turbo', 'vitest', 'playwright', 'npm ', 'electron']) {
       expect(context.toLowerCase()).not.toContain(stackWord)
     }
@@ -56,43 +56,57 @@ describe('session-context — SessionStart way-of-working card', () => {
 })
 
 describe('session-context — setup lifecycle nudges', () => {
-  it('nudges to run /argo:setup-claude when the project has no .claude/argo-config.json', async () => {
+  it('nudges to run /argo:init when the project has no .claude/argo.json', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
     try {
       const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
       const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
-      expect(context).toContain('/argo:setup-claude')
+      expect(context).toContain('/argo:init')
       expect(context).toMatch(/not set up|isn't set up/i)
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }
   })
 
-  it('nudges to re-run setup when argo-config.json was written by an older plugin version', async () => {
+  it('nudges to re-run setup when argo.json was written by an older plugin version', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
     try {
       mkdirSync(join(dir, '.claude'), { recursive: true })
       writeFileSync(
-        join(dir, '.claude', 'argo-config.json'),
+        join(dir, '.claude', 'argo.json'),
         JSON.stringify({ landing: 'merge', setupVersion: '0.1.0' })
       )
       const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
       const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
-      expect(context).toContain('/argo:setup-claude')
+      expect(context).toContain('/argo:init')
       expect(context).toContain('0.1.0')
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }
   })
 
-  it('nudges when argo-config.json predates setup versioning (no setupVersion field)', async () => {
+  it('nudges when argo.json predates setup versioning (no setupVersion field)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
+    try {
+      mkdirSync(join(dir, '.claude'), { recursive: true })
+      writeFileSync(join(dir, '.claude', 'argo.json'), JSON.stringify({ landing: 'merge' }))
+      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
+      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
+      expect(context).toContain('/argo:init')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('treats a legacy argo-config.json as NOT set up (no-legacy ruling: rip-and-re-init, no migration)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
     try {
       mkdirSync(join(dir, '.claude'), { recursive: true })
       writeFileSync(join(dir, '.claude', 'argo-config.json'), JSON.stringify({ landing: 'merge' }))
       const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
       const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
-      expect(context).toContain('/argo:setup-claude')
+      expect(context).toContain('/argo:init')
+      expect(context).toMatch(/not set up|isn't set up/i)
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }
@@ -106,7 +120,7 @@ describe('session-context — setup lifecycle nudges', () => {
       )
       mkdirSync(join(dir, '.claude'), { recursive: true })
       writeFileSync(
-        join(dir, '.claude', 'argo-config.json'),
+        join(dir, '.claude', 'argo.json'),
         JSON.stringify({ landing: 'merge', setupVersion: version })
       )
       const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))

@@ -82,7 +82,7 @@ The brief's region-disposition block must account for **100%** of contract
 regions: each region is either `built-here` (+ component + REUSE/EXTEND/
 RECONCILE/NEW verdict) or `deferred-to-<wave/screen>` (+ reason, target validated
 against BUILD-ORDER). Extend the rows with an optional **REQ-ID column** so a PRD
-requirement mapped to no region is flagged here. Run `region-coverage.mjs`: any
+requirement mapped to no region is flagged here. Run `argo design region-coverage`: any
 contract region with no disposition row = FAIL before a single Figma write. **This
 is the cheapest catch — it stops an under-build here, pre-Figma.**
 
@@ -101,9 +101,9 @@ verifier, so the builder cannot grade its own work:
 - **(b)** Structural coverage: an independent run does `get_metadata` on the
   BUILT screen; `region-contract.js` classifies present | deferred | UNACCOUNTED
   | MISSING. `present` REQUIRES a registry-backed **instance** (a bare frame is
-  hollow-MISSING) — so coverage can't be satisfied by tracing boxes. `record-
-  coverage-receipt.mjs` writes `design/coverage-receipt.json` (`producedBy ≠
-  compose`); `design-coverage-gate.mjs` blocks the commit unless the receipt is
+  hollow-MISSING) — so coverage can't be satisfied by tracing boxes. `argo design
+  record-coverage-receipt` writes the per-screen coverage receipt (`producedBy ≠
+  compose`); the kit's design-coverage-gate blocks the commit unless the receipt is
   fresh, `clean` (UNACCOUNTED 0 && MISSING 0), and non-compose-produced.
 - **(c)** Spawn the **design-verifier** agent (separate, sonnet, HARD-isolated):
   it gets ONLY wireframe + built screenshots + region-contract + the PRD's

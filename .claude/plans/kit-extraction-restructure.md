@@ -722,11 +722,14 @@ This is **rip-and-re-init**, not a migration (resolved open question 3 / decisio
   updated to match): dev distribution is `bun link` + `"link:@argohq/kit"`
   dep lines; release is `npm publish` + `link:` → `^version` swap. Slices 4-6
   rewritten above; no `vendor/`, `.tgz`, or pack script anywhere.
-- **2026-07-06 — co-located unit tests** (owner ruling): every unit test lives
-  NEXT TO the file it tests (`packages/kit/src/hooks/red-proof-gate.js` →
+- **2026-07-06 — co-located unit tests, REPO-WIDE** (owner ruling + addition):
+  every unit test lives NEXT TO the file it tests
+  (`packages/kit/src/hooks/red-proof-gate.js` →
   `packages/kit/src/hooks/red-proof-gate.test.js`), never in a parallel/flat
-  `test/` tree. Applies to all kit tests already written (moved) and all future
-  ones (Slice 4's `cliInit`/`cliDoctor` tests land as
+  `test/` tree — including the pre-existing plugin-side specs (safety-hook
+  suites → `hooks/`, eval helpers → `eval/lib/`, R7 corpus suite →
+  `packages/kit/src/design-kit/`). Applies to all tests already written
+  (moved) and all future ones (Slice 4's `cliInit`/`cliDoctor` tests land as
   `packages/kit/src/cli/init.test.js` / `doctor.test.js`; Slice 7's walker
   vacuity test stays path-anchored per the exception). Exceptions that stay in
   `test/`: the dual-mode acid fixtures/harnesses (Slice 6), e2e-style suites

@@ -67,7 +67,7 @@ none at all.
    **Registry-reconcile ride-along (design-memory-placement.md A3).** The
    sweep already traverses every top-level COMPONENT/COMPONENT_SET — diff
    that same live list against `design/registry.json` via
-   `reconcileRegistrySweep` (`packages/figma-design-kit/registry-reconcile.js`)
+   `reconcileRegistrySweep` (import from `@argohq/kit/design-kit`)
    to catch drift a per-task incremental upsert can't see on its own:
    `registry-orphan` (entry whose nodeId no longer resolves AND whose name
    isn't found live), `registry-unregistered` (live component absent from
@@ -99,11 +99,11 @@ none at all.
    call it complete — a recipe's checks are part of the canonical audit,
    not an optional extra.
 2a. **Bundle it before execution — never paste the assembled module into
-   `use_figma` as-is.** The assembled module's top-level `import`s (from the
-   vendored `figma-design-kit`/`figma-design-kit-shadcn-tailwind` packages
-   and the recipe's `./kit-patches.json`) cannot resolve inside the sandbox —
+   `use_figma` as-is.** The assembled module's top-level `import`s (from
+   `@argohq/kit`'s zod-free tier0-rules subpaths and the recipe's
+   `./kit-patches.json`) cannot resolve inside the sandbox —
    there is no module resolution there, only one self-contained script.
-   Run `bundleTier0Audit` from `${CLAUDE_PLUGIN_ROOT}/scripts/assemble-tier0-audit.mjs`
+   Run `argo design assemble-tier0-audit` (which wraps `bundleTier0Audit`)
    against the assembled source, with `cwd` set to the directory the module
    was assembled into (so the recipe's relative `./kit-patches.json` import
    resolves) — it shells out to `bun build --bundle --format=esm`, restores
@@ -113,8 +113,8 @@ none at all.
    50,000-char cap. Paste THAT bundled output into `use_figma`, never the
    source module.
 3. **Derive the composite-name set before calling `use_figma` — the sandbox
-   can't read a committed file itself.** Run `deriveTier0AuditOptions` from
-   `${CLAUDE_PLUGIN_ROOT}/scripts/prepare-tier0-audit-options.mjs` with
+   can't read a committed file itself.** Run
+   `argo design prepare-tier0-audit-options` (wraps `deriveTier0AuditOptions`) with
    `{ cwd: <host project root>, componentNames: [...] }` (or `[]` for a
    file-wide sweep) — it reads `design/registry.json` Node-side and returns
    `{ componentNames, compositeNames }`, `compositeNames` being the registry's
@@ -129,7 +129,7 @@ none at all.
 5. **Record the receipt — mandatory for a named audit, the deterministic
    proof design-guard-stop.mjs checks before a session can end.** Immediately
    after `use_figma` returns the violations array, run
-   `node ${CLAUDE_PLUGIN_ROOT}/scripts/record-audit-receipt.mjs --record
+   `argo design record-audit-receipt --record
    '{"componentNames":[...],"violations":[...]}'`, passing the EXACT array
    `use_figma` returned (never hand-authored, never summarized) alongside the
    `componentNames` this run audited. This writes `design/audit-receipt.json`

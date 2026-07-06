@@ -1,4 +1,4 @@
-# Hook templates (installed by /argo:setup-claude). setup-claude fills the {{…}}
+# Hook templates (installed by /argo:init). init fills the {{…}}
 # slots from the project's detected lint/typecheck commands. Formatting is NOT
 # gated in any hook — it's an auto-fix concern (see the format-on-write hook).
 

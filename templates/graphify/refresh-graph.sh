@@ -3,9 +3,9 @@
 # run this only on the integration branch (main), on-device (the `integrator`
 # agent or a local main-side step). Worktree/agent branches must NOT run it.
 #
-# Installed (adapted) by the setup-claude skill. Works for BOTH a single-app repo
+# Installed (adapted) by the init skill. Works for BOTH a single-app repo
 # and a monorepo: it discovers every workspace that has a graphify-out/ and refreshes
-# each; for a single-app repo that's just the root. (setup-claude does the first
+# each; for a single-app repo that's just the root. (init does the first
 # per-workspace build to seed graphify-out/ dirs; this script keeps them current.)
 #
 # Labeling uses the claude-cli backend — spawns the on-device `claude` (subscription

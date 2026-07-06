@@ -197,7 +197,7 @@ math re-asserted per consumer layer.
 ## 7. Land or surface — always close out the worktree
 - **All slices done + final review clean** → delete `.argo/build-mode.json`, hand the
   branch to **`argo:integrator`**. How it lands depends on the project's landing mode
-  (`.claude/argo-config.json`, set by `setup-claude`): in **pr** mode (the default) it
+  (`.claude/argo.json`'s `landing` field, set by `/argo:init`): in **pr** mode (the default) it
   pushes the branch and opens/updates the PR — it never merges, and merging happens
   via the PR. In **merge** mode (solo maintainer) it lands the branch straight onto
   the default branch (`git push origin HEAD:<default>`, its own re-verification as

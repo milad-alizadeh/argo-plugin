@@ -19,7 +19,7 @@
  *
  * Extension list: stack-agnostic default below; a host project can override
  * it via `.claude/argo-source-extensions.json` (a JSON array of extensions,
- * read from the hook's cwd) — installed/documented by setup-claude.
+ * read from the hook's cwd) — installed/documented by the init skill.
  * Fail-open on malformed stdin: this runs on every Bash call everywhere.
  */
 import { readFileSync, existsSync } from 'node:fs'

@@ -65,11 +65,11 @@ interactively.
    before moving on.
    **Then record the receipt** — the walker's exit code is the only accepted
    proof this tier passed, never your own reading of its output: run
-   `node ${CLAUDE_PLUGIN_ROOT}/scripts/record-spec-diff-receipt.mjs --
+   `argo design record-spec-diff-receipt --
    <the project's spec-diff test command>` (e.g. `npx vitest run
    design/spec-diff-walker`), which executes the command, writes
    `design/spec-diff-receipt.json` (`{ recordedAt, exitCode }`) from its REAL
-   exit code, and re-exits with that same code. `design-commit-gate.mjs`
+   exit code, and re-exits with that same code. The kit's design-commit-gate
    requires this receipt to be fresh (within 10 minutes) and `exitCode: 0`
    before it will let a commit touching `componentsPath` land — re-run it
    immediately before committing, not once at the start of the session.

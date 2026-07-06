@@ -83,6 +83,11 @@ function runDesignVerb(verb, args) {
   process.exit(res.status ?? 1)
 }
 
+function flagValue(args, name) {
+  const i = args.indexOf(name)
+  return i === -1 ? undefined : args[i + 1]
+}
+
 const [cmd, ...rest] = process.argv.slice(2)
 
 switch (cmd) {
@@ -92,9 +97,32 @@ switch (cmd) {
   case 'design':
     runDesignVerb(rest[0], rest.slice(1))
     break
-  case 'init':
-  case 'update':
-  case 'doctor':
+  case 'init': {
+    const { runInit } = await import('../src/cli/init.js')
+    const repo = flagValue(rest, '--marketplace-repo')
+    const report = runInit({
+      hostRoot: flagValue(rest, '--host-root') ?? process.cwd(),
+      marketplaceSource: repo ? { source: 'github', repo } : undefined,
+    })
+    console.log(JSON.stringify(report))
+    break
+  }
+  case 'update': {
+    const { runUpdate } = await import('../src/cli/update.js')
+    const report = runUpdate({ hostRoot: flagValue(rest, '--host-root') ?? process.cwd() })
+    console.log(JSON.stringify(report))
+    break
+  }
+  case 'doctor': {
+    const { runDoctor } = await import('../src/cli/doctor.js')
+    const result = runDoctor({ pluginRoot: flagValue(rest, '--plugin-root') ?? process.env.CLAUDE_PLUGIN_ROOT })
+    if (!result.ok) {
+      process.stderr.write(`${result.reason}\n`)
+      process.exit(1)
+    }
+    console.log(`doctor: ok — designLibrary ${result.declared} === installed kit ${result.installed}`)
+    break
+  }
   case 'graph':
     process.stderr.write(`argo ${cmd}: not implemented yet\n`)
     process.exit(1)

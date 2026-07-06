@@ -7,7 +7,7 @@
  * a description that summarizes a workflow becomes a shortcut agents take
  * instead of reading the skill. Hard budget: ≤600 tokens (~2400 chars),
  * enforced by test. Stack-agnostic wording only: project specifics belong to
- * setup-claude's installed rules, not this card.
+ * init's installed rules, not this card.
  *
  * Fail-open by design: malformed stdin or a non-SessionStart event exits 0
  * with no output — this runs at every session boot in every host project.
@@ -48,12 +48,17 @@ Standing rules live in .claude/rules/.`
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-/** Lifecycle nudge: the card knows WHEN to send you through setup-claude. */
+/**
+ * Lifecycle nudge: the card knows WHEN to send you through /argo:init.
+ * State lives in .claude/argo.json (the consolidated config). A legacy
+ * argo-config.json is deliberately NOT read — no-legacy ruling: an
+ * old-shape project rips and re-inits, it never migrates.
+ */
 function setupNudge(cwd) {
   if (!cwd) return ''
-  const configPath = join(cwd, '.claude', 'argo-config.json')
+  const configPath = join(cwd, '.claude', 'argo.json')
   if (!existsSync(configPath)) {
-    return `\n\nSETUP: argo is installed but this project isn't set up — run /argo:setup-claude (stack detection + adapted rules, per-item consent).`
+    return `\n\nSETUP: argo is installed but this project isn't set up — run /argo:init (stack detection + adapted rules, per-item consent).`
   }
   try {
     const config = JSON.parse(readFileSync(configPath, 'utf8'))
@@ -61,10 +66,10 @@ function setupNudge(cwd) {
       readFileSync(new URL('../.claude-plugin/plugin.json', import.meta.url), 'utf8')
     ).version
     if (!config.setupVersion) {
-      return `\n\nSETUP: this project's argo setup predates setup versioning — run /argo:setup-claude once to adopt it (adds setupVersion + managedFiles; touches only argo-managed files).`
+      return `\n\nSETUP: this project's argo setup predates setup versioning — run /argo:init once to adopt it (adds setupVersion + managedFiles; touches only argo-managed files).`
     }
     if (pluginVersion && config.setupVersion !== pluginVersion) {
-      return `\n\nSETUP: this project was set up with argo v${config.setupVersion}; the plugin is now v${pluginVersion} — run /argo:setup-claude to review updates (touches only argo-managed files).`
+      return `\n\nSETUP: this project was set up with argo v${config.setupVersion}; the plugin is now v${pluginVersion} — run /argo:init to review updates (touches only argo-managed files).`
     }
   } catch {
     // Unreadable config or manifest — stay quiet; the card must never break a session.
@@ -74,9 +79,9 @@ function setupNudge(cwd) {
 
 /**
  * Design-pack lifecycle nudge — the design pack owns its own state in
- * design/config.json's `_meta` (§2a Option B), independent of setup-claude's
- * argo-config.json. Silent when the design pack was never installed (no
- * design/config.json) — unlike the setup-claude nudge, absence here is not a
+ * design/config.json's `_meta` (§2a Option B), independent of init's
+ * .claude/argo.json. Silent when the design pack was never installed (no
+ * design/config.json) — unlike the init nudge, absence here is not a
  * "you forgot to set up" signal.
  */
 function designSetupNudge(cwd) {

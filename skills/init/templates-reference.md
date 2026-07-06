@@ -1,4 +1,4 @@
-# setup-claude — template instantiation reference
+# init — template instantiation reference
 
 How to instantiate each template under `${CLAUDE_PLUGIN_ROOT}/templates/rules/`
 into the host project's `.claude/rules/`. For each accepted template: fill every

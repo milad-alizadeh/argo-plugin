@@ -1,18 +1,18 @@
 ---
 name: setup-design
-description: Install/adapt the Figma-to-code design pack into a host project — shadcn init, Storybook + Vitest addon, VRT/spec-diff walkers, gate wiring, lint rule, design/config.json, figma-design-kit path dependency. Use when the user says "set up design", "install the design pack", "wire up Figma-to-code", or when setup-claude's recommendations pass mentions it.
+description: Install/adapt the Figma-to-code design pack into a host project — shadcn init, Storybook + Vitest addon, VRT/spec-diff walkers, gate wiring, lint rule, design/config.json (the kit design modules resolve via @argohq/kit). Use when the user says "set up design", "install the design pack", "wire up Figma-to-code", or when init's recommendations pass mentions it.
 ---
 
 # Set Up the Design Pack
 
-Installs/adapts the whole Figma-to-code design pack, mirroring `setup-claude`'s
+Installs/adapts the whole Figma-to-code design pack, mirroring `init`'s
 wizard shape: AskUserQuestion batches, propose-don't-impose, per-item consent.
 See `skills/setup-design/templates-reference.md` for the exact `{{…}}` slot ↔
 `design/config.json` field mapping for every template this skill copies.
 
 ## 0. Wizard UX
 
-Same rules as `setup-claude` §0: batch related decisions into one
+Same rules as `init` §0: batch related decisions into one
 AskUserQuestion call (up to 4 per screen), recommended option first and
 labeled, free-form via "Other", prose only for the opening one-liner and the
 final report.
@@ -84,10 +84,10 @@ library** (Professional plan); note this to the user if they add a kit key.
 
 ## 0d. Entry mode — first run, update, or re-run
 
-Mirrors `setup-claude` §1. Read `design/config.json` first; its `_meta`
+Mirrors `init` §1. Read `design/config.json` first; its `_meta`
 decides the mode (the design pack owns its own lifecycle state — §2a Option B
-of `project-reconcile.md` — separate from `.claude/argo-config.json`, which
-`setup-claude` owns):
+of `project-reconcile.md` — separate from `.claude/argo.json`, which
+`init` owns):
 
 - **Missing `design/config.json`, or present but with no `_meta` — first-run**:
   the full wizard below (§0a onward). (A `design/config.json` that predates
@@ -113,12 +113,12 @@ is read from its own manifest, never hardcoded.
 Confirm (or ask if undetectable): UI framework, components dir, existing
 Storybook install (version, builder), existing Vitest install, package
 manager, whether `shadcn` is already initialized (a `components.json` at
-root is the tell). This mirrors `setup-claude` §2 — reuse its detection if
+root is the tell). This mirrors `init` §2 — reuse its detection if
 this project already ran that skill.
 
 ## 2. shadcn init via the shadcn MCP (D16) — default-on where possible
 
-Mirrors the tdd-guard default-on pattern (`skills/setup-claude/SKILL.md`
+Mirrors the tdd-guard default-on pattern (`skills/init/SKILL.md`
 §6c: detect → install default-on with a stated skip path, never silently
 required):
 
@@ -151,7 +151,7 @@ plugin-repo change (this skill does not build upgrade detection, see plan
 ## 3a. Ignore `design/` in tdd-guard's config — with consent, before copying templates
 
 If the host project has `.claude/tdd-guard/data/` (tdd-guard installed by
-`setup-claude`), add `design/**` to tdd-guard's `ignorePatterns` in
+`init`), add `design/**` to tdd-guard's `ignorePatterns` in
 `.claude/tdd-guard/data/config.json` — with consent, showing the diff, never
 silently editing a file another skill already owns. Do this BEFORE §4's
 template copy: without it, tdd-guard blocks every design-pack template file
@@ -217,8 +217,8 @@ one: `design/tier0-audit.js` stays the readable/diffable assembled module
 (re-derived by this step and by `design-upgrade`, importable by tooling
 outside the sandbox); a second, **transient, generated** file,
 `design/tier0-audit.bundle.js`, is what actually gets pasted into
-`use_figma` — regenerate it any time via `bundleTier0Audit` from
-`${CLAUDE_PLUGIN_ROOT}/scripts/assemble-tier0-audit.mjs`, never hand-edit it.
+`use_figma` — regenerate it any time via `argo design assemble-tier0-audit`
+(wraps `bundleTier0Audit`), never hand-edit it.
 That function shells out to `bun build --bundle --format=esm` from a temp
 file inside `design/` (so the recipe's relative `./kit-patches.json` import
 resolves exactly as it does from the real installed location), then
@@ -276,8 +276,8 @@ routine `design-upgrade` re-runs on a kit swap, invoked here at t=0:
 
 1. Marshal the kit library's component roster live (name, type, purpose;
    icons collapse to one `{ family: 'lucide/*', count, note }` row, never an
-   enumerated list) and shape it via `buildKitInventory`
-   (`scripts/capture-kit-inventory.mjs`).
+   enumerated list) and shape it via `argo design capture-kit-inventory`
+   (wraps `buildKitInventory`).
 2. Seed the starter alias map for common shadcn collisions alongside each
    matched component: `switch`/`toggle`, `badge`/`chip`/`tag`/`pill`,
    `collapsible`/`accordion`/`disclosure`, `dialog`/`modal`,
@@ -288,96 +288,49 @@ routine `design-upgrade` re-runs on a kit swap, invoked here at t=0:
    (`figma-create/SKILL.md`) depends on it; report the gap and stop rather
    than silently letting the first `figma-create` run fly blind.
 
-## 5. Vendor the figma-design-kit package(s) — relative dep, never an absolute plugin-cache path
+## 5. The design-kit dep is already resolvable — nothing to vendor
 
-`figma-design-kit` is imported **by bare name** from the spec-diff/VRT walker
-test files (`spec-diff.walker.spec-diff.js`, `base-congruence.walker.spec-diff.js`,
-and the assembled `tier0-audit.js`), so the host project needs it resolvable
-by its own package manager — but it is **not published to a registry**
-("published later if ever"). Do **NOT** add it as a `file:` dependency
-pointing at `${CLAUDE_PLUGIN_ROOT}/packages/figma-design-kit`: that expands
-to an **absolute, version-stamped plugin-cache path**
-(`~/.claude/plugins/cache/argo/argo/<version>/packages/…`) that leaks the
-local machine, is pinned to one plugin version and breaks the moment the
-plugin updates and the old cache dir is garbage-collected, and does not
-resolve for any other clone, machine, or contributor. This was a real
-shipped bug (observed: a committed `package.json` with
-`file:/Users/<name>/.claude/plugins/cache/argo/argo/0.10.1/packages/…`).
-
-Instead **vendor** it (both packages are pure ESM, no build step) — and let
-the host's shape decide WHERE and HOW, via `resolveVendorPlan` from the
-`setup-migrations` package (§2f of `project-reconcile.md`). Read the host's
-ROOT `package.json` (and check for a `pnpm-workspace.yaml`), then for each
-package (`figma-design-kit`; plus `figma-design-kit-shadcn-tailwind` when the
-recipe is `shadcn-tailwind-external-kit`, whose `tier0-recipe-checks.js`
-imports from it):
-
-- Compute `plan = resolveVendorPlan(rootPkg, pkgName, { pnpmWorkspace })`.
-- **Workspace / monorepo host** (`plan.mode === 'workspace'`): copy the files
-  in the package's `files` array into `<plan.packageDir>/<pkgName>` (e.g.
-  `packages/figma-design-kit`, alongside any existing vendored workspace
-  package like `tdd-guard-playwright`), and set the dependency to
-  `plan.depSpecifier` (`"workspace:*"`) — matching the host's existing
-  convention.
-- **Plain single-package host** (`plan.mode === 'file'`): copy into
-  `design/vendor/<pkgName>` (under `design/`, so tdd-guard's `design/**`
-  ignore from §3a already covers it) and set the dependency to
-  `plan.depSpecifier` (a relative `"file:./design/vendor/<pkgName>"`).
-
-Then run the project's package-manager install so the bare `figma-design-kit`
-imports resolve (`figma-design-kit`'s own `zod` installs transitively). Commit
-the vendored copies — they are what make the repo portable. Record each
-vendored location in `_meta.managedFiles` (§9) so update mode (§5a category c)
-knows where to look.
-
-Re-running `setup-design` (or `design-upgrade` after a kit/plugin bump)
-re-vendors the copy: the vendored package and the copied templates/walkers are
-a matched set, refreshed together. If/when the packages are published to a
-registry, replace the vendored deps with a normal `^version` and delete the
-vendored dirs.
+The design-kit modules ship inside `@argohq/kit` (`/argo:init` placed the
+`"@argohq/kit": "link:@argohq/kit"` dependency, resolvable after
+`bun install`). Walker test files and the assembled `tier0-audit.js` import
+the subpaths directly — `@argohq/kit/design-kit`,
+`@argohq/kit/design-kit/tier0-rules`, and (for the shadcn-tailwind recipe)
+`@argohq/kit/design-kit/shadcn-tailwind/tier0-rules`. There is no vendoring
+step, no `resolveVendorPlan`, no `design/vendor/` dir, and never a `file:`
+dependency pointing at the plugin cache. If `@argohq/kit` does not resolve
+here, stop and run `/argo:init` (or `bun install`) first — do not improvise
+a path dependency.
 
 ## 5a. Update mode — per-category reconcile + migrations
 
 When §0d selects update mode, reconcile the pack's managed surface by category
 (never a blind re-copy; never clobbering user values or hand-edits):
 
-1. **Pending migrations first.** Run `pendingMigrations(_meta.setupVersion)`
-   from `setup-migrations`; for each, show its `description`, ask consent, and
-   apply — the migration's `detect(pkgJson, ctx)`/`computePatch(pkgJson,
-   planFor, ctx)` are pure over the parsed `package.json` (with `ctx.isWorkspace`
-   from `resolveVendorPlan`), and THIS skill performs the resulting file writes
-   / vendor copy (passing `resolveVendorPlan`'s result as `planFor`). Migration #1
-   (`vendor-figma-design-kit-absolute-path`) fixes a project still carrying an
-   absolute plugin-cache `file:` dep, and — on a workspace host — an
-   off-convention relative `design/vendor` dep, converting either to
-   `workspace:*`.
-2. **Regenerated templates** (category a: `tier0-audit.js`, walkers, the
+1. **Regenerated templates** (category a: `tier0-audit.js`, walkers, the
    `testing.md` amendment) — re-derive current content and diff against disk;
    ask per batch (≤4 files/AskUserQuestion). Skip any file whose on-disk
-   content ≠ what setup last derived (hand-edited) → conflict prompt.
-3. **`design/config.json`** (category b) — run `mergeConfigShape(currentShape,
-   onDiskConfig)` from `design-config-merge`; write the returned `merged`
+   content ≠ what setup last derived (hand-edited) → conflict prompt. (There
+   are NO migrations — no-legacy ruling: nothing detects or converts
+   prior-version shapes; a pre-kit project rips and re-inits.)
+2. **`design/config.json`** (category b) — run `mergeConfigShape(currentShape,
+   onDiskConfig)` (import from `@argohq/kit`); write the returned `merged`
    object via `JSON.stringify` (do NOT mutate its nested values in place — a
    freshly-added key may share a reference with the template shape) and report
    `addedKeys` to the user. Existing values are preserved verbatim.
-4. **Vendored dirs** (category c) — compare each vendored copy's own
-   `package.json` `version` against the plugin's current
-   `packages/<pkg>/package.json`; on a bump, offer a full-directory re-copy to
-   the location `resolveVendorPlan` resolves for this host.
-5. **Foreign-file managed edits** (category d: `package.json` deps beyond the
-   migration, `.claude/tdd-guard/data/config.json`'s `ignorePatterns`) — re-run
+3. **Foreign-file managed edits** (category d: `package.json` deps,
+   `.claude/tdd-guard/data/config.json`'s `ignorePatterns`) — re-run
    the idempotent §3a/§5 checks; touch only the managed portion.
-6. **External Figma state** (category e) — out of scope for file reconcile:
+4. **External Figma state** (category e) — out of scope for file reconcile:
    Semantic-layer seeding is handled by §4a, and kit/shadcn version by
    `design-upgrade` — print that one-line pointer rather than silently skipping.
 
 ## 6. Append the testing.md amendment — with consent
 
 If the host project has a `.claude/rules/testing.md` (installed by
-`setup-claude`), show the diff and ask before appending
+`/argo:init`), show the diff and ask before appending
 `templates/design/testing-rule-amendment.md`'s C17 scoped-exception text —
-**never silently edit a file `setup-claude` already installed.** If no
-`testing.md` exists yet, offer to run `setup-claude` first, or install the
+**never silently edit a file `init` already installed.** If no
+`testing.md` exists yet, offer to run `/argo:init` first, or install the
 amendment as a standalone note the user can fold in manually.
 
 ## 7. Create `design/` scaffolding
@@ -497,24 +450,24 @@ yet.
 ## 9. Report — and stamp `_meta`
 
 **Before reporting**, write the design pack's lifecycle state into
-`design/config.json`'s `_meta` (§2a Option B — mirrors `setup-claude` §9, but
+`design/config.json`'s `_meta` (§2a Option B — mirrors `init` §9, but
 in the design pack's own file, never `argo-config.json`):
 - `_meta.setupVersion` ← the plugin's CURRENT version (read from the plugin's
   own `.claude-plugin/plugin.json`, never hardcoded).
 - `_meta.managedFiles` ← every path this run wrote or updated: the assembled
   `design/tier0-audit.js`, the walker paths chosen in §4, `design/config.json`
   itself, the vendored package dirs at their resolved locations (`packages/<pkg>`
-  or `design/vendor/<pkg>`, per §5), and `design/waivers.json`/`kit-patches.json`
+  per §5's note — the kit dep itself is init's, not this skill's), and
+  `design/waivers.json`/`kit-patches.json`
   if created. Update mode (§5a) may touch only these.
   In **update mode**, merge this list with the existing `managedFiles` rather
   than replacing it, so a file installed by an earlier run under a different
   path isn't orphaned.
 
-Then list exactly what was written/installed where (mirrors `setup-claude` §9):
+Then list exactly what was written/installed where (mirrors `init` §9):
 shadcn init result, Storybook/Vitest versions recorded, every template
-copied + its fill values, the vendored packages + their resolved locations and
-dep specifier (`workspace:*` vs relative `file:`), whether the testing.md
+copied + its fill values, whether the testing.md
 amendment landed, whether tdd-guard's `ignorePatterns` was updated, the
-`design/` scaffolding created, and (in update mode) the migrations applied +
+`design/` scaffolding created, and (in update mode)
 `design/config.json` `addedKeys`. Verified by manual dry-run against a scratch
 project only — no host project lives in this repo to install into for real.

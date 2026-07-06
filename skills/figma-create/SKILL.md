@@ -230,15 +230,14 @@ build a second component for something that already exists under another name;
 reuse or extend it instead.
 
 **Anti-recreation check, mechanically (step 1 below, before building any NEW
-composite):** run `checkNewNameAliasCollision` from
-`${CLAUDE_PLUGIN_ROOT}/scripts/check-anti-recreation.mjs` with the proposed
-name and `{ cwd: <host project root> }` — it reads the host's
+composite):** run `argo design check-anti-recreation --name "<proposed name>"`
+(wraps `checkNewNameAliasCollision`) from the host project root — it reads the host's
 `design/component-aliases.json` (seeded from `COMPONENT-INVENTORY.md`'s prose
 Aliases/synonyms column; format in
 `templates/design/component-aliases.example.json`) and hard-rejects a
 collision. Run this ONCE per NEW name, before any Figma write for it — never
 against an already-registered component's own name (the check has no
-self-exclusion, unlike the kit-name-collision check `record-audit-receipt.mjs`
+self-exclusion, unlike the kit-name-collision check `argo design record-audit-receipt`
 runs on every re-audit; it's designed for a one-off pre-authoring gate, not a
 repeat audit). A collision **stops the line** exactly like the kit-import
 failure above: report it and do not build the component; reuse or extend the
@@ -289,7 +288,7 @@ schema if it doesn't exist yet, then a **single-key** read-modify-write —
 re-read the file immediately before writing and merge only this component's
 key (never overwrite the whole file from a stale in-memory copy; flat
 concurrent designer sessions make last-write-wins a real entry-loss risk).
-Entry shape (`RegistryEntrySchema`, `packages/figma-design-kit/schemas.js`):
+Entry shape (`RegistryEntrySchema`, imported from `@argohq/kit/design-kit`):
 `{ nodeId, category, status: 'audit-clean', description, provenance: {
 createdBy: 'figma-create', lastTask, lastAudit: { auditedAt, clean: true }
 } }`. `status` is Figma-side lifecycle ONLY — this skill only ever writes

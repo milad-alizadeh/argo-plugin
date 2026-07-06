@@ -2,7 +2,7 @@
 # graphify-out (bulk viz, caches, manifests, metadata). graph.json carries the
 # embedded community labels Claude reads. Globs cover monorepo (per-workspace
 # graphify-out/) and single-app (root graphify-out/) alike.
-# setup-claude appends this to the project's .gitignore.
+# init appends this to the project's .gitignore.
 **/graphify-out/*
 !**/graphify-out/graph.json
 !**/graphify-out/graph.html

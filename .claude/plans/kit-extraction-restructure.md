@@ -1,4 +1,11 @@
-# Extract `@argohq/kit`, thin the plugin to safety guardrails + LLM surface, tarball-distribute locally
+# Extract `@argohq/kit`, thin the plugin to safety guardrails + LLM surface, bun-link-distribute locally
+
+> **AMENDED 2026-07-06 (owner ruling, matches design doc decision 4 as updated):**
+> development is single-machine only, so the committed-tarball mechanism
+> (`bun pm pack` → `file:vendor/*.tgz`) is **cancelled**. Dev phase: `bun link`
+> in `packages/kit`; consumers commit `"@argohq/kit": "link:@argohq/kit"`.
+> Release: `npm publish` + swap `link:` → `^version`. Slices 4-6 below have
+> been rewritten to match; everything else is unchanged.
 
 Status: ready to build · Source of truth (grilled + council-reviewed):
 `/Users/milad/Developer/argo-v2/.claude/plans/argo-npm-package-and-docs-consolidation.md`
@@ -319,25 +326,28 @@ format-on-write → test-smell (matches `hooks/hooks.json:82-91` order).
   §9's config write now targets `.claude/argo.json` (not `.claude/argo-config.json`),
   and a new §X delegates to `argo init` (the CLI's deterministic half: writes
   `.claude/settings.json` `enabledPlugins`+`extraKnownMarketplaces` per decision 5,
-  detects monorepo-vs-single-repo per §Dual-mode, places the kit dep + `vendor/`
-  tarball accordingly, writes `.claude/argo.json` skeleton).
+  detects monorepo-vs-single-repo per §Dual-mode, places the
+  `"@argohq/kit": "link:@argohq/kit"` dep line accordingly (2026-07-06
+  amendment — no vendor tarball), writes `.claude/argo.json` skeleton).
 - `packages/kit/src/cli/init.js` (new) — the deterministic half above.
 - `skills/setup-claude/SKILL.md` — **deleted outright** (no deprecated-alias pointer
   file — resolved open question 3: no-legacy, `/argo:init` fully replaces it).
 - `skills/update/SKILL.md` — rewritten: §2's `import pendingMigrations from
   ${CLAUDE_PLUGIN_ROOT}/packages/setup-migrations` section is **deleted entirely**
   (no `argo migrate` subcommand exists anywhere — resolved open question 3), replaced
-  with a step delegating to the new `argo update` CLI subcommand (bumps the kit
-  tarball pin, re-emits generated files, no migration steps of any kind); §1's
+  with a step delegating to the new `argo update` CLI subcommand (re-emits
+  generated files; no dep-line bump in the dev phase, `link:` is version-less;
+  no migration steps of any kind); §1's
   version-handshake read becomes the bidirectional single-version-lockstep check
   (decision 11) — the skill asserts `.claude-plugin/plugin.json`'s `designLibrary`
   major.minor **equals** the installed `@argohq/kit` version's major.minor exactly
   (not a range-contains check), in both directions, via `argo doctor`.
 - `packages/kit/src/cli/update.js` (new) — the deterministic half of `/argo:update`:
-  re-packs/bumps the kit tarball pin, re-emits generated files (walker shims,
-  `argo.json` skeleton defaults) while preserving user-edited fields via
-  `mergeConfigShape`. No migrations logic — there is no prior-version data shape to
-  migrate away from (resolved open question 3).
+  re-emits generated files (walker shims, `argo.json` skeleton defaults) while
+  preserving user-edited fields via `mergeConfigShape`; no dep-line bump in the
+  dev phase (`link:` is version-less — 2026-07-06 amendment). No migrations
+  logic — there is no prior-version data shape to migrate away from (resolved
+  open question 3).
 - `packages/kit/src/cli/doctor.js` (new) — the bidirectional `designLibrary` ===
   installed-kit-version equality check described above.
 - `skills/setup-design/SKILL.md` — every `${CLAUDE_PLUGIN_ROOT}/scripts/*` and
@@ -349,23 +359,25 @@ format-on-write → test-smell (matches `hooks/hooks.json:82-91` order).
   `skills/figma-audit/SKILL.md:70,106,117,132`, `skills/design-upgrade/SKILL.md:66`,
   `skills/build-design/SKILL.md:85,104-107` — path references rewritten per the table.
 
-**Slice 5 — tarball-based local distribution**
-- `packages/kit/package.json` — version bumped to `0.0.0-dev.1` scheme.
-- `Makefile` or `scripts/pack-kit.sh` (new, plugin-repo-root convenience script) —
-  wraps `bun pm pack` inside `packages/kit`, moves the resulting tarball, and prints
-  the exact dep line to paste (used by `argo init`'s dep-placement step, i.e.
-  `packages/kit/src/cli/init.js`, and by `argo update`'s re-pack step, i.e.
-  `packages/kit/src/cli/update.js`).
+**Slice 5 — bun-link-based local distribution (AMENDED — tarball mechanism cancelled)**
+- `packages/kit/package.json` — version stays `0.1.0` (lockstep with
+  `designLibrary: "0.1"`; the `0.0.0-dev.N` tarball versioning scheme dies with
+  the tarball mechanism).
 - `package.json` (plugin repo root) — adds `"workspaces": ["packages/*"]` so the
-  plugin repo dogfoods its own kit via `workspace:*` (decision 4, last sentence).
-- `test/preflight-bun-tarball-dep.md` (new — a documented, run-once-and-record
-  preflight, NOT a vitest test, since it exercises `bun install` itself rather than
-  code under test) capturing the confirmed answer to decision 4's open verification
-  item: does `bun install` resolve a committed `file:vendor/*.tgz` dependency
-  offline with correct lockfile pinning, parity with npm. This step is a **research
-  action for the builder to perform and record**, not something resolved by this
-  planning pass (no live bun/npm registry access here) — see Verification below for
-  the exact commands to run.
+  plugin repo dogfoods its own kit via the workspace (decision 4, last sentence —
+  unchanged by the amendment).
+- `test/preflight-bun-link-dep.md` (new — a documented, run-once-and-record
+  preflight, NOT a vitest test, since it exercises `bun link`/`bun install`
+  themselves rather than code under test): register the link (`cd packages/kit &&
+  bun link`), then from a scratch consumer with `"@argohq/kit": "link:@argohq/kit"`
+  run `bun install` and confirm (a) the dep resolves to a symlink at the linked
+  packages/kit, (b) the `argo` bin is exposed through `node_modules/.bin`, (c)
+  `npx --no @argohq/kit argo-hook bash-pretooluse` resolves through the link (the
+  hooks.json wrapper path works). Record the exact commands + output; flag any
+  surprise as a blocking finding.
+- Release path (documented, not fired in this plan): `npm publish` from
+  `packages/kit` (Slice 7's OIDC workflow) + consumers swap `link:@argohq/kit` →
+  `^<version>`. No pack script, no `vendor/` dir, anywhere.
 
 **Slice 6 — dual-mode acid-test fixtures**
 - `test/fixtures/acid-monorepo/` (new) — a minimal two-app bun-workspaces fixture
@@ -388,7 +400,7 @@ format-on-write → test-smell (matches `hooks/hooks.json:82-91` order).
   explicit mandate).
 - `.github/workflows/publish.yml` (new) — OIDC/Trusted-Publisher `npm publish
   --provenance`, no long-lived `NPM_TOKEN` (decision 13). Not fired in this plan
-  (local-tarball phase only) but wired now so publish-readiness isn't a future gap.
+  (local bun-link phase only) but wired now so publish-readiness isn't a future gap.
 - `packages/kit/package.json` — `"publishConfig": { "access": "public" }` added
   (inert until Slice-7+1 publish, per decision 13).
 
@@ -498,8 +510,9 @@ and distribution mechanics (Slice 5) build on top of a settled hook contract.
 ### Slice 4 — `/argo:init` + `/argo:update` rewrite
 14. Write `packages/kit/src/cli/init.js`: detects `workspaces` in the host's root
     `package.json` (monorepo) vs absent (single-repo); places the kit dep line
-    (`"@argohq/kit": "file:vendor/argohq-kit-0.0.0-dev.N.tgz"`, exact pin per
-    decision 13) at the workspace root or the single package.json; writes
+    (`"@argohq/kit": "link:@argohq/kit"` — dev-phase link protocol per the
+    2026-07-06 amendment; release swaps to `^version`) at the workspace root or
+    the single package.json; writes
     `.claude/settings.json`'s `enabledPlugins`+`extraKnownMarketplaces` (decision
     5 — the sole owner, never `settings.local.json`); writes a starter
     `.claude/argo.json` skeleton shaped per mode (`design` keyed per-app for
@@ -526,10 +539,10 @@ and distribution mechanics (Slice 5) build on top of a settled hook contract.
 17. Rewrite `skills/update/SKILL.md`: delete §2's migration-import section
     entirely (no `argo migrate` subcommand exists anywhere — resolved open
     question 3); replace with a step delegating to the new `argo update` CLI
-    subcommand (`packages/kit/src/cli/update.js`, deterministic half: bumps the
-    kit tarball pin via `scripts/pack-kit.sh`, re-emits generated files — walker
-    shims, `argo.json` skeleton defaults — leaving user-edited fields untouched
-    via `mergeConfigShape`; no migration steps of any kind). Add the bidirectional
+    subcommand (`packages/kit/src/cli/update.js`, deterministic half: re-emits
+    generated files — walker shims, `argo.json` skeleton defaults — leaving
+    user-edited fields untouched via `mergeConfigShape`; no dep-line bump in the
+    dev phase, `link:` is version-less; no migration steps of any kind). Add the bidirectional
     single-version-lockstep check (decision 11) via a new `argo doctor` subcommand
     (`packages/kit/src/cli/doctor.js`) that reads `.claude-plugin/plugin.json`'s
     `designLibrary` field and the installed `@argohq/kit` package.json's own
@@ -554,36 +567,32 @@ verified by grep/read-through, not a red-green test), except step 17's
 behavior, not just doc text). Scoped verify: `bun run test` + the grep command
 in step 18.
 
-### Slice 5 — tarball-based local distribution
-19. Confirm the design doc's decision-4 preflight for real: from a scratch temp
-    dir, `bun pm pack` a trivial local package into a `.tgz`, commit it into a
-    throwaway git repo under `vendor/`, add `"pkg": "file:vendor/pkg-0.0.0.tgz"`
-    to that repo's `package.json`, run `bun install --frozen-lockfile` from a
-    **fresh clone** of that throwaway repo, and confirm: (a) it resolves offline
-    (no registry hit needed for that dep), (b) `bun.lock` pins it by content hash
-    or path consistently across the two installs. Record the exact commands run
-    and their output in `test/preflight-bun-tarball-dep.md`. This is manual/one-
-    time, not a repeatable vitest test — flag any surprise (e.g. bun requiring an
-    absolute vs relative `file:` path, or lockfile non-determinism) as a blocking
-    finding to resolve before continuing, since Slice 5's whole mechanism depends
-    on this holding.
+### Slice 5 — bun-link-based local distribution (AMENDED — tarball mechanism cancelled)
+19. Confirm the amended decision-4 preflight for real: register the link
+    (`cd packages/kit && bun link`), create a scratch consumer dir with
+    `"@argohq/kit": "link:@argohq/kit"` in its `package.json`, run `bun install`,
+    and confirm: (a) `node_modules/@argohq/kit` is a symlink to this repo's
+    `packages/kit`, (b) the `argo` bin is exposed (`node_modules/.bin/argo`),
+    (c) `npx --no @argohq/kit argo-hook bash-pretooluse` resolves through the
+    link with a benign stdin (the hooks.json wrapper path works end-to-end).
+    Record the exact commands and output in `test/preflight-bun-link-dep.md`.
+    Manual/one-time, not a repeatable vitest test — flag any surprise as a
+    blocking finding, since Slices 5-6 depend on the mechanism holding.
 20. Add `"workspaces": ["packages/*"]` to the plugin repo's root `package.json`;
-    change `packages/kit/package.json` version to `0.0.0-dev.1`.
-    Verify: `bun install` from repo root resolves `packages/kit` as a workspace
-    (no vendoring needed here — the plugin repo dogfoods via `workspace:*`, per
-    decision 4's last sentence, not the tarball path; the tarball path is for
-    EXTERNAL host projects, exercised by Slice 6's acid fixtures instead).
-21. Write `scripts/pack-kit.sh`: `cd packages/kit && bun pm pack`, move the
-    resulting `.tgz` to a caller-specified `vendor/` dir, print the exact
-    `"@argohq/kit": "file:vendor/<name>.tgz"` line. This is what the acid-test
-    fixtures (Slice 6), `argo init`, and `argo update` all call.
-    Verify: run it once against a scratch output dir, confirm the tgz is a valid
-    tarball (`tar -tzf <file> | head` lists `package/package.json`).
+    `packages/kit/package.json` version stays `0.1.0` (lockstep with
+    `designLibrary: "0.1"` — the `0.0.0-dev.N` scheme died with the tarball).
+    Verify: `bun install` from repo root resolves `packages/kit` as a workspace.
+21. Document the release path in `packages/kit/package.json`-adjacent docs (the
+    plan/progress docs suffice): release = `npm publish` from `packages/kit`
+    (Slice 7's OIDC workflow, wired-not-fired) + consumers swap
+    `link:@argohq/kit` → `^<version>`. No pack script, no `vendor/` dir.
+    Verify: `grep -rn "vendor/\|\.tgz\|pack-kit" packages/kit/ hooks/` returns
+    nothing.
 
 Build metadata: step 19 `testable: false` (research/preflight, recorded not
-asserted — its "test" is the recorded finding, not a pass/fail harness); 20-21
-`testable: true`, `requiresLaunch: false`. Scoped verify: `bun install &&
-bash scripts/pack-kit.sh /tmp/vendor-test && tar -tzf /tmp/vendor-test/*.tgz | head`.
+asserted); 20-21 `testable: false` (workspace/config + docs only — no
+red-green behavior of their own; the link mechanism is asserted by Slice 6's
+acid tests). Scoped verify: `bun install && bun run test`.
 
 ### Slice 6 — dual-mode acid-test fixtures
 22. Build `test/fixtures/acid-monorepo/` (package.json with `workspaces:
@@ -592,23 +601,26 @@ bash scripts/pack-kit.sh /tmp/vendor-test && tar -tzf /tmp/vendor-test/*.tgz | h
     `.claude/argo.json`'s `design: { "." : {...} }`).
     Verify: `git status` inside each fixture is clean immediately after creation
     (no stray untracked files from a half-finished scaffold).
-23. Write `test/acidInit.test.mjs`: runs `scripts/pack-kit.sh` to produce a fresh
-    tarball, copies each fixture to a temp dir, runs `argo init` against it,
-    asserts dep placement + `.claude/settings.json` + `.claude/argo.json` shape
-    per mode (reuses Slice 4's assertions, now against the REAL packed tarball
-    instead of a workspace symlink — this is what actually proves the tarball
-    distribution path end-to-end, not just the CLI logic in isolation).
+23. Write `test/acidInit.test.mjs` (AMENDED): copies each fixture to a temp dir,
+    runs `argo init` against it, asserts dep placement (the
+    `"@argohq/kit": "link:@argohq/kit"` line at the right package.json) +
+    `.claude/settings.json` + `.claude/argo.json` shape per mode. Link
+    resolution itself is proven hermetically: the test materializes what
+    `bun link` produces (a `node_modules/@argohq/kit` symlink to this repo's
+    `packages/kit`) and asserts the `argo` bin + `argo-hook` dispatch resolve
+    through it — no global bun link registry mutation from inside the suite
+    (the real `bun link` registration is Slice 5's recorded preflight).
 24. Write `test/acidGateFire.test.mjs`: after `argo init`, stage a file inside
     `apps/a`'s componentsPath (monorepo fixture) and confirm
     `design-coverage-gate` arms; stage the equivalent file in `apps/b` (no
     `design` block) and confirm it stays inert; repeat both assertions against
     the single-repo fixture's one `"."` entry.
-25. Write `test/acidUpdate.test.mjs`: bump `packages/kit/package.json`'s dev
-    version, re-run `scripts/pack-kit.sh`, run `argo update` against each
-    already-initialized fixture, assert the tarball dep line's version bumped,
-    `.claude/argo.json`'s user-set fields are untouched, generated files (walker
-    shims) are re-emitted, and no other managed file regressed. No migration step
-    is exercised here — there isn't one.
+25. Write `test/acidUpdate.test.mjs` (AMENDED): run `argo update` against each
+    already-initialized fixture, assert the `link:` dep line is untouched (it is
+    version-less — nothing to bump in the dev phase), `.claude/argo.json`'s
+    user-set fields are untouched, generated files (walker shims) are
+    re-emitted, and no other managed file regressed. No migration step is
+    exercised here — there isn't one.
     Verify: `bun run test -- acid` runs all three green for BOTH fixtures (the
     council's "neither mode may be the untested one" bar).
 
@@ -629,7 +641,7 @@ Build metadata: all `testable: true`, `requiresLaunch: false`. Scoped verify:
     council's explicit "a rename can never silently zero out a gate" assertion.
 28. Add `.github/workflows/publish.yml` (OIDC Trusted Publisher, `npm publish
     --provenance`, no `NPM_TOKEN`) and `"publishConfig": { "access": "public" }`
-    to `packages/kit/package.json` — wired but not fired (local-tarball phase).
+    to `packages/kit/package.json` — wired but not fired (local bun-link phase).
 29. Full-repo final pass: `bun run test` (all suites), re-run the fail-closed
     test (step 4) and the zod-free test (step 10) as an explicit regression
     check now that everything has moved, re-run `grep` from step 18, confirm
@@ -649,8 +661,9 @@ per the canonical loop.
 
 ## argo-v2 conversion — later-phase milestone outline (not built here)
 
-Once the plugin repo above is landed and its kit tarball published to
-`vendor/argohq-kit-0.0.0-dev.N.tgz`-style local distribution works end-to-end.
+Once the plugin repo above is landed and the bun-link local distribution
+(`bun link` in packages/kit; consumers on `"@argohq/kit": "link:@argohq/kit"`)
+works end-to-end.
 This is **rip-and-re-init**, not a migration (resolved open question 3 / decision
 10's no-legacy ruling — argo-v2 is unshipped, zero backward compatibility needed):
 
@@ -662,8 +675,8 @@ This is **rip-and-re-init**, not a migration (resolved open question 3 / decisio
    slate, nothing preserved.
 2. Run `/argo:init` fresh against argo-v2 (bun-workspaces monorepo, `apps/desktop`
    + `apps/docs`) — it has no prior state to detect or migrate; it writes a brand-
-   new `.claude/argo.json`, places the `@argohq/kit` tarball dep at the workspace
-   root (monorepo mode), and writes project-scoped `.claude/settings.json`.
+   new `.claude/argo.json`, places the `"@argohq/kit": "link:@argohq/kit"` dep at
+   the workspace root (monorepo mode), and writes project-scoped `.claude/settings.json`.
 3. Run `/argo:setup-design` fresh against `apps/desktop` to regenerate the design
    pack (walker shims, gate wiring, tokens) from scratch — no port of the old
    generated files.
@@ -698,16 +711,36 @@ This is **rip-and-re-init**, not a migration (resolved open question 3 / decisio
   A reviewer disagreeing with any of these is still a legitimate checkpoint-seam
   veto, but these are no longer this plan's own assumptions to defend — they are
   the owner's decisions.
-- **Risk:** Slice 5 step 19's bun tarball-dep preflight is unverified by this
-  planning pass (no network/registry tool access here) — it is the FIRST thing
+- **Risk:** Slice 5 step 19's bun-link preflight (AMENDED from the cancelled
+  tarball preflight) is unverified by this planning pass — it is the FIRST thing
   the builder should run in Slice 5, before writing any code that depends on the
   mechanism holding, exactly as sequenced above.
+
+## Amendment log
+
+- **2026-07-06 — tarball → bun link** (owner ruling; design doc decision 4
+  updated to match): dev distribution is `bun link` + `"link:@argohq/kit"`
+  dep lines; release is `npm publish` + `link:` → `^version` swap. Slices 4-6
+  rewritten above; no `vendor/`, `.tgz`, or pack script anywhere.
+- **2026-07-06 — co-located unit tests** (owner ruling): every unit test lives
+  NEXT TO the file it tests (`packages/kit/src/hooks/red-proof-gate.js` →
+  `packages/kit/src/hooks/red-proof-gate.test.js`), never in a parallel/flat
+  `test/` tree. Applies to all kit tests already written (moved) and all future
+  ones (Slice 4's `cliInit`/`cliDoctor` tests land as
+  `packages/kit/src/cli/init.test.js` / `doctor.test.js`; Slice 7's walker
+  vacuity test stays path-anchored per the exception). Exceptions that stay in
+  `test/`: the dual-mode acid fixtures/harnesses (Slice 6), e2e-style suites
+  (e.g. `test/fail-closed-hook.test.mjs`), shared fixtures/helpers, and
+  anything path-anchored by gates. `templates/rules/testing.md` states the rule
+  for consumer projects.
 
 ## Verification (repo-wide)
 
 - `bun run test` from repo root after every slice (root `vitest.config.ts` covers
   the whole repo; no sub-workspace test split introduced by this plan).
-- `bun run test -- fail-closed-hook` and `bun run test -- zodFreeTier0Rules` as
+- `bun run test -- fail-closed-hook` and `bun run test -- zod-free-tier0-rules`
+  (moved to `packages/kit/zod-free-tier0-rules.test.js` by the co-location
+  amendment) as
   the two council-mandated hard gates, re-run at the end of Slice 7 as a
   regression check.
 - `bun run test -- acid` for the dual-mode acid suite (Slice 6+).

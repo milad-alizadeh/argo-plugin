@@ -37,6 +37,26 @@ evidence. Know its rules up front:
    logic and draws over-implementation blocks even on a minimal code line.
    Add explanatory comments in a refactor edit on green.
 
+## Unit tests live next to the file they test
+
+Co-locate every unit test with its subject: `src/hooks/red-proof-gate.js` is
+tested by `src/hooks/red-proof-gate.test.js`, in the same directory — never in
+a parallel tree (`test/hooks/...`) or a flat `test/` dump. The test is part of
+the module: it moves, renames, and deletes with the file it proves, and a
+reader who opens the directory sees the contract next to the code.
+
+Exceptions that live in a dedicated `test/` (or equivalent) directory instead:
+
+- **e2e-style suites** that drive the app/package surface as a whole rather
+  than one module.
+- **Acid/integration fixtures and harnesses** (fixture repos, corpus files,
+  shared helpers) — these are shared infrastructure, not one module's test.
+- **Path-anchored suites** whose location a tool or gate depends on (e.g.
+  walker shims a vitest project globs by path).
+
+Wire your runner's include globs to match both homes (e.g. vitest:
+`['src/**/*.test.*', 'test/**/*.test.*']`).
+
 ## Cosmetic changes are looked at, not unit-tested
 
 A cosmetic change only affects visual presentation — class/token values,

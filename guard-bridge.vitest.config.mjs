@@ -12,7 +12,7 @@ import { defineConfig } from 'vitest/config'
 // this file works for any calling project without editing it per session.
 export default defineConfig({
   test: {
-    include: ['test/**/*.test.mjs'],
+    include: ['test/**/*.test.mjs', 'packages/**/*.test.{js,mjs}'],
     reporters: ['default', ['tdd-guard-vitest', { projectRoot: process.env.CLAUDE_PROJECT_DIR ?? process.cwd() }]]
   }
 })

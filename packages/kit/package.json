@@ -19,7 +19,8 @@
   },
   "files": [
     "bin",
-    "src"
+    "src",
+    "!src/**/*.test.js"
   ],
   "sideEffects": false,
   "dependencies": {

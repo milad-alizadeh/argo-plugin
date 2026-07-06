@@ -1,9 +1,9 @@
 ---
-name: build-design
+name: design-screen
 description: Build out an EXISTING screen (or wave of screens) in Figma autonomously — ONE long-lived designer session works a BUILD-ORDER wave component-first, with a frozen region-contract as the completeness oracle, deterministic coverage gates on every commit, and an independent adversarial design-verifier before it lands. The design analog of /argo:build-plan. Use when a screen's PRD + brief + wireframe exist and you want the hi-fi built hands-off; for a single component jump straight to /argo:figma-create.
 ---
 
-# Build a Screen (single-session, contract-gated, anti-recreation-preserving)
+# Design a Screen (hi-fi in Figma, single-session, contract-gated, anti-recreation-preserving)
 
 The **automated** design stage of the canonical loop: take a screen whose intent
 already exists (PRD → brief → optional wireframe) and build its hi-fi in Figma,

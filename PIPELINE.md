@@ -22,7 +22,7 @@ flowchart LR
     wf["wireframe<br/>figma-wireframe<br/><i>lo-fi, explore & converge</i>"]:::stage
     wfv{"wireframe-verifier<br/>gate"}:::gate
     freeze[["FREEZE<br/>region-contract<br/><i>structural oracle</i>"]]:::seam
-    hifi["hi-fi<br/>build-design<br/><i>pixel design, component-first</i>"]:::stage
+    hifi["hi-fi<br/>design-screen<br/><i>pixel design, component-first</i>"]:::stage
     dv{"design-verifier<br/>gate"}:::gate
     handoff[["HANDOFF<br/>figma-sync<br/><i>story-map · tokens · specs</i>"]]:::seam
     code["code<br/>figma-to-code → test-first<br/><i>behavior TDD'd, tokens applied</i>"]:::stage
@@ -40,8 +40,8 @@ flowchart LR
 | 2 | **Grill** (as needed) | `grill-me` | PRD / a design decision | sharpened decisions, a design doc for non-trivial forks | no unresolved guess remains |
 | 3 | **Brief** | author (per "no brief, no wireframe") | PRD projected onto one screen | screen brief in `design/briefs/` — regions, Flow/IA, **Stage arrangement** | the brief covers every PRD `Visible in build?` requirement for the screen |
 | 4 | **Wireframe** | `figma-wireframe` | the brief | lo-fi Figma frames — kit instances, one font, no style; **variations explored then converged** | **`wireframe-verifier`** (adversarial, given-only): scope · region coverage · arrangement · standing rules |
-| 5 | **Freeze** | `build-design` (P1) | the chosen wireframe | `design/contracts/<screen>.json` — the frozen **region-contract**, the structural oracle | contract extracted + committed (version-stamped) |
-| 6 | **Hi-fi** | `build-design` (`figma-create` for one component) | contract + brief | hi-fi Figma, built component-first, coverage-gated per commit | **`design-verifier`** (P5, adversarial, given-only) rules every region + PRD requirement present |
+| 5 | **Freeze** | `design-screen` (P1) | the chosen wireframe | `design/contracts/<screen>.json` — the frozen **region-contract**, the structural oracle | contract extracted + committed (version-stamped) |
+| 6 | **Hi-fi** | `design-screen` (`figma-create` for one component) | contract + brief | hi-fi Figma, built component-first, coverage-gated per commit | **`design-verifier`** (P5, adversarial, given-only) rules every region + PRD requirement present |
 | 7 | **Sync** | `figma-sync` | the hi-fi Figma file | committed design context — tokens, specs, `story-map.json`, reference screenshots, freshness metadata; regenerated CSS | the target component has a `story-map.json` entry |
 | 8 | **Handoff → code** | `figma-to-code` | the synced context | real component code, generated through **`test-first`** | tiered acceptance gates in order: **spec-diff → gestalt → baseline commit** |
 | 9 | **Feature build** | `test-first` (interactive) / `build-plan` (hands-off) | generated components + plan | the feature, wired together, tests green | commit gates / receipts |
@@ -83,7 +83,7 @@ generated** (the app assembles them from generated parts). Code Connect
 (`figma-code-connect`) maps Figma components to their code counterparts so the
 handoff resolves to real components, not re-invented ones.
 
-So the full handoff sentence: **build-design produces hi-fi → figma-sync commits
+So the full handoff sentence: **design-screen produces hi-fi → figma-sync commits
 it as design context + a story-map → figma-to-code generates each design-owned
 component test-first and gate-proven → build-plan/test-first assembles them into
 the feature.** The builder is handed *committed artifacts*, never a live design it

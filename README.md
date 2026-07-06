@@ -36,7 +36,7 @@ flowchart LR
         wf["figma-wireframe<br/>lo-fi variants → converge"]:::stage
         wfv{"wireframe-verifier<br/>adversarial LLM judge"}:::judge
         freeze[["FREEZE<br/>region-contract = structural oracle"]]:::det
-        hifi["build-design / figma-create<br/>component-first hi-fi"]:::stage
+        hifi["design-screen / figma-create<br/>component-first hi-fi"]:::stage
         t0{"tier-0 audit +<br/>coverage receipts<br/>deterministic"}:::det
         dv{"design-verifier<br/>adversarial LLM judge<br/>sees only wireframe + contract + PRD"}:::judge
     end
@@ -129,7 +129,7 @@ change is rip-and-re-init via a fresh `/argo:init`).
 1. **`/argo:write-prd`** — a raw idea becomes a grounded PRD (`.claude/prds/`).
 2. **`/argo:grill-me`** — stress-test the design/plan until no guess remains.
 3. **Design pack** (UI work): brief → `/argo:figma-wireframe` → freeze →
-   `/argo:build-design` (or `/argo:figma-create` for one component) →
+   `/argo:design-screen` (or `/argo:figma-create` for one component) →
    `/argo:figma-sync` → `/argo:figma-to-code`.
 4. **`argo:planner`** — read-only implementation plan grounded in real code
    (`.claude/plans/`).

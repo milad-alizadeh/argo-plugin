@@ -121,7 +121,7 @@ mechanisms close those gaps without new tooling.
   per design run: round-trips per component, wasted rounds (a fix that
   re-triggered the same violation), and gate false positives hit (count of
   `possible-gate-false-positive`-tagged violations reported). For a screen built
-  through `/argo:build-design`, ALSO report its completeness scorecard: regions
+  through `/argo:design-screen`, ALSO report its completeness scorecard: regions
   covered / deferred / **UNACCOUNTED (must be 0 to land)** / MISSING, PRD
   requirements present / **absent (must be 0)**, dishonest deferrals, and
   anti-recreation collisions — a screen with UNACCOUNTED>0 or absent>0 is FAILED

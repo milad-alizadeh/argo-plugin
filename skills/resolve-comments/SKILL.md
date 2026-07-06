@@ -125,6 +125,35 @@ narrows it: `wireframe` (only `W##` pins), `design`/`screen` (only `D##`),
 `components` (only the component surface), or a page name / node id. Use this
 when the user only wants one surface amended.
 
+## Execution shape — analyze in parallel, write serially
+
+Do NOT process threads one-at-a-time end-to-end (classify → fix → audit →
+reply, per thread). Do NOT fan out the *writes* either. Split the run into a
+parallel read phase and a serial write phase:
+
+1. **Analyze (fan out, read-only).** After `list` returns the open threads,
+   dispatch a subagent per thread (or per surface batch) to do the read-only
+   work: resolve the pin's page, classify `W##`/`D##`/component, decide
+   fix-vs-question, and draft both the concrete edit and the one-line reply.
+   Each returns a structured item `{ commentId, nodeId, page, surface,
+   decision: 'fix'|'question', editPlan, replyText }`. This is where the
+   latency is and it is race-free — nothing writes.
+2. **Apply (single writer, serial).** One agent applies the drafted edits in
+   this order: `W##` wireframe fixes first (audit-exempt), then `D##` screens,
+   then component masters **last and strictly one at a time** (blast radius —
+   a master edit ripples to every instance, so two "disjoint" fixes can still
+   collide through a shared master). Then run **one** `figma-audit` over all
+   touched `D##`/component nodes and record **one** receipt.
+3. **Reply (may fan out again).** The `✅ Fixed` / `❓` REST posts are plain
+   HTTP with no Figma mutation, so they can go out in parallel at the end.
+
+**Why writes stay serial (non-negotiable).** `use_figma` writes to one live
+file, and every write bumps the repo-global `.argo/design-guard.json` counter.
+Fanning out writer subagents recreates the concurrent-write deadlock inside a
+single run: N agents mutating the same file and counter, none able to record a
+clean audit its siblings don't immediately invalidate. The parallelism win is
+entirely in the analysis; the write phase is inherently sequential.
+
 ## Procedure
 
 1. **Resolve the target file key(s)** from `.claude/argo.json` — the app's
@@ -139,16 +168,19 @@ when the user only wants one surface amended.
    unresolved and not authored by the bot (it filters own replies via `/v1/me`,
    so a re-sweep never re-triages your own `✅ Fixed`/question replies). If a
    scope argument was given, filter `openThreads` to it after classification.
-4. **Classify each thread** by resolving its `nodeId` to a page (Plugin API,
-   above) and reading the page name → `W##` / `D##` / component. A thread whose
-   `nodeId` is null (a bare canvas-coordinate pin with no node) → treat as a
-   file-level note: read the message, route by what it references, or ask.
-5. **Triage each thread, in place:**
-   - **Clear and actionable** → apply the fix using the routed convention +
-     audit from the table. Then reply one terse line (see "Keep replies terse"):
-     `✅ Fixed — <what changed>` via the helper's
-     `reply <fileKey> <commentId> <message>`. For a master, append the blast
-     radius as a short second clause, not a paragraph.
+4. **Analyze every thread — fan out, read-only** (see "Execution shape").
+   Dispatch a subagent per thread (or per surface batch) to resolve its
+   `nodeId` to a page (Plugin API, above), read the page name → `W##` / `D##` /
+   component, decide fix-vs-question, and draft the concrete edit + the one-line
+   reply. A thread whose `nodeId` is null (a bare canvas-coordinate pin with no
+   node) → treat as a file-level note: read the message, route by what it
+   references, or ask. Nothing writes in this phase. Collect the drafted items.
+5. **Apply the fixes — single writer, serial** (see "Execution shape"),
+   ordered `W##` → `D##` → masters (masters one at a time). For each:
+   - **Clear and actionable** → apply the fix using the routed convention, then
+     reply one terse line (see "Keep replies terse"): `✅ Fixed — <what changed>`
+     via the helper's `reply <fileKey> <commentId> <message>`. For a master,
+     append the blast radius as a short second clause, not a paragraph.
    - **Ambiguous / underspecified / structural master change** → reply
      `❓ <the one specific question>` (name the exact ambiguity + the options,
      nothing else), and move on without editing.
@@ -156,14 +188,17 @@ when the user only wants one surface amended.
    comments, the re-sweep shows only threads still needing action — a clean way
    to confirm nothing was missed. Threads you answered with a question stay
    "open" (correctly — they await the user), but now carry your reply.
-7. **Audit the writes.** If any `D##` screen or component master was edited, the
-   hard tier-0 gate applies exactly as in normal design work: run `figma-audit`
-   named-component mode on the touched nodes and **record a fresh
-   `design/audit-receipt.json`** (`argo design record-audit-receipt`) at the
-   current guard write count. `design-guard-stop.mjs` blocks the session
-   otherwise — comment-driven Figma writes are still Figma writes. Wireframe-only
-   (`W##`) edits are audit-exempt, so no receipt is required for a run that
-   touched only wireframe pages.
+7. **Audit the writes — once, after the whole write phase.** If any `D##` screen
+   or component master was edited, the hard tier-0 gate applies exactly as in
+   normal design work: run `figma-audit` named-component mode on the touched
+   nodes and **record a fresh `design/audit-receipt.json`**
+   (`argo design record-audit-receipt`) at the current guard write count.
+   `design-guard-stop.mjs` blocks the session otherwise — comment-driven Figma
+   writes are still Figma writes. Wireframe-only (`W##`) edits are audit-exempt,
+   so no receipt is required for a run that touched only wireframe pages. (The
+   stop gate is per-session since kit 0.2.1, so a concurrent designer editing
+   the same file no longer invalidates this run's receipt — but keep the audit
+   to the end of the serial write phase regardless.)
 8. **Report — the triage-completeness close-out.** Summarize every thread the run
    saw, grouped by surface: fixed (with the fix reply) vs. questioned (with the
    question), plus the audit/receipt result for any hard-gated writes. State

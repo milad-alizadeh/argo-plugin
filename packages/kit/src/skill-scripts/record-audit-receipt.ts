@@ -64,13 +64,28 @@ export function recordAuditReceipt(
   if (!cwd) throw new Error('recordAuditReceipt: cwd is required')
 
   let writeCounterAtAudit = 0
+  // Per-session snapshot: each session's writeCount at audit time, keyed by
+  // session_id. design-guard-stop compares THIS session's live count against
+  // its snapshot here, so a concurrent design session advancing the repo-
+  // global counter no longer deadlocks a session whose own writes are audited
+  // (dogfood finding 2026-07-06). Empty on a legacy/sessionless guard state,
+  // where the stop gate falls back to the global writeCounterAtAudit.
+  let sessionWriteCountsAtAudit: Record<string, number> = {}
   const guardStatePath = join(resolveRepoRoot(cwd), '.argo', 'design-guard.json')
   if (existsSync(guardStatePath)) {
     try {
       const state = JSON.parse(readFileSync(guardStatePath, 'utf8'))
       writeCounterAtAudit = typeof state.writeCount === 'number' ? state.writeCount : 0
+      const sessions = state.sessions
+      if (sessions && typeof sessions === 'object') {
+        for (const [sid, info] of Object.entries(sessions)) {
+          const wc = (info as { writeCount?: unknown })?.writeCount
+          if (typeof wc === 'number') sessionWriteCountsAtAudit[sid] = wc
+        }
+      }
     } catch {
       writeCounterAtAudit = 0 // corrupt state — this writer never blocks; the stop gate does
+      sessionWriteCountsAtAudit = {}
     }
   }
 
@@ -85,7 +100,8 @@ export function recordAuditReceipt(
     timestamp: now,
     componentNames,
     violationCount: hardViolations.length + kitNameCollisionCount,
-    writeCounterAtAudit
+    writeCounterAtAudit,
+    sessionWriteCountsAtAudit
   }
 
   writeDesignJson(cwd, 'audit-receipt.json', receipt)

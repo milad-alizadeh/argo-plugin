@@ -102,4 +102,32 @@ describe('recordAuditReceipt', () => {
       rmSync(repoRoot, { recursive: true, force: true })
     }
   })
+
+  // Concurrent-design-session fix (2026-07-06): the receipt snapshots each
+  // session's write count so design-guard-stop can compare per-session rather
+  // than against the repo-global counter (which a concurrent session advances,
+  // deadlocking any session that itself wrote).
+  it('snapshots each session\'s write count from .argo/design-guard.json into sessionWriteCountsAtAudit', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'tier0-audit-receipt-sessions-'))
+    try {
+      execFileSync('git', ['-C', repoRoot, 'init', '-q'])
+      const appRoot = join(repoRoot, 'apps', 'desktop')
+      mkdirSync(appRoot, { recursive: true })
+      mkdirSync(join(repoRoot, '.argo'), { recursive: true })
+      writeFileSync(
+        join(repoRoot, '.argo', 'design-guard.json'),
+        JSON.stringify({
+          writeCount: 12,
+          sessions: { mine: { writeCount: 7, lastWriteAt: 1 }, other: { writeCount: 5, lastWriteAt: 2 } }
+        })
+      )
+
+      const receipt = recordAuditReceipt({ componentNames: [], violations: [] }, { cwd: appRoot, now: 123 })
+
+      expect(receipt.writeCounterAtAudit).toBe(12)
+      expect(receipt.sessionWriteCountsAtAudit).toEqual({ mine: 7, other: 5 })
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+    }
+  })
 })

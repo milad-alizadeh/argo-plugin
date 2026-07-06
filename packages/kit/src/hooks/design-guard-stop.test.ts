@@ -181,4 +181,44 @@ describe('design-guard-stop — blocks Stop/SubagentStop on stale/missing audit 
     expect(r.code).toBe(2)
     expect(r.stderr).toMatch(/no audit receipt/)
   })
+
+  // Concurrent-design-session deadlock (dogfood finding 2026-07-06): two
+  // sessions editing one Figma file share a repo-global writeCount. Comparing
+  // a receipt against that global counter means a session whose own writes
+  // are fully audited can never stop while ANOTHER session keeps writing. The
+  // fix: the receipt snapshots each session's write count, and the stop gate
+  // asks only whether THIS session wrote since its own audit.
+  it('PASS: this session fully audited, another session advanced the global counter after', async () => {
+    armDesignPack(cwd)
+    // this session (mine) made 3 writes; another session then made 2 more →
+    // global 5, but the receipt snapshotted mine at 3 (all audited).
+    writeGuardState(cwd, {
+      writeCount: 5,
+      sessions: { mine: { writeCount: 3, lastWriteAt: Date.now() }, other: { writeCount: 2, lastWriteAt: Date.now() } }
+    })
+    writeAuditReceipt(cwd, { writeCounterAtAudit: 3, sessionWriteCountsAtAudit: { mine: 3 } })
+    expect((await runHook(stopInput(cwd, { session_id: 'mine' }))).code).toBe(0)
+  })
+
+  it('BLOCK: this session wrote again after its own audit (session counter ahead of snapshot)', async () => {
+    armDesignPack(cwd)
+    writeGuardState(cwd, {
+      writeCount: 6,
+      sessions: { mine: { writeCount: 4, lastWriteAt: Date.now() }, other: { writeCount: 2, lastWriteAt: Date.now() } }
+    })
+    // receipt snapshotted mine at 3, but mine is now 4 → I owe a re-audit.
+    writeAuditReceipt(cwd, { writeCounterAtAudit: 5, sessionWriteCountsAtAudit: { mine: 3, other: 2 } })
+    const r = await runHook(stopInput(cwd, { session_id: 'mine' }))
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/after the last clean audit/)
+  })
+
+  it('BLOCK (back-compat): a legacy receipt without a per-session snapshot falls back to the global counter', async () => {
+    armDesignPack(cwd)
+    writeGuardState(cwd, { writeCount: 5, sessions: { mine: { writeCount: 3, lastWriteAt: Date.now() } } })
+    writeAuditReceipt(cwd, { writeCounterAtAudit: 3 }) // no sessionWriteCountsAtAudit
+    const r = await runHook(stopInput(cwd, { session_id: 'mine' }))
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/after the last clean audit/)
+  })
 })

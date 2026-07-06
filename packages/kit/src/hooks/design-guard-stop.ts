@@ -90,9 +90,10 @@ if (backgroundTasks.length > 0) process.exit(0) // in-flight subagent/workflow m
 // used to dodge the gate, so it falls back to the global (default-deny)
 // count below.
 const sessionId = typeof hook?.session_id === 'string' && hook.session_id.length > 0 ? hook.session_id : null
+let sessionWriteCount: number | null = null
 if (sessionId) {
   const sessions = typeof state.sessions === 'object' && state.sessions !== null ? state.sessions : {}
-  const sessionWriteCount = typeof sessions[sessionId]?.writeCount === 'number' ? sessions[sessionId].writeCount : 0
+  sessionWriteCount = typeof sessions[sessionId]?.writeCount === 'number' ? sessions[sessionId].writeCount : 0
   if (sessionWriteCount === 0) process.exit(0) // this session made zero Figma writes — nothing owed
 }
 
@@ -115,8 +116,21 @@ for (const { block: designBlock } of designApps) {
   if (typeof receipt.violationCount !== 'number' || receipt.violationCount !== 0)
     block(`last audit found ${receipt.violationCount ?? 'unknown'} violation(s) in ${appRoot} — fix and re-audit before stopping`)
 
-  if (receipt.writeCounterAtAudit !== writeCount)
+  // Per-session staleness (concurrent-design-session fix, 2026-07-06): when
+  // the receipt carries a per-session snapshot and this session's id is known,
+  // block only if THIS session wrote since its own audit — a DIFFERENT session
+  // advancing the repo-global writeCount must not hold this one hostage (that
+  // deadlocked any session with its own writes while a concurrent designer
+  // kept editing). Legacy receipts with no snapshot, or a missing session_id,
+  // fall back to the global comparison (default-deny).
+  const snapshot = receipt.sessionWriteCountsAtAudit
+  if (sessionId && sessionWriteCount !== null && snapshot && typeof snapshot === 'object') {
+    const auditedForSession = typeof snapshot[sessionId] === 'number' ? snapshot[sessionId] : 0
+    if (sessionWriteCount > auditedForSession)
+      block(`Figma writes happened in this session after the last clean audit in ${appRoot} — re-run /argo:figma-audit before stopping`)
+  } else if (receipt.writeCounterAtAudit !== writeCount) {
     block(`Figma writes happened after the last clean audit in ${appRoot} — re-run /argo:figma-audit before stopping`)
+  }
 }
 
 process.exit(0)

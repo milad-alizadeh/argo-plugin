@@ -244,6 +244,47 @@ describe('classifyCoverageByComponent (build-screen option B: code screens match
     // cardinality shortfall is advisory only
     expect(summarize(result).clean).toBe(true)
   })
+
+  it('fail-closed MISSING for a built-here row with no component field (malformed row cannot be verified)', () => {
+    const one = { screen: 'X', regions: [{ name: 'Widget', path: 'X/Widget', depth: 1, children: [] }] }
+    const dispositions = [{ region: 'Widget', disposition: 'built-here', verdict: 'NEW' }] // no component
+    expect(classifyCoverageByComponent(one, [{ component: 'anything' }], dispositions)).toEqual([
+      { name: 'Widget', path: 'X/Widget', status: 'MISSING' },
+      { name: 'anything', path: 'anything', status: 'UNACCOUNTED' }
+    ])
+  })
+
+  it('flags a component named only in a deferred row but rendered anyway as UNACCOUNTED (building a deferred thing is a surprise)', () => {
+    const one = { screen: 'X', regions: [{ name: 'Later', path: 'X/Later', depth: 1, children: [] }] }
+    const dispositions = [{ region: 'Later', disposition: 'deferred-to-wave-2', component: 'future-thing', target: 'wave-2', reason: 'x' }]
+    const result = classifyCoverageByComponent(one, [{ component: 'future-thing' }], dispositions)
+    expect(result).toEqual([
+      { name: 'Later', path: 'X/Later', status: 'deferred' },
+      { name: 'future-thing', path: 'future-thing', status: 'UNACCOUNTED' }
+    ])
+  })
+
+  it('a cardinality region and a plain region on the same component each consume an instance (interaction)', () => {
+    const screen = {
+      screen: 'Feed',
+      regions: [
+        { name: 'Cards', path: 'Feed/Cards', depth: 1, children: [] },
+        { name: 'Hero', path: 'Feed/Hero', depth: 1, children: [] }
+      ]
+    }
+    const dispositions = [
+      { region: 'Cards', disposition: 'built-here', component: 'card', verdict: 'NEW', cardinality: 2 },
+      { region: 'Hero', disposition: 'built-here', component: 'card', verdict: 'REUSE' }
+    ]
+    const rendered = [{ component: 'card' }, { component: 'card' }, { component: 'card' }] // 3 built: 2 for Cards' cardinality + 1 for Hero
+
+    const result = classifyCoverageByComponent(screen, rendered, dispositions)
+    expect(result).toEqual([
+      { name: 'Cards', path: 'Feed/Cards', status: 'present' }, // 3 >= cardinality 2, no warning
+      { name: 'Hero', path: 'Feed/Hero', status: 'present' }
+    ])
+    expect(summarize(result).clean).toBe(true)
+  })
 })
 
 describe('summarize', () => {

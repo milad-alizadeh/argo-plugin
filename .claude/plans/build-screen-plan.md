@@ -138,6 +138,26 @@ Three options, with the tradeoff being independence vs robustness:
 classifier reusing `summarize`. This is a design decision that must land before
 S1 is coded — it changes what S1 is.
 
+## S1 landed (b55c762) + known limitations (from opus review)
+
+`classifyCoverageByComponent` is built and tested (option B). Two deliberate,
+delegated limitations a future reader must know — both documented in the
+function's docstring too:
+- **Placement-blind.** Proves the right components rendered in the right
+  QUANTITY, never that they sit in the correct regions (option B discarded
+  path/position matching — a DOM has no matching path). Right-components /
+  wrong-regions passes the coverage gate; **placement is delegated to the
+  screen-level gestalt gate + reviewer.** A clean coverage receipt is NOT proof
+  of layout — this is the core tradeoff of component-identity over path.
+- **Name-keyed.** Matches on `region.name`, so two contract regions sharing a
+  name (C3a's repeated-composite case) collapse to one disposition row,
+  distinguishable only by consumption count. Mitigated (N same-named regions
+  need N instances) but the Figma side's path-level distinction is not
+  recoverable on the code side.
+
+The DOM extractor (`data-argo-component` → rendered list) remains thin CLI
+glue, deferred until a real screen exists to exercise it.
+
 ## Open risks carried from the design doc
 1. Screen reference screenshot path/naming (blocks S3) — confirm in figma-sync.
 2. Stale disposition vs frozen contract (S2 mitigates by re-linting at entry).

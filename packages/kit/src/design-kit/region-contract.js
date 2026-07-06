@@ -178,15 +178,39 @@ export function classifyCoverage(contract, builtRegions = [], dispositions = [])
  * Code-side coverage classifier (build-screen, option B). A code screen's
  * rendered DOM is not a Figma tree, so `classifyCoverage`'s path-matching does
  * not apply. Instead match each contract region to its disposition's
- * `component` and check that registry-backed component ACTUALLY rendered.
- * Output shape is identical to `classifyCoverage`, so it feeds `summarize`.
+ * `component` and check that registry-backed component ACTUALLY rendered
+ * (`renderedComponents` come from the real render — base kit components self-ID
+ * via `data-argo-component` — not the generator's claims). Output shape is
+ * identical to `classifyCoverage`, so it feeds `summarize` / the coverage
+ * receipt / the gate unchanged.
+ *
+ * Semantics: `present` when the disposition's component rendered; instance
+ * CONSUMPTION means N distinct regions on the same component need N rendered
+ * instances (first-come), a shortfall is MISSING; `deferred` for a
+ * `deferred-to-*` row; UNACCOUNTED for a rendered component no built-here
+ * disposition names; a `cardinality` shortfall is an advisory WARN, never
+ * clean-affecting (mirrors `cardinalityWarning`). A region with no disposition,
+ * or a built-here row with no `component`, is fail-closed MISSING.
+ *
+ * TWO DELIBERATE LIMITATIONS (both delegated, not bugs):
+ * 1. PLACEMENT-BLIND. This proves the right components rendered in the right
+ *    QUANTITY, never that they sit in the correct regions — option B discarded
+ *    `classifyCoverage`'s path/position check (a DOM has no matching path). A
+ *    screen rendering the right components in the WRONG regions scores clean
+ *    here; placement correctness is delegated to the screen-level GESTALT gate
+ *    + reviewer. Do not read a clean coverage receipt as proof of layout.
+ * 2. NAME-KEYED. Matching keys on `region.name` via `findDisposition`, so two
+ *    contract regions sharing a name (C3a's repeated-composite case) collapse
+ *    to one disposition row, distinguishable only by consumption count — the
+ *    Figma side's path-level distinction is not recoverable on the code side.
  * @param {{regions: {name: string, path: string}[]}} contract
  * @param {{component: string, path?: string}[]} renderedComponents
- * @param {{region: string, disposition: string, component?: string}[]} dispositions
+ * @param {{region: string, disposition: string, component?: string, cardinality?: number}[]} dispositions
  */
 export function classifyCoverageByComponent(contract, renderedComponents = [], dispositions = []) {
-  const available = new Map()
-  for (const { component } of renderedComponents) available.set(component, (available.get(component) ?? 0) + 1)
+  const totalRendered = new Map()
+  for (const { component } of renderedComponents) totalRendered.set(component, (totalRendered.get(component) ?? 0) + 1)
+  const available = new Map(totalRendered)
   const planned = new Set(
     dispositions.filter((d) => d.component && !d.disposition.startsWith('deferred-to-')).map((d) => d.component)
   )
@@ -202,7 +226,7 @@ export function classifyCoverageByComponent(contract, renderedComponents = [], d
       available.set(disposition.component, remaining - 1)
       const result = { name: region.name, path: region.path, status: 'present' }
       if (typeof disposition.cardinality === 'number') {
-        const builtCount = renderedComponents.filter((r) => r.component === disposition.component).length
+        const builtCount = totalRendered.get(disposition.component) ?? 0
         if (builtCount < disposition.cardinality) {
           result.warning = `cardinality ${builtCount} built, expected ${disposition.cardinality}`
         }

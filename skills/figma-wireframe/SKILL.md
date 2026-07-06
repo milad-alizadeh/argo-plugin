@@ -73,6 +73,17 @@ Rules for kit use:
 - Instance the kit's rough primitives; set text/labels to the brief's region
   names. Do NOT restyle instances toward brand colors or bind Semantic tokens —
   they stay lo-fi kit-native.
+- **ONE typeface everywhere — the kit's.** EVERY text node uses the wireframe
+  kit's typography (its rough/handwritten text styles), with no exception:
+  panel headings, breadcrumbs, captions, annotations, labels, code/terminal
+  content — all of it. NEVER a default Figma font, a system sans, or a hi-fi
+  type style. Mixed fonts (kit handwritten in the cards + a default greyscale
+  sans in the panel captions) is the #1 tell that a wireframe has half-drifted
+  to hi-fi — it reads "fucking strange." If you create a new frame/label
+  (a StageHeader, a PanelHeader, a new annotation), it MUST take a kit text
+  style, not Figma's default. Likewise every CONTAINER is a kit component or a
+  kit-native frame on the lo-fi palette — never an ad-hoc rectangle styled
+  toward hi-fi. Same font, same container vocabulary, every frame, every page.
 - A repeated element (a list of cards) is N instances of ONE kit component with a
   `state`/`variant` prop, never N detached copies.
 - **Never collapse a content region to a blank image/skeleton placeholder.** A
@@ -136,11 +147,36 @@ one visual language per concept. Never invent a synonym or a new marker
 convention inside a wireframe page; if the legend doesn't cover a concept
 yet, add it to the legend first.
 
+## Variations are first-class (explore in parallel, then converge)
+
+Cheap parallel variation is the POINT of lo-fi wireframing — a kit-instance
+variant costs almost nothing, so exploring 2-4 alternative layouts of one screen
+side by side is a primary use, not an exception. Distinguish two things the
+"delete superseded frames" rule below otherwise conflates:
+
+- **Exploratory variants** — intentional, live alternatives of ONE concern, kept
+  side by side to compare. Name them explicitly: `WF / <area> · <focus> — variant
+  A｜B｜C` (or a one-word thesis each, e.g. `… — master-detail` vs `… — stacked`).
+  Lay them out adjacent on the same `W<NN>` page with the standard gutter. KEEP
+  them until the user picks — do NOT auto-delete a variant just because another
+  exists; that is the whole comparison.
+- **Superseded frames** — a dead earlier attempt at the SAME variant, replaced by
+  a newer take. Delete these (the iteration rule below).
+
+**Converge on decision.** Once the user chooses a variant, delete the losers and
+keep the winner as the single current frame for that concern. Converging is what
+deletes variants — not the act of making a second one. Downstream (`build-design`
+P1) freezes the CHOSEN frame into the region-contract, so only one variant per
+screen survives into hi-fi; variations live and die at the lo-fi stage, which is
+exactly where exploration is cheap.
+
 ## Iteration rule
 
-Iterate **one thing at a time** with the user. When a frame is superseded,
-**delete it** rather than keep it around as a stale variant next to the
-current one: dead frames lie about what's current and rot a page fast.
+Iterate **one thing at a time** with the user. When a frame is superseded by a
+newer take on the SAME variant, **delete the old one** rather than keep it as a
+stale duplicate: dead frames lie about what's current and rot a page fast. This
+is about killing dead iterations, NOT about killing live exploratory variants
+(above) — a labeled A｜B｜C set held for comparison is not "stale," it is the work.
 
 ## Auto Layout still applies
 

@@ -46,12 +46,36 @@ from:
   `get_screenshot`, plus the create tools the designer uses.
 
 ## 2. Freeze the contract (P1)
+**Pre-freeze gate — run the `wireframe-verifier` agent first.** A contract frozen
+on a bad wireframe bakes the defect into hi-fi. Before extracting, the wireframe
+set must earn a `PROCEED` from the independent, given-only `wireframe-verifier`
+(scope · region coverage · Stage-arrangement conformance · standing rules). A
+`BLOCK` (out-of-scope frame, missing region, flat-stack, terminal-as-widget,
+etc.) is fixed at the wireframe stage — do NOT freeze over it.
+
 Run the extract step: `get_metadata` on the wireframe node, flatten named regions
 to `design/contracts/<screen>.json` (`{ screen, wireframeNodeId,
 figmaFileVersion, regions }`). Version-stamped and committed — this is the frozen
 structural oracle. Never re-extract mid-build to "match" what you built (that
 re-introduces the circularity); if the wireframe legitimately changes, that's a
 new frozen version and a human seam.
+
+**Manual wireframe edits are supported — the contract is the boundary, not a
+lock.** Editing wireframes by hand in Figma (iterating, exploring variants,
+fixing a layout) never breaks the flow; the wireframe is a live surface. What
+matters is WHEN relative to this freeze:
+- **Before the freeze** — edit freely; that is the whole lo-fi stage.
+- **After the freeze** — the contract is now a STALE snapshot; hi-fi would build
+  the old structure. Re-run this P1 extract to mint a NEW contract version (the
+  "human seam" above) before continuing to hi-fi, so your edit flows through.
+  This is a deliberate re-freeze, not the forbidden mid-build re-extract: it
+  happens at the wireframe→hi-fi boundary, driven by a real wireframe change,
+  not to paper over drift between the built screen and an old contract.
+- **A structural edit** (adds/removes a region) also means the wireframe and the
+  brief have diverged. A wireframe is allowed to be richer than its brief (it is
+  an independent completeness source), but flow the change back to the brief so
+  the two do not silently drift. The lo-fi wireframe verifier flags this
+  divergence rather than swallowing or hard-blocking it.
 
 ## 3. Reconcile HARD, before any Figma write (P2)
 The brief's region-disposition block must account for **100%** of contract

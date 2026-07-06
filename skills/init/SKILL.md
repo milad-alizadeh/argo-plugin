@@ -231,7 +231,7 @@ so invoke it from the plugin's own workspace copy:
 node "${CLAUDE_PLUGIN_ROOT}/packages/kit/bin/argo.js" init --host-root "<abs repo root>"
 ```
 
-(Once `bun install` has run, `npx --no @argohq/kit argo init` works too.) It
+(Once `bun install` has run, `npx --no -p @argohq/kit argo init` works too.) It
 deterministically:
 
 - detects **monorepo** (`workspaces` in the root `package.json`) vs **single-repo**;
@@ -248,7 +248,7 @@ deterministically:
 
 Then register the link source once per machine (`cd <plugin repo>/packages/kit &&
 bun link`) if not already registered, and run `bun install` in the host project so
-the dep resolves. Verify: `npx --no @argohq/kit argo doctor --plugin-root
+the dep resolves. Verify: `npx --no -p @argohq/kit argo doctor --plugin-root
 "${CLAUDE_PLUGIN_ROOT}"` reports the lockstep check ok.
 
 ## 7. graphify (conditional) — treat the graph as local build cache

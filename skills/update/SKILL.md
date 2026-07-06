@@ -28,7 +28,7 @@ Read the plugin's current version from its own `.claude-plugin/plugin.json`
 (never hardcode). Then run the kit/plugin lockstep check:
 
 ```
-npx --no @argohq/kit argo doctor --plugin-root "${CLAUDE_PLUGIN_ROOT}"
+npx --no -p @argohq/kit argo doctor --plugin-root "${CLAUDE_PLUGIN_ROOT}"
 ```
 
 `argo doctor` asserts the plugin manifest's `designLibrary` major.minor
@@ -46,7 +46,7 @@ say so and exit — nothing to do.
 ## 2. Run the deterministic half — `argo update`
 
 ```
-npx --no @argohq/kit argo update --host-root "<abs repo root>"
+npx --no -p @argohq/kit argo update --host-root "<abs repo root>"
 ```
 
 It re-emits `.claude/argo.json`'s skeleton defaults while preserving every

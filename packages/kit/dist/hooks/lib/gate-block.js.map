@@ -1,1 +1,0 @@
-{"version":3,"file":"gate-block.js","sourceRoot":"","sources":["../../../src/hooks/lib/gate-block.ts"],"names":[],"mappings":"AAAA;;;;GAIG;AACH,MAAM,UAAU,SAAS,CAAC,KAAa;IACrC,OAAO,SAAS,KAAK,CAAC,MAAc;QAClC,OAAO,CAAC,MAAM,CAAC,KAAK,CAAC,GAAG,KAAK,eAAe,MAAM,IAAI,CAAC,CAAA;QACvD,OAAO,CAAC,IAAI,CAAC,CAAC,CAAC,CAAA;IACjB,CAAC,CAAA;AACH,CAAC"}

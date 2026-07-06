@@ -116,17 +116,33 @@ run TypeScript natively is a non-issue once `dist/` exists and is current. See
   bundles a *consumer-side* temp entry file for the Figma sandbox — a completely
   different bundling job, still bun, still unaffected (see Grounding above).
 
-**`dist/` is committed to git, not gitignored.** Reasoning (load-bearing, not a style
-preference): `skills/init/SKILL.md:231` invokes `packages/kit/bin/argo.js` **directly
-from the plugin's own checkout** as the *first* call in a brand-new host project, before
-`bun install` has ever run anywhere for that kit — see Grounding. The plugin repo, once
-installed as a Claude Code plugin from the marketplace, is just a checked-out git tree;
-nothing in that installation path is known to run a build or install step for
-`packages/kit` specifically (there is none today). If `dist/` is gitignored, that first
-`argo init` call breaks on every fresh plugin install/update until *someone* happens to
-run a build locally. Committing `dist/` makes the checked-out tree self-sufficient exactly
-like it is today (plain `.js` in `src/`, no build required). The guard against staleness
-(see below) is a CI parity check plus a local pre-commit rebuild, not gitignoring.
+**`dist/` is gitignored, not committed (REVERSED 2026-07-06, owner ruling).** The
+original decision committed `dist/` so a cold marketplace checkout could run
+`packages/kit/bin/argo.js` before any build — see Grounding, `skills/init/SKILL.md:231`.
+That reason is real but only bites the **general-distribution** path (a stranger's fresh
+plugin install running `argo init` before anything builds). It does **not** bite the
+current phase: the sole consumer (argo-v2) resolves the kit via **`bun link`** — a
+filesystem symlink to this checkout — so it runs whatever `dist/` the checkout currently
+holds, which the dev-loop watch build keeps fresh. Committing `dist/` there only bought
+git churn (208 generated files re-touched on every build).
+
+So for the bun-link local phase, `dist/` is gitignored and produced three ways, each
+covering a different entry:
+- **Local dev:** `bun run dev` (`tsc --watch`) keeps `dist/` fresh over the linked
+  checkout — the loop the owner asked for. `bun run build` is the one-shot equivalent.
+- **Fresh clone / git-dependency install:** a `prepare` script (`bun run build`) rebuilds
+  `dist/` on `bun install` in the kit's own repo, so a freshly-cloned checkout is usable
+  without a manual build.
+- **Published consumers:** `npm publish` packs `dist/` via `files: ["bin","dist"]` after
+  `prepublishOnly` builds it (`publish.yml`, OIDC, on a `kit-v*` tag). `files` is
+  gitignore-independent, so gitignoring `dist/` does not affect the tarball.
+
+**The one path this gives up, consciously:** a cold marketplace install running
+`argo init` from the bundled checkout's `bin/argo.js` before any build now has no `dist/`.
+That is the trigger to flip `skills/init` from the bundled-checkout bin call to
+`npx --no -p @argohq/kit argo init` (the published kit, dist in its tarball) — the
+deliberate move from the bun-link phase to the published phase. Until that flip, treat the
+bundled-checkout bootstrap as dev-machine-only.
 
 **Stale-`dist/` failure mode and its guards.** If `src/*.ts` changes and `dist/*.js` is
 not rebuilt before commit, every fail-closed path (`bash-pretooluse` → red-proof/trust
@@ -141,15 +157,16 @@ whose entire design point is to fail closed on drift. Three guards, layered:
    `test/preflight-bun-link-dep.md`), and every kit entry point is either freshly spawned
    (`spawnSync` in `bin/argo.js`) or freshly `import()`ed per invocation, never cached
    in a long-lived process.
-2. **CI dist-parity gate** (new): a CI job runs `bun run build` in `packages/kit` and then
-   `git diff --exit-code -- packages/kit/dist` — fails the build if committed `dist/`
-   doesn't match what `src/` currently compiles to. This is the authoritative backstop;
-   it catches a forgotten rebuild regardless of local hook state.
-3. **Local pre-commit reminder**, not a hard block: no lefthook config exists in this
-   repo today (confirmed — `templates/lefthook.yml` is a host-project template, not
-   wired here), so introducing one here is out of scope for this migration. Instead,
-   document `bun run build` as a pre-commit step in this repo's own contributor docs
-   (README) and rely on guard 2 as the real gate.
+2. **CI build+test gate** (`kit-ci.yml`): a CI job runs `bun run build` (strict `tsc`)
+   then `bun run test` on every push/PR. Since `dist/` is no longer committed there is
+   nothing to diff — correctness is guarded by the build compiling clean and the full
+   suite passing against that build (several tests spawn the compiled CLI/hooks as real
+   node subprocesses, so build must precede test). This replaces the old dist-parity gate.
+3. **No stale-committed-`dist/` risk to guard against anymore** — because `dist/` isn't
+   committed, there is no checked-in copy that can silently lag `src/`. Every path that
+   runs `dist/` either watch-builds it (dev), `prepare`-builds it (fresh install), or
+   `prepublishOnly`-builds it (publish), so the compiled output is always derived from
+   current source rather than a possibly-stale commit.
 
 **Tests migrate alongside their module, importing the sibling `.ts` source directly —
 not `dist`.** Vitest already runs `.ts` test files with zero extra config (esbuild

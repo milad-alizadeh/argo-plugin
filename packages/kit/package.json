@@ -13,6 +13,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch --preserveWatchOutput",
+    "prepare": "bun run build",
     "prepublishOnly": "bun run build"
   },
   "exports": {

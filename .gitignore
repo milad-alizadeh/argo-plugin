@@ -1,3 +1,9 @@
 node_modules/
 .claude/tdd-guard/data/
 .argo/
+
+# Build output — @argohq/kit compiles src/*.ts to dist/ (tsc). Not committed:
+# local dev keeps it fresh via `bun run dev` (tsc --watch) over the bun-linked
+# checkout; `prepare` rebuilds it on a fresh install; npm ships it in the
+# tarball via `files` + `prepublishOnly`. See kit-typescript-migration.md.
+packages/kit/dist/

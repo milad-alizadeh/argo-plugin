@@ -9,7 +9,7 @@
  *
  * `buildKitCorpus` is the pure shaping function (unit-tested); the CLI usage
  * below is untested by convention — same posture as
- * `assemble-tier0-audit.js`'s `bundleTier0Audit` CLI entry and
+ * `bundle-tier0-audit.js`'s `bundleTier0Audit` CLI entry and
  * `record-audit-receipt.js`'s `--record` usage: it only shapes/writes what a
  * live `use_figma` marshal already produced, never re-derives it.
  *

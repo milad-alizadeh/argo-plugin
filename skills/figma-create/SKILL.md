@@ -304,9 +304,10 @@ variants) per call, never one property per call. Capture verification
 screenshots inline (`await node.screenshot()`) in the same call as the last
 fix instead of separate `get_screenshot` round trips. Cap the visual
 self-review at two fix→re-shoot iterations unless the critique found a
-concrete defect. Reuse `design/tier0-audit.bundle.js` if it exists and is
-current (the assembler skips rebuilds when the source hash matches) instead
-of re-bundling per audit.
+concrete defect. `argo design bundle-tier0-audit` caches its output (keyed on
+the recipe, not a project file — there's no project file to hash anymore)
+and skips re-bundling when unchanged, so repeat audits in the same task are
+cheap without any extra caching on this skill's part.
 
 ## Procedure
 

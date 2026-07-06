@@ -7,9 +7,10 @@
  * renames.
  *
  * Reads the bundled semantic-seed.json (installed alongside this script by
- * setup-design's assembly step, same relative-import convention as
- * tier0-recipe-checks.js's ./kit-patches.json) for its project-owned
- * `primitives`/`semanticSpacing` sections (D10: Primitives are project-local
+ * setup-design, a plain relative import — this script, unlike the tier-0
+ * audit, runs as a normal Node module, not inside the `use_figma` sandbox)
+ * for its project-owned `primitives`/`semanticSpacing` sections (D10:
+ * Primitives are project-local
  * — never kit-derived). Nothing in this script hardcodes the spacing scale
  * or the starter token names; a project wanting a different starter scale
  * edits the seed data, never this script.

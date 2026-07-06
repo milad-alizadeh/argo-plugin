@@ -17,17 +17,68 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
     try {
       expect(deriveTier0AuditOptions({ cwd, componentNames: ['rail-session-card'] })).toEqual({
         componentNames: ['rail-session-card'],
-        compositeNames: ['rail-session-card', 'status-bar']
+        compositeNames: ['rail-session-card', 'status-bar'],
+        semanticCollectionName: 'Semantic',
+        recipe: null,
+        kitPatches: {},
+        kitVariableKeys: [],
+        retiredKitVariableKeys: []
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }
   })
 
-  it('fails open (empty compositeNames) when design/registry.json is absent', () => {
+  it('fails open (empty compositeNames, {} kitPatches, [] variable keys, defaulted semanticCollectionName) when nothing is configured', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
     try {
-      expect(deriveTier0AuditOptions({ cwd })).toEqual({ componentNames: [], compositeNames: [] })
+      expect(deriveTier0AuditOptions({ cwd })).toEqual({
+        componentNames: [],
+        compositeNames: [],
+        semanticCollectionName: 'Semantic',
+        recipe: null,
+        kitPatches: {},
+        kitVariableKeys: [],
+        retiredKitVariableKeys: []
+      })
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it("reads semanticCollectionName and recipe from the app's design.<app> block in .claude/argo.json", () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
+    mkdirSync(join(cwd, '.claude'), { recursive: true })
+    writeFileSync(
+      join(cwd, '.claude', 'argo.json'),
+      JSON.stringify({ design: { '.': { root: '.', recipe: 'shadcn-tailwind', semanticCollectionName: 'Argo Semantic' } } }),
+      'utf8'
+    )
+
+    try {
+      const options = deriveTier0AuditOptions({ cwd })
+      expect(options.semanticCollectionName).toBe('Argo Semantic')
+      expect(options.recipe).toBe('shadcn-tailwind')
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('reads kitPatches, kitVariableKeys and retiredKitVariableKeys from design/kit-patches.json + design/kit.lock', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
+    mkdirSync(join(cwd, 'design'), { recursive: true })
+    writeFileSync(join(cwd, 'design', 'kit-patches.json'), JSON.stringify({ Button: ['button.tsx'] }), 'utf8')
+    writeFileSync(
+      join(cwd, 'design', 'kit.lock'),
+      JSON.stringify({ variableKeys: ['abc123'], retiredVariableKeys: ['def456'] }),
+      'utf8'
+    )
+
+    try {
+      const options = deriveTier0AuditOptions({ cwd })
+      expect(options.kitPatches).toEqual({ Button: ['button.tsx'] })
+      expect(options.kitVariableKeys).toEqual(['abc123'])
+      expect(options.retiredKitVariableKeys).toEqual(['def456'])
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }

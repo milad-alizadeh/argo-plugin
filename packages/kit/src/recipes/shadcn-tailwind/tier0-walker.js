@@ -1,41 +1,37 @@
 /**
- * Recipe-owned tier-0 checks for the shadcn-tailwind recipe (template dir
- * templates/design/recipes/shadcn-tailwind-external-kit/) (D23). Thin
- * Plugin-API walker: marshals live `figma.*` node/variable objects into
- * plain-object shapes and delegates to figma-design-kit-shadcn-tailwind's
- * unit-tested pure functions. `setup-design`'s §4 assembly step splices this
- * file's ENTIRE content verbatim into templates/design/tier0-audit.js's
- * `// {{RECIPE_TIER0_CHECKS}}` marker line (at module top level, so this
- * file's own `import`s survive intact) — the host project always runs ONE
- * assembled canonical script (X3/F12), never this file separately.
+ * Recipe-owned tier-0 checks for the shadcn-tailwind recipe (D23) — the thin
+ * Plugin-API walker half: marshals live `figma.*` node/variable objects into
+ * plain-object shapes and delegates to this recipe's unit-tested pure
+ * functions (./tier0-rules.js). `bundle-tier0-audit`'s generated entry module
+ * imports `runRecipeTier0Checks`/`runKitPatchesConformance` from here and
+ * bakes them into the bundle `use_figma` runs, curried with the project's own
+ * DATA (kit/retired variable keys, kit-patches.json contents) read Node-side
+ * by `prepare-tier0-audit-options.js` and threaded back in via the options
+ * object at call time — see design-kit/tier0-audit.js's doc comment for the
+ * full data-flow.
  *
- * {{KIT_VARIABLE_KEYS_JSON}} — JSON array of the kit's variable keys (from
- *   kit.lock, recorded at sync/seed time). `[]` until the first sync — the
- *   rule then treats any remote binding as kit-sourced (single-subscribed-
- *   library model). Real variable keys are plain hashes; file-key prefix
- *   matching never worked (revised 2026-07-05).
- * {{RETIRED_KIT_VARIABLE_KEYS_JSON}} — JSON array of variable keys retired by
- *   a Library Swap (recorded by design-upgrade from the outgoing kit.lock).
+ * `runRecipeTier0Checks` reads `figma.variables.*` and can't be unit-tested
+ * outside Figma's sandbox (same documented accepted gap as the mechanism's
+ * own auditNode) — `runKitPatchesConformance` below has no figma dependency
+ * and is covered by tier0-walker.test.js.
  */
 
 import {
   nonSemanticBindingViolation,
   retiredFileKeyBindingViolation,
   kitPatchesConformanceViolations
-} from '@argohq/kit/design-kit/shadcn-tailwind/tier0-rules'
-import kitPatches from './kit-patches.json'
-
-const KIT_VARIABLE_KEYS = JSON.parse('{{KIT_VARIABLE_KEYS_JSON}}')
-const RETIRED_KIT_VARIABLE_KEYS = JSON.parse('{{RETIRED_KIT_VARIABLE_KEYS_JSON}}')
-// SEMANTIC_COLLECTION_NAME is declared above this file's splice point in the
-// assembled tier0-audit.js — same module scope, available here as a free variable.
+} from './tier0-rules.js'
 
 // Gap/padding fields legally bind Primitives spacing variables (D24, revised
 // 2026-07-05) — they are governed by gapPaddingSpacingViolations, so exclude
 // them from this Semantic-only sweep.
 const SPACING_FIELDS = new Set(['itemSpacing', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'counterAxisSpacing'])
 
-async function runRecipeTier0Checks(node, { hard }) {
+/**
+ * @param {object} node - a live figma.* node.
+ * @param {{ hard: boolean, kitVariableKeys?: string[], retiredKitVariableKeys?: string[], semanticCollectionName?: string }} ctx
+ */
+export async function runRecipeTier0Checks(node, { hard, kitVariableKeys = [], retiredKitVariableKeys = [], semanticCollectionName = 'Semantic' } = {}) {
   const violations = []
   const report = (rule, detail) => {
     violations.push({ severity: hard ? 'hard' : 'advisory', rule, nodeId: node.id, nodeName: node.name, detail })
@@ -66,10 +62,10 @@ async function runRecipeTier0Checks(node, { hard }) {
       key: variable.key,
       collectionName: collection?.name ?? null
     }
-    const nonSemantic = nonSemanticBindingViolation(marshaledVariable, KIT_VARIABLE_KEYS, SEMANTIC_COLLECTION_NAME)
+    const nonSemantic = nonSemanticBindingViolation(marshaledVariable, kitVariableKeys, semanticCollectionName)
     if (nonSemantic) report(nonSemantic.rule, nonSemantic.detail)
 
-    const retiredKey = retiredFileKeyBindingViolation(marshaledVariable, RETIRED_KIT_VARIABLE_KEYS)
+    const retiredKey = retiredFileKeyBindingViolation(marshaledVariable, retiredKitVariableKeys)
     if (retiredKey) report(retiredKey.rule, retiredKey.detail)
   }
 
@@ -77,12 +73,14 @@ async function runRecipeTier0Checks(node, { hard }) {
 }
 
 /**
- * Runs once per audit (not per node), called from tier0-audit.js's
- * runTier0Audit after the assembled script's collectModifiedKitCopyNodes()
- * marshals the kit-copy file's modified nodes: flag any not recorded in
- * kit-patches.json (D13/D15).
+ * Runs once per audit (not per node), called from design-kit/tier0-audit.js's
+ * runTier0Audit after it marshals the kit-copy file's modified nodes: flag
+ * any not recorded in kit-patches.json (D13/D15). `kitPatches` is the
+ * project's `design/kit-patches.json` contents, read Node-side by
+ * prepare-tier0-audit-options.js and curried in by the bundle entry — never
+ * imported here as a project file.
  */
-function runKitPatchesConformance(modifiedNodes) {
+export function runKitPatchesConformance(modifiedNodes, kitPatches = {}) {
   return kitPatchesConformanceViolations(modifiedNodes, kitPatches).map(({ rule, detail }) => ({
     severity: 'hard',
     rule,

@@ -60,7 +60,7 @@ async function runHookChain(event) {
 const DESIGN_VERBS = {
   'record-spec-diff-receipt': '../src/skill-scripts/record-spec-diff-receipt.js',
   'check-anti-recreation': '../src/skill-scripts/check-anti-recreation.js',
-  'assemble-tier0-audit': '../src/skill-scripts/assemble-tier0-audit.js',
+  'bundle-tier0-audit': '../src/skill-scripts/bundle-tier0-audit.js',
   'prepare-tier0-audit-options': '../src/skill-scripts/prepare-tier0-audit-options.js',
   'record-audit-receipt': '../src/skill-scripts/record-audit-receipt.js',
   'capture-kit-inventory': '../src/skill-scripts/capture-kit-inventory.js',

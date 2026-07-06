@@ -5,7 +5,7 @@
  * commit touching generated component code (the `componentsPath` in the
  * app's `design.<app>` block in `.claude/argo.json`) can land. This pure function only shapes the receipt;
  * the CLI entry point below (untested by convention, same as
- * assemble-tier0-audit.js's `bundleTier0Audit` CLI usage) is what actually
+ * bundle-tier0-audit.js's `bundleTier0Audit` CLI usage) is what actually
  * runs the spec-diff walker and persists the receipt via `writeDesignJson`.
  */
 export function recordSpecDiffReceipt(exitCode, { now = Date.now() } = {}) {

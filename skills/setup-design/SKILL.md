@@ -59,8 +59,10 @@ Store the choice into the app's `design.<app>.recipe` field in
 dispatch to, resolving to files installed from the mapped
 `templates/design/recipes/<dir>/`:
 
-- **recipe audit checks** — `design-source/tier0-recipe-checks.js`, spliced
-  into `tier0-audit.js`'s injection region (Slice 2's F12 assembly)
+- **recipe audit checks** — `@argohq/kit/design-kit/<recipe>/tier0-walker`
+  (e.g. `shadcn-tailwind`'s), baked into the audit bundle by import at
+  `bundle-tier0-audit` time (kit-extraction restructure — no longer a
+  template installed/spliced into this project)
 - **recipe sync steps** — `design-source/kit.lock.example.json`/
   `kit-patches.example.json` (external-library-only), consumed by
   `figma-sync`
@@ -214,37 +216,17 @@ proceed and report why. This is the enum `figma-create`'s placement step and
 `figma-audit`'s reconcile sweep both validate a category against — see
 `templates/design/file-structure.md`.
 
-Then assemble `tier0-audit.js` (into `design/`, so
-`figma-audit`/`figma-sync`/`figma-create` read the project's own assembled
-copy rather than the plugin template): replace its
-`// {{RECIPE_TIER0_CHECKS}}` marker line verbatim with the chosen recipe's
-`design-source/tier0-recipe-checks.js` file content (the splice point is at
-module top level, so the recipe file's own `import`s survive intact) —
-`design/tier0-audit.js` is the ONE assembled canonical **module** (F12/X3),
-with no unresolved marker left behind. For a `baseSource: none` recipe with no
-checks file, delete the marker line instead of leaving it unresolved.
-
-**This assembled module still can't run in `use_figma`** — Figma's Plugin
-API sandbox takes one self-contained script with NO module resolution, and
-the assembled module's `import`s (from the vendored `figma-design-kit`/
-`figma-design-kit-shadcn-tailwind` packages and the recipe's own
-`./kit-patches.json`) can never resolve there. Two installed artifacts, not
-one: `design/tier0-audit.js` stays the readable/diffable assembled module
-(re-derived by this step and by `design-upgrade`, importable by tooling
-outside the sandbox); a second, **transient, generated** file,
-`design/tier0-audit.bundle.js`, is what actually gets pasted into
-`use_figma` — regenerate it any time via `argo design assemble-tier0-audit`
-(wraps `bundleTier0Audit`), never hand-edit it.
-That function shells out to `bun build --bundle --format=esm` from a temp
-file inside `design/` (so the recipe's relative `./kit-patches.json` import
-resolves exactly as it does from the real installed location), then
-verifies the result is actually sandbox-runnable: zero `import`/`export`
-statements left, and under `use_figma`'s 50,000-char cap. Bundling via the
-barrel `figma-design-kit`/`figma-design-kit-shadcn-tailwind` entrypoints
-pulls in `zod` (~120KB, unused by the tier-0 rules) and blows that cap —
-this is why `tier0-audit.js` and `tier0-recipe-checks.js` import from the
-`/tier0-rules` subpath directly, not the package root; keep it that way.
-Install the
+**The tier-0 audit is never installed into the host project** (kit-extraction
+restructure — this killed the old assemble-into-`design/tier0-audit.js`
+splice model, the exact source of the drift bug that motivated the rewrite:
+a kit-side fix that never reached a project's already-assembled copy).
+`figma-audit` bundles it fresh, on demand, straight from `@argohq/kit` via
+`argo design bundle-tier0-audit --recipe <recipe>` (wraps
+`bundleTier0AuditForRecipe`) — nothing for this skill to assemble or copy
+here. `config.semanticCollectionName` (filled above) and the recipe's own
+project DATA (`design/kit-patches.json`, `design/kit.lock`'s variable keys)
+still flow through `argo design prepare-tier0-audit-options` at call time —
+see figma-audit/SKILL.md for the full procedure. Install the
 chosen recipe's remaining templates per their `templates-reference.md`
 install-when conditions: `design-source/base-congruence.walker.spec-diff.js`
 + `kit-patches.example.json` + `kit.lock.example.json` (only when the
@@ -473,9 +455,10 @@ yet.
 but this skill owns only the app's block):
 - `_meta.setupVersion` ← the plugin's CURRENT version (read from the plugin's
   own `.claude-plugin/plugin.json`, never hardcoded).
-- `_meta.managedFiles` ← every path this run wrote or updated: the assembled
-  `design/tier0-audit.js`, the walker shim paths emitted/chosen in §4, and
-  `design/waivers.json`/`kit-patches.json` if created (the `design.<app>`
+- `_meta.managedFiles` ← every path this run wrote or updated: the walker
+  shim paths emitted/chosen in §4, and `design/waivers.json`/`kit-patches.json`
+  if created (the tier-0 audit is bundled on demand, never a file this skill
+  writes into the project — nothing to list here for it; the `design.<app>`
   block itself is lifecycle state, not a managed file; the kit dep is init's,
   not this skill's). Update mode (§5a) may touch only these.
   In **update mode**, merge this list with the existing `managedFiles` rather

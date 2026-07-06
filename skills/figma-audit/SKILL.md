@@ -7,16 +7,23 @@ description: Run the canonical tier-0 Figma hygiene audit against named componen
 
 Owns the **canonical** tier-0 Figma hygiene audit (design-pack plan, X3:
 "figma-audit owns the canonical audit script; sync/create call it" — there is
-exactly one copy of this logic, never a second divergent one). That one
-copy is an **assembled** script (F12): the mechanism's `tier0-audit.js` with
-the installed recipe's `tier0-recipe-checks.js` spliced into its
-`// {{RECIPE_TIER0_CHECKS}}` marker — one script, one severity-grouped
-report, never two separately-executed audit scripts.
+exactly one copy of this logic, never a second divergent one). That one copy
+lives in `@argohq/kit` — `design-kit/tier0-audit`'s `runTier0Audit` — and is
+never assembled or committed into a host project (kit-extraction restructure:
+killed the old splice-into-`design/tier0-audit.js` model, the exact source of
+a real drift bug where a kit-side fix didn't reach a project's already-
+assembled copy). `bundle-tier0-audit` bundles it fresh, on demand, for every
+run; the installed recipe's own check functions (e.g. shadcn-tailwind's
+`design-kit/shadcn-tailwind/tier0-walker`) are baked into that SAME bundle by
+import, never a second separately-executed script. Project-specific DATA
+(the Semantic collection name, kit-patches.json contents, kit/retired
+variable keys) flows through the `options` object `prepare-tier0-audit-
+options` derives, never through a committed/assembled copy.
 
 **Mandatory prerequisite:** load `figma:figma-use` first — this skill's every
-check runs by executing a **bundled** copy of `templates/design/tier0-audit.js`
-inside Figma's Plugin API sandbox via `use_figma`; skipping that skill causes
-the usual hard-to-debug `use_figma` failures.
+check runs by executing a **bundled** script inside Figma's Plugin API
+sandbox via `use_figma`; skipping that skill causes the usual hard-to-debug
+`use_figma` failures.
 
 ## What it checks (figma-to-code-pipeline.md §5 tier 0)
 
@@ -40,8 +47,8 @@ from built components. Always advisory, never the hard authoritative
 decomposition gate (Option C, deferred until its brief/story-map schema
 lands) — never wire it as a hard-fail.
 
-**Recipe checks (installed recipe only):** for `shadcn-tailwind` (template
-dir `templates/design/recipes/shadcn-tailwind-external-kit/`)
+**Recipe checks (installed recipe only):** for `shadcn-tailwind`
+(`@argohq/kit/design-kit/shadcn-tailwind/tier0-walker`)
 — non-Semantic bindings (distinguished by library source, §8),
 retired-file-key bindings (a stale binding left over from a Library Swap),
 and edits to the kit copy not present in `design/kit-patches.json`. A
@@ -86,43 +93,36 @@ none at all.
 ## Procedure
 
 1. Load `figma:figma-use`.
-2. Locate the **assembled** `tier0-audit.js` — read it from the host
-   project's `design/` dir if `setup-design` has already installed and
-   assembled it there (mechanism + the installed recipe's
-   `tier0-recipe-checks.js` spliced in, all `{{…}}` slots filled from the
-   app's `design.<app>` block in `.claude/argo.json`). If running before install (no host project has it
-   yet), assemble the same way ad hoc from the plugin's own template copies:
-   splice `templates/design/recipes/<recipe>/design-source/tier0-recipe-checks.js`
-   into the mechanism template's `// {{RECIPE_TIER0_CHECKS}}` marker,
-   filling `{{SEMANTIC_COLLECTION_NAME}}` (mechanism) and the recipe's own
-   slots (e.g. `{{KIT_LIBRARY_FILE_KEY}}`) from whatever config is
-   available, or ask the user. Never run the mechanism script alone and
-   call it complete — a recipe's checks are part of the canonical audit,
-   not an optional extra.
-2a. **Bundle it before execution — never paste the assembled module into
-   `use_figma` as-is.** The assembled module's top-level `import`s (from
-   `@argohq/kit`'s zod-free tier0-rules subpaths and the recipe's
-   `./kit-patches.json`) cannot resolve inside the sandbox —
-   there is no module resolution there, only one self-contained script.
-   Run `argo design assemble-tier0-audit` (which wraps `bundleTier0Audit`)
-   against the assembled source, with `cwd` set to the directory the module
-   was assembled into (so the recipe's relative `./kit-patches.json` import
-   resolves) — it shells out to `bun build --bundle --format=esm`, restores
-   the mechanism's bare-completion-value ending (a naive tree-shake would
-   otherwise discard the whole audit body as "unused"), and verifies the
-   result has zero `import`/`export` statements and is under `use_figma`'s
-   50,000-char cap. Paste THAT bundled output into `use_figma`, never the
-   source module.
-3. **Derive the composite-name set before calling `use_figma` — the sandbox
-   can't read a committed file itself.** Run
-   `argo design prepare-tier0-audit-options` (wraps `deriveTier0AuditOptions`) with
-   `{ cwd: <host project root>, componentNames: [...] }` (or `[]` for a
-   file-wide sweep) — it reads `design/registry.json` Node-side and returns
-   `{ componentNames, compositeNames }`, `compositeNames` being the registry's
-   component keys `compositeRegionNamingViolation` (Option B) checks a
-   screen's plain FRAMEs against. Execute the bundled script via `use_figma`,
-   passing THAT returned object as `runTier0Audit`'s options — never a
-   hand-authored `{ componentNames: [...] }` missing `compositeNames`.
+2. **Derive the full options object first — Node-side, before any
+   `use_figma` call.** Run `argo design prepare-tier0-audit-options` (wraps
+   `deriveTier0AuditOptions`) with `{ cwd: <host project root>,
+   componentNames: [...] }` (or `[]` for a file-wide sweep). It reads
+   `.claude/argo.json`'s `design.<app>` block, `design/registry.json`,
+   `design/kit-patches.json`, and `design/kit.lock` Node-side (the sandbox
+   can't read a committed file itself) and returns `{ componentNames,
+   compositeNames, semanticCollectionName, recipe, kitPatches,
+   kitVariableKeys, retiredKitVariableKeys }`. Keep the whole object — every
+   field is DATA the bundled script's completion value needs; never
+   hand-author a trimmed `{ componentNames: [...] }`.
+3. **Bundle the audit for the returned `recipe` — never hand-assemble or
+   paste raw source into `use_figma`.** Run `argo design bundle-tier0-audit
+   --recipe <recipe>` (wraps `bundleTier0AuditForRecipe`), `cwd` set to the
+   host project root (so `@argohq/kit` resolves from its `node_modules`).
+   This generates a tiny entry module that imports `runTier0Audit` from
+   `@argohq/kit/design-kit/tier0-audit` plus (for a recipe with tier-0
+   checks) that recipe's own check functions, e.g.
+   `@argohq/kit/design-kit/shadcn-tailwind/tier0-walker`, wires the DATA
+   fields from step 2's options into them (functions can't cross the
+   `use_figma` data boundary, so they're baked into the bundle by import —
+   only the DATA options object crosses it), and shells out to `bun build
+   --bundle --format=esm` — restoring the bare-completion-value ending (a
+   naive tree-shake would otherwise discard the whole audit body as
+   "unused") and verifying the result has zero `import`/`export` statements
+   and is under `use_figma`'s 50,000-char cap. Nothing is written into the
+   host project's `design/` dir — the bundle lands at a cached tmp path this
+   command prints; read that file and paste ITS content into `use_figma`,
+   never a hand-assembled source module. Execute it via `use_figma`, calling
+   the completion value with the FULL options object from step 2.
 4. Report violations grouped by `severity`. For a named audit with any
    `hard` violation: **fail loud** — list every violation with its
    `nodeId`/`nodeName`/`rule`/`detail`, and do not report success. For an

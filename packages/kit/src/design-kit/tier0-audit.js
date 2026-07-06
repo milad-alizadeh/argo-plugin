@@ -2,31 +2,35 @@
  * Canonical tier-0 Figma hygiene audit (figma-to-code-pipeline.md §5 tier 0).
  *
  * Owned by /argo:figma-audit (X3) — /argo:figma-sync and /argo:figma-create
- * call this SAME script; do not fork a second copy. This is a thin Plugin-API
- * walker: it marshals live `figma.*` node/variable objects into plain-object
- * shapes and delegates the actual rule logic to `@argohq/kit`'s
- * unit-tested pure functions (@argohq/kit/design-kit/tier0-rules) — the
- * marshaling glue below still can't be unit-tested outside Figma, but the
- * rule logic it calls now can (see design-pack-recipes.md §2, decision B).
+ * call this SAME function; there is exactly one copy of this logic. This is
+ * a thin Plugin-API walker: it marshals live `figma.*` node/variable objects
+ * into plain-object shapes and delegates the actual rule logic to this
+ * package's unit-tested pure functions (./tier0-rules.js).
  *
- * {{SEMANTIC_COLLECTION_NAME}} — this project's Semantic variable collection
- *   name (e.g. "Semantic"), filled by /argo:setup-design from the app's
- *   design.<app> block in .claude/argo.json.
+ * Config-as-data (kit-extraction restructure): every project-specific value
+ * this mechanism needs — the Semantic collection name, and the two recipe
+ * extension points below — arrives through `options`, never through a
+ * splice/placeholder step baked into a committed copy. `bundle-tier0-audit`
+ * (skill-scripts) generates a small entry module that imports this function
+ * plus whichever recipe's check functions and bakes them into the bundle
+ * `use_figma` runs; DATA (kitPatches, kit/retired variable keys) still flows
+ * through `options` at call time — see prepare-tier0-audit-options.js.
+ *
+ * `options.runRecipeTier0Checks(node, { hard })` — recipe-owned per-node
+ *   checks (e.g. non-semantic-binding, retired-file-key-binding). Omit for a
+ *   `baseSource: none` recipe with no checks — the guarded call below no-ops.
+ * `options.runKitPatchesConformance(modifiedNodes)` — recipe-owned file-wide
+ *   check (kit-patches-conformance). Same omit-to-no-op contract.
  *
  * Reports violations as { severity: 'hard' | 'advisory', rule, nodeId, nodeName, detail }.
  * `hard` fails the calling skill loud (D8); `advisory` is a file-wide sweep
  * finding surfaced but not blocking (e.g. un-synced frames).
  *
- * --- RECIPE-CHECKS SPLICE MARKER ---
- * /argo:setup-design's §4 assembly step replaces the single marker line below
- * with the VERBATIM contents of the chosen recipe's design-source/
- * tier0-recipe-checks.js (its own `import`s survive intact since the splice
- * point is at module top level) — so the host project's installed
- * tier0-audit.js is always ONE assembled canonical script (X3/F12), never
- * two separately-executed files. For a `baseSource: none` recipe with no
- * checks file, the marker line is simply deleted, leaving
- * runRecipeTier0Checks/runKitPatchesConformance undefined — the guarded
- * calls below no-op in that case.
+ * Cannot be unit-tested outside Figma's Plugin API sandbox (design-pack plan
+ * §6, risk 1; documented accepted gap) — the `options`-passing plumbing
+ * around it (semanticCollectionName threading, recipe-hook wiring) is
+ * exercised by prepare-tier0-audit-options.test.js and
+ * bundle-tier0-audit.test.js instead of a synthetic Figma harness here.
  */
 
 import {
@@ -49,13 +53,9 @@ import {
   strokeScaleViolation,
   possibleGateFalsePositiveTag,
   compositeRegionNamingViolation
-} from '@argohq/kit/design-kit/tier0-rules'
+} from './tier0-rules.js'
 
-const SEMANTIC_COLLECTION_NAME = '{{SEMANTIC_COLLECTION_NAME}}'
-
-// {{RECIPE_TIER0_CHECKS}}
-
-async function auditNode(node, { hard, spacingScale, semanticModes, insideInstance = false, compositeNames = [] }) {
+async function auditNode(node, { hard, spacingScale, semanticModes, semanticCollectionName, insideInstance = false, compositeNames = [], runRecipeTier0Checks }) {
   const violations = []
 
   // Fetched early (rather than inside the INSTANCE-only block below) so the
@@ -189,7 +189,7 @@ async function auditNode(node, { hard, spacingScale, semanticModes, insideInstan
 
   if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') {
     const siblings = (node.parent?.children ?? []).filter((sibling) => sibling !== node)
-    for (const v of modeCopyViolations({ type: node.type, name: node.name, siblings }, SEMANTIC_COLLECTION_NAME, semanticModes)) {
+    for (const v of modeCopyViolations({ type: node.type, name: node.name, siblings }, semanticCollectionName, semanticModes)) {
       report(v.rule, v.detail)
     }
   }
@@ -216,7 +216,7 @@ async function auditNode(node, { hard, spacingScale, semanticModes, insideInstan
   }
 
   // Recipe-owned per-node checks (e.g. non-semantic-binding, retired-file-key-binding)
-  // — undefined for a baseSource: none recipe with no checks spliced above.
+  // — undefined for a baseSource: none recipe (or a recipe with no checks).
   if (typeof runRecipeTier0Checks === 'function') {
     violations.push(...(await runRecipeTier0Checks(node, { hard })))
   }
@@ -247,7 +247,7 @@ function marshalIconStrokeScale(node, main) {
  * Marshals a single Auto Layout gap/padding field (D24). boundVariables for a
  * number property is a single { id } object, not an array (unlike fills/
  * strokes) — resolved and marshaled explicitly, field by field, same
- * convention as tier0-recipe-checks.js (remote/key/variableCollectionId are
+ * convention as the recipe tier0 walker (remote/key/variableCollectionId are
  * prototype getters, not own properties, so never spread a live Variable).
  */
 async function marshalGapPaddingField(node, field) {
@@ -283,18 +283,32 @@ async function walk(node, opts, out) {
 }
 
 /**
- * @param {{ componentNames?: string[], compositeNames?: string[] }} options -
- *   named components get a hard audit (D8, fails loud); omitted -> advisory
- *   file-wide sweep of un-synced frames. `compositeNames` — the project's
- *   registered composite names (`design/registry.json`'s keys), derived
- *   Node-side by `scripts/prepare-tier0-audit-options.mjs` before this call —
+ * @param {{
+ *   componentNames?: string[], compositeNames?: string[],
+ *   semanticCollectionName?: string,
+ *   runRecipeTier0Checks?: (node, ctx: { hard: boolean }) => Promise<Array>,
+ *   runKitPatchesConformance?: (modifiedNodes) => Array
+ * }} options - named components get a hard audit (D8, fails loud); omitted ->
+ *   advisory file-wide sweep of un-synced frames. `compositeNames` — the
+ *   project's registered composite names (`design/registry.json`'s keys),
+ *   derived Node-side by `prepare-tier0-audit-options.js` before this call —
  *   feeds `compositeRegionNamingViolation` (Option B, always advisory).
+ *   `semanticCollectionName` defaults to `'Semantic'`. `runRecipeTier0Checks`/
+ *   `runKitPatchesConformance` are the recipe's extension points, baked into
+ *   the bundle by `bundle-tier0-audit`'s generated entry — omit either for a
+ *   `baseSource: none` recipe.
  */
-async function runTier0Audit(options = {}) {
-  const { componentNames, compositeNames = [] } = options
+export async function runTier0Audit(options = {}) {
+  const {
+    componentNames,
+    compositeNames = [],
+    semanticCollectionName = 'Semantic',
+    runRecipeTier0Checks,
+    runKitPatchesConformance
+  } = options
   const violations = []
   const spacingScale = await collectPrimitivesSpacingScale()
-  const semanticModes = await collectSemanticModeNames()
+  const semanticModes = await collectSemanticModeNames(semanticCollectionName)
 
   if (componentNames?.length) {
     // Dynamic-page mode requires every page loaded before figma.root.findAll
@@ -310,7 +324,7 @@ async function runTier0Audit(options = {}) {
       const matches = figma.root.findAll((n) => isNamedAuditTarget(n, name))
       for (const match of matches) {
         if (isWireframePageName(findOwningPage(match)?.name ?? '')) continue
-        await walk(match, { hard: true, spacingScale, semanticModes, compositeNames }, violations)
+        await walk(match, { hard: true, spacingScale, semanticModes, semanticCollectionName, compositeNames, runRecipeTier0Checks }, violations)
       }
     }
   } else {
@@ -321,15 +335,17 @@ async function runTier0Audit(options = {}) {
       // stroke — the whole gate is exempt, per the skill's documented
       // wording.
       if (isWireframePageName(page.name)) continue
-      for (const topLevel of page.children) await walk(topLevel, { hard: false, spacingScale, semanticModes, compositeNames }, violations)
+      for (const topLevel of page.children) {
+        await walk(topLevel, { hard: false, spacingScale, semanticModes, semanticCollectionName, compositeNames, runRecipeTier0Checks }, violations)
+      }
     }
   }
 
   // Recipe-owned file-wide check (kit-patches-conformance): runs once per
-  // audit, not per node — undefined for a baseSource: none recipe.
+  // audit, not per node — omitted for a baseSource: none recipe.
   if (typeof runKitPatchesConformance === 'function') {
     const modifiedNodes = await collectModifiedKitCopyNodes()
-    violations.push(...runKitPatchesConformance(modifiedNodes))
+    violations.push(...(await runKitPatchesConformance(modifiedNodes)))
   }
 
   return violations
@@ -338,8 +354,8 @@ async function runTier0Audit(options = {}) {
 /**
  * Recipe-owned file-wide checks (kit-patches-conformance) need the set of
  * kit-copy nodes modified since import, not a per-node predicate — this
- * marshals that set for whichever recipe's runKitPatchesConformance is
- * spliced in above.
+ * marshals that set for whichever recipe's `runKitPatchesConformance` was
+ * baked into the bundle.
  *
  * TODO(figma-sync): a live-Figma-session-only concern (mirrors the existing
  * TODOs in base-congruence.walker.spec-diff.js for CDP-forced pseudo-states)
@@ -383,14 +399,13 @@ async function collectPrimitivesSpacingScale() {
  * DERIVED from the project's own Semantic collection at audit time, never a
  * hardcoded "Light"/"Dark" pair — `modes[0]` is the default mode the
  * component itself renders in; every mode after it needs a copy. Returns []
- * if the Semantic collection doesn't exist yet (unseeded project), in which
- * case `modeCopyViolations` no-ops (nothing to check yet).
+ * if the Semantic collection (named `semanticCollectionName`) doesn't exist
+ * yet (unseeded project), in which case `modeCopyViolations` no-ops (nothing
+ * to check yet).
  */
-async function collectSemanticModeNames() {
+async function collectSemanticModeNames(semanticCollectionName) {
   const collections = await figma.variables.getLocalVariableCollectionsAsync()
-  const semantic = collections.find((c) => c.name === SEMANTIC_COLLECTION_NAME)
+  const semantic = collections.find((c) => c.name === semanticCollectionName)
   if (!semantic) return []
   return semantic.modes.map((mode) => mode.name)
 }
-
-runTier0Audit

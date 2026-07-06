@@ -6,7 +6,7 @@
  * tier0-audit result (the `runTier0Audit` completion value, an array of
  * `{ severity, rule, nodeId, nodeName, detail }`) into the receipt shape.
  *
- * A sibling of assemble-tier0-audit.js (figma-audit/SKILL.md's procedure
+ * A sibling of bundle-tier0-audit.js (figma-audit/SKILL.md's procedure
  * documents this as its final step, run right after `use_figma` returns the
  * audit's violations array): `argo design record-audit-receipt --record
  * '<json>'`, where `<json>` is `{ componentNames, violations }`.

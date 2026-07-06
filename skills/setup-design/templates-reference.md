@@ -8,9 +8,17 @@ consent before overwriting anything already installed by `init` (the
 testing.md amendment, in particular — never silently edit a file another
 skill already owns).
 
+**The tier-0 audit is NOT a template installed into the host project**
+(kit-extraction restructure). `figma-audit` bundles it on demand from
+`@argohq/kit/design-kit/tier0-audit` (+ the installed recipe's own
+`design-kit/<recipe>/tier0-walker` subpath) via `argo design
+bundle-tier0-audit` — see figma-audit/SKILL.md. Nothing audit-related is ever
+written to `design/` here; `config.semanticCollectionName` (below) and
+`design/kit-patches.json`/`design/kit.lock` still live in the project as DATA
+the bundled audit reads at call time, never as source it imports.
+
 | Template | Install when | Substitute / scope with |
 |---|---|---|
-| `tier0-audit.js` | always | `{{SEMANTIC_COLLECTION_NAME}}` ← `config.semanticCollectionName`. Assembled with the installed recipe's `tier0-recipe-checks.js` spliced into the marked injection region (F12/X3) — the host project runs ONE canonical script, never two |
 | `vrt-walker/vrt.walker.vrt.js` | prefer `argo design emit-shims` (generates it from the block's `componentsPath`/`walkers`); manual fill only when a project needs a bespoke shim | a THIN shim calling `runVrtWalker` from `@argohq/kit/walkers` — the factory owns the walk. Slots: `{{STORYBOOK_TEST_PACKAGE}}` ← the project's Storybook test-package name (`walkers.storybookTestPackage`); `{{STORIES_GLOB}}` ← story glob relative to the shim dir (`walkers.storiesGlob`); `{{BASELINES_GLOB}}` ← relative glob to the committed baselines (`walkers.baselinesGlob`, e.g. `../../design/screenshots/**/*.png`) |
 | `vrt-walker/vitest.vrt.config.js` | always (copied/filled manually — emit-shims does not generate it) | `{{VRT_WALKER_DIR}}` ← the project's chosen path (e.g. `test/vrt/`); `{{EXT}}` ← `ts` or `js` per project; `{{PINNED_CHROMIUM_BUILD}}` ← block `vrtEnvironment.browser`; `{{VIEWPORT_WIDTH}}`/`{{VIEWPORT_HEIGHT}}` ← split block `vrtEnvironment.viewport` (`"WxH"`) on `x`; `{{SOURCE_ALIASES}}` ← the host app's source aliases as `'@alias': resolve(__dirname, '<path>')` entries (SKILL §7b); `{{CSS_PLUGIN_IMPORT}}`/`{{CSS_PLUGIN_CALL}}` ← the host app's real CSS pipeline plugin (e.g. `@tailwindcss/vite`'s `tailwindcss()`), mirrored the same way into `.storybook/main.ts`'s `viteFinal` — without this every VRT render is unstyled and no assertion here catches it by default (SKILL §7b/§8) |
 | `spec-diff-walker/spec-diff.walker.spec-diff.js` | prefer `argo design emit-shims`; manual fill only for a bespoke shim | a THIN shim calling `runSpecDiffWalker` from `@argohq/kit/walkers`. Slots: `{{STORYBOOK_TEST_PACKAGE}}`/`{{STORIES_GLOB}}` as above; `{{DESIGN_SPECS_GLOB}}` ← glob of `design/specs/*.json` relative to the shim dir (`walkers.specsGlob`) — specs pair with stories by basename |
@@ -42,7 +50,6 @@ conditions are keyed off that recipe's declared `baseSource`/`codeTarget`
 | `design-source/base-congruence.walker.spec-diff.js` | recipe's `baseSource == "external-library"` (or `same-file` with vendored base code) | same substitutions as `spec-diff.walker.spec-diff.js`, plus `{{BASE_SMOKE_STORIES_GLOB_OR_INDEX}}` and `{{KIT_SPECS_GLOB_OR_INDEX}}` |
 | `design-source/kit-patches.example.json` | recipe's `baseSource == "external-library"` | copy to `design/kit-patches.json` verbatim (`{}`) |
 | `design-source/kit.lock.example.json` | recipe's `baseSource == "external-library"` | copy to `design/kit.lock`, fill `{{KIT_VERSION}}`/`{{DATE}}`/`{{KIT_FILE_KEY}}`/`{{FILE_VERSION}}`/`{{ISO_TIMESTAMP}}` from the current kit import — normally superseded by `figma-sync`'s first real sync run |
-| `design-source/tier0-recipe-checks.js` | recipe's `baseSource == "external-library"` | `{{KIT_VARIABLE_KEYS_JSON}}` ← JSON array of the kit's variable keys from `design/kit.lock` (`[]` before the first sync — remote bindings then count as kit-sourced); `{{RETIRED_KIT_VARIABLE_KEYS_JSON}}` ← JSON array of variable keys retired by Library Swaps (`[]` if none; design-upgrade records them from the outgoing kit.lock); spliced into `tier0-audit.js`'s injection region, never installed/run standalone |
 | `code-target/lint/design-lint.md` | a lint config + component dir exist | `{{COMPONENTS_GLOB}}` ← the project's real components dir glob; `{{PRIMITIVE_TOKEN_PREFIX}}` ← the project's Primitive naming convention |
 | `code-target/token-writer.md` | always (for this recipe) | `{{TOKEN_FILE_PATH}}` ← `config.tokenFilePath` — `figma-sync`'s step 7 delegates to this doc instead of narrating the token-writer inline |
 | `code-target/css-pipeline.md` | always (for this recipe) | reference only, not filled with slots — states this recipe's `codeTarget` (Tailwind v4, `@tailwindcss/vite`) CSS-plugin detection/wiring detail that SKILL §7b delegates to instead of hardcoding a CSS tool into the generic skill; fills the `{{CSS_PLUGIN_IMPORT}}`/`{{CSS_PLUGIN_CALL}}` slots in `vrt-walker/vitest.vrt.config.js` and the equivalent plugin entry in `.storybook/main.ts`'s `viteFinal` |
@@ -69,7 +76,7 @@ category rather than re-running the wizard. This table mirrors the skill's
 
 | Category | Examples | Reconcile strategy |
 |---|---|---|
-| (a) Regenerated template | `tier0-audit.js`, `vrt-walker/*`, `spec-diff` walker, `testing.md` amendment | Re-derive current content, diff vs disk, ask per batch (≤4/AskUserQuestion). A file whose on-disk content ≠ last-derived is hand-edited → conflict prompt (keep/overwrite/merge), never auto-overwrite. |
+| (a) Regenerated template | `vrt-walker/*`, `spec-diff` walker, `testing.md` amendment | Re-derive current content, diff vs disk, ask per batch (≤4/AskUserQuestion). A file whose on-disk content ≠ last-derived is hand-edited → conflict prompt (keep/overwrite/merge), never auto-overwrite. |
 | (b) Structured user-config | the `design.<app>` block in `.claude/argo.json` | `mergeConfigShape` (from `@argohq/kit`) against the app's block: add missing shape keys, preserve every existing value, never delete on-disk-only keys; write `merged` via `JSON.stringify`, report `addedKeys`. |
 | (d) Foreign-file managed edit | `package.json` deps, tdd-guard `config.json` `ignorePatterns` | Idempotent re-apply of only the managed portion. |
 | (e) External Figma state | Semantic-layer seeding | Out of scope for file reconcile — handled by §4a / `design-upgrade`; printed as a pointer, not silently skipped. |

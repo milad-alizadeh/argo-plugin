@@ -96,6 +96,48 @@ tested against fixtures (contract + built-regions + dispositions → receipt
 exit code). S4-S5 are skill prose + wiring — true test is a real argo-v2 screen
 generated end-to-end (no fixture exists in-plugin; same posture as figma-to-code).
 
+## FINDING (2026-07-06, from grounding S1) — path-matching does not cross to code
+
+`classifyCoverage` matches built→contract regions by **`path`** (`findBuiltMatch`:
+`built.path === region.path`). Contract paths are ancestry-qualified from the
+**Figma metadata tree** — every node name including non-instance wrappers (see
+`promoteNodes.visit`: path grows on *every* child, region or not). design-screen
+works because BOTH sides are Figma trees, so paths align by construction. C3a
+deliberately chose path over name so one instance can't satisfy multiple
+same-named contract rows.
+
+A code screen's rendered DOM is a different tree (wrapper divs, different
+nesting, no Figma node names), so **path identity does not survive the jump to
+code**. So S1 is NOT a mechanical mirror of `buildBuiltRegions`, and
+`classifyCoverage` cannot be reused verbatim. The matching key has to change.
+Three options, with the tradeoff being independence vs robustness:
+
+- **(A) Replicate Figma paths in code.** Generator emits `data-region-path` on
+  every instance, verbatim from the contract. Extractor reads it → paths align →
+  `classifyCoverage` unchanged. Con: self-annotated — the generator declares
+  which contract path each instance fulfills, so extraction reads the generator's
+  claims (weakens the independent-oracle property). Also must annotate wrapper
+  nesting to match Figma paths — fragile.
+- **(B) Component-identity via disposition (RECOMMENDED).** Base kit components
+  self-identify at their root (`data-argo-component="<key>"`, emitted by the
+  component, not the screen generator). Extractor collects the registry
+  instances actually rendered. A new *code-side classifier* matches each contract
+  region to its disposition's `component` and checks that component rendered:
+  present / MISSING / UNACCOUNTED / deferred, same output shape as
+  `classifyCoverage` → feeds `summarize`/`buildCoverageReceipt`/the gate
+  unchanged. Pros: robust (no Figma-path replication), reasonably independent
+  (components self-identify; disposition is frozen), matches how code composes
+  (by component, not Figma ancestry). Con: a new classifier, so "only S1 is new"
+  becomes "S1 + a small code-side classifier are new" (receipt + gate +
+  `summarize` still reused).
+- **(C) Name-based matching.** Match by region name. Rejected: reintroduces
+  exactly the one-instance-satisfies-many-rows bug C3a fixed.
+
+**Recommendation: (B).** Revises S1 to: base-component self-ID marker + a
+`classifyCoverageByComponent(contract, renderedComponents, dispositions)` code
+classifier reusing `summarize`. This is a design decision that must land before
+S1 is coded — it changes what S1 is.
+
 ## Open risks carried from the design doc
 1. Screen reference screenshot path/naming (blocks S3) — confirm in figma-sync.
 2. Stale disposition vs frozen contract (S2 mitigates by re-linting at entry).

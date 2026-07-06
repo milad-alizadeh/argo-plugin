@@ -18,11 +18,14 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const HOOK_CHAINS = {
-  // Order matches the pre-extraction hooks.json: red-proof → trust → design-commit → design-coverage.
+  // Order: red-proof → trust → design-commit → design-contract-freeze → design-coverage.
+  // The freeze gate runs before coverage because coverage grades against the
+  // frozen contract — its integrity must be checked before it is trusted.
   'bash-pretooluse': [
     '../dist/hooks/red-proof-gate.js',
     '../dist/hooks/trust-gate.js',
     '../dist/hooks/design-commit-gate.js',
+    '../dist/hooks/design-contract-freeze-gate.js',
     '../dist/hooks/design-coverage-gate.js',
   ],
   'post-edit-write': ['../dist/hooks/format-on-write.js', '../dist/hooks/test-smell.js'],

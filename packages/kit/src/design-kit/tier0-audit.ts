@@ -387,12 +387,18 @@ export async function runTier0Audit(
  * marshals that set for whichever recipe's `runKitPatchesConformance` was
  * baked into the bundle.
  *
- * TODO(figma-sync): a live-Figma-session-only concern (mirrors the existing
- * TODOs in base-congruence.walker.spec-diff.js for CDP-forced pseudo-states)
- * — the concrete "modified since import" signal (a stored per-node
- * content hash compared against kit.lock's syncTimestamp, or an explicit
- * plugin-data dirty marker) is proven at Slice 14's live-file verification,
- * not authored blind here.
+ * DORMANT — always returns `[]`, so kit-patches-conformance can never fire:
+ * an unrecorded edit to a kit copy currently PASSES every audit. This is not a
+ * bug to patch blind — it needs a "modified since import" signal that does not
+ * yet exist in the pipeline: a per-node content hash (compared against
+ * kit.lock's syncTimestamp) or an explicit plugin-data dirty marker, STAMPED
+ * BY figma-sync at import time and verified against a live file (the deferred
+ * Slice-14 work). Authoring the detector without that baseline risks
+ * false-blocking legitimate kit instances (destructive — forces detaching, as
+ * earlier tier-0 false positives did). The dormancy is disclosed in
+ * figma-audit/SKILL.md so no skill or agent relies on protection that isn't
+ * there. Once figma-sync stamps the baseline, this becomes a real lookup and
+ * the gate goes live with no other audit-side change.
  */
 async function collectModifiedKitCopyNodes(): Promise<any[]> {
   return []

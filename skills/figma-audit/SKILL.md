@@ -55,6 +55,16 @@ and edits to the kit copy not present in `design/kit-patches.json`. A
 different recipe (or `baseSource: none`) supplies its own check set, or
 none at all.
 
+> **DORMANT — the kit-copy-edit (kit-patches conformance) check does not fire
+> yet.** `kitPatchesConformanceViolations` is wired but inert: the audit's
+> `collectModifiedKitCopyNodes` returns `[]` because nothing stamps a per-node
+> import baseline (a content hash or a dirty marker) that "modified since
+> import" could be measured against. Until `figma-sync` stamps that baseline at
+> import time and it is verified against a live file (the deferred Slice-14
+> work), **an unrecorded edit to a kit copy PASSES the audit** — do not lean on
+> this check for D13 kit-mirror integrity. The other two recipe checks in this
+> set (non-Semantic binding, retired-file-key) DO fire.
+
 ## Two modes
 
 1. **Named-component audit (hard gate, D8)** — when called with specific

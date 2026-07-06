@@ -4,15 +4,15 @@
  * corpus header — not hand-authored synthetic shapes like `{remote: true,
  * key: 'kit-file-key:1:2'}`, which passed green while encoding the exact
  * wrong `key.startsWith(fileKey)` assumption this fixture exists to prevent
- * recurring). Re-capture via `scripts/capture-kit-corpus.mjs` on kit upgrade
+ * recurring). Re-capture via `argo design capture-kit-corpus` on kit upgrade
  * (design-upgrade/D15) so the fixture tracks the kit it certifies.
  *
  * Guardrail (YAGNI, R7): one pristine instance per rule category — this is
  * NOT a general snapshot framework.
  */
 import { describe, it, expect } from 'vitest'
-import { runPureTier0Audit } from './helpers/runPureTier0Audit.mjs'
-import corpus from './fixtures/kit-corpus.json' with { type: 'json' }
+import { runPureTier0Audit } from '../../../../test/helpers/runPureTier0Audit.mjs'
+import corpus from '../../../../test/fixtures/kit-corpus.json' with { type: 'json' }
 
 describe('R7 pristine kit corpus', () => {
   it('produces zero violations across the whole pristine corpus', () => {

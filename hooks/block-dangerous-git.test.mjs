@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
-const HOOK = fileURLToPath(new URL('../hooks/block-dangerous-git.sh', import.meta.url))
+const HOOK = fileURLToPath(new URL('./block-dangerous-git.sh', import.meta.url))
 
 /** Run the hook as Claude Code does: hook-input JSON on stdin, observe exit code. */
 function runHook(stdin, env = {}) {

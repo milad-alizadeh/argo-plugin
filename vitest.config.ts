@@ -8,6 +8,10 @@ const repoRoot = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
   test: {
+    // Co-located tests repo-wide (owner ruling 2026-07-06): every unit test
+    // lives next to its subject (hooks/, packages/kit/src/**, eval/lib/);
+    // test/ keeps only shared fixtures/helpers and the dual-mode acid suites.
+    include: ['hooks/**/*.test.mjs', 'packages/**/*.test.{js,mjs}', 'eval/**/*.test.mjs', 'test/**/*.test.mjs'],
     reporters: ['default', ['tdd-guard-vitest', { projectRoot: repoRoot }]]
   }
 })

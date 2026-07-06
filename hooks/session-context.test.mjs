@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-const HOOK = fileURLToPath(new URL('../hooks/session-context.mjs', import.meta.url))
+const HOOK = fileURLToPath(new URL('./session-context.mjs', import.meta.url))
 
 /** Run the hook as Claude Code does: hook-input JSON on stdin, observe exit + stdout. */
 function runHook(stdin) {

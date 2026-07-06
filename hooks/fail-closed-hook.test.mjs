@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url'
  * through dead gates.
  */
 
-const HOOKS_JSON = fileURLToPath(new URL('../hooks/hooks.json', import.meta.url))
+const HOOKS_JSON = fileURLToPath(new URL('./hooks.json', import.meta.url))
 
 function allCommands(hooksJson) {
   const out = []

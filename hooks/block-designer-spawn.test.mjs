@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isDesignerTranscript } from '../hooks/block-designer-spawn.mjs'
+import { isDesignerTranscript } from './block-designer-spawn.mjs'
 
 describe('isDesignerTranscript', () => {
   it('detects a designer session from its system-prompt marker text', () => {

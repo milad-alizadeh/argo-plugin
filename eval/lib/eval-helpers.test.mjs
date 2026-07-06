@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { fileURLToPath } from 'node:url'
-import { extractCard } from '../eval/lib/card.mjs'
-import { scoreRouting } from '../eval/lib/scoreRouting.mjs'
+import { extractCard } from './card.mjs'
+import { scoreRouting } from './scoreRouting.mjs'
 
-const HOOK = fileURLToPath(new URL('../hooks/session-context.mjs', import.meta.url))
+const HOOK = fileURLToPath(new URL('../../hooks/session-context.mjs', import.meta.url))
 
 describe('extractCard — reads the live CARD text out of session-context.mjs', () => {
   it('returns the CARD body, starting with its own heading', () => {

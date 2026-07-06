@@ -89,4 +89,42 @@ describe('design-guard-record — PostToolUse on the Figma use_figma tool', () =
   it('PASS: malformed hook stdin → inert', async () => {
     expect((await runHook('not json')).code).toBe(0)
   })
+
+  it('records a per-session write count alongside the global counter', async () => {
+    armDesignPack(cwd)
+    await runHook(postToolUseInput(cwd, { session_id: 'sess-a' }))
+    const state = JSON.parse(readFileSync(join(cwd, '.argo', 'design-guard.json'), 'utf8'))
+    expect(state.writeCount).toBe(1)
+    expect(state.sessions['sess-a'].writeCount).toBe(1)
+    expect(typeof state.sessions['sess-a'].lastWriteAt).toBe('number')
+  })
+
+  it('tracks separate sessions independently while the global counter sums all of them', async () => {
+    armDesignPack(cwd)
+    await runHook(postToolUseInput(cwd, { session_id: 'sess-a' }))
+    await runHook(postToolUseInput(cwd, { session_id: 'sess-a' }))
+    await runHook(postToolUseInput(cwd, { session_id: 'sess-b' }))
+    const state = JSON.parse(readFileSync(join(cwd, '.argo', 'design-guard.json'), 'utf8'))
+    expect(state.writeCount).toBe(3)
+    expect(state.sessions['sess-a'].writeCount).toBe(2)
+    expect(state.sessions['sess-b'].writeCount).toBe(1)
+  })
+
+  it('repairs gracefully when an existing state file predates the sessions map', async () => {
+    armDesignPack(cwd)
+    mkdirSync(join(cwd, '.argo'), { recursive: true })
+    writeFileSync(join(cwd, '.argo', 'design-guard.json'), JSON.stringify({ writeCount: 5, lastWriteAt: Date.now() }))
+    await runHook(postToolUseInput(cwd, { session_id: 'sess-a' }))
+    const state = JSON.parse(readFileSync(join(cwd, '.argo', 'design-guard.json'), 'utf8'))
+    expect(state.writeCount).toBe(6)
+    expect(state.sessions['sess-a'].writeCount).toBe(1)
+  })
+
+  it('still increments the global counter when session_id is missing, without crashing', async () => {
+    armDesignPack(cwd)
+    const r = await runHook(postToolUseInput(cwd))
+    expect(r.code).toBe(0)
+    const state = JSON.parse(readFileSync(join(cwd, '.argo', 'design-guard.json'), 'utf8'))
+    expect(state.writeCount).toBe(1)
+  })
 })

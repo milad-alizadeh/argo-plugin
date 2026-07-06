@@ -41,6 +41,22 @@ function writeAuditReceipt(cwd, over = {}) {
   )
 }
 
+function armDesignPackMonorepo(cwd, appRoot) {
+  mkdirSync(join(cwd, '.claude'), { recursive: true })
+  writeFileSync(
+    join(cwd, '.claude', 'argo.json'),
+    JSON.stringify({ landing: 'pr', design: { [appRoot]: { root: appRoot, recipe: 'shadcn-tailwind' } } })
+  )
+}
+
+function writeAppAuditReceipt(cwd, appRoot, over = {}) {
+  mkdirSync(join(cwd, appRoot, 'design'), { recursive: true })
+  writeFileSync(
+    join(cwd, appRoot, 'design', 'audit-receipt.json'),
+    JSON.stringify({ timestamp: Date.now(), componentNames: ['Button'], violationCount: 0, writeCounterAtAudit: 1, ...over }),
+  )
+}
+
 describe('design-guard-stop — blocks Stop/SubagentStop on stale/missing audit receipts', () => {
   let cwd
   beforeEach(() => { cwd = mkdtempSync(join(tmpdir(), 'argo-designguard-stop-')) })
@@ -102,7 +118,65 @@ describe('design-guard-stop — blocks Stop/SubagentStop on stale/missing audit 
     expect(r.code).toBe(2)
   })
 
+  it('PASS: stale write counter defers rather than blocks while a background subagent is still in flight', async () => {
+    armDesignPack(cwd)
+    writeAuditReceipt(cwd, { writeCounterAtAudit: 1 })
+    writeGuardState(cwd, { writeCount: 2 })
+    const r = await runHook(
+      stopInput(cwd, { background_tasks: [{ id: 'a1', type: 'subagent', status: 'running', description: 'designer fan-out', agent_type: 'designer' }] })
+    )
+    expect(r.code).toBe(0)
+  })
+
+  it('BLOCK: once background work clears, the same stale counter blocks again', async () => {
+    armDesignPack(cwd)
+    writeAuditReceipt(cwd, { writeCounterAtAudit: 1 })
+    writeGuardState(cwd, { writeCount: 2 })
+    const r = await runHook(stopInput(cwd, { background_tasks: [] }))
+    expect(r.code).toBe(2)
+  })
+
   it('PASS: malformed hook stdin → inert', async () => {
     expect((await runHook('not json')).code).toBe(0)
+  })
+
+  it('PASS (monorepo): a clean receipt at <app.root>/design/audit-receipt.json satisfies the guard', async () => {
+    armDesignPackMonorepo(cwd, 'apps/desktop')
+    writeGuardState(cwd)
+    writeAppAuditReceipt(cwd, 'apps/desktop')
+    expect((await runHook(stopInput(cwd))).code).toBe(0)
+  })
+
+  it('BLOCK (monorepo): a receipt at the OLD repo-root path is not consulted, app-root receipt still missing', async () => {
+    armDesignPackMonorepo(cwd, 'apps/desktop')
+    writeGuardState(cwd)
+    writeAuditReceipt(cwd) // old, wrong location: <repoRoot>/design/audit-receipt.json
+    const r = await runHook(stopInput(cwd))
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/no audit receipt/)
+  })
+
+  it('PASS: a bystander session with zero recorded writes is not blocked by another session\'s global writeCount', async () => {
+    armDesignPack(cwd)
+    writeGuardState(cwd, { sessions: { 'other-session': { writeCount: 1, lastWriteAt: Date.now() } } })
+    // no receipt exists at all, and global writeCount > 0 — would block under the old global-only logic
+    const r = await runHook(stopInput(cwd, { session_id: 'bystander-session' }))
+    expect(r.code).toBe(0)
+  })
+
+  it('BLOCK: a session that DID record writes is still gated on its own missing/stale receipt', async () => {
+    armDesignPack(cwd)
+    writeGuardState(cwd, { sessions: { 'writer-session': { writeCount: 1, lastWriteAt: Date.now() } } })
+    const r = await runHook(stopInput(cwd, { session_id: 'writer-session' }))
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/no audit receipt/)
+  })
+
+  it('BLOCK: missing session_id falls back to default-deny on the global counter (no free pass)', async () => {
+    armDesignPack(cwd)
+    writeGuardState(cwd, { sessions: { 'some-other-session': { writeCount: 1, lastWriteAt: Date.now() } } })
+    const r = await runHook(stopInput(cwd)) // no session_id at all
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/no audit receipt/)
   })
 })

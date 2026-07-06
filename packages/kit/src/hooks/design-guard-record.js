@@ -61,18 +61,24 @@ const repoRoot = resolveRepoRoot(cwd)
 if (setUpDesignApps(findArgoJson(repoRoot)?.config).length === 0) process.exit(0) // design pack not installed — inert
 
 const statePath = join(repoRoot, '.argo', 'design-guard.json')
-let state = { writeCount: 0 }
+let state = { writeCount: 0, sessions: {} }
 if (existsSync(statePath)) {
   try {
     state = JSON.parse(readFileSync(statePath, 'utf8'))
   } catch {
-    state = { writeCount: 0 } // corrupt state — recover rather than crash
+    state = { writeCount: 0, sessions: {} } // corrupt state — recover rather than crash
   }
 }
 
+const sessions = typeof state.sessions === 'object' && state.sessions !== null ? state.sessions : {}
 const writeCount = (typeof state.writeCount === 'number' ? state.writeCount : 0) + 1
+const sessionId = typeof hook?.session_id === 'string' && hook.session_id.length > 0 ? hook.session_id : null
+if (sessionId) {
+  const prior = typeof sessions[sessionId]?.writeCount === 'number' ? sessions[sessionId].writeCount : 0
+  sessions[sessionId] = { writeCount: prior + 1, lastWriteAt: Date.now() }
+}
 mkdirSync(join(repoRoot, '.argo'), { recursive: true })
-writeFileSync(statePath, JSON.stringify({ writeCount, lastWriteAt: Date.now() }))
+writeFileSync(statePath, JSON.stringify({ writeCount, lastWriteAt: Date.now(), sessions }))
 
 process.stdout.write(
   JSON.stringify({

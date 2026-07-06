@@ -84,6 +84,29 @@ Rules for kit use:
   style, not Figma's default. Likewise every CONTAINER is a kit component or a
   kit-native frame on the lo-fi palette — never an ad-hoc rectangle styled
   toward hi-fi. Same font, same container vocabulary, every frame, every page.
+- **ONE visual grammar everywhere — inherit it from the kit, don't invent it.**
+  The kit (whatever `design/config.json` → `figma.wireframeKitFileKey` points at —
+  stay agnostic, name no kit and bake in NO kit-specific values) defines the
+  corner radius, border weight/stroke style,
+  type scale, and spacing rhythm. EVERY container you place — including any
+  custom/new component you must build (a StageHeader, a nested rail card, a panel
+  header) — takes those SAME values, so a hand-built component is visually
+  indistinguishable from a default kit primitive. Mixed radii (rounded accordion
+  headers next to sharp session cards), mixed border weights, or off-scale text
+  is the same "half-drifted to hi-fi" tell as mixed fonts. When you build
+  something the kit lacks, compose it from the kit's primitives or copy their
+  exact radius/stroke/type/spacing — never a default Figma rectangle with ad-hoc
+  values.
+- **Reuse the kit's icons — never hand-draw one.** The wireframe kit ships an
+  icon collection; use it for every glyph (avatars, chevrons, status marks,
+  toggles, actions). Do NOT recreate an icon by drawing shapes or pull one from
+  outside the kit — a hand-drawn avatar or a foreign icon breaks the single
+  visual grammar exactly like a foreign font does. If the kit genuinely lacks an
+  icon, use the closest kit icon and flag the gap, don't fabricate one.
+- **Prefer the library's primitives over anything custom.** Reach for a kit
+  component/primitive first; build custom only for what the kit truly can't
+  express, and even then match its grammar per the two rules above. The goal:
+  custom-for-wireframe and default-kit components look like one set.
 - A repeated element (a list of cards) is N instances of ONE kit component with a
   `state`/`variant` prop, never N detached copies.
 - **Never collapse a content region to a blank image/skeleton placeholder.** A

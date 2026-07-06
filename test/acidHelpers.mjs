@@ -28,12 +28,16 @@ export function materializeFixture(fixturePath) {
   return dir
 }
 
-/** What `bun link @argohq/kit` produces in a consumer, materialized hermetically. */
-export function linkKit(hostRoot) {
+/** What `bun link @argohq/kit` produces in a consumer, materialized hermetically.
+ * `withVitest` also links this repo's vitest install (a real host has its own). */
+export function linkKit(hostRoot, { withVitest = false } = {}) {
   mkdirSync(join(hostRoot, 'node_modules', '@argohq'), { recursive: true })
   symlinkSync(KIT_DIR, join(hostRoot, 'node_modules', '@argohq', 'kit'))
   mkdirSync(join(hostRoot, 'node_modules', '.bin'), { recursive: true })
   symlinkSync(join(hostRoot, 'node_modules', '@argohq', 'kit', 'bin', 'argo.js'), join(hostRoot, 'node_modules', '.bin', 'argo'))
+  if (withVitest) {
+    symlinkSync(join(REPO_ROOT, 'node_modules', 'vitest'), join(hostRoot, 'node_modules', 'vitest'))
+  }
 }
 
 export function runArgo(hostRoot, args) {

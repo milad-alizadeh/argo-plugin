@@ -1,0 +1,31 @@
+# Guards the committed packages/kit/dist/ against drift from packages/kit/src/*.ts —
+# dist is committed (not gitignored, see kit-typescript-migration.md's Approach
+# section), so a forgotten `bun run build` before commit would ship stale
+# compiled gate/hook logic on a path whose entire point is fail-closed
+# determinism. This is the authoritative backstop; local dev relies on
+# `bun run dev` (tsc --watch) instead of a pre-commit hook.
+name: kit-dist-parity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dist-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Build packages/kit
+        working-directory: packages/kit
+        run: bun run build
+      - name: Fail if the committed dist/ doesn't match a clean build
+        run: git diff --exit-code -- packages/kit/dist

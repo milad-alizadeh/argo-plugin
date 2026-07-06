@@ -214,6 +214,15 @@ One package, bin `argo`:
 swap to `^version`. Monorepo and single-repo hosts are both first-class (dual-mode
 acid suites run every gate against a fixture of each).
 
+**Source is TypeScript, compiled to a committed `packages/kit/dist/`** (`tsc`,
+strict, NodeNext — see `.claude/plans/kit-typescript-migration.md`). `dist/` is
+committed, not gitignored: `skills/init/SKILL.md` invokes `packages/kit/bin/argo.js`
+directly from the checked-out plugin tree before any install step runs, so the
+tree must be self-sufficient. When working on `packages/kit`, run
+`bun run dev` (from `packages/kit`) to keep `dist/` rebuilding on save, and run
+`bun run build` before committing — the `kit-dist-parity` CI job fails the build
+if the committed `dist/` doesn't match a clean rebuild.
+
 ## How opinionation is delivered (rules are inert until adapted)
 
 Claude Code has no plugin-level `rules/` mechanism, and always-on rules would

@@ -1,7 +1,8 @@
 # Tailwind token-writer (D19)
 
 Regenerates the generated `@theme` region in this project's
-`{{TOKEN_FILE_PATH}}` (from `design/config.json`) from the freshly dumped
+`{{TOKEN_FILE_PATH}}` (from the app's `design.<app>` block in
+`.claude/argo.json`) from the freshly dumped
 `design/tokens.json` — this is the ONE writer for that region; never
 hand-edit it.
 

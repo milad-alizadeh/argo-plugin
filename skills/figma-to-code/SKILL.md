@@ -15,7 +15,8 @@ only accepted proof.** Reading the spec-diff walker's output and concluding
 red-proof/trust gates apply to test runs applies here to design gates. Every
 tier below that can write a machine-checkable receipt does so, and
 `hooks/design-commit-gate.mjs` enforces it at commit time — a commit
-touching `design/config.json`'s `componentsPath` with no fresh, passing
+touching the `componentsPath` named in the app's `design.<app>` block in
+`.claude/argo.json` with no fresh, passing
 `design/spec-diff-receipt.json` is blocked (exit 2), independent of any
 build-mode gating, whether this skill runs inside a gated build or
 interactively.
@@ -44,8 +45,8 @@ interactively.
 1. **Read committed context.** `design/story-map.json` for the
    component→story→import/prop mapping, `design/specs/<Component>.json`
    for per-variant×mode metrics, `design/screenshots/<Component>/*` for the
-   reference screenshots. If the project has an `aesthetic-profile.md` next
-   to `design/config.json`, read it too — it carries the non-tokenizable
+   reference screenshots. If the project has an `aesthetic-profile.md` in
+   its `design/` directory, read it too — it carries the non-tokenizable
    design intent (material logic, light logic, motion feel) the generated
    code must honor with the token names it cites.
 2. **Generate through the normal test-first loop** (this project's existing

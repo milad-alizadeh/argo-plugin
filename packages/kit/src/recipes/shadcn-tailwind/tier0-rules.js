@@ -1,5 +1,5 @@
 /**
- * Tier-0 recipe rules for shadcn-tailwind-external-kit (D23) — pure predicate
+ * Tier-0 recipe rules for the shadcn-tailwind recipe (D23) — pure predicate
  * functions over plain-object variable/node shapes, unit-tested outside Figma's
  * Plugin API sandbox. The Plugin-API walker
  * (templates/design/recipes/shadcn-tailwind-external-kit/design-source/tier0-recipe-checks.js)

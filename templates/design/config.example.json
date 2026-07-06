@@ -1,8 +1,9 @@
 {
-  "recipe": "{{RECIPE_NAME}}",
+  "root": "{{APP_ROOT}}",
+  "componentsPath": "{{COMPONENTS_PATH}}",
+  "recipe": "shadcn-tailwind",
   "semanticCollectionName": "{{SEMANTIC_COLLECTION_NAME}}",
   "tokenFilePath": "{{TOKEN_FILE_PATH}}",
-  "componentsPath": "{{COMPONENTS_PATH}}",
   "knownGoodTriad": {
     "storybook": "{{VERSION}}",
     "vitestAddon": "{{VERSION}}",
@@ -17,8 +18,12 @@
     "projectFileKey": "{{PROJECT_FILE_KEY}}",
     "wireframeKitFileKey": "{{WIREFRAME_KIT_FILE_KEY}}"
   },
-  "design": {
-    "componentCategories": ["primitive", "composite"]
+  "componentCategories": ["primitive", "composite"],
+  "walkers": {
+    "storiesGlob": "{{STORIES_GLOB}}",
+    "specsGlob": "{{DESIGN_SPECS_GLOB}}",
+    "baselinesGlob": "{{BASELINES_GLOB}}",
+    "storybookTestPackage": "{{STORYBOOK_TEST_PACKAGE}}"
   },
   "recipeConfig": {
     "figma": {

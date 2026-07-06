@@ -13,8 +13,8 @@ node creation, variable binding, and variant-set assembly.
 
 ## Design intent (aesthetic profile)
 
-If the host project has an `aesthetic-profile.md` next to its
-`design/config.json`, **read it before creating anything** — it carries the
+If the host project has an `aesthetic-profile.md` in its `design/`
+directory, **read it before creating anything** — it carries the
 design intent that is not expressible as tokens (mood, material composition
 logic, light logic, reference anchors, motion feel). It references token
 NAMES only; values still come solely from the Semantic collection. During
@@ -253,8 +253,8 @@ the `W<NN> <group>` wireframe page of the same group 1:1.
 **Category placement (design-memory-placement.md, step 6) — one deterministic
 op, no coordinate math:**
 1. Resolve the component's category using the rubric in `file-structure.md`.
-2. Validate it is a member of `design/config.json`'s
-   `design.componentCategories` (`isCategoryInEnum` from
+2. Validate it is a member of the `componentCategories` in the app's
+   `design.<app>` block in `.claude/argo.json` (`isCategoryInEnum` from
    `figma-design-kit/component-categories`) — an out-of-enum category is a
    stop-and-ask, never a silent new bucket.
 3. `appendChild` the component (and its mode copies, in a nested vertical

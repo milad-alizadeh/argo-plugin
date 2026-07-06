@@ -1,5 +1,6 @@
 /**
- * Recipe-owned tier-0 checks for shadcn-tailwind-external-kit (D23). Thin
+ * Recipe-owned tier-0 checks for the shadcn-tailwind recipe (template dir
+ * templates/design/recipes/shadcn-tailwind-external-kit/) (D23). Thin
  * Plugin-API walker: marshals live `figma.*` node/variable objects into
  * plain-object shapes and delegates to figma-design-kit-shadcn-tailwind's
  * unit-tested pure functions. `setup-design`'s §4 assembly step splices this

@@ -43,6 +43,18 @@ export function resolveDesignArming(config, appKey) {
   return config?.design?.[appKey] ?? null
 }
 
+/**
+ * design.<app> blocks the setup-design skill has SET UP (stamped a `recipe`
+ * into) — the design-pack-installed marker. Init-seeded inert `{}` blocks
+ * don't count, and neither does a legacy `design/config.json` (no-legacy
+ * ruling: pre-kit projects rip and re-init).
+ */
+export function setUpDesignApps(config) {
+  return Object.entries(config?.design ?? {})
+    .filter(([, block]) => typeof block?.recipe === 'string')
+    .map(([appKey, block]) => ({ appKey, block }))
+}
+
 /** Absolute components dir: join(repoRoot, block.root, block.componentsPath). */
 export function resolveComponentsPath(repoRoot, designBlock) {
   return resolve(repoRoot, designBlock.root ?? '.', designBlock.componentsPath)

@@ -2,19 +2,21 @@
 
 How to instantiate each template under `${CLAUDE_PLUGIN_ROOT}/templates/design/`
 into the host project. For each template: fill every explicit `{{…}}` slot
-from `design/config.json` (see `templates/design/config.example.json` for the
-shape), and confirm consent before overwriting anything already installed by
-`init` (the testing.md amendment, in particular — never silently edit
-a file another skill already owns).
+from the app's `design.<app>` block in `.claude/argo.json` (see
+`templates/design/config.example.json` for the block shape), and confirm
+consent before overwriting anything already installed by `init` (the
+testing.md amendment, in particular — never silently edit a file another
+skill already owns).
 
 | Template | Install when | Substitute / scope with |
 |---|---|---|
 | `tier0-audit.js` | always | `{{SEMANTIC_COLLECTION_NAME}}` ← `config.semanticCollectionName`. Assembled with the installed recipe's `tier0-recipe-checks.js` spliced into the marked injection region (F12/X3) — the host project runs ONE canonical script, never two |
-| `vrt-walker/` | always | `{{VRT_WALKER_DIR}}` ← the project's chosen path (e.g. `test/vrt/`); `{{EXT}}` ← `ts` or `js` per project; `{{PINNED_CHROMIUM_BUILD}}` ← `config.vrtEnvironment.browser`; `{{VIEWPORT_WIDTH}}`/`{{VIEWPORT_HEIGHT}}` ← split `config.vrtEnvironment.viewport` (`"WxH"`) on `x`; `{{STORYBOOK_TEST_PACKAGE}}`/`{{STORIES_GLOB_OR_INDEX}}` ← the project's real Storybook test-package name and story glob; `{{BASELINES_GLOB}}` ← relative glob from the walker file to the committed baselines (e.g. `../../design/screenshots/**/*.png`); `{{SOURCE_ALIASES}}` (in `vitest.vrt.config.js`) ← the host app's source aliases as `'@alias': resolve(__dirname, '<path>')` entries (SKILL §7b); `{{CSS_PLUGIN_IMPORT}}`/`{{CSS_PLUGIN_CALL}}` (in `vitest.vrt.config.js`) ← the host app's real CSS pipeline plugin (e.g. `@tailwindcss/vite`'s `tailwindcss()`), mirrored the same way into `.storybook/main.ts`'s `viteFinal` — without this every VRT render is unstyled and no assertion here catches it by default (SKILL §7b/§8) |
-| `spec-diff-walker/spec-diff.walker.spec-diff.js` | always | `{{SPEC_DIFF_WALKER_DIR}}` ← the project's chosen path; `{{EXT}}`, `{{STORYBOOK_TEST_PACKAGE}}`, `{{STORIES_GLOB_OR_INDEX}}` as above; `{{DESIGN_SPECS_GLOB_OR_INDEX}}` ← `design/specs/*.json` loader for this project's bundler |
+| `vrt-walker/vrt.walker.vrt.js` | prefer `argo design emit-shims` (generates it from the block's `componentsPath`/`walkers`); manual fill only when a project needs a bespoke shim | a THIN shim calling `runVrtWalker` from `@argohq/kit/walkers` — the factory owns the walk. Slots: `{{STORYBOOK_TEST_PACKAGE}}` ← the project's Storybook test-package name (`walkers.storybookTestPackage`); `{{STORIES_GLOB}}` ← story glob relative to the shim dir (`walkers.storiesGlob`); `{{BASELINES_GLOB}}` ← relative glob to the committed baselines (`walkers.baselinesGlob`, e.g. `../../design/screenshots/**/*.png`) |
+| `vrt-walker/vitest.vrt.config.js` | always (copied/filled manually — emit-shims does not generate it) | `{{VRT_WALKER_DIR}}` ← the project's chosen path (e.g. `test/vrt/`); `{{EXT}}` ← `ts` or `js` per project; `{{PINNED_CHROMIUM_BUILD}}` ← block `vrtEnvironment.browser`; `{{VIEWPORT_WIDTH}}`/`{{VIEWPORT_HEIGHT}}` ← split block `vrtEnvironment.viewport` (`"WxH"`) on `x`; `{{SOURCE_ALIASES}}` ← the host app's source aliases as `'@alias': resolve(__dirname, '<path>')` entries (SKILL §7b); `{{CSS_PLUGIN_IMPORT}}`/`{{CSS_PLUGIN_CALL}}` ← the host app's real CSS pipeline plugin (e.g. `@tailwindcss/vite`'s `tailwindcss()`), mirrored the same way into `.storybook/main.ts`'s `viteFinal` — without this every VRT render is unstyled and no assertion here catches it by default (SKILL §7b/§8) |
+| `spec-diff-walker/spec-diff.walker.spec-diff.js` | prefer `argo design emit-shims`; manual fill only for a bespoke shim | a THIN shim calling `runSpecDiffWalker` from `@argohq/kit/walkers`. Slots: `{{STORYBOOK_TEST_PACKAGE}}`/`{{STORIES_GLOB}}` as above; `{{DESIGN_SPECS_GLOB}}` ← glob of `design/specs/*.json` relative to the shim dir (`walkers.specsGlob`) — specs pair with stories by basename |
 | `gate-wiring.md` | always | `{{TEST_CMD}}`/`{{TYPECHECK_CMD}}`/`{{LINT_CMD}}` ← the project's real scripts; `{{SPEC_DIFF_WALKER_DIR}}`/`{{VRT_WALKER_DIR}}`/`{{TOKEN_DRIFT_SCRIPT}}` ← paths chosen above — copy the resulting wiring into the project's own docs/README, this file itself is not committed verbatim |
 | `testing-rule-amendment.md` | a `.claude/rules/testing.md` already exists (installed by `init`) | `{{SPEC_DIFF_WALKER_DIR}}`/`{{VRT_WALKER_DIR}}`/`{{EXT}}` as above — **append** to the existing file, with consent; never silently edit |
-| `config.example.json` | always (first install) | copy to `design/config.json`, fill every `{{…}}` slot from setup-design's detection/AskUserQuestion wizard, including the new `recipe` field (the chosen recipe's name, e.g. `shadcn-tailwind-external-kit`) and `recipeConfig.*` (recipe-specific fields, e.g. `figma.kitLibraryFileKey`) — this is the ONE file every other template's substitutions are sourced from. `figma.wireframeKitFileKey` (§0c-i) ← the bare file key of a lo-fi wireframe component library `figma-wireframe` instances from (parse it out of a pasted `figma.com/file/<KEY>/…` URL; optional — omit/leave placeholder to fall back to hand-drawn greyboxes). `componentsPath` ← the project's real generated-component output directory (a plain path prefix, e.g. `src/components`, not a glob — distinct from `{{COMPONENTS_GLOB}}` used by the lint template) — `hooks/design-commit-gate.mjs` reads it to decide whether a commit touches generated component code and needs a fresh spec-diff receipt. The `_meta` block (`setupVersion`, `managedFiles`) is design-pack lifecycle state (§2a Option B): it is filled at the END of a run (setup-design §9 equivalent), NOT at initial copy — `setupVersion` ← the plugin's current version, `managedFiles` ← every path the run wrote. Update mode reads `_meta.setupVersion` to decide first-run vs reconcile |
+| `config.example.json` | always (first install) — NOT copied to its own file: it is the shape reference for the app's `design.<app>` block in `.claude/argo.json` | merge its keys into the app's existing block (init's `root`/`componentsPath` are preserved), filling every `{{…}}` slot from setup-design's detection/AskUserQuestion wizard, including the `recipe` field (the chosen recipe's id, `shadcn-tailwind`) and `recipeConfig.*` (recipe-specific fields, e.g. `figma.kitLibraryFileKey`) — this block is the ONE place every other template's substitutions are sourced from. `figma.wireframeKitFileKey` (§0c-i) ← the bare file key of a lo-fi wireframe component library `figma-wireframe` instances from (parse it out of a pasted `figma.com/file/<KEY>/…` URL; optional — omit/leave placeholder to fall back to hand-drawn greyboxes). `componentsPath` ← the project's real generated-component output directory (a plain path prefix relative to the app root, e.g. `src/components`, not a glob — distinct from `{{COMPONENTS_GLOB}}` used by the lint template) — the kit's design-commit gate reads it to decide whether a commit touches generated component code and needs a fresh spec-diff receipt, and `argo design emit-shims` derives the default stories glob from it. `walkers.*` ← optional per-app overrides for emit-shims. The `_meta` block (`setupVersion`, `managedFiles`) is design-pack lifecycle state: it is filled at the END of a run (setup-design §9), NOT at initial merge — `setupVersion` ← the plugin's current version, `managedFiles` ← every path the run wrote. Update mode reads `_meta.setupVersion` to decide first-run vs reconcile |
 
 **tdd-guard `ignorePatterns` (not a template — see §3a):** if the host
 project has tdd-guard installed, `setup-design` adds `design/**` to
@@ -26,12 +28,14 @@ runner) — `ignorePatterns` is a deterministic glob skip, not an
 LLM-judged instruction, so it's the correct mechanism here rather than
 tdd-guard's free-text custom-instructions file.
 
-### Recipe templates — `templates/design/recipes/<recipe-name>/`
+### Recipe templates — `templates/design/recipes/<recipe-dir>/`
 
-Everything below installs from the chosen recipe's directory (today, only
-`shadcn-tailwind-external-kit` exists) — install-when conditions are keyed
-off that recipe's declared `baseSource`/`codeTarget` (its `README.md`), not
-unconditionally.
+Everything below installs from the chosen recipe's mapped directory. Recipe
+IDs match their kit subpath and map explicitly to physical template dirs —
+today the only recipe is `shadcn-tailwind` → dir
+`templates/design/recipes/shadcn-tailwind-external-kit/`. Install-when
+conditions are keyed off that recipe's declared `baseSource`/`codeTarget`
+(its `README.md`), not unconditionally.
 
 | Template | Install when | Substitute / scope with |
 |---|---|---|
@@ -58,15 +62,15 @@ copy.
 
 ### Update mode — per-category reconcile strategy (§5a)
 
-When `setup-design` re-runs against a project whose `design/config.json`
-`_meta.setupVersion` is older than the plugin (§0d), it reconciles by category
-rather than re-running the wizard. This table mirrors the skill's §5a so the
-two don't drift:
+When `setup-design` re-runs against an app whose `design.<app>._meta.setupVersion`
+(in `.claude/argo.json`) is older than the plugin (§0d), it reconciles by
+category rather than re-running the wizard. This table mirrors the skill's
+§5a so the two don't drift:
 
 | Category | Examples | Reconcile strategy |
 |---|---|---|
 | (a) Regenerated template | `tier0-audit.js`, `vrt-walker/*`, `spec-diff` walker, `testing.md` amendment | Re-derive current content, diff vs disk, ask per batch (≤4/AskUserQuestion). A file whose on-disk content ≠ last-derived is hand-edited → conflict prompt (keep/overwrite/merge), never auto-overwrite. |
-| (b) Structured user-config | `design/config.json` | `mergeConfigShape` (from `@argohq/kit`): add missing shape keys, preserve every existing value, never delete on-disk-only keys; write `merged` via `JSON.stringify`, report `addedKeys`. |
+| (b) Structured user-config | the `design.<app>` block in `.claude/argo.json` | `mergeConfigShape` (from `@argohq/kit`) against the app's block: add missing shape keys, preserve every existing value, never delete on-disk-only keys; write `merged` via `JSON.stringify`, report `addedKeys`. |
 | (d) Foreign-file managed edit | `package.json` deps, tdd-guard `config.json` `ignorePatterns` | Idempotent re-apply of only the managed portion. |
 | (e) External Figma state | Semantic-layer seeding | Out of scope for file reconcile — handled by §4a / `design-upgrade`; printed as a pointer, not silently skipped. |
 

@@ -7,9 +7,9 @@
  */
 export const DEFAULT_COMPONENT_CATEGORIES = ['primitive', 'composite']
 
-/** Reads `design.componentCategories` from a parsed design/config.json, falling back to the thin default enum when a project sets none. */
+/** Reads `componentCategories` from a parsed `design.<app>` block (`.claude/argo.json`), falling back to the thin default enum when a project sets none. */
 export function resolveComponentCategories(config) {
-  const categories = config?.design?.componentCategories
+  const categories = config?.componentCategories
   return Array.isArray(categories) && categories.length > 0 ? categories : DEFAULT_COMPONENT_CATEGORIES
 }
 

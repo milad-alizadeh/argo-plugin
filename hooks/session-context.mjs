@@ -78,27 +78,34 @@ function setupNudge(cwd) {
 }
 
 /**
- * Design-pack lifecycle nudge — the design pack owns its own state in
- * design/config.json's `_meta` (§2a Option B), independent of init's
- * .claude/argo.json. Silent when the design pack was never installed (no
- * design/config.json) — unlike the init nudge, absence here is not a
- * "you forgot to set up" signal.
+ * Design-pack lifecycle nudge — the design pack's state lives in
+ * `.claude/argo.json`'s `design.<app>` blocks (a block setup-design stamped a
+ * `recipe` into is "set up"; its `_meta.setupVersion`/`managedFiles` are that
+ * app's lifecycle state). Silent when no block was ever set up — unlike the
+ * init nudge, absence here is not a "you forgot to set up" signal. A legacy
+ * `design/config.json` is deliberately NOT read (no-legacy ruling: pre-kit
+ * projects rip and re-init).
  */
 function designSetupNudge(cwd) {
   if (!cwd) return ''
-  const configPath = join(cwd, 'design', 'config.json')
-  if (!existsSync(configPath)) return '' // design pack not installed — nothing to nudge
+  const configPath = join(cwd, '.claude', 'argo.json')
+  if (!existsSync(configPath)) return ''
   try {
     const config = JSON.parse(readFileSync(configPath, 'utf8'))
+    const setUpApps = Object.entries(config?.design ?? {}).filter(
+      ([, block]) => typeof block?.recipe === 'string'
+    )
+    if (setUpApps.length === 0) return '' // design pack not installed — nothing to nudge
     const pluginVersion = JSON.parse(
       readFileSync(new URL('../.claude-plugin/plugin.json', import.meta.url), 'utf8')
     ).version
-    const setupVersion = config?._meta?.setupVersion
-    if (!setupVersion) {
-      return `\n\nSETUP: this project's design pack predates version tracking — run /argo:setup-design to adopt it (adds _meta.setupVersion + managedFiles; touches only design-pack files).`
+    const untracked = setUpApps.find(([, block]) => !block?._meta?.setupVersion)
+    if (untracked) {
+      return `\n\nSETUP: the design pack for "${untracked[0]}" predates version tracking — run /argo:setup-design to adopt it (adds design.<app>._meta setupVersion + managedFiles; touches only design-pack files).`
     }
-    if (pluginVersion && setupVersion !== pluginVersion) {
-      return `\n\nSETUP: the design pack was set up with argo v${setupVersion}; the plugin is now v${pluginVersion} — run /argo:setup-design to review updates (touches only design-pack files).`
+    const stale = setUpApps.find(([, block]) => pluginVersion && block._meta.setupVersion !== pluginVersion)
+    if (stale) {
+      return `\n\nSETUP: the design pack for "${stale[0]}" was set up with argo v${stale[1]._meta.setupVersion}; the plugin is now v${pluginVersion} — run /argo:setup-design to review updates (touches only design-pack files).`
     }
   } catch {
     // Unreadable config or manifest — stay quiet; the card must never break a session.

@@ -1,5 +1,5 @@
 {
-  "description": "Argo guardrails — plugin-side SAFETY hooks (destructive-git, pipe-to-shell, shell-source-write, lockfile, designer-spawn, session context) run verbatim from this directory; every kit GATE (red-proof, trust, design-commit, design-coverage, format-on-write, test-smell, design-guard) is dispatched through the @argohq/kit CLI's argo-hook subcommand, fail-closed when the kit is not installed.",
+  "description": "Argo guardrails — plugin-side SAFETY hooks (destructive-git, pipe-to-shell, shell-source-write, lockfile, designer-spawn, session context) run verbatim from this directory; every kit GATE (red-proof, trust, design-commit, design-coverage, format-on-write, test-smell, design-guard) is dispatched through hooks/kit-dispatch.mjs — fail-closed (exit 2) when the project declares @argohq/kit but it is missing or version-skewed, allow-with-warning when the project is not argo-initialized so bootstrap (bun install) can proceed.",
   "hooks": {
     "PreToolUse": [
       {
@@ -13,7 +13,7 @@
         ]
       },
       {
-        "matcher": "Bash",
+        "matcher": "Bash|Monitor",
         "hooks": [
           {
             "type": "command",
@@ -29,10 +29,15 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/block-bash-source-write.mjs\"",
             "timeout": 5
-          },
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
           {
             "type": "command",
-            "command": "npx --no @argohq/kit argo-hook bash-pretooluse || { echo 'argo gates inactive: run bun install (or /argo:init)' >&2; exit 2; }",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/kit-dispatch.mjs\" bash-pretooluse",
             "timeout": 10
           }
         ]
@@ -66,7 +71,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no @argohq/kit argo-hook post-edit-write || { echo 'argo gates inactive: run bun install (or /argo:init)' >&2; exit 2; }",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/kit-dispatch.mjs\" post-edit-write",
             "timeout": 15
           }
         ]
@@ -76,7 +81,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no @argohq/kit argo-hook design-guard-record || { echo 'argo gates inactive: run bun install (or /argo:init)' >&2; exit 2; }",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/kit-dispatch.mjs\" design-guard-record",
             "timeout": 5
           }
         ]
@@ -87,7 +92,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no @argohq/kit argo-hook design-guard-stop || { echo 'argo gates inactive: run bun install (or /argo:init)' >&2; exit 2; }",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/kit-dispatch.mjs\" design-guard-stop",
             "timeout": 5
           }
         ]
@@ -98,7 +103,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no @argohq/kit argo-hook design-guard-stop || { echo 'argo gates inactive: run bun install (or /argo:init)' >&2; exit 2; }",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/kit-dispatch.mjs\" design-guard-stop",
             "timeout": 5
           }
         ]

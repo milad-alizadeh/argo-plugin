@@ -19,7 +19,8 @@ answer is rip-and-re-init (`/argo:init` fresh), not a migration.
 ## 1. Version handshake — bidirectional lockstep via `argo doctor`
 
 - `.claude/argo.json` → `setupVersion` (the /argo:init surface).
-- `design/config.json` → `_meta.setupVersion` (the design-pack surface).
+- `.claude/argo.json` → per-app `design.<app>` block → `_meta.setupVersion`
+  (the design-pack surface).
   Absent → the design pack was never installed here; skip everything
   design-related silently.
 
@@ -62,13 +63,14 @@ In order:
    and reconciles its managed surface (rules, hooks, tdd-guard instructions),
    diff-per-file with consent, hand-edit-protected.
 2. `/argo:setup-design` — its §0d entry mode + §5a per-category reconcile
-   (templates re-derived, `design/config.json` shape-merged, generated files
+   (templates re-derived, the `design.<app>` block in `.claude/argo.json`
+   shape-merged, generated files
    like walker shims re-emitted, foreign-file edits re-applied idempotently).
 
 ## 4. Report
 
 Summarize what each phase did: doctor verdict, `argo update`'s `addedKeys`,
 files updated vs. skipped (and any hand-edit conflicts surfaced),
-`design/config.json` `addedKeys`. State plainly that this was a convenience
+the `design.<app>` block's `addedKeys`. State plainly that this was a convenience
 umbrella — running `/argo:init` or `/argo:setup-design` directly does the same
 for its own surface, and each stamps its own `setupVersion` when done.

@@ -1,14 +1,18 @@
 ---
 name: setup-design
-description: Install/adapt the Figma-to-code design pack into a host project — shadcn init, Storybook + Vitest addon, VRT/spec-diff walkers, gate wiring, lint rule, design/config.json (the kit design modules resolve via @argohq/kit). Use when the user says "set up design", "install the design pack", "wire up Figma-to-code", or when init's recommendations pass mentions it.
+description: Install/adapt the Figma-to-code design pack into a host project — shadcn init, Storybook + Vitest addon, VRT/spec-diff walker shims, gate wiring, lint rule, the app's design.<app> block in .claude/argo.json (the kit design modules resolve via @argohq/kit). Use when the user says "set up design", "install the design pack", "wire up Figma-to-code", or when init's recommendations pass mentions it.
 ---
 
 # Set Up the Design Pack
 
 Installs/adapts the whole Figma-to-code design pack, mirroring `init`'s
 wizard shape: AskUserQuestion batches, propose-don't-impose, per-item consent.
-See `skills/setup-design/templates-reference.md` for the exact `{{…}}` slot ↔
-`design/config.json` field mapping for every template this skill copies.
+All design-pack config and lifecycle state lives in **`.claude/argo.json`'s
+`design.<app>` block** (the block `init` seeded inert; single-repo apps use
+the `"."` key, monorepo apps their app-dir key — this skill fills ONE app's
+block per run and asks which app first in a monorepo). See
+`skills/setup-design/templates-reference.md` for the exact `{{…}}` slot ↔
+`design.<app>` field mapping for every template this skill copies.
 
 ## 0. Wizard UX
 
@@ -30,7 +34,7 @@ doesn't use it.
 AskUserQuestion, single question: "Is this Figma file on a Professional plan
 or higher?" **Why this gate exists (F10):** below Professional, variable
 collections are capped at **one mode**, which today's only recipe
-(`shadcn-tailwind-external-kit`) needs library publishing for regardless — a
+(`shadcn-tailwind`) needs library publishing for regardless — a
 separate Professional-plan-gated feature, so this gate applies to every
 project run through this skill. Note (D11, generalized to mode copies,
 2026-07-05): a single-mode Semantic collection is a legal project shape on
@@ -45,11 +49,15 @@ depends on it. If no: **stop** with the same clear-explanation pattern as
 ## 0c. Recipe selection
 
 AskUserQuestion: which recipe to install. Today there is exactly one option,
-`shadcn-tailwind-external-kit` (label it recommended/only choice, per this
-skill's existing "recommended option first and labeled" convention below).
-Store the choice into `design/config.json`'s new `recipe` field. Each recipe
-supplies named extension points that skills dispatch to, resolving to files
-installed from `templates/design/recipes/<name>/`:
+`shadcn-tailwind` (label it recommended/only choice, per this skill's
+existing "recommended option first and labeled" convention below). The
+recipe ID matches its kit subpath (`@argohq/kit/design-kit/shadcn-tailwind`);
+its template directory is explicitly mapped:
+`shadcn-tailwind` → `templates/design/recipes/shadcn-tailwind-external-kit/`.
+Store the choice into the app's `design.<app>.recipe` field in
+`.claude/argo.json`. Each recipe supplies named extension points that skills
+dispatch to, resolving to files installed from the mapped
+`templates/design/recipes/<dir>/`:
 
 - **recipe audit checks** — `design-source/tier0-recipe-checks.js`, spliced
   into `tier0-audit.js`'s injection region (Slice 2's F12 assembly)
@@ -66,7 +74,7 @@ installed from `templates/design/recipes/<name>/`:
 ## 0c-i. Figma file keys — project file + wireframe kit
 
 AskUserQuestion (free-text via "Other" for each), capturing the file keys that
-skills read from `design/config.json`:
+skills read from the app's `design.<app>` block:
 
 - **Project file** → `figma.projectFileKey`. The Figma file this project's
   design system + screens live in.
@@ -84,24 +92,25 @@ library** (Professional plan); note this to the user if they add a kit key.
 
 ## 0d. Entry mode — first run, update, or re-run
 
-Mirrors `init` §1. Read `design/config.json` first; its `_meta`
-decides the mode (the design pack owns its own lifecycle state — §2a Option B
-of `project-reconcile.md` — separate from `.claude/argo.json`, which
-`init` owns):
+Mirrors `init` §1. Read the target app's `design.<app>` block in
+`.claude/argo.json` first; its `_meta` decides the mode (the design pack's
+lifecycle state lives inside the app's own block — per-app, so a monorepo
+can have apps at different setup versions; `init` owns the file itself and
+seeds inert `{}` blocks):
 
-- **Missing `design/config.json`, or present but with no `_meta` — first-run**:
-  the full wizard below (§0a onward). (A `design/config.json` that predates
-  `_meta` tracking is treated as `setupVersion: "0.0.0"` and falls into update
-  mode below, which re-derives every managed file from what's on disk — no
-  separate adoption pass.)
+- **No `recipe` in the block (init-seeded inert `{}`, or block missing) —
+  first-run**: the full wizard below (§0a onward). (A block that has a
+  `recipe` but predates `_meta` tracking is treated as
+  `setupVersion: "0.0.0"` and falls into update mode below, which re-derives
+  every managed file from what's on disk — no separate adoption pass. A
+  legacy `design/config.json` is NOT read or migrated — no-legacy ruling: a
+  pre-kit project rips and re-inits.)
 - **`_meta.setupVersion` older than the plugin's version — update mode**:
   diff-driven reconcile, touching ONLY files this pack manages
-  (`_meta.managedFiles`), per the per-category strategy in §5a below. Never
-  auto-overwrite a file whose on-disk content no longer matches what setup
-  last derived (the user hand-edited it) — surface the conflict and let them
-  choose keep / overwrite / merge-manually. Also run any **pending
-  migrations** first (see §5a) — a stale absolute `file:` dep can break
-  `bun install` before diff-derivation runs cleanly.
+  (`design.<app>._meta.managedFiles`), per the per-category strategy in §5a
+  below. Never auto-overwrite a file whose on-disk content no longer matches
+  what setup last derived (the user hand-edited it) — surface the conflict
+  and let them choose keep / overwrite / merge-manually.
 - **Current version — offer**: "design pack setup is current (vX.Y.Z) — re-run
   detection anyway, or exit?" via AskUserQuestion.
 
@@ -141,8 +150,8 @@ Install the **latest** Storybook (Vite builder) and its Vitest addon —
 **never hardcode a version** in this skill's own text (design doc D9/C20:
 "known-good triad, not hardcoded" vs the task's own latest-tools policy).
 After install, record the ACTUAL resulting versions
-(`storybook`/`vitestAddon`/`vitest`) into `design/config.json`'s
-`knownGoodTriad` — this is a recorded observation of what worked, not a
+(`storybook`/`vitestAddon`/`vitest`) into the app's
+`design.<app>.knownGoodTriad` — this is a recorded observation of what worked, not a
 pinned recommendation. If a later bump on this host project breaks the
 triad, that's a `design-upgrade`-style gated bump in the HOST project, not a
 plugin-repo change (this skill does not build upgrade detection, see plan
@@ -184,15 +193,22 @@ there's nothing to gate yet; the same offer recurs harmlessly on a future
 
 ## 4. Copy and fill design-pack templates
 
-Copy from `${CLAUDE_PLUGIN_ROOT}/templates/design/` into the host project,
-filling every `{{…}}` slot per `skills/setup-design/templates-reference.md`:
-`vrt-walker/`, `spec-diff-walker/spec-diff.walker.spec-diff.js`,
-`gate-wiring.md`, `config.example.json` → `design/config.json` — always.
-`config.example.json` seeds `design.componentCategories` with the thin default
+Fill the app's `design.<app>` block in `.claude/argo.json` from
+`config.example.json` (the block-shape reference — merge its keys into the
+existing block, never replace the block wholesale; `root`/`componentsPath`
+may already be set by init). Then copy templates from
+`${CLAUDE_PLUGIN_ROOT}/templates/design/` into the host project, filling
+every `{{…}}` slot per `skills/setup-design/templates-reference.md`:
+`gate-wiring.md` — always; the walker shims preferably by running
+`argo design emit-shims` (generates `test/spec-diff/` + `test/vrt/` from the
+block's `componentsPath`/`walkers` fields) rather than hand-filling the
+`vrt-walker/`/`spec-diff-walker/` templates — the vrt vitest config
+(`vrt-walker/vitest.vrt.config.js`) is still copied/filled manually.
+The block seeds `componentCategories` with the thin default
 `["primitive", "composite"]` (design-memory-placement.md A1) — a project with
 real domain groupings (e.g. argo-v2's `rail`/`controls`/`status`/
 `foundation-atoms`) sets its own list here instead. Validate it with
-`validateComponentCategories` from `figma-design-kit/component-categories`
+`validateComponentCategories` from `@argohq/kit/design-kit`
 before writing: a non-empty array of unique, non-empty strings, or refuse to
 proceed and report why. This is the enum `figma-create`'s placement step and
 `figma-audit`'s reconcile sweep both validate a category against — see
@@ -241,8 +257,8 @@ convention.
 
 ## 4a. Seed the Semantic layer
 
-Gated on: the chosen recipe (§0c) is `shadcn-tailwind-external-kit` (i.e.
-`baseSource == "external-library"`) AND `design/config.json`'s
+Gated on: the chosen recipe (§0c) is `shadcn-tailwind` (i.e.
+`baseSource == "external-library"`) AND the design block's
 `figma.projectFileKey` and `recipeConfig.figma.kitLibraryFileKey` are both
 filled (not still `{{…}}` placeholders). If either is unfilled: skip with a
 printed note — "Semantic seeding needs both file keys configured — run
@@ -282,7 +298,7 @@ routine `design-upgrade` re-runs on a kit swap, invoked here at t=0:
    matched component: `switch`/`toggle`, `badge`/`chip`/`tag`/`pill`,
    `collapsible`/`accordion`/`disclosure`, `dialog`/`modal`,
    `tabs`/`segmented`.
-3. Add `design/kit-inventory.json` to `config.json._meta.managedFiles`.
+3. Add `design/kit-inventory.json` to the block's `_meta.managedFiles`.
 4. **Refuse to hand off to `figma-create` if this file is missing** once
    an external-kit recipe is installed — the check-before-you-build flow
    (`figma-create/SKILL.md`) depends on it; report the gap and stop rather
@@ -312,11 +328,14 @@ When §0d selects update mode, reconcile the pack's managed surface by category
    content ≠ what setup last derived (hand-edited) → conflict prompt. (There
    are NO migrations — no-legacy ruling: nothing detects or converts
    prior-version shapes; a pre-kit project rips and re-inits.)
-2. **`design/config.json`** (category b) — run `mergeConfigShape(currentShape,
-   onDiskConfig)` (import from `@argohq/kit`); write the returned `merged`
-   object via `JSON.stringify` (do NOT mutate its nested values in place — a
-   freshly-added key may share a reference with the template shape) and report
-   `addedKeys` to the user. Existing values are preserved verbatim.
+2. **The `design.<app>` block in `.claude/argo.json`** (category b) — run
+   `mergeConfigShape(currentBlockShape, onDiskBlock)` (import from
+   `@argohq/kit`) against the app's block only; write the returned `merged`
+   object back into `design.<app>` via `JSON.stringify` of the whole config
+   (do NOT mutate its nested values in place — a freshly-added key may share
+   a reference with the template shape) and report `addedKeys` to the user.
+   Existing values (init's `root`/`componentsPath` included) are preserved
+   verbatim.
 3. **Foreign-file managed edits** (category d: `package.json` deps,
    `.claude/tdd-guard/data/config.json`'s `ignorePatterns`) — re-run
    the idempotent §3a/§5 checks; touch only the managed portion.
@@ -369,7 +388,7 @@ a given recipe uses or how to wire it. **The chosen recipe's own
 `code-target/css-pipeline.md`** (installed alongside its other
 `code-target/` templates, same dispatch pattern as `token-writer.md`) states
 the concrete tool for its `codeTarget` (e.g. this pack's only current recipe,
-`shadcn-tailwind-external-kit`, targets Tailwind's Vite plugin), how to
+`shadcn-tailwind`, targets Tailwind's Vite plugin), how to
 detect it in the host's own bundler config, and which docs to WebSearch
 before wiring it into `.storybook/main.ts`'s `viteFinal`, the vrt config's
 `{{CSS_PLUGIN_IMPORT}}`/`{{CSS_PLUGIN_CALL}}` slots, and any other separate
@@ -449,17 +468,16 @@ yet.
 
 ## 9. Report — and stamp `_meta`
 
-**Before reporting**, write the design pack's lifecycle state into
-`design/config.json`'s `_meta` (§2a Option B — mirrors `init` §9, but
-in the design pack's own file, never `argo-config.json`):
+**Before reporting**, write the design pack's lifecycle state into the app's
+`design.<app>._meta` in `.claude/argo.json` (mirrors `init` §9 — same file,
+but this skill owns only the app's block):
 - `_meta.setupVersion` ← the plugin's CURRENT version (read from the plugin's
   own `.claude-plugin/plugin.json`, never hardcoded).
 - `_meta.managedFiles` ← every path this run wrote or updated: the assembled
-  `design/tier0-audit.js`, the walker paths chosen in §4, `design/config.json`
-  itself, the vendored package dirs at their resolved locations (`packages/<pkg>`
-  per §5's note — the kit dep itself is init's, not this skill's), and
-  `design/waivers.json`/`kit-patches.json`
-  if created. Update mode (§5a) may touch only these.
+  `design/tier0-audit.js`, the walker shim paths emitted/chosen in §4, and
+  `design/waivers.json`/`kit-patches.json` if created (the `design.<app>`
+  block itself is lifecycle state, not a managed file; the kit dep is init's,
+  not this skill's). Update mode (§5a) may touch only these.
   In **update mode**, merge this list with the existing `managedFiles` rather
   than replacing it, so a file installed by an earlier run under a different
   path isn't orphaned.
@@ -468,6 +486,6 @@ Then list exactly what was written/installed where (mirrors `init` §9):
 shadcn init result, Storybook/Vitest versions recorded, every template
 copied + its fill values, whether the testing.md
 amendment landed, whether tdd-guard's `ignorePatterns` was updated, the
-`design/` scaffolding created, and (in update mode)
-`design/config.json` `addedKeys`. Verified by manual dry-run against a scratch
+`design/` scaffolding created, and (in update mode) the design block's
+`addedKeys`. Verified by manual dry-run against a scratch
 project only — no host project lives in this repo to install into for real.

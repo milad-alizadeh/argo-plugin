@@ -49,18 +49,14 @@ Read `.claude/argo.json` first; it decides the mode:
 
 Never overwrite a hand-authored file in any mode.
 
-## 1b. Check the plugin's install scope — worktrees don't see project scope
-Sessions rooted in a **git worktree** (every `/argo:build-plan` run, and Argo
-cockpit agent sessions) do NOT load project-scoped plugins — the worktree path has
-no install record, and `enabledPlugins` in the worktree's checked-out settings is
-not sufficient. If this plugin is installed at project scope, none of its hooks
-(commit gates, guards, session card) fire inside those sessions.
-
-Check `claude plugin list` for argo's scope. If project-scoped, tell the user
-plainly what silently won't work in worktrees, and recommend reinstalling at
-**user scope** (`/plugin install argo@argo` choosing user/global scope). Do not
-reinstall for them — scope is a machine-level choice. If they decline, record the
-limitation in CLAUDE.md stack-facts so builds don't assume armed gates.
+## 1b. Plugin install scope — project scope is fine, worktrees included
+Project-scoped plugins load in sessions rooted in a **git worktree** on Claude
+Code ≥ 2.1.200 (the historical worktree gap is fixed — no user-scope
+reinstall recommendation, no CLAUDE.md limitation note). Only if
+`claude --version` reports something older: warn that worktree sessions
+(`/argo:build-plan` runs, Argo cockpit agents) won't fire a project-scoped
+plugin's hooks there, and recommend upgrading Claude Code rather than
+changing the plugin's scope.
 
 ## 2. Detect the stack (read-only, evidence-based)
 From manifests/lockfiles/config, determine and cite evidence for: language(s) (TS vs
@@ -271,19 +267,20 @@ commit the graph.
   repo root (a single root build handles a real monorepo poorly, so split there).
 - **Install the templates** from `${CLAUDE_PLUGIN_ROOT}/templates/graphify/`: append
   `gitignore` to the project's `.gitignore` (commits `graph.json` + `GRAPH_REPORT.md`
-  + `.graphify_labels.json`, ignores `graph.html`/`cache/`/analysis), and copy
-  `refresh-graph.sh` into the project (e.g. `scripts/`). The script auto-discovers
+  + `.graphify_labels.json`, ignores `graph.html`/`cache/`/analysis). The refresh logic
+  itself ships in the kit as `argo graph refresh` — nothing to copy; it auto-discovers
   workspaces, so it serves monorepo and single-app unchanged.
 - **Single touchpoint, single writer = a `post-merge` git hook** (installed via
   `lefthook`), on-device. It fires **only when `main` integrates commits** (a merge or
-  `git pull`) — the one moment the graph should advance — and runs `refresh-graph.sh`:
-  `graphify update --force` + `graphify label --missing-only --backend=claude-cli`
-  (spawns on-device `claude` — subscription auth, **no API key**) + commit. The script
-  self-guards (main-only, skips worktrees), so worktree/feature-branch commits never
-  write the graph → no write-race. `post-merge` (not `post-commit`) means it never fires
-  on ordinary commits and can't recurse on its own graph commit. Must run where `claude`
-  is authenticated — **on-device, not headless CI**; without a backend, labels degrade to
-  `Community N` (no crash).
+  `git pull`) — the one moment the graph should advance — and runs `argo graph refresh`
+  (the `@argohq/kit` CLI): `graphify update --force` + `graphify label --missing-only
+  --backend=claude-cli` (spawns on-device `claude` — subscription auth, **no API key**)
+  + a pathspec-scoped commit. The verb self-guards (graphify-missing, main-only, skips
+  worktrees), so worktree/feature-branch commits never write the graph → no write-race.
+  `post-merge` (not `post-commit`) means it never fires on ordinary commits and can't
+  recurse on its own graph commit. Must run where `claude` is authenticated —
+  **on-device, not headless CI**; without a backend, labels degrade to `Community N`
+  (no crash).
 - **Worktrees never commit the graph** — they read main's (present + labeled
   instantly on checkout). An agent that wants its own in-flight code mapped runs a
   **local, uncommitted** `graphify update <ws>` (never staged) — so parallel

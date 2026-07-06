@@ -175,6 +175,56 @@ export function classifyCoverage(contract, builtRegions = [], dispositions = [])
 }
 
 /**
+ * Code-side coverage classifier (build-screen, option B). A code screen's
+ * rendered DOM is not a Figma tree, so `classifyCoverage`'s path-matching does
+ * not apply. Instead match each contract region to its disposition's
+ * `component` and check that registry-backed component ACTUALLY rendered.
+ * Output shape is identical to `classifyCoverage`, so it feeds `summarize`.
+ * @param {{regions: {name: string, path: string}[]}} contract
+ * @param {{component: string, path?: string}[]} renderedComponents
+ * @param {{region: string, disposition: string, component?: string}[]} dispositions
+ */
+export function classifyCoverageByComponent(contract, renderedComponents = [], dispositions = []) {
+  const available = new Map()
+  for (const { component } of renderedComponents) available.set(component, (available.get(component) ?? 0) + 1)
+  const planned = new Set(
+    dispositions.filter((d) => d.component && !d.disposition.startsWith('deferred-to-')).map((d) => d.component)
+  )
+  const classification = contract.regions.map((region) => {
+    const disposition = findDisposition(region, dispositions)
+    if (disposition && disposition.disposition.startsWith('deferred-to-')) {
+      return { name: region.name, path: region.path, status: 'deferred' }
+    }
+    // Consume one rendered instance per region so N regions mapped to the same
+    // component require N built instances (first-come); a shortfall is MISSING.
+    const remaining = disposition?.component ? available.get(disposition.component) ?? 0 : 0
+    if (remaining > 0) {
+      available.set(disposition.component, remaining - 1)
+      const result = { name: region.name, path: region.path, status: 'present' }
+      if (typeof disposition.cardinality === 'number') {
+        const builtCount = renderedComponents.filter((r) => r.component === disposition.component).length
+        if (builtCount < disposition.cardinality) {
+          result.warning = `cardinality ${builtCount} built, expected ${disposition.cardinality}`
+        }
+      }
+      return result
+    }
+    return { name: region.name, path: region.path, status: 'MISSING' }
+  })
+
+  // UNACCOUNTED: a rendered component key no built-here disposition names — the
+  // code analog of classifyCoverage's "built, but no disposition row". Reported
+  // once per orphan key, in render order.
+  const reportedOrphans = new Set()
+  for (const { component, path } of renderedComponents) {
+    if (planned.has(component) || reportedOrphans.has(component)) continue
+    reportedOrphans.add(component)
+    classification.push({ name: component, path: path ?? component, status: 'UNACCOUNTED' })
+  }
+  return classification
+}
+
+/**
  * Groups a `classifyCoverage` result by status. `clean` is the D01 gate
  * number of record: UNACCOUNTED must be 0 to land, MISSING equally so —
  * `present`/`deferred` alone don't prove completeness. C3b's hollow-

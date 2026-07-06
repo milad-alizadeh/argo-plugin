@@ -15,6 +15,7 @@ import {
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
   isNamedAuditTarget,
+  isWireframePageName,
   strokeScaleViolation,
   possibleGateFalsePositiveTag,
   unsectionedComponentViolation,
@@ -325,6 +326,24 @@ describe('isNamedAuditTarget', () => {
   })
   it('does not match a same-named node of a non-matchable type', () => {
     expect(isNamedAuditTarget({ name: 'Button', type: 'TEXT' }, 'Button')).toBe(false)
+  })
+})
+
+describe('isWireframePageName', () => {
+  it('matches a wireframe surface page name (W<NN> <group>)', () => {
+    expect(isWireframePageName('W00 Components')).toBe(true)
+  })
+  it('matches another wireframe surface page name', () => {
+    expect(isWireframePageName('W01 Shell & Rail')).toBe(true)
+  })
+  it('matches the Cover page (design-language legend, never code-synced)', () => {
+    expect(isWireframePageName('Cover')).toBe(true)
+  })
+  it('does not match a hi-fi foundations page', () => {
+    expect(isWireframePageName('Foundations')).toBe(false)
+  })
+  it('does not match a hi-fi screens page', () => {
+    expect(isWireframePageName('Hi-fi / Screens')).toBe(false)
   })
 })
 

@@ -45,6 +45,7 @@ import {
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
   isNamedAuditTarget,
+  isWireframePageName,
   strokeScaleViolation,
   possibleGateFalsePositiveTag,
   compositeRegionNamingViolation
@@ -261,6 +262,17 @@ async function marshalGapPaddingField(node, field) {
   return { field, value, bound: true, collectionName: collection?.name ?? null }
 }
 
+/**
+ * Named-audit mode (figma.root.findAll) can match a node anywhere in the
+ * file, including on a wireframe page — walk up its parent chain to find
+ * the owning PAGE so the wireframe-page exemption applies there too.
+ */
+function findOwningPage(node) {
+  let current = node
+  while (current && current.type !== 'PAGE') current = current.parent
+  return current ?? null
+}
+
 async function walk(node, opts, out) {
   out.push(...(await auditNode(node, opts)))
   if ('children' in node) {
@@ -296,10 +308,19 @@ async function runTier0Audit(options = {}) {
     }
     for (const name of componentNames) {
       const matches = figma.root.findAll((n) => isNamedAuditTarget(n, name))
-      for (const match of matches) await walk(match, { hard: true, spacingScale, semanticModes, compositeNames }, violations)
+      for (const match of matches) {
+        if (isWireframePageName(findOwningPage(match)?.name ?? '')) continue
+        await walk(match, { hard: true, spacingScale, semanticModes, compositeNames }, violations)
+      }
     }
   } else {
     for (const page of figma.root.children) {
+      // Wireframe-page exemption (figma-wireframe/SKILL.md): wireframe
+      // surface pages (`W<NN> <group>`) and `Cover` are never code-synced,
+      // so ALL tier-0 checks are skipped for their nodes, not just fill/
+      // stroke — the whole gate is exempt, per the skill's documented
+      // wording.
+      if (isWireframePageName(page.name)) continue
       for (const topLevel of page.children) await walk(topLevel, { hard: false, spacingScale, semanticModes, compositeNames }, violations)
     }
   }

@@ -105,6 +105,19 @@ export function isNamedAuditTarget(node, name) {
   return node.name === name && NAMED_AUDIT_TARGET_TYPES.has(node.type)
 }
 
+/**
+ * Wireframe-page exemption (figma-wireframe/SKILL.md "Wireframe pages are
+ * exempt from the tier-0 hard gate"): wireframe surface pages are named
+ * `W<NN> <group>` (e.g. `W00 Components`, `W01 Shell & Rail`) per that
+ * skill's "Frame naming and layout" section, and the `Cover` page (the
+ * design-language legend) is likewise never code-synced. Nodes on a matching
+ * page produce zero tier-0 violations at every severity — grayscale
+ * unbound fills/strokes there are expected, not a defect.
+ */
+export function isWireframePageName(name) {
+  return /^W\d{2}(\b|\s)/.test(name) || name === 'Cover'
+}
+
 export function missingAutoLayoutViolation(node) {
   // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
   // kit internals structure their own layout — not ours to Auto-Layout.

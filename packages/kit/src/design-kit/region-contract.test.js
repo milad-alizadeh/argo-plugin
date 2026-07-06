@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   classifyCoverage,
+  classifyCoverageByComponent,
   summarize,
   reconcileBrief,
   buildRegionContract,
@@ -165,6 +166,83 @@ describe('classifyCoverage (C3b: cardinality + declared children are WARN, not a
     expect(classification).toEqual([
       { name: 'FindingsList', path: 'FindingsList', status: 'present', warning: 'cardinality 2 built, expected 3' }
     ])
+  })
+})
+
+describe('classifyCoverageByComponent (build-screen option B: code screens match by disposition component, not Figma path)', () => {
+  const contract = {
+    screen: 'Shell',
+    regions: [
+      { name: 'TitleBlock', path: 'Shell/TitleBlock', depth: 1, children: [] },
+      { name: 'StatusBar', path: 'Shell/StatusBar', depth: 1, children: [] },
+      { name: 'VoiceSwitch', path: 'Shell/VoiceSwitch', depth: 1, children: [] }
+    ]
+  }
+
+  it('present when the disposition component rendered, MISSING when it did not, deferred for a deferred-to row', () => {
+    const dispositions = [
+      { region: 'TitleBlock', disposition: 'built-here', component: 'title-block', verdict: 'NEW' },
+      { region: 'StatusBar', disposition: 'built-here', component: 'status-bar', verdict: 'REUSE' },
+      { region: 'VoiceSwitch', disposition: 'deferred-to-wave-2', target: 'wave-2', reason: 'not yet designed' }
+    ]
+    const rendered = [{ component: 'title-block', path: 'Shell/header/title-block' }]
+
+    expect(classifyCoverageByComponent(contract, rendered, dispositions)).toEqual([
+      { name: 'TitleBlock', path: 'Shell/TitleBlock', status: 'present' },
+      { name: 'StatusBar', path: 'Shell/StatusBar', status: 'MISSING' },
+      { name: 'VoiceSwitch', path: 'Shell/VoiceSwitch', status: 'deferred' }
+    ])
+  })
+
+  it('flags a rendered component that no built-here disposition names as UNACCOUNTED (built something unplanned)', () => {
+    const dispositions = [
+      { region: 'TitleBlock', disposition: 'built-here', component: 'title-block', verdict: 'NEW' },
+      { region: 'StatusBar', disposition: 'built-here', component: 'status-bar', verdict: 'REUSE' },
+      { region: 'VoiceSwitch', disposition: 'deferred-to-wave-2', target: 'wave-2', reason: 'x' }
+    ]
+    const rendered = [
+      { component: 'title-block' },
+      { component: 'status-bar' },
+      { component: 'rogue-widget', path: 'Shell/rogue-widget' }
+    ]
+
+    const result = classifyCoverageByComponent(contract, rendered, dispositions)
+    expect(result).toContainEqual({ name: 'rogue-widget', path: 'Shell/rogue-widget', status: 'UNACCOUNTED' })
+    expect(summarize(result).clean).toBe(false)
+  })
+
+  it('consumes instances: two distinct regions mapped to the same component need two rendered instances', () => {
+    const twoCards = {
+      screen: 'Roster',
+      regions: [
+        { name: 'CardA', path: 'Roster/CardA', depth: 1, children: [] },
+        { name: 'CardB', path: 'Roster/CardB', depth: 1, children: [] }
+      ]
+    }
+    const dispositions = [
+      { region: 'CardA', disposition: 'built-here', component: 'session-card', verdict: 'REUSE' },
+      { region: 'CardB', disposition: 'built-here', component: 'session-card', verdict: 'REUSE' }
+    ]
+    const rendered = [{ component: 'session-card' }] // only one built
+
+    expect(classifyCoverageByComponent(twoCards, rendered, dispositions)).toEqual([
+      { name: 'CardA', path: 'Roster/CardA', status: 'present' },
+      { name: 'CardB', path: 'Roster/CardB', status: 'MISSING' }
+    ])
+  })
+
+  it('WARNs (never fails clean) when a cardinality region has fewer instances than declared', () => {
+    const list = { screen: 'Audit', regions: [{ name: 'FindingsList', path: 'Audit/FindingsList', depth: 1, children: [] }] }
+    const dispositions = [{ region: 'FindingsList', disposition: 'built-here', component: 'finding-row', verdict: 'NEW', cardinality: 3 }]
+    const rendered = [{ component: 'finding-row' }, { component: 'finding-row' }]
+
+    const result = classifyCoverageByComponent(list, rendered, dispositions)
+    expect(result).toEqual([
+      { name: 'FindingsList', path: 'Audit/FindingsList', status: 'present', warning: 'cardinality 2 built, expected 3' }
+    ])
+    // extras/shortfall of a PLANNED component never make it UNACCOUNTED, and a
+    // cardinality shortfall is advisory only
+    expect(summarize(result).clean).toBe(true)
   })
 })
 

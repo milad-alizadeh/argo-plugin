@@ -9,6 +9,73 @@ Authors lo-fi wireframes to a fixed shape so they read the same across every
 project, and stay obviously separate from hi-fi design work. Builds on
 `figma:figma-use` for node creation.
 
+## Lo-fi effort ceiling — greybox-first, promote on convergence
+
+**This is the governing rule; everything below about kit fidelity is scoped by
+it.** Wireframing is fast because it is CHEAP per frame — the moment a frame
+costs near-hi-fi effort, the point is lost and it "takes forever." There are
+two levels of effort, and most frames only ever earn the first:
+
+- **Exploratory pass (the default, and the majority of frames).** Plain
+  kit-instance greyboxes + region labels. Decompose a content pane exactly
+  ONE level — name its 3-5 sub-regions (a terminal → `toolbar · output ·
+  input`; a diff viewer → `file list · hunks · gutter`), do NOT build their
+  rows/atoms. NO `W00` master library — instance the kit's stock primitives
+  directly and hand-place the few gaps as loose greyboxes. NO per-glyph kit
+  icons — a labelled box or a single placeholder glyph is enough. Target
+  roughly 5-15 nodes per frame. This is what you build while the layout is
+  still a question.
+- **Converged frame (only after the user picks a direction).** The ONE
+  surviving frame per screen that `design-screen` P1 will freeze into the
+  region-contract earns the full treatment below: kit-instance masters on the
+  `W00` page, full sub-region decomposition of every content pane, exact kit
+  icons, one-typeface / one-grammar discipline. Promote a single frame to this
+  level; never every exploratory frame.
+
+When exploring 2-4 variants of a screen, they are ALL exploratory-level — you
+are comparing layouts, not polishing them. Promote the winner, delete the
+losers, then (and only then) take the winner to converged fidelity. Building a
+master library or full pane decomposition during exploration is the specific
+failure that makes wireframing slow: it is hi-fi's work, done before the layout
+is even decided, and then thrown away.
+
+The full-fidelity kit rules in the next sections describe the CONVERGED level.
+Read them as "what a promoted frame looks like," not "what every box costs."
+
+## Execution: batch writes, fan out in parallel
+
+Each `use_figma` call is a full round-trip; observed live runs spend their
+wall-clock on call COUNT, not call size. Build accordingly:
+
+- **One frame ≈ one call.** Assemble an entire frame's greyboxes/instances,
+  labels, and layout in a SINGLE `use_figma` script (create container →
+  append all children → set sizing → position), up to `figma-use`'s
+  ~10-logical-operation ceiling; split only when one frame genuinely exceeds
+  it. Never build a frame property-by-property or child-by-child across calls.
+- **Fan independent frames out in parallel.** Independent frames — variants
+  A｜B｜C of one screen, or frames on different `W<NN>` pages — MUST be emitted
+  as N `use_figma` tool-use blocks in ONE assistant message (they run
+  concurrently), each setting its page at most once via `setCurrentPageAsync`.
+  Do NOT build variant A, then B, then C serially across turns — that is the
+  single biggest wall-clock waste, and variant exploration is the case it
+  hurts most.
+- **Resolve the kit once, reuse everywhere.** On the first write of a session,
+  do ONE pass over the wireframe kit's components (read its component page /
+  `search_design_system`) and keep a name→componentId map; instance from that
+  map for every subsequent frame. Never re-discover the same `wf-card` /
+  `wf-panel-header` / icon per frame — blind per-frame rediscovery is pure
+  waste (the same lesson `design-screen`'s resolution manifest encodes for
+  hi-fi).
+- **Inline verification.** Capture `await frame.screenshot()` in the SAME
+  write call that finishes a frame; do not spend a separate round-trip on a
+  `get_screenshot` per frame.
+- **Tag every wireframe write.** Pass `figma-wireframe` in the `use_figma`
+  `skillNames` parameter on every call (alongside `figma-use`). This is not
+  cosmetic: the design-guard record hook reads it to skip the tier-0 write
+  counter for wireframe writes, so a wireframe-only session is NOT forced
+  through an end-of-session audit it is exempt from. Omit it and every
+  wireframe session ends with a pointless guaranteed-empty audit.
+
 ## The screen brief is the spec — read it first
 
 A wireframe is a lo-fi **layout expression of a screen's brief**, never the
@@ -54,6 +121,11 @@ failure this guards against: a layout with no product intent, which hi-fi then
 traces.
 
 ## Use the project's wireframe kit (rough, not hand-drawn hi-fi)
+
+**Scope (per the effort ceiling above):** the master-library and full-fidelity
+rules in this section describe a CONVERGED frame. During exploration, instance
+the kit's stock primitives directly and skip the `W00` master library — do not
+build masters for a layout that is still a question.
 
 Read `figma.wireframeKitFileKey` from the app's `design.<app>` block in
 `.claude/argo.json` FIRST. If set, that is a

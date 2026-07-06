@@ -51,6 +51,20 @@ if (typeof cwd !== 'string' || cwd.length === 0) process.exit(0)
 const repoRoot = resolveRepoRoot(cwd)
 if (setUpDesignApps(findArgoJson(repoRoot)?.config).length === 0) process.exit(0) // design pack not installed — inert
 
+// Wireframe-write exemption (figma-wireframe/SKILL.md): wireframe pages are
+// tier-0 exempt in the audit (isWireframePageName), so counting a wireframe
+// write would force a guaranteed-empty end-of-session audit. The wireframe
+// skill tags every write with `figma-wireframe` in the use_figma `skillNames`
+// argument; honor it and stay fully inert (no counter bump, no audit-owed
+// nudge). Missing/other skillNames → normal counting.
+function skillNamesFrom(toolInput: any): string[] {
+  const raw = toolInput?.skillNames
+  if (Array.isArray(raw)) return raw.map((s) => String(s))
+  if (typeof raw === 'string') return raw.split(',')
+  return []
+}
+if (skillNamesFrom(hook?.tool_input).some((s) => s.trim() === 'figma-wireframe')) process.exit(0)
+
 // Per-session-design-gate.md: when the write is attributed to a session,
 // record it in that session's OWN file (`.argo/design-guard/<sid>.json`) and
 // touch nothing shared — this is what lets a concurrent design session write

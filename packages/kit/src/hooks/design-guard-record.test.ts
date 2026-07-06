@@ -134,4 +134,39 @@ describe('design-guard-record — PostToolUse on the Figma use_figma tool', () =
     const state = JSON.parse(readFileSync(join(cwd, '.argo', 'design-guard.json'), 'utf8'))
     expect(state.writeCount).toBe(1)
   })
+
+  // Wireframe-write exemption (figma-wireframe/SKILL.md). Wireframe pages are
+  // tier-0 exempt in the audit; the record hook honors the same exemption via
+  // the `skillNames` tag so a wireframe-only session isn't forced into a
+  // guaranteed-empty end-of-session audit. Signal = `figma-wireframe` present
+  // in the use_figma `skillNames` argument (string or array form).
+  it('does NOT bump the shared counter for a wireframe write (skillNames string)', async () => {
+    armDesignPack(cwd)
+    const r = await runHook(postToolUseInput(cwd, { tool_input: { skillNames: 'figma-use,figma-wireframe' } }))
+    expect(r.code).toBe(0)
+    expect(existsSync(join(cwd, '.argo', 'design-guard.json'))).toBe(false)
+  })
+
+  it('does NOT bump the per-session counter for a wireframe write (skillNames array)', async () => {
+    armDesignPack(cwd)
+    const r = await runHook(
+      postToolUseInput(cwd, { session_id: 'wf-sess', tool_input: { skillNames: ['figma-use', 'figma-wireframe'] } })
+    )
+    expect(r.code).toBe(0)
+    expect(existsSync(join(cwd, '.argo', 'design-guard', 'wf-sess.json'))).toBe(false)
+  })
+
+  it('does NOT emit the audit-owed nudge for a wireframe write', async () => {
+    armDesignPack(cwd)
+    const r = await runHook(postToolUseInput(cwd, { tool_input: { skillNames: 'figma-wireframe' } }))
+    expect(r.stdout.trim()).toBe('')
+  })
+
+  it('a non-wireframe write in the same session STILL counts (exemption is per-call, not per-session)', async () => {
+    armDesignPack(cwd)
+    await runHook(postToolUseInput(cwd, { session_id: 'mixed', tool_input: { skillNames: 'figma-wireframe' } }))
+    await runHook(postToolUseInput(cwd, { session_id: 'mixed', tool_input: { skillNames: 'figma-use,figma-create' } }))
+    const s = JSON.parse(readFileSync(join(cwd, '.argo', 'design-guard', 'mixed.json'), 'utf8'))
+    expect(s.writeCount).toBe(1) // only the create write counted; the wireframe write did not
+  })
 })

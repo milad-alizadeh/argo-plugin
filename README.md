@@ -155,10 +155,10 @@ flowchart LR
     classDef entry fill:#b45309,color:#fff,stroke:#92400e
     PRD --> brief --> wf[wireframe] --> FR[[FREEZE]] --> hifi[hi-fi] --> sync --> code
 
-    scope([product / scope change]):::entry -.-> PRD
-    struct([structure / new layout]):::entry -.-> wf
-    style([style / tokens / polish]):::entry -.-> hifi
-    behave([component behavior]):::entry -.-> code
+    scopeChange(["product / scope change"]):::entry -.-> PRD
+    structChange(["structure / new layout"]):::entry -.-> wf
+    styleChange(["style / tokens / polish"]):::entry -.-> hifi
+    behaviorChange(["component behavior"]):::entry -.-> code
 ```
 
 | What changed | Enters at | Re-wireframe? | Path |

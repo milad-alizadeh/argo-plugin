@@ -145,6 +145,40 @@ prototypes), `/argo:orchestrate` (babysit background builds),
 `/argo:finish-branch`, `/argo:design-upgrade`, `/argo:author-skill`,
 `argo:auditor` (whole-codebase health).
 
+## Editing what already exists — re-enter at the ALTITUDE of the change
+
+The pipeline is not one-way: changes re-enter it at the level they actually
+touch. The **freeze is the pivot** — structure lives above it, style below it.
+
+```mermaid
+flowchart LR
+    classDef entry fill:#b45309,color:#fff,stroke:#92400e
+    PRD --> brief --> wf[wireframe] --> FR[[FREEZE]] --> hifi[hi-fi] --> sync --> code
+
+    scope([product / scope change]):::entry -.-> PRD
+    struct([structure / new layout]):::entry -.-> wf
+    style([style / tokens / polish]):::entry -.-> hifi
+    behave([component behavior]):::entry -.-> code
+```
+
+| What changed | Enters at | Re-wireframe? | Path |
+|---|---|---|---|
+| **Product / scope** — new requirement, new screen | PRD | only if it adds structure | PRD → brief → wireframe → re-freeze → hi-fi → sync → code |
+| **Structure / new layout** — region added/removed, rearrangement | wireframe | **yes** | wireframe → re-freeze → hi-fi → sync → code |
+| **Style** — color, spacing, tokens, polish | hi-fi | **no** | hi-fi → `figma-sync` → `figma-to-code` regenerate |
+| **Component behavior** — a new state/prop | code | only if structural | `test-first` → verify |
+
+Two rules make this safe rather than just tidy: re-wireframing a style change is
+waste (wireframes are deliberately style-free), and editing *structure* directly
+in hi-fi is the expensive trap — it silently breaks the frozen contract. The
+**design-verifier** catches exactly that: a structural change smuggled into hi-fi
+shows up as contract drift and gets forced back through wireframe → re-freeze.
+You edit hi-fi freely for style; the gate only bites when the change was actually
+structural. Same principle in code: any edit to a generated component goes back
+through spec-diff, and any behavior change through tdd-guard's red-first loop —
+whether it's day 1 or a year later. Full rationale in
+[PIPELINE.md](PIPELINE.md#change-management--re-enter-at-the-altitude-of-the-change).
+
 ## What ships active
 
 - **Agents** (`agents/`) — lifecycle roles invoked on demand: `product`,

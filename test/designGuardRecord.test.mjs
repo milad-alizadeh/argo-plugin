@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const HOOK = fileURLToPath(new URL('../hooks/design-guard-record.mjs', import.meta.url))
+const HOOK = fileURLToPath(new URL('../packages/kit/src/hooks/design-guard-record.js', import.meta.url))
 
 function runHook(stdin) {
   return new Promise((resolve) => {

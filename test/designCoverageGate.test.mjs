@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { evaluateCoverageReceipt } from '../hooks/design-coverage-gate.mjs'
+import { evaluateCoverageReceipt } from '../packages/kit/src/hooks/design-coverage-gate.js'
 
 describe('evaluateCoverageReceipt (design-coverage-gate.mjs decision predicate)', () => {
   it('passes a clean, fresh, non-compose receipt matching the contract figmaFileVersion', () => {

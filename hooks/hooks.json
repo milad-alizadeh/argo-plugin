@@ -1,5 +1,5 @@
 {
-  "description": "Argo guardrails — block destructive git + pipe-to-shell before they run, gate build-mode commits on machine-checkable receipts (red-proof + launch evidence), gate design-pack sessions on tier-0 audit receipts (design-guard, armed by design/config.json alone, independent of build-mode), and auto-format files as they're written.",
+  "description": "Argo guardrails — plugin-side SAFETY hooks (destructive-git, pipe-to-shell, shell-source-write, lockfile, designer-spawn, session context) run verbatim from this directory; every kit GATE (red-proof, trust, design-commit, design-coverage, format-on-write, test-smell, design-guard) is dispatched through the @argohq/kit CLI's argo-hook subcommand, fail-closed when the kit is not installed.",
   "hooks": {
     "PreToolUse": [
       {
@@ -32,22 +32,7 @@
           },
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/red-proof-gate.mjs\"",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/trust-gate.mjs\"",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/design-commit-gate.mjs\"",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/design-coverage-gate.mjs\"",
+            "command": "npx --no @argohq/kit argo-hook bash-pretooluse || { echo 'argo gates inactive: run bun install (or /argo:init)' >&2; exit 2; }",
             "timeout": 10
           }
         ]
@@ -81,13 +66,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/format-on-write.mjs\"",
+            "command": "npx --no @argohq/kit argo-hook post-edit-write || { echo 'argo gates inactive: run bun install (or /argo:init)' >&2; exit 2; }",
             "timeout": 15
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/test-smell.mjs\"",
-            "timeout": 10
           }
         ]
       },
@@ -96,7 +76,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/design-guard-record.mjs\"",
+            "command": "npx --no @argohq/kit argo-hook design-guard-record || { echo 'argo gates inactive: run bun install (or /argo:init)' >&2; exit 2; }",
             "timeout": 5
           }
         ]
@@ -107,7 +87,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/design-guard-stop.mjs\"",
+            "command": "npx --no @argohq/kit argo-hook design-guard-stop || { echo 'argo gates inactive: run bun install (or /argo:init)' >&2; exit 2; }",
             "timeout": 5
           }
         ]
@@ -118,7 +98,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/design-guard-stop.mjs\"",
+            "command": "npx --no @argohq/kit argo-hook design-guard-stop || { echo 'argo gates inactive: run bun install (or /argo:init)' >&2; exit 2; }",
             "timeout": 5
           }
         ]

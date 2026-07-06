@@ -15,7 +15,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { makeBlock } from './lib/gate-block.mjs'
+import { makeBlock } from './lib/gate-block.js'
 
 function readStdin() {
   return new Promise((resolve) => {

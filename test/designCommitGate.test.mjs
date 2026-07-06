@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const GATE = fileURLToPath(new URL('../hooks/design-commit-gate.mjs', import.meta.url))
+const GATE = fileURLToPath(new URL('../packages/kit/src/hooks/design-commit-gate.js', import.meta.url))
 
 function runGate(stdin) {
   return new Promise((resolve) => {

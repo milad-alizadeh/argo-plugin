@@ -7,17 +7,17 @@
  * never an LLM's narration that "the region diff came back clean", and
  * never a stale receipt from a DIFFERENT screen (C2 fix — the ruling's top
  * silent-failure risk was a clean receipt from screen N passing the gate
- * for screen N+1). Mirrors design-commit-gate.mjs's receipt-gate shape
+ * for screen N+1). Mirrors design-commit-gate.js's receipt-gate shape
  * exactly; this is the coverage half, not the spec-diff half.
  *
  * SELF-SCOPING: arms whenever `design/config.json` exists — same contract
- * as design-commit-gate.mjs, independent of `.argo/build-mode.json`.
+ * as design-commit-gate.js, independent of `.argo/build-mode.json`.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { makeBlock } from './lib/gate-block.mjs'
+import { makeBlock } from './lib/gate-block.js'
 
 /**
  * The gate's decision logic — moved to the kit module (region-contract.js)
@@ -30,7 +30,7 @@ export {
   evaluateCoverageReceipt,
   coverageReceiptFilename,
   deriveExpectedScreensFromStagedFiles
-} from '../packages/figma-design-kit/region-contract.js'
+} from '../../../figma-design-kit/region-contract.js'
 
 function readStdin() {
   return new Promise((resolve) => {
@@ -43,7 +43,7 @@ function readStdin() {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const { evaluateCoverageReceipt, coverageReceiptFilename, deriveExpectedScreensFromStagedFiles } = await import(
-    '../packages/figma-design-kit/region-contract.js'
+    '../../../figma-design-kit/region-contract.js'
   )
 
   const raw = await readStdin().catch(() => '')

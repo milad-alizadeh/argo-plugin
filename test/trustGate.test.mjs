@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const GATE = fileURLToPath(new URL('../hooks/trust-gate.mjs', import.meta.url))
+const GATE = fileURLToPath(new URL('../packages/kit/src/hooks/trust-gate.js', import.meta.url))
 
 /** Run the gate as the real hook does: hook-input JSON on stdin, observe exit code. */
 function runGate(stdin) {

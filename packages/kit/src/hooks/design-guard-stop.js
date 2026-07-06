@@ -2,7 +2,7 @@
 /**
  * Design-guard stop gate (Stop + SubagentStop). Same UX as the trust gate
  * (exit 2 blocks, reason on stderr) but a DIFFERENT arming rule: this checks
- * whether Figma writes recorded by design-guard-record.mjs are newer than
+ * whether Figma writes recorded by design-guard-record.js are newer than
  * the latest clean tier-0 audit receipt, and blocks the stop until the audit
  * gate is run.
  *
@@ -22,7 +22,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { makeBlock } from './lib/gate-block.mjs'
+import { makeBlock } from './lib/gate-block.js'
 
 const block = makeBlock('Design guard')
 

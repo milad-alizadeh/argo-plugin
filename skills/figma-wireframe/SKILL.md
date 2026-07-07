@@ -290,6 +290,21 @@ frame-like container, same as hi-fi work. What does **not** apply is
 variable binding, colors and type stay as hand-set grayscale hex values from
 the fixed palette above, never bound to the Semantic collection.
 
+**Fill the container, don't hardcode widths.** Default every child inside an
+auto-layout frame to `layoutSizingHorizontal = 'FILL'` (and `'FILL'` vertically
+where it should stretch) so the layout stays responsive and reflows when the
+frame resizes. A hardcoded pixel width is the exception, allowed ONLY where the
+thing is genuinely fixed by design — a rail/sidebar of a set width, an
+icon/avatar, a fixed-size badge. Everything that should breathe with the
+viewport — main panes, content columns, cards in a row, text blocks, toolbars —
+fills. This matters more in lo-fi than hi-fi: a wireframe full of fixed widths
+is miserable to rearrange while you are still exploring layout, and it silently
+teaches hi-fi to trace those same brittle widths. Set the frame axis to `FIXED`
+(the 1440x900 canvas) and let the children FILL into it; reach for a hardcoded
+child width only when you can name why it is fixed. (Per `figma-use` rule 12,
+`FILL` is only valid once a child is appended to an auto-layout parent — append
+first, then set sizing.)
+
 ## Procedure
 
 1. **Read the screen brief** (`design/briefs/<screen>.md`) — no brief, stop and

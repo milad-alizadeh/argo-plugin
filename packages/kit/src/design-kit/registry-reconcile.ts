@@ -47,7 +47,29 @@ export function reconcileRegistrySweep({
     if (!entry) {
       violations.push({ rule: 'registry-unregistered', detail: `live component "${live.name}" has no registry entry` })
     }
+    if (!isPascalCaseComponentName(live.name)) {
+      violations.push({
+        rule: 'component-name-not-pascal',
+        detail: `component "${live.name}" must be PascalCase to match its React component name (e.g. "${toPascalCase(live.name)}")`
+      })
+    }
   }
 
   return violations
+}
+
+/** Icon components (lucide/*) and demo furniture keep their own naming conventions. */
+const PASCAL_EXEMPT_PREFIXES = ['lucide/', 'demo/']
+
+export function isPascalCaseComponentName(name: string): boolean {
+  if (PASCAL_EXEMPT_PREFIXES.some((p) => name.startsWith(p))) return true
+  return /^[A-Z][A-Za-z0-9]*$/.test(name)
+}
+
+function toPascalCase(name: string): string {
+  return name
+    .split(/[\s_/-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('')
 }

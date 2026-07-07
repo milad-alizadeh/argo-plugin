@@ -39,6 +39,21 @@ describe('reconcileRegistrySweep (design-memory-placement.md A3, figma-sync swee
   })
 })
 
+describe('pascal-case component names', () => {
+  it('flags a non-PascalCase live component name', () => {
+    const violations = reconcileRegistrySweep({
+      liveComponents: [{ name: 'session-card', nodeId: '3:3' }],
+      registryEntries: [{ name: 'session-card', nodeId: '3:3' }]
+    })
+    expect(violations).toEqual([
+      {
+        rule: 'component-name-not-pascal',
+        detail: 'component "session-card" must be PascalCase to match its React component name (e.g. "SessionCard")'
+      }
+    ])
+  })
+})
+
 describe('isScratchPageName', () => {
   it('matches a case-sensitive Scratch prefix', () => {
     expect(isScratchPageName('Scratch')).toBe(true)

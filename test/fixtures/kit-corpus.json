@@ -1,6 +1,5 @@
 {
   "capturedFrom": "seeded-from-live-observations-2026-07-05, re-capture via scripts/capture-kit-corpus.mjs",
-  "semanticModes": ["Light", "Dark"],
   "pristine": [
     {
       "id": "1:100",

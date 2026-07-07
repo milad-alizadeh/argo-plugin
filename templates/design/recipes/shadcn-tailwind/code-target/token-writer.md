@@ -15,8 +15,9 @@ hand-edit it.
    Figma→CSS conversion table via `figma-design-kit`'s `conversion-table.js`),
    scoped to the marked generated region only; hand-authored CSS outside
    that region is untouched.
-3. Leave each Semantic mode's values as a separate custom-property set (D10/
-   D11, generalized to mode copies, 2026-07-05) — never collapse them into a
+3. Leave each Semantic mode's values as a separate custom-property set,
+   generated directly from the Semantic collection's Figma variable modes —
+   never collapse them into a
    single value at generation time. When the Semantic collection has exactly
    one mode, emit plain `:root { … }` values (there is no second mode to
    split against). When it has 2+ modes, emit `:root { … }` for the default

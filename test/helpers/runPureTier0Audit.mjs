@@ -26,7 +26,7 @@ import {
   strokeScaleViolation
 } from '../../packages/kit/src/design-kit/tier0-rules.js'
 
-export function auditPureNode(node, { semanticModes = [] } = {}) {
+export function auditPureNode(node) {
   const violations = []
   const report = (rule, detail) => violations.push({ rule, detail, nodeId: node.id, nodeName: node.name })
 
@@ -79,10 +79,10 @@ export function auditPureNode(node, { semanticModes = [] } = {}) {
 }
 
 /** Walks a forest of already-marshaled plain node trees, same rule set as the real walker. */
-export function runPureTier0Audit(nodes, opts = {}) {
+export function runPureTier0Audit(nodes) {
   const violations = []
   const walk = (node) => {
-    violations.push(...auditPureNode(node, opts))
+    violations.push(...auditPureNode(node))
     for (const child of node.children ?? []) walk(child)
   }
   for (const node of nodes) walk(node)

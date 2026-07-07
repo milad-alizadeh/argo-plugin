@@ -18,7 +18,7 @@ import corpus from '../../../../test/fixtures/kit-corpus.json' with { type: 'jso
 
 describe('R7 pristine kit corpus', () => {
   it('produces zero violations across the whole pristine corpus', () => {
-    const violations = runPureTier0Audit(corpus.pristine, { semanticModes: corpus.semanticModes })
+    const violations = runPureTier0Audit(corpus.pristine)
     expect(violations).toEqual([])
   })
 })

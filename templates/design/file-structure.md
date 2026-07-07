@@ -26,8 +26,7 @@ all point here instead of restating it.
    so the pairing is positional, not just nominal. Hi-fi screens here are
    composition only: component instances and layout containers, never loose
    rectangles or raw styles (figma-create's screen rule).
-6. **`Custom Components`**: every project-owned component, plus its D11
-   mode copies when the Semantic collection has 2+ modes, plus imported
+6. **`Custom Components`**: every project-owned component, plus imported
    raster assets named `asset/<name>`. This is the only page components live
    on; a screen never hosts a component definition inline.
 

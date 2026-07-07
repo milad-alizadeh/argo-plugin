@@ -63,8 +63,6 @@ async function auditNode(
   node: any,
   {
     hard,
-    semanticModes,
-    semanticCollectionId,
     semanticCollectionName = 'Semantic',
     primitivesCollectionName = 'Primitives',
     additionalAllowedCollectionNames = [],
@@ -74,8 +72,6 @@ async function auditNode(
     runRecipeTier0Checks
   }: {
     hard: boolean
-    semanticModes: string[]
-    semanticCollectionId: string | null
     semanticCollectionName?: string
     primitivesCollectionName?: string
     additionalAllowedCollectionNames?: string[]
@@ -356,7 +352,6 @@ export async function runTier0Audit(
     runRecipeTier0Checks
   } = options
   const violations: any[] = []
-  const { id: semanticCollectionId, modes: semanticModes } = await collectSemanticModeNames(semanticCollectionName)
 
   if (componentNodeIds.length || componentNames.length) {
     // Dynamic-page mode requires every page loaded before figma.root.findAll
@@ -368,7 +363,7 @@ export async function runTier0Audit(
     } catch {
       /* sandbox: figma.root.findAll sees only loaded pages */
     }
-    const walkOpts = { hard: true, semanticModes, semanticCollectionId, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks }
+    const walkOpts = { hard: true, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks }
 
     // Authoritative path (field bug fix, 2026-07-07 live D01 build): target
     // by the registry's real nodeId, resolved by the caller Node-side before
@@ -417,7 +412,7 @@ export async function runTier0Audit(
       // wording.
       if (isWireframePageName(page.name)) continue
       for (const topLevel of page.children) {
-        await walk(topLevel, { hard: false, semanticModes, semanticCollectionId, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks }, violations)
+        await walk(topLevel, { hard: false, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks }, violations)
       }
     }
   }
@@ -425,18 +420,3 @@ export async function runTier0Audit(
   return violations
 }
 
-/**
- * Resolves the project Semantic collection's real id
- * (`VariableCollectionId:X:Y`) and ordered mode names; `{ id: null,
- * modes: [] }` if the collection doesn't exist yet (unseeded project).
- * Non-semantic-binding checks key off the id — a node's
- * `explicitVariableModes` is keyed by collection ID, never by name.
- */
-async function collectSemanticModeNames(
-  semanticCollectionName: string
-): Promise<{ id: string | null; modes: string[] }> {
-  const collections = await figma.variables.getLocalVariableCollectionsAsync()
-  const semantic = collections.find((c: any) => c.name === semanticCollectionName)
-  if (!semantic) return { id: null, modes: [] }
-  return { id: semantic.id, modes: semantic.modes.map((mode: any) => mode.name) }
-}

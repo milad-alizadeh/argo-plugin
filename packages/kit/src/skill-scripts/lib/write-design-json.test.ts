@@ -1,15 +1,9 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-vi.mock('node:fs', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('node:fs')>()
-  return { ...actual, renameSync: vi.fn(actual.renameSync) }
-})
-
 const { writeDesignJson } = await import('./write-design-json.js')
-const { renameSync: renameSpy } = (await import('node:fs')) as unknown as { renameSync: ReturnType<typeof vi.fn> }
 
 describe('writeDesignJson (atomic temp-file+rename write)', () => {
   it('writes the final file with no stray temp file left behind', () => {
@@ -25,15 +19,17 @@ describe('writeDesignJson (atomic temp-file+rename write)', () => {
     }
   })
 
-  it('writes via a temp file + rename, not a direct write to the final path (crash-mid-write safety)', () => {
+  it('leaves no stray .tmp-* file and exact final content, on a pre-existing final file (crash-mid-write safety)', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'write-design-json-'))
     try {
-      renameSpy.mockClear()
-      writeDesignJson(cwd, 'registry.json', { components: {} })
-      expect(renameSpy).toHaveBeenCalledTimes(1)
-      const [source, destination] = renameSpy.mock.calls[0]
-      expect(destination).toBe(join(cwd, 'design', 'registry.json'))
-      expect(source).not.toBe(destination)
+      writeDesignJson(cwd, 'registry.json', { components: { old: true } })
+      writeDesignJson(cwd, 'registry.json', { components: { fresh: true } })
+      const files = readdirSync(join(cwd, 'design'))
+      expect(files).toEqual(['registry.json'])
+      const staleTemp = files.find((f) => f.startsWith('.registry.json.tmp-'))
+      expect(staleTemp).toBeUndefined()
+      const onDisk = JSON.parse(readFileSync(join(cwd, 'design', 'registry.json'), 'utf8'))
+      expect(onDisk).toEqual({ components: { fresh: true } })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }

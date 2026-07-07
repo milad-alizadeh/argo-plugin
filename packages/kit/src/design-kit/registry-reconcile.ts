@@ -37,12 +37,32 @@ export function isDividerPageName(pageName: string): boolean {
  * by `kitPageNames`, not as the primary kit/not-kit decision (that is
  * positional, see `kitPageNames`).
  */
-export function isKitPageName(pageName: string): boolean {
+/**
+ * Per-project non-kit page patterns (directive 2, config-driven exclusion):
+ * a page whose name matches any of these is never a kit page, regardless of
+ * where it sits. A pattern is either an exact name or a `*`-glob (only `*`
+ * is special; e.g. `*Icons` matches `Lucide Icons`/`HugeIcons`). Config lives
+ * in `.claude/argo.json`'s `design.<app>.nonKitPages`; when absent it
+ * defaults to `DEFAULT_NON_KIT_PAGE_PATTERNS` (the icon-library convention).
+ * Files change per project, so this is config, not a hardcoded list.
+ */
+export const DEFAULT_NON_KIT_PAGE_PATTERNS = ['*Icons', '*Icon']
+
+function matchesPagePattern(pageName: string, patterns: string[]): boolean {
+  return patterns.some((p) => {
+    if (!p.includes('*')) return pageName === p
+    const re = new RegExp('^' + p.split('*').map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$')
+    return re.test(pageName)
+  })
+}
+
+export function isKitPageName(pageName: string, nonKitPages: string[] = DEFAULT_NON_KIT_PAGE_PATTERNS): boolean {
   if (pageName === 'Custom Components' || pageName === 'Foundations' || pageName === 'Screens') return false
   if (isWireframePageName(pageName)) return false // Cover + W\d{2}
   if (/^D\d{2}(\b|\s)/.test(pageName)) return false // D\d{2} hi-fi groups
   if (isScratchPageName(pageName)) return false
   if (isDividerPageName(pageName)) return false
+  if (matchesPagePattern(pageName, nonKitPages)) return false
   return true
 }
 
@@ -64,7 +84,7 @@ export function isKitPageName(pageName: string): boolean {
  * enumerating every icon-library page as kit, which produced ~14k bogus
  * entries before this fix).
  */
-export function kitPageIndices(orderedPageNames: string[]): Set<number> {
+export function kitPageIndices(orderedPageNames: string[], nonKitPages: string[] = DEFAULT_NON_KIT_PAGE_PATTERNS): Set<number> {
   const firstDivider = orderedPageNames.findIndex(isDividerPageName)
   if (firstDivider === -1) return new Set()
   let end = orderedPageNames.length
@@ -76,7 +96,10 @@ export function kitPageIndices(orderedPageNames: string[]): Set<number> {
   }
   const kit = new Set<number>()
   for (let i = firstDivider + 1; i < end; i++) {
-    if (isKitPageName(orderedPageNames[i])) kit.add(i)
+    // config nonKitPages excludes icon pages regardless of band position, so
+    // deleting the demo dividers (which merges primitives + icons into one
+    // band) can't leak icons into the kit set.
+    if (isKitPageName(orderedPageNames[i], nonKitPages)) kit.add(i)
   }
   return kit
 }

@@ -123,16 +123,18 @@ function collect(nodes: RestNode[], pageName: string, pageIndex: number, doc: Re
 export function buildPullRegistryResult({
   liveComponents,
   orderedPageNames,
+  nonKitPages,
   registry,
   now
 }: {
   liveComponents: MarshaledComponent[]
   orderedPageNames: string[]
+  nonKitPages?: string[]
   registry: { components?: Record<string, unknown> }
   now: string
 }) {
   const existingNames = new Set(registryComponentNames(registry))
-  const kitPages = kitPageIndices(orderedPageNames)
+  const kitPages = kitPageIndices(orderedPageNames, nonKitPages)
   const kitComponents = liveComponents.filter((c) => kitPages.has(c.pageIndex))
   const customComponentCount = liveComponents.length - kitComponents.length
   const newEntries = buildKitRegistryEntries({ liveKitComponents: kitComponents, existingNames }, now)
@@ -152,6 +154,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const doc = await fetchFile(fileKey, figmaToken)
   const liveComponents = marshalRestDocument(doc)
   const orderedPageNames = (doc.document.children ?? []).map((p) => p.name)
+  const nonKitPages = Array.isArray(designBlock?.nonKitPages) ? (designBlock!.nonKitPages as string[]) : undefined
 
   const registry = readDesignJsonOrRebuild<{ components?: Record<string, unknown> }>(cwd, 'registry.json', {
     rebuild: () => ({ components: {} })
@@ -161,6 +164,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const { newEntries, kitComponentCount, customComponentCount } = buildPullRegistryResult({
     liveComponents,
     orderedPageNames,
+    nonKitPages,
     registry,
     now
   })

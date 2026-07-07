@@ -137,6 +137,21 @@ describe('kitPageIndices (positional divider-band classifier)', () => {
     const kit = kitPageIndices(['Cover', '------', 'Button', 'Card'])
     expect([...kit].sort((a, b) => a - b)).toEqual([2, 3])
   })
+
+  it('excludes config nonKitPages even inside the band (demo dividers deleted -> icons adjacent to primitives)', () => {
+    // After deleting demo pages + their dividers, icons sit in the same band as
+    // primitives. Default nonKitPages (*Icons) keeps them out.
+    const kit = kitPageIndices(['Custom Components', '------', 'Button', 'Card', 'Lucide Icons', 'HugeIcons'])
+    expect([...kit].sort((a, b) => a - b)).toEqual([2, 3]) // Button, Card; icons excluded by pattern
+  })
+
+  it('honors a custom nonKitPages list (exact names + glob)', () => {
+    const kit = kitPageIndices(
+      ['Cover', '------', 'Button', 'Sandbox', 'Foo Icons'],
+      ['Sandbox', '*Icons']
+    )
+    expect([...kit].sort((a, b) => a - b)).toEqual([2]) // Button only
+  })
 })
 
 describe('extractVariantMatrix', () => {

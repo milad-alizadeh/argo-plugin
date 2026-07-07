@@ -162,18 +162,26 @@ narrows it: `wireframe` (only `W##` pins), `design`/`screen` (only `D##`),
 `components` (only the component surface), or a page name / node id. Use this
 when the user only wants one surface amended.
 
-## Execution shape — one batched read, one inline pass, serial writes
+## Execution shape — one batched read, one inline pass, serial writes, reply as you go
 
-Do NOT process threads one-at-a-time end-to-end (classify → fix → audit →
-reply, per thread). And do **not** fan out subagents to analyze — an earlier
-design did, and it was the slow shape you saw: each subagent paid a `figma-use`
-cold start and made its own `use_figma` round trip just to resolve one pin's
-page. Once that read is batched (below), the residual analysis is pure reasoning
-over data already in hand — the cheap phase — while the expensive phase (Figma
-writes) is serial by hard constraint. Fanning out the cheap phase to funnel into
-a serial one buys nothing: its ceiling is one subagent per surface (≈3×) and it
-collapses toward 1× because comments cluster on `D##` screens. So: batch the
-read, analyze in a single inline pass, write serially.
+Do NOT batch classification or drafting per-thread end-to-end (an earlier
+design fanned out subagents to analyze one thread each, and it was the slow
+shape you saw: each subagent paid a `figma-use` cold start and made its own
+`use_figma` round trip just to resolve one pin's page). Once that read is
+batched (below), the residual analysis is pure reasoning over data already in
+hand — the cheap phase — while the expensive phase (Figma writes) is serial by
+hard constraint. Fanning out the cheap phase to funnel into a serial one buys
+nothing: its ceiling is one subagent per surface (≈3×) and it collapses toward
+1× because comments cluster on `D##` screens. So: batch the read, analyze in a
+single inline pass, write serially — but **reply to each comment the moment
+its fix lands**, not batched to the end. The reply is the primary,
+default-on behavior for every comment this skill touches: as soon as a
+thread's edit is applied (or its question is decided), post that thread's
+reply immediately, before moving to the next thread. Never accumulate a set
+of drafted replies and fire them together after the whole write phase — a run
+that dies partway through (a blocked master edit, a crashed audit) must still
+leave every thread it already fixed carrying its reply, not silently
+un-replied because the batch never got posted.
 
 1. **Resolve context — ONE batched, read-only `use_figma` call.** Collect every
    non-null `nodeId` from `list` and run the canned resolver
@@ -204,18 +212,19 @@ read, analyze in a single inline pass, write serially.
    call over just that fix-subset — never a round trip per thread. Each item is
    `{ commentId, nodeId, page, surface, decision: 'fix'|'question', editPlan,
    replyText }`. Nothing writes in this phase.
-3. **Apply — single writer, serial.** Apply the drafted edits in this order:
-   `W##` wireframe fixes first (audit-exempt), then `D##` screens, then component
-   masters **last and strictly one at a time** (blast radius — a master edit
-   ripples to every instance, so two "disjoint" fixes can still collide through a
-   shared master; a single inline draft pass also keeps every master thread
-   visible to one reasoner, so no two conflicting master plans get drafted).
-   Then run **one** `figma-audit` over all touched `D##`/component nodes and
-   record **one** receipt.
-4. **Reply — parallel REST.** The `✅ Fixed` / `❓` posts are plain HTTP with no
-   Figma mutation, so fire them concurrently at the end. (Folding these into a
-   single `reply-batch` kit verb that posts in one process and returns a receipt
-   is the intended home once `figma-comments.ts` migrates into `@argohq/kit`.)
+3. **Apply + reply — single writer, serial, one comment at a time.** Apply the
+   drafted edits in this order: `W##` wireframe fixes first (audit-exempt),
+   then `D##` screens, then component masters **last and strictly one at a
+   time** (blast radius — a master edit ripples to every instance, so two
+   "disjoint" fixes can still collide through a shared master; a single
+   inline draft pass also keeps every master thread visible to one reasoner,
+   so no two conflicting master plans get drafted). A question thread (no
+   edit to apply) still gets its reply posted at this point, in its turn —
+   don't hold it for the end either. **The moment a thread's edit lands (or
+   its question is decided), post that thread's `✅ Fixed`/`❓` reply before
+   touching the next thread** — never collect replies to fire together after
+   the write phase. Then run **one** `figma-audit` over all touched
+   `D##`/component nodes and record **one** receipt.
 
 **Why writes stay serial (non-negotiable).** `use_figma` writes to one live
 file, and every write bumps the repo-global `.argo/design-guard.json` counter.
@@ -254,15 +263,20 @@ inherently sequential; the only concurrency worth having is inside the read
    message, never guess a surface. Nothing writes in this phase. Collect the
    drafted items `{ commentId, nodeId, page, surface, decision, editPlan,
    replyText }`.
-5. **Apply the fixes — single writer, serial** (see "Execution shape"),
-   ordered `W##` → `D##` → masters (masters one at a time). For each:
-   - **Clear and actionable** → apply the fix using the routed convention, then
-     reply one terse line (see "Keep replies terse"): `✅ Fixed — <what changed>`
-     via the helper's `reply <fileKey> <commentId> <message>`. For a master,
-     append the blast radius as a short second clause, not a paragraph.
+5. **Apply the fixes and reply per thread — single writer, serial** (see
+   "Execution shape"), ordered `W##` → `D##` → masters (masters one at a
+   time). For each thread, in turn:
+   - **Clear and actionable** → apply the fix using the routed convention,
+     **then immediately** reply one terse line (see "Keep replies terse"):
+     `✅ Fixed — <what changed>` via the helper's
+     `reply <fileKey> <commentId> <message>`, before moving to the next
+     thread. For a master, append the blast radius as a short second clause,
+     not a paragraph.
    - **Ambiguous / underspecified / structural master change** → reply
      `❓ <the one specific question>` (name the exact ambiguity + the options,
-     nothing else), and move on without editing.
+     nothing else) right away, and move on without editing.
+   Post each reply as soon as that thread is decided — do not collect replies
+   across threads and post them together at the end.
 6. **Re-sweep** (`list` again). Because the helper filters out bot-authored
    comments, the re-sweep shows only threads still needing action — a clean way
    to confirm nothing was missed. Threads you answered with a question stay

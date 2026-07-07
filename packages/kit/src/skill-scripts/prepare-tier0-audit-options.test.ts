@@ -133,8 +133,8 @@ describe('resolveComponentNodeIds (authoritative audit targeting, field bug fix)
   })
 })
 
-describe('deriveTier0AuditOptions kit exemption (vendored mirrors are not authoring surfaces)', () => {
-  it('drops kind:"kit" components from the hard-gate target list, keeps custom ones', () => {
+describe('deriveTier0AuditOptions audits kit components too (directive 3, no blanket exemption)', () => {
+  it('resolves both kit and custom named components to their nodeIds', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'audit-opts-kit-'))
     mkdirSync(join(cwd, 'design'), { recursive: true })
     writeFileSync(
@@ -148,8 +148,9 @@ describe('deriveTier0AuditOptions kit exemption (vendored mirrors are not author
     )
     try {
       const options = deriveTier0AuditOptions({ cwd, componentNames: ['Buttons', 'SessionCard'] })
-      expect(options.componentNodeIds).toEqual(['50:1']) // SessionCard only; Buttons (kit) exempt
-      expect(options.componentNames).toEqual([]) // neither falls through to the name-lookup fallback
+      // Both audited: kit is editable, gated by SCOPE (only changed components are ever passed), not exemption.
+      expect(options.componentNodeIds.sort()).toEqual(['50:1', '73:1'])
+      expect(options.componentNames).toEqual([])
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }

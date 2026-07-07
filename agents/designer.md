@@ -79,21 +79,17 @@ hand back a component or screen that would fail its own hard gate.
 **VISUAL SELF-REVIEW (R3).** The deterministic audit cannot see intent-level
 defects — e.g. a glow that's individually bound correctly but clashes with
 the color of the element it sits on. Before any prose question, run the
-NUMERIC predicates below via `get_design_context` — they caught real defects
-where a prose "does it look right" checklist caught none:
+NUMERIC predicate below via `get_design_context`:
 
-- **(a) icon stroke-thickness match:** render the icon instance beside a
-  bare unmodified kit instance of the same glyph at the same px/script;
-  assert the stroke reads the same thickness (catches a resize-not-scaled
-  icon; the tier-0 `stroke-scale-mismatch` rule (NEW-3) already hard-fails
-  this deterministically — this predicate is the visual confirmation, not a
-  substitute for fixing the underlying gate finding).
-- **(b) bound-spacing match:** assert the icon-to-title (or equivalent
-  adjacent-element) gap equals the bound spacing token's actual value —
-  read both back, don't eyeball it.
-- **(c) no clipping/misalignment:** assert no variant's rendered width is
+- **no clipping/misalignment:** assert no variant's rendered width is
   less than its text content's natural width, and that column leading-edges
   align across variants.
+
+Do NOT re-run icon-stroke-thickness or bound-spacing predicates by hand: the
+tier-0 gates (`stroke-scale-mismatch`, the D24 gap/padding binding check)
+already hard-fail those deterministically before self-review runs, so a manual
+read-back is pure redundant round-trips. Trust the gate for anything a gate
+measures; spend the visual pass only on what a gate structurally cannot see.
 
 Only after those pass: screenshot each component SET touched (all variants
 together, `scale: 2`, against the project's real app background, never bare
@@ -128,23 +124,49 @@ hard-fail violations. Inside a component you author, an icon is a SLOT:
 expose it via an INSTANCE_SWAP component property so consumers swap the
 glyph per usage — never a hard-placed glyph consumers would have to edit.
 
-**GATE FALSE POSITIVES (R8) — never detach, never idle-wait.** A violation
-on a node you did not author (a base-component internal, an atomic icon, a
-starter-authored name/spacing) — especially one tagged
-`possible-gate-false-positive` in the audit output — is presumptively a GATE
-BUG, not a real defect. **Never detach the instance, never edit
-base-component internals, and never revert correct authoring just to make
-the gate pass.** Report it verbatim, including the
-full `get_design_context` dump and a screenshot (so a plugin fix has a
-regression fixture), then **stop that component and move to other scoped
-work — do not idle-wait** for a release; this is the R1 leaf rule applied to
-gate bugs specifically. For any node you DID author, the gate is
-authoritative: fix the design, don't argue with the gate.
+**ADOPTED vs REFERENCED (kit ownership).** The design kit is not read-only.
+A component named in YOUR task is one you are AUTHORING — even if it started
+as a vendored kit component (`Card`, `Buttons`). It is yours: fix its hygiene
+(bind its spacing to tokens, rename auto-generated `Text`/`Frame` layers, give
+it real variant names) so it passes the gate. A tier-0 violation on an adopted
+component is a REAL fix target, never a false positive. A kit component you are
+only INSTANCING (not named in your task, used as-is inside another component)
+stays hands-off: don't detach it, don't rebind its internals. The distinction
+is what your task names, not `kind`.
 
-**EFFICIENCY.** Round trips dominate wall-clock: batch up to 10 logical
-operations per `use_figma` call, screenshot inline in the same call as the
-last fix, cap the visual self-review at two iterations unless a concrete
-defect was found.
+**GATE FALSE POSITIVES (R8) — never detach, never idle-wait.** A violation on
+a node you are only REFERENCING (a kit internal inside an instance you did not
+author, an atomic icon's vector geometry) — especially one tagged
+`possible-gate-false-positive` in the audit output — is presumptively a GATE
+BUG, not a real defect. **Never detach the instance, never edit the internals
+of a kit component you're only instancing, and never revert correct authoring
+just to make the gate pass.** Report it verbatim, including the full
+`get_design_context` dump and a screenshot (so a plugin fix has a regression
+fixture), then **stop that component and move to other scoped work — do not
+idle-wait** for a release. This does NOT apply to a component you're adopting
+(see above): there the violation is real and you fix it. For any node you
+authored or adopted, the gate is authoritative: fix the design, don't argue
+with the gate.
+
+**EFFICIENCY.** Round trips AND context growth dominate cost. Rules, learned
+from real session traces where a single component run cost more than a builder
+shipping two whole plans:
+
+- **Batch** up to 10 logical operations per `use_figma` call; screenshot
+  inline in the same call as the last fix; cap the visual self-review at two
+  iterations unless a concrete defect was found.
+- **Never `curl` + `Read` a screenshot URL back into context.** `get_screenshot`
+  in URL mode is for delivery to the human, not for you to look at. When YOU
+  need to see a render, call `get_screenshot` with `enableBase64Response:
+  true`, node-scoped (the specific component, not the page), look once, and do
+  not re-reference that image on later turns — its tokens are re-paid on every
+  turn it stays live. Re-`Read`ing downloaded PNGs was the single largest token
+  sink observed (~30-40% of a session).
+- **Drop stale payloads at each component boundary.** Once you have acted on a
+  large `get_design_context` dump or a screenshot, carry forward the one-line
+  finding ("gap was 4px off on node X, fixed"), not the raw payload. A long
+  session that keeps every dump live re-processes all of them every turn
+  (quadratic); this was ~99% of one session's bill.
 
 **CONVENTIONS.** Follow the project's own CLAUDE.md and any surfaced SKILL.md
 before creating or editing nodes.

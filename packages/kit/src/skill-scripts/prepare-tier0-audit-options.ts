@@ -84,27 +84,22 @@ export function findDesignBlock(cwd: string): Record<string, any> | null {
 }
 
 /**
- * Vendored kit components (`kind: "kit"`) are gate-verified MIRRORS of code we
- * do not author, not authoring surfaces: their raw shadcn structure (unbound
- * spacing on internal frames, auto-generated `Text`/`Frame` names) legitimately
- * fails our tier-0 authoring rules, and we never rebind kit internals (see the
- * insideInstance exemptions in tier0-rules.ts). Consolidating the whole kit
- * into the registry (registry-covers-kit) put ~117 of them in range of the
- * named hard-gate for the first time; the gate must skip them or it blocks
- * forever on the vendor's structure. Custom (authored) components stay fully
- * gated. The staleness sweep still tracks kit entries; only the tier-0 HARD
- * gate exempts them.
+ * Kit components are AUDITED, not exempt (directive 3, 2026-07-07): the kit is
+ * an editable part of the project's own design system, not a read-only
+ * vendored mirror. A component named in an audit is a component someone is
+ * authoring/adopting, so its hygiene must pass. The earlier blanket
+ * `kind:"kit"` exemption is removed. What keeps this affordable is SCOPE, not
+ * exemption: the hard gate targets only the components a session changed
+ * (per-session write tracking) or that drifted (pull-registry's
+ * detectChangedKitComponents), never the whole 117-component kit every turn.
+ * The insideInstance exemptions in tier0-rules.ts still spare kit internals a
+ * designer only instances.
  */
-function isKitEntry(name: string, registry: any): boolean {
-  return registry?.components?.[name]?.kind === 'kit'
-}
-
 export function deriveTier0AuditOptions({ cwd, componentNames = [] }: { cwd: string; componentNames?: string[] }) {
   const registry = readOptionalJson(join(cwd, 'design', 'registry.json'))
   const designBlock = findDesignBlock(cwd)
   const recipe = designBlock?.recipe ?? null
-  const auditableNames = componentNames.filter((name) => !isKitEntry(name, registry))
-  const { componentNodeIds, unresolvedNames } = resolveComponentNodeIds(auditableNames, registry)
+  const { componentNodeIds, unresolvedNames } = resolveComponentNodeIds(componentNames, registry)
 
   return {
     componentNodeIds,

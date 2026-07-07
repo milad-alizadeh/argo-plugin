@@ -1,128 +1,96 @@
 ---
 name: design-screen
-description: Build out an EXISTING screen (or wave of screens) in Figma autonomously — ONE long-lived designer session works a BUILD-ORDER wave component-first, with a frozen region-contract as the completeness oracle, deterministic coverage gates on every commit, and an independent adversarial design-verifier before it lands. The design analog of /argo:build-plan. Use when a screen's PRD + brief + wireframe exist and you want the hi-fi built hands-off; for a single component jump straight to /argo:figma-create.
+description: Build out an EXISTING screen (or wave of screens) in Figma autonomously — ONE long-lived designer session works a BUILD-ORDER wave component-first, straight to hi-fi from the PRD, gated by a single hard tier-0 audit plus a cheap deterministic instance-presence check and an advisory completeness pass. The design analog of /argo:build-plan. Use when a screen's PRD exists (a rough wireframe is optional context) and you want the hi-fi built hands-off; for a single component jump straight to /argo:figma-create.
 ---
 
-# Design a Screen (hi-fi in Figma, single-session, contract-gated, anti-recreation-preserving)
+# Design a Screen (hi-fi in Figma, single-session, component-first, PRD-driven)
 
 The **automated** design stage of the canonical loop: take a screen whose intent
-already exists (PRD → brief → optional wireframe) and build its hi-fi in Figma,
-component-first, with completeness **verified against an independent source** and
-anti-recreation preserved. It fixes both observed failure modes: overnight
-tracing (screens that reskinned wireframe boxes) and silent under-build (a screen
-that dropped regions no gate caught).
+already exists (a **PRD**, optionally a rough wireframe for reference) and build
+its hi-fi in Figma, component-first, so it turns cleanly into code. This is the
+simplified flow (design-process-simplification.md, 2026-07-07): the old
+contract-freeze / region-coverage / structural-receipt / wireframe-verifier
+machinery is retired. It was disproportionate bookkeeping — maintaining a second
+synced lo-fi artifact per screen — for a solo designer with settled taste and a
+known product shape.
 
 Why one long-lived session (like `build-plan`): a wave's components are built in
 dependency order, then composed — a fresh context per component re-reads the
-inventory every time. Determinism lives in the **gates** (deterministic hooks +
-an isolated verifier), never in the builder's self-assessment — a builder
-grading its own screen is exactly what let D01 under-build.
+inventory every time.
 
-## The core insight (why the obvious gate would be theater)
+## What the PRD owns vs the design layer
 
-Diffing a built screen against its own **brief** is circular: `figma-wireframe`
-makes the wireframe a near-echo of the brief, so brief → wireframe → hi-fi narrow
-together. The completeness gate needs sources the built screen did NOT descend
-from:
-- the **PRD's requirements** (`Visible in build?` rows) as the *semantic*
-  contract — what the screen must DO, authored upstream, independent of layout;
-- the frozen **region-contract** (extracted from the wireframe once, version-
-  stamped) as the *structural* contract — what regions must exist, as real
-  instances.
+- **The PRD is the spec and the completeness oracle.** Its feature→screen matrix
+  and `Visible in build?` requirement rows define what each screen must DO. The
+  PRD stays PURE semantic — product-owned, durable, independent of layout. It does
+  NOT carry component names or arrangement.
+- **Arrangement lives in the design layer, on the frame.** The per-screen
+  "which components, arranged how" note is a **Figma frame description /
+  annotation**, not a brief file and not a PRD column (Figma's own best practice:
+  annotations convey design intent hard to capture visually). This keeps the
+  completeness check from ever grading the plan against a note the builder wrote.
 
 ## 1. Preconditions — check all, fail loudly
 - **A PRD** for the feature (`.claude/prds/<feature>.md`) with a feature→screen
-  matrix, and **a brief** for the screen (`design/briefs/<screen>.md`) with a
-  machine-readable region-disposition block. No PRD or no brief → stop; author
-  them first (`/argo:write-prd`, then the brief).
-- **A wireframe** with a resolvable Figma node id (optional per the loop, but if
-  present it is frozen into the region-contract — the structural check needs it).
-  Component-only builds skip the wireframe and run PRD-semantic checks only.
+  matrix and `Visible in build?` rows for this screen. No PRD → stop; author it
+  first (`/argo:write-prd`).
+- **A wireframe is OPTIONAL** — reference context only, never frozen or verified
+  against. Use one only when a screen's layout is a genuine open question; skip it
+  when the shape is known.
 - **INVENTORY / RECONCILIATION / BUILD-ORDER** mounted **READ-ONLY** — the
   anti-recreation authority. The net-new budget is a ceiling only a human raises.
 - **design-guard armed** (the app's `design.<app>` block present in
-  `.claude/argo.json`, so the coverage + commit gates fire) and a
-  **design-verifier** available.
+  `.claude/argo.json`, so the tier-0 stop gate + commit gate fire).
 - **Figma MCP reachable** (load tools via ToolSearch if deferred): `get_metadata`,
   `get_screenshot`, plus the create tools the designer uses.
 
-## 2. Freeze the contract (P1)
-**Pre-freeze gate — run the `wireframe-verifier` agent first.** A contract frozen
-on a bad wireframe bakes the defect into hi-fi. Before extracting, the wireframe
-set must earn a `PROCEED` from the independent, given-only `wireframe-verifier`
-(scope · region coverage · Stage-arrangement conformance · standing rules). A
-`BLOCK` (out-of-scope frame, missing region, flat-stack, terminal-as-widget,
-etc.) is fixed at the wireframe stage — do NOT freeze over it.
-
-Run the extract step: `get_metadata` on the wireframe node, flatten named regions
-to `design/contracts/<screen>.json` (`{ screen, wireframeNodeId,
-figmaFileVersion, regions }`). Version-stamped and committed — this is the frozen
-structural oracle. Never re-extract mid-build to "match" what you built (that
-re-introduces the circularity); if the wireframe legitimately changes, that's a
-new frozen version and a human seam.
-
-**Manual wireframe edits are supported — the contract is the boundary, not a
-lock.** Editing wireframes by hand in Figma (iterating, exploring variants,
-fixing a layout) never breaks the flow; the wireframe is a live surface. What
-matters is WHEN relative to this freeze:
-- **Before the freeze** — edit freely; that is the whole lo-fi stage.
-- **After the freeze** — the contract is now a STALE snapshot; hi-fi would build
-  the old structure. Re-run this P1 extract to mint a NEW contract version (the
-  "human seam" above) before continuing to hi-fi, so your edit flows through.
-  This is a deliberate re-freeze, not the forbidden mid-build re-extract: it
-  happens at the wireframe→hi-fi boundary, driven by a real wireframe change,
-  not to paper over drift between the built screen and an old contract.
-- **A structural edit** (adds/removes a region) also means the wireframe and the
-  brief have diverged. A wireframe is allowed to be richer than its brief (it is
-  an independent completeness source), but flow the change back to the brief so
-  the two do not silently drift. The lo-fi wireframe verifier flags this
-  divergence rather than swallowing or hard-blocking it.
-
-## 3. Reconcile HARD, before any Figma write (P2)
-The brief's region-disposition block must account for **100%** of contract
-regions: each region is either `built-here` (+ component + REUSE/EXTEND/
-RECONCILE/NEW verdict) or `deferred-to-<wave/screen>` (+ reason, target validated
-against BUILD-ORDER). Extend the rows with an optional **REQ-ID column** so a PRD
-requirement mapped to no region is flagged here. Run `argo design region-coverage`: any
-contract region with no disposition row = FAIL before a single Figma write. **This
-is the cheapest catch — it stops an under-build here, pre-Figma.**
-
-## 4. Build component-first (P3), then compose (P4)
+## 2. Build component-first (P1), then compose (P2)
 Walk BUILD-ORDER: `figma-create` each composite in dependency order — audit-gated,
 registered, anti-recreation UNCHANGED (inventory citation, kit-name-collision
 hard gate, RECONCILE-codegen denylist). An unmatched composite ESCALATES to a
 human — NEVER auto-`NEW` past the budget. Only when the components exist do you
-compose the screen from **instances** (not fresh frames). The compose-time
-coverage diff is advisory (non-authoritative) — a nudge, not the gate.
+compose the screen from **instances** (not fresh frames). Record the screen's
+component list + arrangement as the frame's Figma description as you go.
 
-## 5. Verify independently (P5) — HARD, this is the gate of record
-Coverage is produced by a **non-compose** producer and checked by an isolated
-verifier, so the builder cannot grade its own work:
-- **(a)** tier-0 audit receipt clean.
-- **(b)** Structural coverage: an independent run does `get_metadata` on the
-  BUILT screen; `region-contract.js` classifies present | deferred | UNACCOUNTED
-  | MISSING. `present` REQUIRES a registry-backed **instance** (a bare frame is
-  hollow-MISSING) — so coverage can't be satisfied by tracing boxes. `argo design
-  record-coverage-receipt` writes the per-screen coverage receipt (`producedBy ≠
-  compose`); the kit's design-coverage-gate blocks the commit unless the receipt is
-  fresh, `clean` (UNACCOUNTED 0 && MISSING 0), and non-compose-produced.
-- **(c)** Spawn the **design-verifier** agent (separate, sonnet, HARD-isolated):
-  it gets ONLY wireframe + built screenshots + region-contract + the PRD's
-  `Visible in build?` REQ rows + the deferral ledger — never this transcript. It
-  rules each requirement present/absent (semantic) and re-walks regions
-  (structural), checks deferral honesty + cardinality. Any absent requirement or
-  UNACCOUNTED region → **BLOCK**.
+`design/registry.json` (component name → node id, committed on `main`) is the
+**code bridge** — the mapping that lets code generation resolve each instance to
+its real component. (This is the on-device substitute for Figma Code Connect,
+which is Org/Enterprise-only; nothing here depends on the paid feature.)
 
-**Scorecard** (the number that would have changed D01): regions covered /
-deferred / **UNACCOUNTED (must be 0)** / MISSING, requirements present / **absent
-(must be 0)**, dishonest deferrals, anti-recreation collisions. UNACCOUNTED>0 or
-absent>0 = FAILED regardless of tier-0.
+## 3. tier-0 audit — the one hard gate (P3)
+Run the named tier-0 audit on every component built and on the composed screen.
+It enforces build hygiene: Semantic-token binding, auto-layout intent, semantic
+names, variant naming, and **real instances, not traced frames** (the
+`composite-region-traced-not-instance` check — advisory today, promoted to a hard
+fail after one NEW-composite calibration wave confirms the wrapper-frame
+exemption is clean). A hard violation fails loud; the session cannot end without a
+clean per-session tier-0 receipt (`design-guard-stop`).
 
-## 6. Land (P6)
-figma-sync → committed artifacts; the integrator commits the design worktree. The
-one human seam: sanity-check the deferral ledger (a session that hits UNACCOUNTED
-must STOP and surface — it may not self-defer to dodge the gate; deferrals are a
-frozen PLANNING output, read-only at verify time).
+Auto-layout is checked for *intent*, not rigidly: a deliberate absolute-canvas
+frame (backdrop / orb-scene / overlay whose children are all absolutely
+positioned) is exempt — auto-layout would be a no-op there.
+
+## 4. Completeness — deterministic pre-check + advisory check, then you (P4)
+No frozen contract; completeness is a cheap layered check:
+- **(a) Deterministic instance-presence pre-check (cheap, hard-ish):** from the
+  live built-screen nodes, assert every component the PRD requires for this screen
+  resolves to a **non-empty registry instance** on the frame. A missing or hollow
+  (bare-frame) region fails here, for free, before any LLM spend. This is the
+  cheapest catch — it replaces the old region-coverage gate without a contract.
+- **(b) Advisory completeness check (must-exist, non-blocking on content):** a
+  checklist generated **mechanically from the PRD's `Visible in build?` rows
+  before the build**, diffed against the built screenshot after → present/absent
+  per requirement. It reads PRD rows + screenshots ONLY (never the arrangement
+  note, never this transcript) so it stays independent. You MAY override an
+  "absent" flag and ship, but the check artifact MUST exist — you cannot silently
+  skip running it (this closes the D01 "silent because skipped" gap without
+  content-blocking). For a pure recompose of banked instances, (a) alone may
+  suffice; for a NEW composite or high PRD-REQ density, always run (b).
+- **(c) You** make the ship call, informed by (a) + (b). Never cut the visual
+  self-review round.
+
+## 5. Land (P5)
+figma-sync → committed artifacts; the integrator commits the design worktree.
 
 ## Two-phase orchestration (DEFAULT — the efficient shape)
 For a wave/batch of screens, do NOT build each screen end-to-end in isolation —
@@ -136,29 +104,26 @@ that re-pays the composite-build cost per screen. Instead:
 2. **Compose fan-out (PARALLEL, ~3-wide).** Once a wave's composites are banked,
    screens only place instances on their OWN frames — no shared master mutation,
    so parallel compose is collision-free with no lock needed. Serialize ONLY the
-   P6 registry/receipt commit through the single on-device writer (integrator).
+   P5 registry/receipt commit through the single on-device writer (integrator).
 
 Front-loading is the dominant token lever (composition-dominant screens cost
 ~75k, not ~300k); parallelism is a wall-time bonus, not the strategy.
 
 ## Cost discipline (hard rules)
-- **`get_metadata` is reserved for P1 freeze and the independent P5 verify ONLY.**
-  P3/P4 read the committed contract JSON + the component-resolution manifest —
-  NEVER re-pull the tree "to check structure" (the single largest redundant spend).
+- **`get_metadata` is reserved for the P4 instance-presence check ONLY.** P1/P2
+  read the committed registry + the component-resolution manifest — NEVER re-pull
+  the tree "to check structure" mid-build (the single largest redundant spend).
 - **Pre-seed the component-resolution manifest** (region/composite → kit node id +
   variant + REUSE/EXTEND/NEW verdict, generated from INVENTORY + registry) into
   every designer session. Resolve by lookup; fire live `search_design_system` only
-  on a genuine miss (D01 burned 2 wrong kit-Switch matches solving this blind).
-- **Tier the verifier.** Run the deterministic region-contract coverage gate on
-  EVERY screen (near-free, hard). Spawn the adversarial design-verifier ONLY for
-  screens with a NEW composite or high PRD-REQ density — a pure recompose of
-  banked instances passes on the deterministic gate alone. Never cut the visual
-  self-review round (that's the anti-under-build teeth).
+  on a genuine miss.
 - **Author tier-0-compliant up front** (naming / Semantic binding / auto-layout)
   rather than create→audit→fix→re-audit round-trips.
+- **Capture screenshots inline** (`await node.screenshot()` in the finishing write
+  call) — never the get_screenshot → curl → Read round-trip loop.
 
 ## Session shape & recovery
-Durable on-disk state (contracts, dispositions, receipts, registry, progress doc)
-+ the Figma file survive an interruption; wrap each designer session in
-`orchestrate`'s bounded-retry loop so a crash restarts ONE screen, not the batch;
-rate-limit recovery inherits `orchestrate` §4.
+Durable on-disk state (registry, receipts, progress doc) + the Figma file survive
+an interruption; wrap each designer session in `orchestrate`'s bounded-retry loop
+so a crash restarts ONE screen, not the batch; rate-limit recovery inherits
+`orchestrate` §4.

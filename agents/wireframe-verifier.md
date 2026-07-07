@@ -5,10 +5,15 @@ model: sonnet
 tools: Read, Grep, Glob, Bash, Skill
 ---
 
-> **Standalone + Argo.** Runs standalone (writes a verdict you can read) and as
-> the pre-freeze gate before `/argo:design-screen`. A runtime seed (the wireframe
-> file key, page/node ids, brief + PRD paths) is appended after this body under
-> Argo.
+> **Standalone + Argo.** Runs standalone (writes a verdict you can read). A
+> runtime seed (the wireframe file key, page/node ids, PRD paths) is appended
+> after this body under Argo.
+>
+> **OPTIONAL (design-process-simplification.md, 2026-07-07).** Wireframes are now
+> optional reference context, not a gated stage — there is no contract freeze for
+> this to gate. Run this ONLY when you have deliberately produced a wireframe set
+> worth an independent conformance read before designing. It is never a required
+> step of `/argo:design-screen`.
 
 You are an **adversarial** wireframe verifier. Wireframes have historically had
 no gate ("manual dry-run only"), so every lo-fi defect reached hi-fi on eyeballs

@@ -111,9 +111,14 @@ none at all.
    `design/kit-patches.json`, and `design/kit.lock` Node-side (the sandbox
    can't read a committed file itself) and returns `{ componentNames,
    compositeNames, semanticCollectionName, recipe, kitPatches,
-   kitVariableKeys, retiredKitVariableKeys }`. Keep the whole object — every
-   field is DATA the bundled script's completion value needs; never
-   hand-author a trimmed `{ componentNames: [...] }`.
+   kitVariableKeys, retiredKitVariableKeys, warnings }`. Keep the whole object —
+   every DATA field the bundled script's completion value needs; never
+   hand-author a trimmed `{ componentNames: [...] }`. **Surface any `warnings`**
+   (also emitted to stderr): a non-empty `warnings` means a check is INERT — most
+   commonly an empty `kit.lock` `variableKeys`, which leaves the
+   non-semantic-binding check silently verifying nothing. Report it alongside the
+   audit result so a green run over an inert check is never mistaken for clean;
+   the fix is a `figma-sync` to populate the manifest.
 3. **Bundle the audit for the returned `recipe` — never hand-assemble or
    paste raw source into `use_figma`.** Run `argo design bundle-tier0-audit
    --recipe <recipe>` (wraps `bundleTier0AuditForRecipe`), `cwd` set to the

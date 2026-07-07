@@ -29,7 +29,17 @@ export const KitLockSchema = z.object({
   libraryFileKey: z.string(),
   fileVersion: z.string(),
   lastModified: z.string(),
-  syncTimestamp: z.string()
+  syncTimestamp: z.string(),
+  // The kit library's variable KEYS — the manifest the recipe's
+  // non-semantic-binding check needs to tell a legit kit-token binding from a
+  // stray remote one. Optional (a lock written before capture landed omits it),
+  // but WITHOUT it the check fails open (remote ⇒ kit) and silently verifies
+  // nothing. Captured from the kit library at figma-sync time.
+  // `retiredVariableKeys` are keys from a superseded kit version (recorded by
+  // design-upgrade at swap time) so a stale binding left over from a Library
+  // Swap is still flagged.
+  variableKeys: z.array(z.string()).optional(),
+  retiredVariableKeys: z.array(z.string()).optional()
 })
 
 /** D1: component key, node id, story id, import path, prop mapping */

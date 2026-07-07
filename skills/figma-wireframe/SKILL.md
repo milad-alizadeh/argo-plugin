@@ -9,6 +9,12 @@ Authors lo-fi wireframes to a fixed shape so they read the same across every
 project, and stay obviously separate from hi-fi design work. Builds on
 `figma:figma-use` for node creation.
 
+> **Wireframes are OPTIONAL context (design-process-simplification.md,
+> 2026-07-07).** The design flow is PRD → hi-fi; a wireframe is a reference spike
+> you reach for only when a screen's layout is a genuine open question. It is
+> never frozen, synced, or verified against downstream. Skip it when the shape is
+> already known.
+
 ## Lo-fi effort ceiling — greybox-first, promote on convergence
 
 **This is the governing rule; everything below about kit fidelity is scoped by

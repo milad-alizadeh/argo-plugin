@@ -137,6 +137,14 @@ export function missingAutoLayoutViolation(node: AnyNode): Violation | null {
   // the instance. Flagging them forced authors to detach kit instances to
   // pass the gate, losing swap/update propagation.
   if ((node.type === 'FRAME' || node.type === 'COMPONENT') && node.layoutMode === 'NONE') {
+    // Absolute-canvas exemption: a frame whose children are ALL absolutely
+    // positioned (a deliberate backdrop / orb-scene / overlay layer) gains
+    // nothing from Auto Layout — it is a no-op on all-absolute children, so
+    // requiring it is rigidity, not hygiene. An empty or non-absolute-child
+    // frame is unaffected, so normal stacked content still flags (keeping the
+    // D24 gap/padding-token leverage intact).
+    const children: AnyNode[] = node.children ?? []
+    if (children.length >= 1 && children.every((c) => c?.layoutPositioning === 'ABSOLUTE')) return null
     return { rule: 'missing-auto-layout', detail: 'frame-like node has no Auto Layout' }
   }
   return null
@@ -384,6 +392,13 @@ export function missingComponentDescriptionViolation(node: AnyNode): Violation |
 export function compositeRegionNamingViolation(node: AnyNode, compositeNames: string[]): Violation | null {
   if (node.type !== 'FRAME') return null
   if (!(compositeNames ?? []).includes(node.name)) return null
+  // Wrapper-frame exemption: a FRAME named after a composite that DIRECTLY
+  // contains an INSTANCE of that same composite is the legitimate
+  // clip/shadow/effect-wrapper idiom (a `Card` frame wrapping a `Card`
+  // instance), not a traced replacement. Only a same-named frame with NO such
+  // instance inside is under-decomposition.
+  const children: AnyNode[] = node.children ?? []
+  if (children.some((c) => c?.type === 'INSTANCE' && c?.name === node.name)) return null
   return {
     rule: 'composite-region-traced-not-instance',
     detail: `frame "${node.name}" is named after a composite component but is a plain FRAME, not an INSTANCE — looks traced, not composed`

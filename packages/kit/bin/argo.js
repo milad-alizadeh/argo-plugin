@@ -18,15 +18,20 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const HOOK_CHAINS = {
-  // Order: red-proof → trust → design-commit → design-contract-freeze → design-coverage.
-  // The freeze gate runs before coverage because coverage grades against the
-  // frozen contract — its integrity must be checked before it is trusted.
+  // Order: red-proof → trust → design-commit.
+  // design-contract-freeze-gate and design-coverage-gate were removed from the
+  // chain (design-process-simplification.md, 2026-07-07): the contract-freeze /
+  // region-coverage machinery is retired, so leaving the coverage gate armed
+  // would deadlock EVERY commit touching component source (it blocks whenever no
+  // per-screen coverage receipt exists, and the design flow no longer writes
+  // one). design-commit-gate (spec-diff receipt, the figma-to-code flow) is
+  // unaffected and stays. The two gate modules remain on disk for now
+  // (unreferenced); delete them + region-coverage/extract-region-contract/
+  // lint-contract-freeze in a follow-up cleanup pass.
   'bash-pretooluse': [
     '../dist/hooks/red-proof-gate.js',
     '../dist/hooks/trust-gate.js',
     '../dist/hooks/design-commit-gate.js',
-    '../dist/hooks/design-contract-freeze-gate.js',
-    '../dist/hooks/design-coverage-gate.js',
   ],
   'post-edit-write': ['../dist/hooks/format-on-write.js', '../dist/hooks/test-smell.js'],
   'design-guard-record': ['../dist/hooks/design-guard-record.js'],

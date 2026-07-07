@@ -22,7 +22,8 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         recipe: null,
         kitPatches: {},
         kitVariableKeys: [],
-        retiredKitVariableKeys: []
+        retiredKitVariableKeys: [],
+        warnings: []
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
@@ -39,7 +40,8 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         recipe: null,
         kitPatches: {},
         kitVariableKeys: [],
-        retiredKitVariableKeys: []
+        retiredKitVariableKeys: [],
+        warnings: []
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
@@ -79,6 +81,41 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
       expect(options.kitPatches).toEqual({ Button: ['button.tsx'] })
       expect(options.kitVariableKeys).toEqual(['abc123'])
       expect(options.retiredKitVariableKeys).toEqual(['def456'])
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('warns that the non-semantic-binding check is INERT when recipe is shadcn-tailwind and kit.lock has no variableKeys', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
+    mkdirSync(join(cwd, '.claude'), { recursive: true })
+    writeFileSync(
+      join(cwd, '.claude', 'argo.json'),
+      JSON.stringify({ design: { '.': { root: '.', recipe: 'shadcn-tailwind' } } }),
+      'utf8'
+    )
+    try {
+      const options = deriveTier0AuditOptions({ cwd })
+      expect(options.kitVariableKeys).toEqual([])
+      expect(options.warnings).toHaveLength(1)
+      expect(options.warnings[0]).toMatch(/INERT/)
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('does NOT warn once kit.lock variableKeys is populated', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
+    mkdirSync(join(cwd, '.claude'), { recursive: true })
+    mkdirSync(join(cwd, 'design'), { recursive: true })
+    writeFileSync(
+      join(cwd, '.claude', 'argo.json'),
+      JSON.stringify({ design: { '.': { root: '.', recipe: 'shadcn-tailwind' } } }),
+      'utf8'
+    )
+    writeFileSync(join(cwd, 'design', 'kit.lock'), JSON.stringify({ variableKeys: ['k1'] }), 'utf8')
+    try {
+      expect(deriveTier0AuditOptions({ cwd }).warnings).toEqual([])
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }

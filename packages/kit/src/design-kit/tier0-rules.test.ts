@@ -137,6 +137,32 @@ describe('missingAutoLayoutViolation', () => {
     const node = { type: 'FRAME', layoutMode: 'NONE', insideInstance: true }
     expect(missingAutoLayoutViolation(node)).toBeNull()
   })
+  it('exempts an absolute-canvas frame — every child is absolutely positioned', () => {
+    const node = {
+      type: 'FRAME',
+      layoutMode: 'NONE',
+      children: [{ layoutPositioning: 'ABSOLUTE' }, { layoutPositioning: 'ABSOLUTE' }]
+    }
+    expect(missingAutoLayoutViolation(node)).toBeNull()
+  })
+  it('still flags a no-Auto-Layout frame with a non-absolute child', () => {
+    const node = {
+      type: 'FRAME',
+      layoutMode: 'NONE',
+      children: [{ layoutPositioning: 'ABSOLUTE' }, { layoutPositioning: 'AUTO' }]
+    }
+    expect(missingAutoLayoutViolation(node)).toEqual({
+      rule: 'missing-auto-layout',
+      detail: 'frame-like node has no Auto Layout'
+    })
+  })
+  it('still flags an empty no-Auto-Layout frame (no children is not an absolute canvas)', () => {
+    const node = { type: 'FRAME', layoutMode: 'NONE', children: [] }
+    expect(missingAutoLayoutViolation(node)).toEqual({
+      rule: 'missing-auto-layout',
+      detail: 'frame-like node has no Auto Layout'
+    })
+  })
 })
 
 describe('handDrawnIconViolation', () => {
@@ -426,6 +452,27 @@ describe('compositeRegionNamingViolation (Option B, design-first-council-ruling.
   it('passes a FRAME whose name matches no known composite', () => {
     const node = { type: 'FRAME', name: 'SessionList' }
     expect(compositeRegionNamingViolation(node, ['RailSessionCard'])).toBeNull()
+  })
+
+  it('exempts a wrapper FRAME that directly contains an INSTANCE of the same composite (clip/shadow idiom)', () => {
+    const node = {
+      type: 'FRAME',
+      name: 'RailSessionCard',
+      children: [{ type: 'INSTANCE', name: 'RailSessionCard' }]
+    }
+    expect(compositeRegionNamingViolation(node, ['RailSessionCard'])).toBeNull()
+  })
+
+  it('still flags a same-named FRAME whose children are not an instance of it', () => {
+    const node = {
+      type: 'FRAME',
+      name: 'RailSessionCard',
+      children: [{ type: 'FRAME', name: 'inner' }, { type: 'TEXT', name: 'label' }]
+    }
+    expect(compositeRegionNamingViolation(node, ['RailSessionCard'])).toEqual({
+      rule: 'composite-region-traced-not-instance',
+      detail: 'frame "RailSessionCard" is named after a composite component but is a plain FRAME, not an INSTANCE — looks traced, not composed'
+    })
   })
 })
 

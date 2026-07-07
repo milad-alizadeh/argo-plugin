@@ -71,6 +71,7 @@ async function auditNode(
     semanticCollectionName,
     insideInstance = false,
     compositeNames = [],
+    compositeNamingHard = false,
     runRecipeTier0Checks
   }: {
     hard: boolean
@@ -79,6 +80,7 @@ async function auditNode(
     semanticCollectionName: string
     insideInstance?: boolean
     compositeNames?: string[]
+    compositeNamingHard?: boolean
     runRecipeTier0Checks?: (node: any, ctx: { hard: boolean }) => Promise<any[]>
   }
 ) {
@@ -197,13 +199,18 @@ async function auditNode(
   const nonSemanticName = nonSemanticNameViolation(nodeCtx)
   if (nonSemanticName) report(nonSemanticName.rule, nonSemanticName.detail)
 
-  // Option B (design-first-council-ruling.md Gate ruling): ALWAYS advisory,
-  // regardless of `hard` — never promote this to the named-audit hard gate
-  // (that's Option C, deferred until its brief/story-map schema lands).
+  // Composite-naming check. Supersedes the earlier "ALWAYS advisory" Option-B
+  // ruling (design-first-council-ruling.md): the mechanism now RESPECTS a hard
+  // flag so it can protect the components-first guarantee (design-process-
+  // simplification.md). It stays advisory by DEFAULT (`compositeNamingHard`
+  // false) until one NEW-composite wave calibrates the wrapper-frame exemption;
+  // flip the default (or wire `prepare-tier0-audit-options` to pass true) after
+  // that. Only a NAMED (hard) audit can escalate it — a file-wide sweep is
+  // always advisory.
   const compositeNaming = compositeRegionNamingViolation(node, compositeNames)
   if (compositeNaming) {
     violations.push({
-      severity: 'advisory',
+      severity: hard && compositeNamingHard ? 'hard' : 'advisory',
       rule: compositeNaming.rule,
       nodeId: node.id,
       nodeName: node.name,
@@ -324,6 +331,7 @@ export async function runTier0Audit(
   options: {
     componentNames?: string[]
     compositeNames?: string[]
+    compositeNamingHard?: boolean
     semanticCollectionName?: string
     runRecipeTier0Checks?: (node: any, ctx: { hard: boolean }) => Promise<any[]>
     runKitPatchesConformance?: (modifiedNodes: any[]) => Promise<any[]> | any[]
@@ -332,6 +340,7 @@ export async function runTier0Audit(
   const {
     componentNames,
     compositeNames = [],
+    compositeNamingHard = false,
     semanticCollectionName = 'Semantic',
     runRecipeTier0Checks,
     runKitPatchesConformance
@@ -354,7 +363,7 @@ export async function runTier0Audit(
       const matches = figma.root.findAll((n: any) => isNamedAuditTarget(n, name))
       for (const match of matches) {
         if (isWireframePageName(findOwningPage(match)?.name ?? '')) continue
-        await walk(match, { hard: true, spacingScale, semanticModes, semanticCollectionName, compositeNames, runRecipeTier0Checks }, violations)
+        await walk(match, { hard: true, spacingScale, semanticModes, semanticCollectionName, compositeNames, compositeNamingHard, runRecipeTier0Checks }, violations)
       }
     }
   } else {
@@ -366,7 +375,7 @@ export async function runTier0Audit(
       // wording.
       if (isWireframePageName(page.name)) continue
       for (const topLevel of page.children) {
-        await walk(topLevel, { hard: false, spacingScale, semanticModes, semanticCollectionName, compositeNames, runRecipeTier0Checks }, violations)
+        await walk(topLevel, { hard: false, spacingScale, semanticModes, semanticCollectionName, compositeNames, compositeNamingHard, runRecipeTier0Checks }, violations)
       }
     }
   }

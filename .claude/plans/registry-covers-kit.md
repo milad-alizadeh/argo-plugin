@@ -1,9 +1,9 @@
-# Registry covers kit components — argo-plugin implementation plan
+# Registry covers kit components, argo-plugin implementation plan
 
 Grounded against the current state of `/Users/milad/Developer/argo-plugin`
 (packages/kit@0.13.0). Makes `design/registry.json` the **complete**
-component inventory of the design file after a sync — kit components (from
-the duplicated starter file) as well as project-owned ("custom") ones — via
+component inventory of the design file after a sync, kit components (from
+the duplicated starter file) as well as project-owned ("custom") ones, via
 a **deterministic CLI command**, not an agent-driven MCP walk.
 
 ## Owner mandate (repeated so every slice is graded against it)
@@ -17,7 +17,7 @@ what's named here.
 
 Milad's verbatim ask, relayed by the coordinator: "Can we not have a script
 that extract all components from figma via api isn't this a deterministic
-code that runs after we run sync or designers touch the files?" — followed
+code that runs after we run sync or designers touch the files?", followed
 by explicit sign-off to proceed with a REST-backed `@argohq/kit` CLI command
 (`GET /v1/files/:key`, env token, pure-function core, invoked by figma-sync
 and runnable standalone). This supersedes the first draft's MCP-walk design
@@ -29,25 +29,25 @@ art rather than inventing new conventions:
   `skills/resolve-comments/scripts/figma-comments.ts`. Its `token()`
   function (lines 89-100) reads `process.env.FIGMA_TOKEN` first, falls back
   to a gitignored `<cwd>/.argo/figma-token` file, and fails loud with a
-  clear message if neither is set. This plan reuses that exact convention —
-  **`FIGMA_TOKEN`, not `FIGMA_ACCESS_TOKEN`** — for a new REST consumer to
+  clear message if neither is set. This plan reuses that exact convention -
+  **`FIGMA_TOKEN`, not `FIGMA_ACCESS_TOKEN`**, for a new REST consumer to
   agree with the one that already exists, not fork a second env-var name for
   the same secret. The request header is `X-Figma-Token` (confirmed at
   `figma-comments.ts:111`), API base `https://api.figma.com/v1`.
 - **Where it lives.** `figma-comments.ts`'s own header comment explains it's
   deliberately kept *outside* `@argohq/kit` ("stays kit-independent... until
   the kit's TS migration lands"), written in erasable TS run via `node
-  --experimental-strip-types` as a stopgap. That migration is now done —
+  --experimental-strip-types` as a stopgap. That migration is now done -
   `packages/kit/package.json` confirms `packages/kit/src` is 100% real
   TypeScript, built by `tsc`, with every other skill-script (`generate-token-manifest.ts`,
   `record-audit-receipt.ts`, etc.) living in `packages/kit/src/skill-scripts/`
   and dispatched via `bin/argo.js`'s `DESIGN_VERBS` map. This new command
-  belongs there directly, as real TS with a real build step — not a second
+  belongs there directly, as real TS with a real build step, not a second
   skill-local erasable-TS script. (Migrating `figma-comments.ts` itself into
   the kit is a separate, unrelated refactor of a different skill and is
-  explicitly **out of scope** here — no scope creep.)
+  explicitly **out of scope** here, no scope creep.)
 - **fileKey source.** `design.<app>.figma.projectFileKey` in `.claude/argo.json`
-  — confirmed field path, read the same way `design-guard-record.ts:64-68`
+ , confirmed field path, read the same way `design-guard-record.ts:64-68`
   already reads it (`block?.figma as { projectFileKey?: unknown }`) and the
   same way `findDesignBlock` (`prepare-tier0-audit-options.ts:75-84`, already
   used by `generate-token-manifest.ts`) resolves the app's `design.<app>`
@@ -57,45 +57,45 @@ art rather than inventing new conventions:
   `componentPropertyDefinitions` field (whether the REST document tree
   mirrors the Plugin API's node shape exactly). There's no live Figma file
   or token available to this planning session to confirm against a real
-  response — `figma-comments.ts`'s own Verification section states the same
+  response, `figma-comments.ts`'s own Verification section states the same
   limitation for its endpoints. Slice 3 below makes fetching and committing
   a real trimmed fixture the FIRST implementation step, before the marshal
   function's field assumptions are locked in by a test.
 
-## Context — what exists today (unchanged findings from the first draft)
+## Context, what exists today (unchanged findings from the first draft)
 
-- `packages/kit/src/design-kit/registry-reconcile.ts` — `reconcileRegistrySweep`
+- `packages/kit/src/design-kit/registry-reconcile.ts`, `reconcileRegistrySweep`
   diffs a live component list against `design/registry.json` entries,
   reporting `registry-orphan` / `registry-unregistered` / advisory, plus
   `isPascalCaseComponentName` (with `PASCAL_EXEMPT_PREFIXES = ['lucide/',
   'demo/']`) and `isScratchPageName`.
-- `packages/kit/src/design-kit/tier0-rules.ts:125-127` — `isWireframePageName`
+- `packages/kit/src/design-kit/tier0-rules.ts:125-127`, `isWireframePageName`
   already classifies `Cover` and `W\d{2}` pages; reused, not reimplemented.
-- `packages/kit/src/design-kit/schemas.ts:28-34` — `RegistryEntrySchema`
+- `packages/kit/src/design-kit/schemas.ts:28-34`, `RegistryEntrySchema`
   already has `kind: z.enum(['kit', 'custom'])` and `status: z.enum(['draft',
-  'audit-clean', 'out-of-sync', 'orphaned'])` (Figma-lifecycle ONLY —
+  'audit-clean', 'out-of-sync', 'orphaned'])` (Figma-lifecycle ONLY -
   `synced`/`coded` are explicitly documented as derived, never stored,
   `schemas.ts:17-19`). Nothing about the schema changes.
-- `templates/design/file-structure.md` — the project's own canonical page
+- `templates/design/file-structure.md`, the project's own canonical page
   set: `Cover`, divider pages (literal `────` padding), `W\d{2} <group>`,
   `D\d{2} <group>`, `Custom Components`, `Foundations`. Kit component pages
-  are NOT named here — they arrive wholesale by duplicating an externally
+  are NOT named here, they arrive wholesale by duplicating an externally
   maintained starter file (`skills/setup-design/SKILL.md:70-77`), and this
   repo has no record of the starter's internal page names.
 - `design/registry.json`'s shape (`component-names.ts:28-31`,
   `registryComponentNames`): `{ header, components: { <Name>: RegistryEntry } }`,
   name-keyed.
-- `skills/figma-create/SKILL.md:263-276` — the existing registry upsert
+- `skills/figma-create/SKILL.md:263-276`, the existing registry upsert
   procedure: bootstrap-if-absent, then a single-key read-modify-write, always
-  re-reading immediately before writing (concurrent-session safety) — the
+  re-reading immediately before writing (concurrent-session safety), the
   new CLI's write step follows the same read-modify-write shape, just
   automated instead of agent-performed.
-- `packages/kit/src/design-kit/staleness.ts` — `classifyStaleness` (decision
+- `packages/kit/src/design-kit/staleness.ts`, `classifyStaleness` (decision
   8) is the existing lifecycle-stamping mechanism; it keeps running over
-  every registry entry regardless of `kind` — unaffected by this plan.
+  every registry entry regardless of `kind`, unaffected by this plan.
 - `tier0-rules.ts:233-243` (`variantNamingViolations`) confirms the Plugin
   API's `componentPropertyDefinitions` shape (`{ [propName]: { type,
-  variantOptions, ... } }`) that `extractVariantMatrix` mirrors — the REST
+  variantOptions, ... } }`) that `extractVariantMatrix` mirrors, the REST
   document tree is assumed (Figma convention) to expose the same field name
   on COMPONENT_SET nodes; Slice 3 verifies this against a real fixture
   before relying on it.
@@ -111,26 +111,26 @@ fail-loud on a missing token, one write via the existing atomic
 
 ## Files to change
 
-- `packages/kit/src/design-kit/registry-reconcile.ts` — add `isKitPageName`,
+- `packages/kit/src/design-kit/registry-reconcile.ts`, add `isKitPageName`,
   `extractVariantMatrix`, `buildKitRegistryEntries`.
-- `packages/kit/src/design-kit/registry-reconcile.test.ts` — tests for all
+- `packages/kit/src/design-kit/registry-reconcile.test.ts`, tests for all
   three, plus a Pascal-case regression case for a kit-style name.
-- `packages/kit/src/skill-scripts/pull-registry.ts` (new) — the CLI: REST
+- `packages/kit/src/skill-scripts/pull-registry.ts` (new), the CLI: REST
   fetch, marshal, classify, upsert lean kit entries, write.
-- `packages/kit/src/skill-scripts/pull-registry.test.ts` (new) — unit tests
+- `packages/kit/src/skill-scripts/pull-registry.test.ts` (new), unit tests
   against a committed fixture, no network.
-- `test/fixtures/figma-file-response.json` (new) — trimmed real `GET
+- `test/fixtures/figma-file-response.json` (new), trimmed real `GET
   /v1/files/:key` response, fetched live during Slice 3's build (needs a
   real token + real file; not something this planning pass can produce).
-- `packages/kit/bin/argo.js` — register `pull-registry` in `DESIGN_VERBS`.
-- `skills/figma-sync/SKILL.md` — step 2b: enumeration moves to `argo design
+- `packages/kit/bin/argo.js`, register `pull-registry` in `DESIGN_VERBS`.
+- `skills/figma-sync/SKILL.md`, step 2b: enumeration moves to `argo design
   pull-registry`; the MCP staleness walk stays scoped to what needs the live
   session (nodeId healing for moved/restructured entries, orphan detection
   against a genuinely live tree, screenshot capture).
 
 ## Step-by-step work items
 
-### Slice 1 — `isKitPageName` classifier (by-exclusion, zero-config)
+### Slice 1, `isKitPageName` classifier (by-exclusion, zero-config)
 
 `argo:build-plan` metadata: `testable: true`, `requiresLaunch: false`.
 
@@ -144,7 +144,7 @@ fail-loud on a missing token, one write via the existing atomic
     * turned into project config (owner ruling: no config sprawl, no version
     * handshake). A page counts as "kit" unless it's one of this project's
     * own canonical pages (file-structure.md's page order) or a divider/
-    * sandbox page. Fragile by design — see Risks.
+    * sandbox page. Fragile by design, see Risks.
     */
    export function isKitPageName(pageName: string): boolean {
      if (pageName === 'Custom Components' || pageName === 'Foundations') return false
@@ -161,7 +161,7 @@ fail-loud on a missing token, one write via the existing atomic
    arbitrary starter-owned name (`'Buttons'`, `'Overlays'`) returns `true`.
 3. Verify: `cd packages/kit && bun test src/design-kit/registry-reconcile.test.ts`
 
-### Slice 2 — variant matrix extraction + lean kit entry builder + Pascal-case lock
+### Slice 2, variant matrix extraction + lean kit entry builder + Pascal-case lock
 
 `argo:build-plan` metadata: `testable: true`, `requiresLaunch: false`.
 
@@ -198,12 +198,12 @@ fail-loud on a missing token, one write via the existing atomic
    }
 
    /**
-    * Entries for kit components the registry has never seen — never
+    * Entries for kit components the registry has never seen, never
     * overwrites an EXISTING kit entry's status/lastSyncedAt (that stays the
     * pre-existing decision-8 staleness sweep's job, which already runs
     * file-wide over every registry entry regardless of kind); this only
     * fills the gap for a component with no entry at all. status: 'draft'
-    * (never audited, never synced before) — figma-create's own upsert is
+    * (never audited, never synced before), figma-create's own upsert is
     * the only writer of 'audit-clean', and only after its own self-audit.
     */
    export function buildKitRegistryEntries(
@@ -234,20 +234,20 @@ fail-loud on a missing token, one write via the existing atomic
    entirely.
 4. Pascal-case regression lock: add a case confirming
    `isPascalCaseComponentName('Buttons')` (a plausible kit top-level
-   component/page name) passes — it already does under the existing
+   component/page name) passes, it already does under the existing
    `/^[A-Z][A-Za-z0-9]*$/` regex; this locks it in now that kit names are a
    live consumer of the same predicate, not just custom ones. No code
-   change expected — a regression test recording that kit component names
+   change expected, a regression test recording that kit component names
    must already be PascalCase-authored in the starter file, same
    requirement already imposed on custom components.
 5. Verify: `cd packages/kit && bun test src/design-kit/registry-reconcile.test.ts`
 
-### Slice 3 — `argo design pull-registry` CLI (REST fetch + marshal + upsert)
+### Slice 3, `argo design pull-registry` CLI (REST fetch + marshal + upsert)
 
 `argo:build-plan` metadata: `testable: true`, `requiresLaunch: false`.
 
 1. **Fetch and commit a real fixture first** (a live step, needs a real
-   `FIGMA_TOKEN` and a real `figma.projectFileKey` — do this once against
+   `FIGMA_TOKEN` and a real `figma.projectFileKey`, do this once against
    the actual project/starter file): `curl -H "X-Figma-Token: $FIGMA_TOKEN"
    https://api.figma.com/v1/files/<key>`, trim it down to a representative
    slice (a couple of pages: one project-owned like `Custom Components`,
@@ -255,13 +255,13 @@ fail-loud on a missing token, one write via the existing atomic
    `componentPropertyDefinitions`, one divider/`Scratch` page for the
    classifier), save as `test/fixtures/figma-file-response.json`. This is
    the step that confirms or corrects the `componentPropertyDefinitions`
-   shape assumption flagged in the Decision section above — if the REST
+   shape assumption flagged in the Decision section above, if the REST
    shape differs from the Plugin API's, fix `extractVariantMatrix`'s input
    type before writing the marshal function against it, not after.
 2. Create `packages/kit/src/skill-scripts/pull-registry.ts`, modeled on
    `generate-token-manifest.ts`'s pure-function-plus-CLI-wrapper pattern:
    - `token()`: reads `FIGMA_TOKEN` env, falls back to `.argo/figma-token`
-     (gitignored, repo-root-relative via `resolveRepoRoot` — same helper
+     (gitignored, repo-root-relative via `resolveRepoRoot`, same helper
      `record-audit-receipt.ts:40` already uses for repo-root-relative reads
      in a monorepo), fails loud with the same message shape
      `figma-comments.ts:95-98` already uses if neither is set.
@@ -269,23 +269,23 @@ fail-loud on a missing token, one write via the existing atomic
      header, throws with `<status> <statusText>` + body on a non-OK
      response (mirrors `figma-comments.ts:107-121`'s `api()` helper).
    - `marshalRestDocument(doc)`: pure, unit-tested against the Slice-3-step-1
-     fixture — walks `doc.document.children` (pages) × each page's
+     fixture, walks `doc.document.children` (pages) × each page's
      `children` (top-level nodes), keeps `COMPONENT`/`COMPONENT_SET` nodes,
      returns `{ name, nodeId, pageName, componentPropertyDefinitions }[]`.
    - `buildPullRegistryResult({ liveComponents, registry, now })`: pure,
      composes `isKitPageName` (classify each live component's `kind` from
      its `pageName`) + `buildKitRegistryEntries` (upsert target for
-     newly-seen kit components) — returns `{ newEntries, kitComponentCount,
+     newly-seen kit components), returns `{ newEntries, kitComponentCount,
      customComponentCount }` for the CLI wrapper to write and report.
    - CLI wrapper (`import.meta.url === file://argv[1]` guard, same as every
      sibling skill-script): resolve `cwd`, `findDesignBlock` for
-     `figma.projectFileKey` (fail loud if absent — "no
+     `figma.projectFileKey` (fail loud if absent, "no
      design.<app>.figma.projectFileKey configured, run setup-design first"),
      fetch the file, `readDesignJsonOrRebuild` the existing
      `design/registry.json` (schema-validated, per `write-design-json.ts`'s
      existing contract), merge `newEntries` into `components`, write via
      `writeDesignJson` (the same atomic temp-file+rename writer every other
-     `design/*.json` writer already uses — no new writer).
+     `design/*.json` writer already uses, no new writer).
 3. Register `pull-registry` in `packages/kit/bin/argo.js`'s `DESIGN_VERBS`
    map (`'pull-registry': '../dist/skill-scripts/pull-registry.js'`),
    alongside the 10 existing verbs.
@@ -296,19 +296,19 @@ fail-loud on a missing token, one write via the existing atomic
    against an empty/partial registry produces the expected `newEntries`
    (kit-only, lucide/demo excluded, existing names untouched); `token()`
    throws the documented message with neither env nor file set (a real
-   tmpdir, no network — same style as `record-audit-receipt.test.ts`'s
+   tmpdir, no network, same style as `record-audit-receipt.test.ts`'s
    monorepo-root tests).
 5. Verify: `cd packages/kit && bun test src/skill-scripts/pull-registry.test.ts`
 
-### Slice 4 — wire into figma-sync's registry-reconcile step
+### Slice 4, wire into figma-sync's registry-reconcile step
 
 `argo:build-plan` metadata: `testable: false` (SKILL.md prose only),
-`requiresLaunch: false`. Checkpoint: none needed — sequential, no seam.
+`requiresLaunch: false`. Checkpoint: none needed, sequential, no seam.
 
 1. Amend `skills/figma-sync/SKILL.md`'s step 2b ("Registry-reconcile
    ride-along") prose: replace "the live node-id walk above already holds
    every top-level COMPONENT/COMPONENT_SET on Custom Components" with
-   running `argo design pull-registry` as its own deterministic step —
+   running `argo design pull-registry` as its own deterministic step -
    runnable standalone (after designers touch the file directly, not only
    after a full sync) or as part of this procedure. It enumerates every
    page, classifies `kind` via `isKitPageName`, and upserts lean kit entries
@@ -316,7 +316,7 @@ fail-loud on a missing token, one write via the existing atomic
 2. Document the resulting division of labor explicitly: `pull-registry`
    owns **enumeration and kit-entry upsert** (deterministic, no live
    session); the existing MCP-based staleness walk (decision 8) stays
-   scoped to what genuinely needs a live session — `registry-unregistered`/
+   scoped to what genuinely needs a live session, `registry-unregistered`/
    `registry-orphan` diffing against the now-complete registry, and the
    nodeId-heal step for an entry whose id moved (`combineAsVariants`/variant
    restructure minted a new id) via `getNodeByIdAsync`/`findAll`, both of
@@ -326,7 +326,7 @@ fail-loud on a missing token, one write via the existing atomic
    MCP-side Pascal-case/unregistered checks (same `PASCAL_EXEMPT_PREFIXES`
    check, now enforced in one more place).
 4. Verify: `cd packages/kit && bun test src/ && bun run build` (whole-package
-   sweep — SKILL.md prose has no test of its own, but this confirms nothing
+   sweep, SKILL.md prose has no test of its own, but this confirms nothing
    in Slices 1-3 regressed).
 
 ## Verification (whole-plan)
@@ -334,32 +334,40 @@ fail-loud on a missing token, one write via the existing atomic
 - `cd packages/kit && bun test src/ && bun run build` after each slice and
   once more at the end.
 - Slice 3's fixture-fetch step is the one genuinely live-dependent step in
-  this plan — everything downstream of the committed fixture (marshal,
+  this plan, everything downstream of the committed fixture (marshal,
   classify, build, write) is unit-tested with no network, same discipline
   `figma-comments.ts`'s own tests would need (that file currently has none
-  committed either — out of scope to add here, noted only for parity
+  committed either, out of scope to add here, noted only for parity
   awareness).
 
 ## Risks & assumptions
 
 - **`isKitPageName` is fragile by design**, per the earlier ruling: a
   future project-owned page this classifier doesn't yet know about would
-  have its components misclassified as `kind: 'kit'` — never blocking
+  have its components misclassified as `kind: 'kit'`, never blocking
   (advisory/additive only), self-corrects once the classifier is taught the
   new page name.
 - **REST document shape is unverified until Slice 3 step 1 lands a real
   fixture.** Everything about `marshalRestDocument`'s field names
   (`componentPropertyDefinitions`, `document.children` nesting) is an
   assumption grounded in Figma's Plugin-API/REST-API field-naming
-  convention, not a confirmed fact — flagged explicitly rather than stated
+  convention, not a confirmed fact, flagged explicitly rather than stated
   as fact, per this plan's own grounding discipline. If the real response
   differs, only `marshalRestDocument` and its test need to change; the pure
   classify/build functions downstream of it are unaffected.
+- **Traversal depth (council finding, 2026-07-07):** page-children-only
+  enumeration under-counts if the starter nests kit component sets inside
+  SECTION/FRAME containers on their pages (common in starter files).
+  `marshalRestDocument` must therefore recurse into SECTION and plain FRAME
+  containers when collecting COMPONENT/COMPONENT_SET nodes, stopping at the
+  first component boundary (never descending INTO a component's own
+  subtree). The Slice-3 fixture must include at least one section-nested
+  kit set to lock this in.
 - **Token handling is duplicated, not shared**, between
   `figma-comments.ts` (resolve-comments skill, deliberately kit-independent
   pending a migration that hasn't happened) and `pull-registry.ts` (this
   plan, inside the kit). A few lines of near-identical `token()` logic in
-  two places is an accepted, small duplication — extracting a shared
+  two places is an accepted, small duplication, extracting a shared
   `lib/figma-rest-token.ts` is a reasonable follow-up once a THIRD REST
   consumer exists, not before (YAGNI); noting it here so it isn't
   rediscovered as a surprise later.
@@ -392,13 +400,13 @@ and `kind: 'custom'` entries.
   the component in Figma, synced by code, never hand-maintained in
   `registry.json` itself. This is the same "deterministic CLI, not
   hand-maintained state" principle the rest of this plan already applies to
-  enumeration and variant matrices — descriptions are just one more field
+  enumeration and variant matrices, descriptions are just one more field
   `pull-registry` pulls from the same REST response, not a new mechanism.
 - Scope note: this addendum only changes what `pull-registry`'s marshal step
   reads (add the `components`/`componentSets` metadata maps as a second
   source alongside the `document` tree walk) and what the schema accepts.
   It does not change `buildKitRegistryEntries`'s existing-entry-untouched
-  behavior, `isKitPageName`, or any other slice's already-landed code —
+  behavior, `isKitPageName`, or any other slice's already-landed code -
   a future implementation pass wires `description` through
   `buildKitRegistryEntries`'s lean-entry shape and the custom-entry upsert
   path `figma-create` already owns, both additive.

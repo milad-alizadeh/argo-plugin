@@ -1,6 +1,6 @@
 {
   "name": "@argohq/kit",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "type": "module",
   "description": "Deterministic half of the argo plugin — hook gates, design-kit comparator, skill-script CLI, reporters. The plugin's skills/agents are the LLM half; this package is everything that must run as real code.",
   "bin": {

@@ -47,14 +47,17 @@ export function findKitNameCollisions(
       .map((w) => normalizeComponentName(w.component))
   )
 
-  // Substring match, not exact equality: a compound authored name
-  // (`status-pill`) is expected to CONTAIN a shorter kit alias (`pill`) —
-  // normalization alone misses this, and aliases[] exists precisely to
-  // catch it. This can over-trigger on an unrelated name that happens to
-  // contain a short alias; a `kit-shadow` waiver is the intended, cheap
-  // escape hatch for that fuzzy false positive (kit-awareness.md's own
-  // fail-open contract).
-  const matchesAny = (normalized: string, candidates: string[]) => candidates.some((candidate) => normalized.includes(candidate))
+  // Exact normalized-equality match (owner ruling, 2026-07-07): an authored
+  // name only collides when its normalized form EQUALS a normalized kit
+  // name/alias or a different registry key's normalized form. `aliases[]`
+  // carries the semantic synonyms normalization can't catch (e.g.
+  // chip/toggle) — this deliberately matches the exact-match philosophy of
+  // `findNewNameAliasCollision` in the same file. A compound authored name
+  // that merely CONTAINS a short kit alias (`rail-session-card` ⊃ `card`,
+  // `terminal-panel` ⊃ `panel`) no longer collides, so `kit-shadow` waivers
+  // are now needed only for a genuine exact-name shadow, not a substring
+  // coincidence.
+  const matchesAny = (normalized: string, candidates: string[]) => candidates.some((candidate) => candidate === normalized)
 
   const collisions: string[] = []
   for (const name of componentNames ?? []) {

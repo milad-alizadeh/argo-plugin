@@ -15,6 +15,8 @@
  * nothing left to compare and is deleted, not softened.
  */
 
+import { isWireframePageName } from './tier0-rules.js'
+
 type LiveComponent = { name: string; nodeId: string; pageName?: string }
 type RegistryEntry = { name: string; nodeId: string; nodeIdResolves?: boolean }
 type Violation = { rule: string; detail: string }
@@ -22,6 +24,23 @@ type Violation = { rule: string; detail: string }
 /** Sandbox pages never generate registry-hygiene noise (design doc decision 4). */
 export function isScratchPageName(pageName: string): boolean {
   return pageName.startsWith('Scratch')
+}
+
+/**
+ * By-exclusion, not a name list: the starter file's own internal page
+ * names aren't recorded anywhere in this repo and are deliberately not
+ * turned into project config (owner ruling: no config sprawl, no version
+ * handshake). A page counts as "kit" unless it's one of this project's
+ * own canonical pages (file-structure.md's page order) or a divider/
+ * sandbox page. Fragile by design, see the plan's Risks section.
+ */
+export function isKitPageName(pageName: string): boolean {
+  if (pageName === 'Custom Components' || pageName === 'Foundations') return false
+  if (isWireframePageName(pageName)) return false // Cover + W\d{2}
+  if (/^D\d{2}(\b|\s)/.test(pageName)) return false // D\d{2} hi-fi groups
+  if (isScratchPageName(pageName)) return false
+  if (/^[─-]{2,}/.test(pageName)) return false // divider pages (──── Wireframes ────, etc.)
+  return true
 }
 
 export function reconcileRegistrySweep({

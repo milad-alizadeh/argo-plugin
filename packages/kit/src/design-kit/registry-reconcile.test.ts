@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { reconcileRegistrySweep, isScratchPageName } from './registry-reconcile.js'
+import { reconcileRegistrySweep, isScratchPageName, isKitPageName } from './registry-reconcile.js'
 
 describe('reconcileRegistrySweep (design-memory-placement.md A3, figma-sync sweep)', () => {
   it('flags a live component with no registry entry (registry-unregistered)', () => {
@@ -60,5 +60,22 @@ describe('isScratchPageName', () => {
     expect(isScratchPageName('Scratch - wip')).toBe(true)
     expect(isScratchPageName('scratch')).toBe(false)
     expect(isScratchPageName('Custom Components')).toBe(false)
+  })
+})
+
+describe('isKitPageName', () => {
+  it('excludes every project-canonical page name (by-exclusion, not a name list)', () => {
+    expect(isKitPageName('Custom Components')).toBe(false)
+    expect(isKitPageName('Foundations')).toBe(false)
+    expect(isKitPageName('Cover')).toBe(false)
+    expect(isKitPageName('W03 Onboarding')).toBe(false)
+    expect(isKitPageName('D03 Onboarding')).toBe(false)
+    expect(isKitPageName('Scratch - wip')).toBe(false)
+    expect(isKitPageName('──── Designs ────')).toBe(false)
+  })
+
+  it('treats an arbitrary starter-owned page name as kit', () => {
+    expect(isKitPageName('Buttons')).toBe(true)
+    expect(isKitPageName('Overlays')).toBe(true)
   })
 })

@@ -211,6 +211,43 @@ export function missingAutoLayoutViolation(node: AnyNode): Violation | null {
   return null
 }
 
+/**
+ * Advisory (task ask: "advisory first, promote later"). Flags a child
+ * whose absoluteBoundingBox extends past its parent's while the parent
+ * has clipsContent disabled, a progress-segment row overflowing its
+ * card's right edge shipped past every existing gate this way (2026-07,
+ * live D02.1 build). Uses absoluteBoundingBox (the layout box), never
+ * absoluteRenderBounds (which pads for shadows/blurs/effects), a drop
+ * shadow bleeding past a card's edge is expected and must not false-
+ * positive here. A child with layoutPositioning ABSOLUTE is exempt, same
+ * carve-out as missingAutoLayoutViolation's absolute-canvas exemption:
+ * a deliberately absolutely-positioned decorative child (e.g. a TreeNode
+ * connector rail) legitimately extends past its parent in some designs,
+ * and is a design choice, not a defect.
+ */
+export function unclippedOverflowViolations(node: AnyNode): Violation[] {
+  if (node.clipsContent !== false) return []
+  const parentBox = node.absoluteBoundingBox
+  if (!parentBox) return []
+  const violations: Violation[] = []
+  for (const child of node.children ?? []) {
+    if (child?.layoutPositioning === 'ABSOLUTE') continue
+    const childBox = child?.absoluteBoundingBox
+    if (!childBox) continue
+    const overflows =
+      childBox.x < parentBox.x ||
+      childBox.y < parentBox.y ||
+      childBox.x + childBox.width > parentBox.x + parentBox.width ||
+      childBox.y + childBox.height > parentBox.y + parentBox.height
+    if (!overflows) continue
+    violations.push({
+      rule: 'unclipped-overflow',
+      detail: `child "${child.name}" extends beyond parent bounds while the parent has clipsContent disabled`
+    })
+  }
+  return violations
+}
+
 export function handDrawnIconViolation(node: AnyNode): Violation | null {
   if (node.type === 'VECTOR' && !node.insideInstance) {
     return {

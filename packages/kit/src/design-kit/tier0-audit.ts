@@ -60,7 +60,8 @@ import {
   compositeRegionNamingViolation,
   emDashViolation,
   screenViewportMismatchViolation,
-  textTruncationViolation
+  textTruncationViolation,
+  unclippedOverflowViolations
 } from './tier0-rules.js'
 
 async function auditNode(
@@ -242,6 +243,16 @@ async function auditNode(
   const emDash = emDashViolation(node)
   if (emDash) {
     violations.push({ severity: 'advisory', rule: emDash.rule, nodeId: node.id, nodeName: node.name, detail: emDash.detail })
+  }
+
+  // node (not nodeCtx) — needs the real children array with each child's own
+  // absoluteBoundingBox/layoutPositioning, which the Proxy already passes
+  // through unchanged, so node and nodeCtx are equivalent here; using node
+  // directly avoids implying the check depends on insideInstance, which it
+  // doesn't. Always advisory regardless of `hard` (same pattern as
+  // emDashViolation/compositeNaming).
+  for (const overflow of unclippedOverflowViolations(node)) {
+    violations.push({ severity: 'advisory', rule: overflow.rule, nodeId: node.id, nodeName: node.name, detail: overflow.detail })
   }
 
   // getPluginData/getPluginDataKeys are unavailable in the use_figma sandbox

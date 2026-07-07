@@ -25,7 +25,8 @@ import {
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
   strokeScaleViolation,
-  textTruncationViolation
+  textTruncationViolation,
+  unclippedOverflowViolations
 } from '../../packages/kit/src/design-kit/tier0-rules.js'
 
 export function auditPureNode(node) {
@@ -77,6 +78,8 @@ export function auditPureNode(node) {
 
   const emDash = emDashViolation(node)
   if (emDash) report(emDash.rule, emDash.detail)
+
+  for (const overflow of unclippedOverflowViolations(node)) report(overflow.rule, overflow.detail)
 
   if (node.type === 'COMPONENT' && node.storyUrl) {
     const storyScope = storyUrlScopeViolation(node)

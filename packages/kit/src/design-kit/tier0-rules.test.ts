@@ -23,7 +23,8 @@ import {
   missingComponentDescriptionViolation,
   compositeRegionNamingViolation,
   screenViewportMismatchViolation,
-  textTruncationViolation
+  textTruncationViolation,
+  unclippedOverflowViolations
 } from './tier0-rules.js'
 
 describe('unboundFillViolations', () => {
@@ -417,6 +418,63 @@ describe('textTruncationViolation', () => {
 
   it('ignores a non-TEXT node even if it somehow carries textTruncation ENDING', () => {
     expect(textTruncationViolation({ type: 'FRAME', textTruncation: 'ENDING' })).toBeNull()
+  })
+})
+
+describe('unclippedOverflowViolations', () => {
+  it("flags a child whose box extends past the parent's right edge when clipsContent is false", () => {
+    const violations = unclippedOverflowViolations({
+      clipsContent: false,
+      absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 50 },
+      children: [{ name: 'Segments', absoluteBoundingBox: { x: 0, y: 0, width: 140, height: 50 } }]
+    })
+    expect(violations).toEqual([
+      { rule: 'unclipped-overflow', detail: 'child "Segments" extends beyond parent bounds while the parent has clipsContent disabled' }
+    ])
+  })
+
+  it('passes when clipsContent is true', () => {
+    const violations = unclippedOverflowViolations({
+      clipsContent: true,
+      absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 50 },
+      children: [{ name: 'Segments', absoluteBoundingBox: { x: 0, y: 0, width: 140, height: 50 } }]
+    })
+    expect(violations).toEqual([])
+  })
+
+  it('passes when clipsContent is absent (not a clipping boundary), never throws on a non-frame', () => {
+    expect(unclippedOverflowViolations({ children: [{ name: 'x', absoluteBoundingBox: { x: 0, y: 0, width: 10, height: 10 } }] })).toEqual([])
+  })
+
+  it("passes when the child is fully inside the parent's bounds", () => {
+    const violations = unclippedOverflowViolations({
+      clipsContent: false,
+      absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 50 },
+      children: [{ name: 'Segments', absoluteBoundingBox: { x: 10, y: 10, width: 50, height: 20 } }]
+    })
+    expect(violations).toEqual([])
+  })
+
+  it('passes when the overflowing child has layoutPositioning ABSOLUTE (TreeNode-connector-rail carve-out)', () => {
+    const violations = unclippedOverflowViolations({
+      clipsContent: false,
+      absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 50 },
+      children: [{ name: 'Rail', layoutPositioning: 'ABSOLUTE', absoluteBoundingBox: { x: 0, y: 0, width: 140, height: 50 } }]
+    })
+    expect(violations).toEqual([])
+  })
+
+  it('passes when either box is missing, never throws on a partially-marshaled shape', () => {
+    expect(
+      unclippedOverflowViolations({ clipsContent: false, absoluteBoundingBox: undefined, children: [{ name: 'x' }] })
+    ).toEqual([])
+    expect(
+      unclippedOverflowViolations({
+        clipsContent: false,
+        absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 50 },
+        children: [{ name: 'x', absoluteBoundingBox: undefined }]
+      })
+    ).toEqual([])
   })
 })
 

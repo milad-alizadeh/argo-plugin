@@ -30,9 +30,17 @@ export async function runRecipeTier0Checks(
   node: any,
   {
     hard,
-    semanticCollectionName = 'Semantic'
-  }: { hard: boolean; semanticCollectionName?: string } = { hard: false }
+    semanticCollectionName = 'Semantic',
+    insideInstance = false
+  }: { hard: boolean; semanticCollectionName?: string; insideInstance?: boolean } = { hard: false }
 ) {
+  // Kit internals are exempt (2026-07-07, consistent with the insideInstance
+  // exemption on unbound-fill/stroke/radius/type): a kit sub-instance nested
+  // inside an audited custom component (a Breadcrumb or icon-glyph swap)
+  // legitimately binds to the kit's own collections; a designer never authored
+  // those bindings and cannot rebind them. Without this, non-semantic-binding
+  // fired ~30 times on kit internals the audit only descended into.
+  if (insideInstance) return []
   const violations: any[] = []
   const report = (rule: string, detail: string) => {
     violations.push({ severity: hard ? 'hard' : 'advisory', rule, nodeId: node.id, nodeName: node.name, detail })

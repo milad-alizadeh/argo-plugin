@@ -85,7 +85,7 @@ async function auditNode(
     insideInstance?: boolean
     compositeNames?: string[]
     compositeNamingHard?: boolean
-    runRecipeTier0Checks?: (node: any, ctx: { hard: boolean }) => Promise<any[]>
+    runRecipeTier0Checks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean }) => Promise<any[]>
     viewport?: { width: number; height: number }
     isScreenFrame?: boolean
   }
@@ -146,8 +146,17 @@ async function auditNode(
   if (radius) report(radius.rule, radius.detail)
   const type = unboundTypeViolation(nodeCtx)
   if (type) report(type.rule, type.detail)
+  // Advisory, never hard (live calibration 2026-07-07): `textTruncation:
+  // ENDING` is Figma's INTENTIONAL ellipsis setting — tree labels, long
+  // session names, and similar deliberately truncate; a live audit found ~65
+  // hits, almost all intentional (48 on TreeNode alone). The rule can't tell
+  // intentional truncation from an accidental clip, so it flags for review but
+  // must not block. The accidental-clip defect it was aimed at (a container
+  // clipping its child's text) is a different mechanism, left to the blind
+  // fidelity-verifier.
   const truncation = textTruncationViolation(nodeCtx)
-  if (truncation) report(truncation.rule, truncation.detail)
+  if (truncation)
+    violations.push({ severity: 'advisory', rule: truncation.rule, nodeId: node.id, nodeName: node.name, detail: truncation.detail })
 
   const autoLayout = missingAutoLayoutViolation(nodeCtx)
   if (autoLayout) report(autoLayout.rule, autoLayout.detail)
@@ -276,7 +285,7 @@ async function auditNode(
   // Recipe-owned per-node checks (e.g. non-semantic-binding) — undefined for
   // a recipe with no checks.
   if (typeof runRecipeTier0Checks === 'function') {
-    violations.push(...(await runRecipeTier0Checks(node, { hard })))
+    violations.push(...(await runRecipeTier0Checks(node, { hard, insideInstance })))
   }
 
   return violations
@@ -373,7 +382,7 @@ export async function runTier0Audit(
     semanticCollectionName?: string
     primitivesCollectionName?: string
     additionalAllowedCollectionNames?: string[]
-    runRecipeTier0Checks?: (node: any, ctx: { hard: boolean }) => Promise<any[]>
+    runRecipeTier0Checks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean }) => Promise<any[]>
     viewport?: { width: number; height: number }
   } = {}
 ) {

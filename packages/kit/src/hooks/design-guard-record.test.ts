@@ -92,6 +92,42 @@ describe('design-guard-record — PostToolUse on the Figma use_figma tool', () =
     expect((await runHook('not json')).code).toBe(0)
   })
 
+  // Non-project-file exemption: a use_figma call against a file that is not the
+  // app's configured projectFileKey (e.g. reading the kit library) must not arm
+  // the project's audit gate.
+  function armWithProjectFileKey(dir: string, projectFileKey: string) {
+    mkdirSync(join(dir, '.claude'), { recursive: true })
+    writeFileSync(
+      join(dir, '.claude', 'argo.json'),
+      JSON.stringify({ design: { '.': { root: '.', recipe: 'shadcn-tailwind', figma: { projectFileKey } } } })
+    )
+  }
+
+  it('PASS: use_figma against a non-project fileKey (kit library read) does NOT count', async () => {
+    armWithProjectFileKey(cwd, 'PROJECT_KEY')
+    const r = await runHook(postToolUseInput(cwd, { tool_input: { fileKey: 'KIT_LIBRARY_KEY' } }))
+    expect(r.code).toBe(0)
+    expect(existsSync(join(cwd, '.argo', 'design-guard.json'))).toBe(false)
+  })
+
+  it('COUNTS: use_figma against the configured projectFileKey', async () => {
+    armWithProjectFileKey(cwd, 'PROJECT_KEY')
+    await runHook(postToolUseInput(cwd, { tool_input: { fileKey: 'PROJECT_KEY' } }))
+    expect(JSON.parse(readFileSync(join(cwd, '.argo', 'design-guard.json'), 'utf8')).writeCount).toBe(1)
+  })
+
+  it('COUNTS (fail-safe): an absent fileKey still counts when a projectFileKey is configured', async () => {
+    armWithProjectFileKey(cwd, 'PROJECT_KEY')
+    await runHook(postToolUseInput(cwd, { tool_input: {} }))
+    expect(JSON.parse(readFileSync(join(cwd, '.argo', 'design-guard.json'), 'utf8')).writeCount).toBe(1)
+  })
+
+  it('COUNTS (fail-safe): no projectFileKey configured → any fileKey counts (old behavior)', async () => {
+    armDesignPack(cwd) // no figma.projectFileKey
+    await runHook(postToolUseInput(cwd, { tool_input: { fileKey: 'ANY_KEY' } }))
+    expect(JSON.parse(readFileSync(join(cwd, '.argo', 'design-guard.json'), 'utf8')).writeCount).toBe(1)
+  })
+
   // Per-session-design-gate.md: a session's write goes into its OWN file
   // (`.argo/design-guard/<sid>.json`) and touches nothing shared, so two
   // concurrent sessions never race a read-modify-write of one counter.

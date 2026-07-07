@@ -49,7 +49,29 @@ const cwd = hook?.cwd
 if (typeof cwd !== 'string' || cwd.length === 0) process.exit(0)
 
 const repoRoot = resolveRepoRoot(cwd)
-if (setUpDesignApps(findArgoJson(repoRoot)?.config).length === 0) process.exit(0) // design pack not installed — inert
+const designApps = setUpDesignApps(findArgoJson(repoRoot)?.config)
+if (designApps.length === 0) process.exit(0) // design pack not installed — inert
+
+// Non-project-file exemption: the tier-0 audit gate covers the app's OWN Figma
+// file (`figma.projectFileKey`). A `use_figma` call against a DIFFERENT file —
+// reading the kit library to import a component, dumping kit variable keys for
+// figma-sync — is not a project write and must not arm the project's audit-owed
+// gate (that false positive forces a nonsensical project audit for a read of an
+// unrelated file). Only skip when we can prove the target is non-project: at
+// least one projectFileKey is configured AND the call's fileKey is a non-empty
+// string that matches none of them. No configured key, or an absent fileKey →
+// count as before (fail-safe: never silently stop gating a real project write).
+function projectFileKeysOf(apps: { block: Record<string, unknown> }[]): Set<string> {
+  const keys = new Set<string>()
+  for (const { block } of apps) {
+    const figma = block?.figma as { projectFileKey?: unknown } | undefined
+    if (typeof figma?.projectFileKey === 'string' && figma.projectFileKey.length > 0) keys.add(figma.projectFileKey)
+  }
+  return keys
+}
+const projectFileKeys = projectFileKeysOf(designApps)
+const writeFileKey = typeof hook?.tool_input?.fileKey === 'string' ? hook.tool_input.fileKey : ''
+if (projectFileKeys.size > 0 && writeFileKey.length > 0 && !projectFileKeys.has(writeFileKey)) process.exit(0)
 
 // Wireframe-write exemption (figma-wireframe/SKILL.md): wireframe pages are
 // tier-0 exempt in the audit (isWireframePageName), so counting a wireframe

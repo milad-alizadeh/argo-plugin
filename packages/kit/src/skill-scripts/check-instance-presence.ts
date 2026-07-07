@@ -14,7 +14,7 @@
 
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { registryComponentNames } from '../design-kit/kit-inventory.js'
+import { registryComponentNames } from '../design-kit/component-names.js'
 import {
   parseScreenManifest,
   classifyInstancePresence,

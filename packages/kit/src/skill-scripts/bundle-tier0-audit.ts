@@ -8,12 +8,11 @@
  * `generateTier0AuditEntry(recipe)` — pure string generation, no I/O: builds
  * a tiny ES-module ENTRY that imports `runTier0Audit` from
  * `@argohq/kit/design-kit/tier0-audit` plus (for a recipe with tier-0 checks)
- * that recipe's `runRecipeTier0Checks`/`runKitPatchesConformance` from
- * `@argohq/kit`, and wraps them so project DATA passed in `options` at call
- * time (retiredKitVariableKeys, kitPatches, semanticCollectionName) reaches
- * the recipe functions too — functions can't
- * cross the `use_figma` data boundary, so they're baked into the bundle via
- * imports; only DATA flows through the options object the caller passes.
+ * that recipe's `runRecipeTier0Checks` from `@argohq/kit`, and wraps it so
+ * project DATA passed in `options` at call time (semanticCollectionName)
+ * reaches the recipe function too — functions can't cross the `use_figma`
+ * data boundary, so they're baked into the bundle via imports; only DATA
+ * flows through the options object the caller passes.
  *
  * `bundleTier0Audit` — shells out to `bun build --bundle` to produce a
  * self-contained, import-free script (the ONLY thing `use_figma` can run —
@@ -36,7 +35,7 @@ const RECIPE_ENTRIES: Record<string, { importPath: string }> = {
  * Pure string generation (no I/O, no bun build) — the entry source
  * `bundleTier0Audit` bundles. `recipe` is the app's `design.<app>.recipe`
  * value (e.g. `'shadcn-tailwind'`); `null`/unknown ⇒ mechanism-only entry, no
- * recipe checks (matches the `baseSource: none` no-op contract).
+ * recipe checks.
  */
 export function generateTier0AuditEntry(recipe: string | null): string {
   const recipeEntry = recipe ? RECIPE_ENTRIES[recipe] : null
@@ -51,17 +50,15 @@ export function generateTier0AuditEntry(recipe: string | null): string {
 
   return [
     "import { runTier0Audit } from '@argohq/kit/design-kit/tier0-audit'",
-    `import { runRecipeTier0Checks, runKitPatchesConformance } from '${recipeEntry.importPath}'`,
+    `import { runRecipeTier0Checks } from '${recipeEntry.importPath}'`,
     '',
     'async function tier0AuditWithRecipe(options = {}) {',
     '  return runTier0Audit({',
     '    ...options,',
     '    runRecipeTier0Checks: (node, ctx) => runRecipeTier0Checks(node, {',
     '      ...ctx,',
-    '      retiredKitVariableKeys: options.retiredKitVariableKeys,',
     '      semanticCollectionName: options.semanticCollectionName',
-    '    }),',
-    '    runKitPatchesConformance: (modifiedNodes) => runKitPatchesConformance(modifiedNodes, options.kitPatches)',
+    '    })',
     '  })',
     '}',
     '',

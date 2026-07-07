@@ -42,32 +42,16 @@ describe('recordAuditReceipt', () => {
     }
   })
 
-  it('folds an unwaived kit-name-collision into violationCount (kit-awareness)', () => {
+  // Kit-name-collision counting was removed with the kit-subscription model
+  // (starter-file restructure, 2026-07-07): violationCount is hard audit
+  // violations ONLY — a stale kit-inventory.json on disk contributes nothing.
+  it('ignores a leftover design/kit-inventory.json entirely (violationCount = hard violations only)', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-receipt-'))
     try {
       mkdirSync(join(cwd, 'design'), { recursive: true })
       writeFileSync(
         join(cwd, 'design', 'kit-inventory.json'),
         JSON.stringify({ components: [{ name: 'Collapsible', aliases: ['accordion'] }] })
-      )
-      const receipt = recordAuditReceipt({ componentNames: ['Collapsible'], violations: [] }, { cwd, now: 123 })
-      expect(receipt.violationCount).toBe(1)
-    } finally {
-      rmSync(cwd, { recursive: true, force: true })
-    }
-  })
-
-  it('clears a kit-name-collision when design/waivers.json carries a matching kit-shadow entry', () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-receipt-'))
-    try {
-      mkdirSync(join(cwd, 'design'), { recursive: true })
-      writeFileSync(
-        join(cwd, 'design', 'kit-inventory.json'),
-        JSON.stringify({ components: [{ name: 'Collapsible', aliases: ['accordion'] }] })
-      )
-      writeFileSync(
-        join(cwd, 'design', 'waivers.json'),
-        JSON.stringify([{ type: 'kit-shadow', component: 'Collapsible', kitCandidate: 'Collapsible', reason: 'needs a custom trigger icon' }])
       )
       const receipt = recordAuditReceipt({ componentNames: ['Collapsible'], violations: [] }, { cwd, now: 123 })
       expect(receipt.violationCount).toBe(0)

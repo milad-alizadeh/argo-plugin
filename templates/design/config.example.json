@@ -16,6 +16,7 @@
   },
   "figma": {
     "projectFileKey": "{{PROJECT_FILE_KEY}}",
+    "starterFileKey": "{{STARTER_FILE_KEY}}",
     "wireframeKitFileKey": "{{WIREFRAME_KIT_FILE_KEY}}"
   },
   "componentCategories": ["primitive", "composite"],
@@ -24,10 +25,5 @@
     "specsGlob": "{{DESIGN_SPECS_GLOB}}",
     "baselinesGlob": "{{BASELINES_GLOB}}",
     "storybookTestPackage": "{{STORYBOOK_TEST_PACKAGE}}"
-  },
-  "recipeConfig": {
-    "figma": {
-      "kitLibraryFileKey": "{{KIT_FILE_KEY}}"
-    }
   }
 }

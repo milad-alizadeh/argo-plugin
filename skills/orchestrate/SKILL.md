@@ -128,7 +128,7 @@ mechanisms close those gaps without new tooling.
   regardless of tier-0.
 - **Dropped:** seed-injection of a node-id context pack at spawn time —
   deferred until a companion artifact for it is designed; the near-term
-  cold-start cost is covered by the registry/kit-inventory read-order in
+  cold-start cost is covered by the registry read-order in
   `agents/designer.md` and `skills/figma-create/SKILL.md`.
 
 ## 6. Score every run — dogfooding is the point

@@ -58,12 +58,10 @@ interactively.
    walker (`templates/design/spec-diff-walker/spec-diff.walker.spec-diff.js`,
    already installed by `setup-design`) against the new component's
    stories, always. Also run tier 1b's base-congruence walker (installed
-   from the recipe's `design-source/base-congruence.walker.spec-diff.js`)
-   only when the installed recipe's `baseSource` makes it applicable
-   (`external-library`, or `same-file` with vendored base code present) —
-   it's off entirely under `baseSource: none` (mirrors `gate-wiring.md`'s
-   tier-1b conditional note, Slice 5). Fix any drift the comparator reports
-   before moving on.
+   from the recipe's `design-source/base-congruence.walker.spec-diff.js`) —
+   vendored base code is the source of truth the design file's starter
+   mirrors are gated against (see `gate-wiring.md`'s tier-1b row). Fix any
+   drift the comparator reports before moving on.
    **Then record the receipt** — the walker's exit code is the only accepted
    proof this tier passed, never your own reading of its output: run
    `argo design record-spec-diff-receipt --

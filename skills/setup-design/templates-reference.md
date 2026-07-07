@@ -14,8 +14,8 @@ skill already owns).
 `design-kit/<recipe>/tier0-walker` subpath) via `argo design
 bundle-tier0-audit` — see figma-audit/SKILL.md. Nothing audit-related is ever
 written to `design/` here; `config.semanticCollectionName` (below) and
-`design/kit-patches.json`/`design/kit.lock` still live in the project as DATA
-the bundled audit reads at call time, never as source it imports.
+`design/registry.json` still live in the project as DATA the bundled audit
+reads at call time, never as source it imports.
 
 | Template | Install when | Substitute / scope with |
 |---|---|---|
@@ -24,7 +24,7 @@ the bundled audit reads at call time, never as source it imports.
 | `spec-diff-walker/spec-diff.walker.spec-diff.js` | prefer `argo design emit-shims`; manual fill only for a bespoke shim | a THIN shim calling `runSpecDiffWalker` from `@argohq/kit/walkers`. Slots: `{{STORYBOOK_TEST_PACKAGE}}`/`{{STORIES_GLOB}}` as above; `{{DESIGN_SPECS_GLOB}}` ← glob of `design/specs/*.json` relative to the shim dir (`walkers.specsGlob`) — specs pair with stories by basename |
 | `gate-wiring.md` | always | `{{TEST_CMD}}`/`{{TYPECHECK_CMD}}`/`{{LINT_CMD}}` ← the project's real scripts; `{{SPEC_DIFF_WALKER_DIR}}`/`{{VRT_WALKER_DIR}}`/`{{TOKEN_DRIFT_SCRIPT}}` ← paths chosen above — copy the resulting wiring into the project's own docs/README, this file itself is not committed verbatim |
 | `testing-rule-amendment.md` | a `.claude/rules/testing.md` already exists (installed by `init`) | `{{SPEC_DIFF_WALKER_DIR}}`/`{{VRT_WALKER_DIR}}`/`{{EXT}}` as above — **append** to the existing file, with consent; never silently edit |
-| `config.example.json` | always (first install) — NOT copied to its own file: it is the shape reference for the app's `design.<app>` block in `.claude/argo.json` | merge its keys into the app's existing block (init's `root`/`componentsPath` are preserved), filling every `{{…}}` slot from setup-design's detection/AskUserQuestion wizard, including the `recipe` field (the chosen recipe's id, `shadcn-tailwind`) and `recipeConfig.*` (recipe-specific fields, e.g. `figma.kitLibraryFileKey`) — this block is the ONE place every other template's substitutions are sourced from. `figma.wireframeKitFileKey` (§0c-i) ← the bare file key of a lo-fi wireframe component library `figma-wireframe` instances from (parse it out of a pasted `figma.com/file/<KEY>/…` URL; optional — omit/leave placeholder to fall back to hand-drawn greyboxes). `componentsPath` ← the project's real generated-component output directory (a plain path prefix relative to the app root, e.g. `src/components`, not a glob — distinct from `{{COMPONENTS_GLOB}}` used by the lint template) — the kit's design-commit gate reads it to decide whether a commit touches generated component code and needs a fresh spec-diff receipt, and `argo design emit-shims` derives the default stories glob from it. `walkers.*` ← optional per-app overrides for emit-shims. There is no `_meta` lifecycle block — the files this pack writes are static suggestions, never reconciled against a plugin version |
+| `config.example.json` | always (first install) — NOT copied to its own file: it is the shape reference for the app's `design.<app>` block in `.claude/argo.json` | merge its keys into the app's existing block (init's `root`/`componentsPath` are preserved), filling every `{{…}}` slot from setup-design's detection/AskUserQuestion wizard, including the `recipe` field (the chosen recipe's id, `shadcn-tailwind`) — this block is the ONE place every other template's substitutions are sourced from. `figma.projectFileKey` (§0c-i) ← the bare file key of the project's design file, the duplicate of the starter file the user creates manually (parse it out of the pasted `figma.com/file/<KEY>/…` or `figma.com/design/<KEY>/…` URL). `figma.starterFileKey` (§0c-i, optional) ← the starter file the duplicate came from — provenance for `design-upgrade`'s starter refresh only. `figma.wireframeKitFileKey` (§0c-i) ← the bare file key of a lo-fi wireframe component library `figma-wireframe` instances from (optional — omit/leave placeholder to fall back to hand-drawn greyboxes). `componentsPath` ← the project's real generated-component output directory (a plain path prefix relative to the app root, e.g. `src/components`, not a glob — distinct from `{{COMPONENTS_GLOB}}` used by the lint template) — the kit's design-commit gate reads it to decide whether a commit touches generated component code and needs a fresh spec-diff receipt, and `argo design emit-shims` derives the default stories glob from it. `walkers.*` ← optional per-app overrides for emit-shims. There is no `_meta` lifecycle block — the files this pack writes are static suggestions, never reconciled against a plugin version |
 
 **tdd-guard `ignorePatterns` (not a template — see §3a):** if the host
 project has tdd-guard installed, `setup-design` adds `design/**` to
@@ -41,22 +41,17 @@ tdd-guard's free-text custom-instructions file.
 Everything below installs from the chosen recipe's mapped directory. Recipe
 IDs match their kit subpath and map explicitly to physical template dirs —
 today the only recipe is `shadcn-tailwind` → dir
-`templates/design/recipes/shadcn-tailwind-external-kit/`. Install-when
-conditions are keyed off that recipe's declared `baseSource`/`codeTarget`
-(its `README.md`), not unconditionally.
+`templates/design/recipes/shadcn-tailwind/`. Install-when conditions are
+keyed off that recipe's declared design source/`codeTarget` (its
+`README.md`), not unconditionally.
 
 | Template | Install when | Substitute / scope with |
 |---|---|---|
-| `design-source/base-congruence.walker.spec-diff.js` | recipe's `baseSource == "external-library"` (or `same-file` with vendored base code) | same substitutions as `spec-diff.walker.spec-diff.js`, plus `{{BASE_SMOKE_STORIES_GLOB_OR_INDEX}}` and `{{KIT_SPECS_GLOB_OR_INDEX}}` |
-| `design-source/kit-patches.example.json` | recipe's `baseSource == "external-library"` | copy to `design/kit-patches.json` verbatim (`{}`) |
-| `design-source/kit.lock.example.json` | recipe's `baseSource == "external-library"` | copy to `design/kit.lock`, fill `{{KIT_VERSION}}`/`{{DATE}}`/`{{KIT_FILE_KEY}}`/`{{FILE_VERSION}}`/`{{ISO_TIMESTAMP}}` from the current kit import — normally superseded by `figma-sync`'s first real sync run |
+| `design-source/base-congruence.walker.spec-diff.js` | always (for this recipe — vendored base code is the source of truth its design-file mirrors are gated against) | same substitutions as `spec-diff.walker.spec-diff.js`, plus `{{BASE_SMOKE_STORIES_GLOB_OR_INDEX}}` and `{{BASE_SPECS_GLOB_OR_INDEX}}` |
 | `code-target/lint/design-lint.md` | a lint config + component dir exist | `{{COMPONENTS_GLOB}}` ← the project's real components dir glob; `{{PRIMITIVE_TOKEN_PREFIX}}` ← the project's Primitive naming convention |
 | `code-target/token-writer.md` | always (for this recipe) | `{{TOKEN_FILE_PATH}}` ← `config.tokenFilePath` — `figma-sync`'s step 7 delegates to this doc instead of narrating the token-writer inline |
 | `code-target/css-pipeline.md` | always (for this recipe) | reference only, not filled with slots — states this recipe's `codeTarget` (Tailwind v4, `@tailwindcss/vite`) CSS-plugin detection/wiring detail that SKILL §7b delegates to instead of hardcoding a CSS tool into the generic skill; fills the `{{CSS_PLUGIN_IMPORT}}`/`{{CSS_PLUGIN_CALL}}` slots in `vrt-walker/vitest.vrt.config.js` and the equivalent plugin entry in `.storybook/main.ts`'s `viteFinal` |
-| `README.md` | reference only, not copied into the host project | states this recipe's `baseSource`/`codeTarget` for setup-design's own recipe-selection bookkeeping |
-| `design-source/derive-semantic-seed.js` | recipe's `baseSource == "external-library"` (installed alongside the seeder — §4a runs it against the kit file on EVERY seeding, and `design-upgrade` can rerun it after a Library Swap) | `{{DERIVE_CONFIG_JSON}}` ← the co-installed `semantic-seed.json`'s `derive` section (`excludeNames`/`roleScopes`), injected fresh on every invocation, not just at initial install |
-| `design-source/semantic-seed.json` | recipe's `baseSource == "external-library"` | none — copied byte-for-byte; project-owned starter data + derivation config only, NO kit-derived keys (edit the data to change the project's starter scale or role-scope table) |
-| `design-source/seed-semantic.js` | recipe's `baseSource == "external-library"` AND both Figma file keys configured (`config.figma.projectFileKey`, `config.recipeConfig.figma.kitLibraryFileKey`) — mirrors the §4a gate | reads the co-installed `semantic-seed.json` for its project-owned sections; `{{DERIVED_SEED_JSON}}` ← the `derive-semantic-seed.js` call's return value from the same §4a pipeline run |
+| `README.md` | reference only, not copied into the host project | states this recipe's design source (the single-file starter) and `codeTarget` for setup-design's own recipe-selection bookkeeping |
 
 **Package dependencies (see §5):** nothing to vendor — the design-kit modules
 ship inside `@argohq/kit` (the dep `/argo:init` placed), imported via its

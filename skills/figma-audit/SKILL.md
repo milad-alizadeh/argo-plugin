@@ -16,9 +16,9 @@ assembled copy). `bundle-tier0-audit` bundles it fresh, on demand, for every
 run; the installed recipe's own check functions (e.g. shadcn-tailwind's
 `design-kit/shadcn-tailwind/tier0-walker`) are baked into that SAME bundle by
 import, never a second separately-executed script. Project-specific DATA
-(the Semantic collection name, kit-patches.json contents, retired variable
-keys) flows through the `options` object `prepare-tier0-audit-
-options` derives, never through a committed/assembled copy.
+(the Semantic collection name, the registry's composite names) flows through
+the `options` object `prepare-tier0-audit-options` derives, never through a
+committed/assembled copy.
 
 **Mandatory prerequisite:** load `figma:figma-use` first — this skill's every
 check runs by executing a **bundled** script inside Figma's Plugin API
@@ -49,24 +49,12 @@ lands) — never wire it as a hard-fail.
 
 **Recipe checks (installed recipe only):** for `shadcn-tailwind`
 (`@argohq/kit/design-kit/shadcn-tailwind/tier0-walker`)
-— non-Semantic bindings (fails OPEN on any remote/library-sourced binding,
-unconditionally — no manifest, no key list, ever; kit-library internals are
-the framework's concern, never authored or bound by project design work, so
-this check has no opinion on them; it flags ONLY a LOCAL variable bound
-outside the project's Semantic collection), retired-file-key bindings (a
-stale binding left over from a Library Swap), and edits to the kit copy not
-present in `design/kit-patches.json`. A different recipe (or `baseSource:
-none`) supplies its own check set, or none at all.
-
-> **DORMANT — the kit-copy-edit (kit-patches conformance) check does not fire
-> yet.** `kitPatchesConformanceViolations` is wired but inert: the audit's
-> `collectModifiedKitCopyNodes` returns `[]` because nothing stamps a per-node
-> import baseline (a content hash or a dirty marker) that "modified since
-> import" could be measured against. Until `figma-sync` stamps that baseline at
-> import time and it is verified against a live file (the deferred Slice-14
-> work), **an unrecorded edit to a kit copy PASSES the audit** — do not lean on
-> this check for D13 kit-mirror integrity. The other two recipe checks in this
-> set (non-Semantic binding, retired-file-key) DO fire.
+— the non-Semantic-binding check: every color binding must resolve to a
+LOCAL variable in the project's Semantic collection (all variables live in
+the project's design file — the duplicated starter — so a remote binding is
+itself a violation, not something to fail open on); gap/padding (D24)
+accepts Primitives or Semantic spacing variables. A different recipe
+supplies its own check set, or none at all.
 
 ## Two modes
 
@@ -110,13 +98,11 @@ none`) supplies its own check set, or none at all.
    `use_figma` call.** Run `argo design prepare-tier0-audit-options` (wraps
    `deriveTier0AuditOptions`) with `{ cwd: <host project root>,
    componentNames: [...] }` (or `[]` for a file-wide sweep). It reads
-   `.claude/argo.json`'s `design.<app>` block, `design/registry.json`,
-   `design/kit-patches.json`, and `design/kit.lock` Node-side (the sandbox
-   can't read a committed file itself) and returns `{ componentNames,
-   compositeNames, semanticCollectionName, recipe, kitPatches,
-   retiredKitVariableKeys }`. Keep the whole object — every DATA field the
-   bundled script's completion value needs; never hand-author a trimmed
-   `{ componentNames: [...] }`.
+   `.claude/argo.json`'s `design.<app>` block and `design/registry.json`
+   Node-side (the sandbox can't read a committed file itself) and returns
+   `{ componentNames, compositeNames, semanticCollectionName, recipe }`.
+   Keep the whole object — every DATA field the bundled script's completion
+   value needs; never hand-author a trimmed `{ componentNames: [...] }`.
 3. **Bundle the audit for the returned `recipe` — never hand-assemble or
    paste raw source into `use_figma`.** Run `argo design bundle-tier0-audit
    --recipe <recipe>` (wraps `bundleTier0AuditForRecipe`), `cwd` set to the

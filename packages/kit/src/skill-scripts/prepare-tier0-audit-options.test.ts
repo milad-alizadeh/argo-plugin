@@ -19,25 +19,21 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         componentNames: ['rail-session-card'],
         compositeNames: ['rail-session-card', 'status-bar'],
         semanticCollectionName: 'Semantic',
-        recipe: null,
-        kitPatches: {},
-        retiredKitVariableKeys: []
+        recipe: null
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }
   })
 
-  it('fails open (empty compositeNames, {} kitPatches, [] retired variable keys, defaulted semanticCollectionName) when nothing is configured', () => {
+  it('fails open (empty compositeNames, defaulted semanticCollectionName) when nothing is configured', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
     try {
       expect(deriveTier0AuditOptions({ cwd })).toEqual({
         componentNames: [],
         compositeNames: [],
         semanticCollectionName: 'Semantic',
-        recipe: null,
-        kitPatches: {},
-        retiredKitVariableKeys: []
+        recipe: null
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
@@ -62,7 +58,7 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
     }
   })
 
-  it('reads kitPatches and retiredKitVariableKeys from design/kit-patches.json + design/kit.lock, ignoring kit.lock variableKeys entirely', () => {
+  it('never reads or emits kit-subscription data (kit.lock / kit-patches.json are dead files)', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
     mkdirSync(join(cwd, 'design'), { recursive: true })
     writeFileSync(join(cwd, 'design', 'kit-patches.json'), JSON.stringify({ Button: ['button.tsx'] }), 'utf8')
@@ -74,8 +70,8 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
 
     try {
       const options = deriveTier0AuditOptions({ cwd })
-      expect(options.kitPatches).toEqual({ Button: ['button.tsx'] })
-      expect(options.retiredKitVariableKeys).toEqual(['def456'])
+      expect(options).not.toHaveProperty('kitPatches')
+      expect(options).not.toHaveProperty('retiredKitVariableKeys')
       expect(options).not.toHaveProperty('kitVariableKeys')
     } finally {
       rmSync(cwd, { recursive: true, force: true })

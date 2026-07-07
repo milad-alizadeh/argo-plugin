@@ -1,6 +1,6 @@
 ---
 name: figma-sync
-description: Dump the Figma design source of truth into committed artifacts — tokens, specs, story-map, reference screenshots, freshness metadata — regenerate the generated CSS region, and commit. Use when the user asks to sync/pull/import the latest Figma changes, before figma-to-code generation needs fresh design context, or on a schedule after Figma edits.
+description: Dump the Figma design source of truth into committed artifacts — tokens, the semantic token manifest, specs, story-map, reference screenshots, freshness metadata — regenerate the generated CSS region, and commit. Use when the user asks to sync/pull/import the latest Figma changes, before figma-to-code generation needs fresh design context, or on a schedule after Figma edits.
 ---
 
 # figma-sync
@@ -15,10 +15,11 @@ product surface is Figma-authored — classify each region before you dump, usin
 the host project's reuse authority (its reconciliation doc); never infer the
 class from the node alone:
 
-1. **Base-kit primitives** (shadcn — Button, Switch, Badge, Dialog, Sonner…):
-   **code is the source of truth**, the Figma kit mirrors it, and the tier-0
-   kit-congruence gate holds it honest. Step 3's base-component spec dump reads
-   the mirror for gate fixtures — it is not a source-of-truth flip.
+1. **Base primitives** (shadcn — Button, Switch, Badge, Dialog, Sonner…):
+   **code is the source of truth**, the design file's starter-derived mirrors
+   track it, and the tier-1b base-congruence gate holds them honest. Step 3's
+   base-component spec dump reads the mirror for gate fixtures — it is not a
+   source-of-truth flip.
 2. **Existing product composites** (e.g. `SessionTerminalView`/TerminalPanel,
    `RosterRow`/SessionCard, `RosterView`/Rail, the activity feed, settings,
    usage — anything already implemented in code): **code is the source of
@@ -41,25 +42,23 @@ the congruence gate, and the code-owned behavior of components that already run.
    Figma before syncing, never sync a dirty file.
 2. **Dump tokens.** Full variable dump (collections, modes, values,
    descriptions) into `design/tokens.json`, plus freshness metadata: file
-   version, `lastModified`, and this sync's timestamp (D4). When the
-   installed recipe's `baseSource == "external-library"`, also validate the
-   kit-lock-relevant fields against `figma-design-kit`'s
-   `recipes/external-kit`-subpath `KitLockSchema` and write `design/kit.lock`
-   from them — for any other `baseSource` there is no separate kit file, so
-   this freshness metadata is just recorded, not schema-checked against a
-   kit lock. There is no kit-library variable-key manifest to capture here —
-   the recipe's non-semantic-binding check fails OPEN on any remote/
-   library-sourced binding unconditionally (kit internals are the
-   framework's concern, never project design work's); `retiredVariableKeys`
-   is `design-upgrade`'s concern (recorded at Library Swap time), not
-   something this sync step captures.
+   version, `lastModified`, and this sync's timestamp (D4). All variables
+   are LOCAL to the project's design file (the duplicated starter) — there
+   is no separate kit file, no `kit.lock`, and no variable-key manifest to
+   capture.
+2a. **Regenerate the semantic manifest.** Run
+   `argo design generate-token-manifest` — it derives
+   `design/semantic-manifest.md` (~60 semantic token names + purposes) from
+   the freshly dumped `design/tokens.json`. This is the authoring vocabulary
+   LLM sessions bind against (instead of enumerating ~1800 local
+   primitives); commit it with the other artifacts in step 9. Never
+   hand-edit it — the CLI is its one writer.
 3. **Dump specs.** Per-variant×**state**×mode node metrics — including
    `layoutSizing` (D14/D20) — into `design/specs/<Component>.json`, for
-   project components always, and for **used base components** only when
-   the installed recipe's `baseSource` calls for a separate base-component
-   spec dump (`external-library`, or `same-file` with vendored base code) —
-   a no-op sub-step under `baseSource: none`. Validate each entry against
-   `StoryMapEntrySchema`'s sibling shape where applicable.
+   project components always, and for **used base components** (the
+   starter's shadcn mirrors — their specs are the tier-1b base-congruence
+   gate's fixtures). Validate each entry against `StoryMapEntrySchema`'s
+   sibling shape where applicable.
 4. **Capture reference screenshots.** Per variant×mode, into
    `design/screenshots/<Component>/<variant>.<mode>.png` — so tier 2 and
    headless rebuilds never need live MCP access (C6). For every non-default
@@ -78,7 +77,7 @@ the congruence gate, and the code-owned behavior of components that already run.
    (the `recipe` field in the app's `design.<app>` block in `.claude/argo.json`
    selects which recipe's `code-target/token-writer.md` applies —
    today that's `token-writer.md` for `shadcn-tailwind`, template dir
-   `templates/design/recipes/shadcn-tailwind-external-kit/`) to
+   `templates/design/recipes/shadcn-tailwind/`) to
    regenerate the generated token region in the project's `tokenFilePath`
    from the freshly dumped `tokens.json` — that doc names the ONE writer for
    that region (D19); never hand-edit it. A future non-Tailwind code-target
@@ -88,14 +87,6 @@ the congruence gate, and the code-owned behavior of components that already run.
 9. **Commit** every artifact above as one commit (or a small, clearly-scoped
    set) — this is what makes downstream gates deterministic (§4's artifact
    discipline: gates only ever compare committed artifacts).
-10. **Kit-inventory staleness check (read-only, never a write).**
-    `design/kit-inventory.json` is owned by `design-upgrade` (whole-file
-    recapture on kit swap) and seeded by `setup-design` — this skill syncs
-    the PROJECT file, not the kit library, and has no trigger to mutate the
-    roster. If it exists, compare the live kit library's version against its
-    `kitSourceVersion` and **warn** on drift (advisory only — the
-    kit-name-collision gate already fails open on a stale/absent inventory).
-    Never re-dump or otherwise write `kit-inventory.json` from this skill.
 
 ## Fail loud, never silently skip
 

@@ -53,9 +53,10 @@ matching `W<NN> <group>` page): don't invent a different page shape.
 
 **COLD-START.** Before creating anything, read `design/registry.json` (thin
 pointer index — reach an existing component in ≤3 calls, not 15-20 discovery
-calls) and, when building, `design/kit-inventory.json` (browse the kit's
-roster before assuming nothing fits — see `skills/figma-create/SKILL.md`'s
-read-order for the full verify-before-use / heal-and-persist procedure).
+calls) and, when building, browse the design file's base component pages (the
+starter's shadcn-mirror roster) before assuming nothing fits — see
+`skills/figma-create/SKILL.md`'s read-order for the full verify-before-use /
+heal-and-persist procedure.
 
 **SELF-AUDIT (D8).** Every skill above ends with `figma-audit` in named-component
 hard-gate mode. Fix every violation it reports before reporting done, never
@@ -108,11 +109,12 @@ expose it via an INSTANCE_SWAP component property so consumers swap the
 glyph per usage — never a hard-placed glyph consumers would have to edit.
 
 **GATE FALSE POSITIVES (R8) — never detach, never idle-wait.** A violation
-on a node you did not author (a kit internal, an atomic icon, a kit-generated
-name/spacing) — especially one tagged `possible-gate-false-positive` in the
-audit output — is presumptively a GATE BUG, not a real defect. **Never
-detach the instance, never edit kit internals, and never revert correct
-authoring just to make the gate pass.** Report it verbatim, including the
+on a node you did not author (a base-component internal, an atomic icon, a
+starter-authored name/spacing) — especially one tagged
+`possible-gate-false-positive` in the audit output — is presumptively a GATE
+BUG, not a real defect. **Never detach the instance, never edit
+base-component internals, and never revert correct authoring just to make
+the gate pass.** Report it verbatim, including the
 full `get_design_context` dump and a screenshot (so a plugin fix has a
 regression fixture), then **stop that component and move to other scoped
 work — do not idle-wait** for a release; this is the R1 leaf rule applied to

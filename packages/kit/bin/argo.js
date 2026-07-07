@@ -71,8 +71,7 @@ const DESIGN_VERBS = {
   'completeness-checklist': '../dist/skill-scripts/completeness-checklist.js',
   'mark-screen-composed': '../dist/skill-scripts/mark-screen-composed.js',
   'record-completeness': '../dist/skill-scripts/record-completeness.js',
-  'capture-kit-inventory': '../dist/skill-scripts/capture-kit-inventory.js',
-  'capture-kit-corpus': '../dist/skill-scripts/capture-kit-corpus.js',
+  'generate-token-manifest': '../dist/skill-scripts/generate-token-manifest.js',
   'emit-shims': '../dist/skill-scripts/emit-shims.js',
 }
 

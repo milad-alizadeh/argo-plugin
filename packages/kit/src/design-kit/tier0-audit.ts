@@ -8,19 +8,17 @@
  * package's unit-tested pure functions (./tier0-rules.js).
  *
  * Config-as-data (kit-extraction restructure): every project-specific value
- * this mechanism needs — the Semantic collection name, and the two recipe
- * extension points below — arrives through `options`, never through a
+ * this mechanism needs — the Semantic collection name, and the recipe
+ * extension point below — arrives through `options`, never through a
  * splice/placeholder step baked into a committed copy. `bundle-tier0-audit`
  * (skill-scripts) generates a small entry module that imports this function
  * plus whichever recipe's check functions and bakes them into the bundle
- * `use_figma` runs; DATA (kitPatches, kit/retired variable keys) still flows
- * through `options` at call time — see prepare-tier0-audit-options.js.
+ * `use_figma` runs; DATA (the Semantic collection name) still flows through
+ * `options` at call time — see prepare-tier0-audit-options.js.
  *
  * `options.runRecipeTier0Checks(node, { hard })` — recipe-owned per-node
- *   checks (e.g. non-semantic-binding, retired-file-key-binding). Omit for a
- *   `baseSource: none` recipe with no checks — the guarded call below no-ops.
- * `options.runKitPatchesConformance(modifiedNodes)` — recipe-owned file-wide
- *   check (kit-patches-conformance). Same omit-to-no-op contract.
+ *   checks (e.g. non-semantic-binding). Omit for a recipe with no checks —
+ *   the guarded call below no-ops.
  *
  * Reports violations as { severity: 'hard' | 'advisory', rule, nodeId, nodeName, detail }.
  * `hard` fails the calling skill loud (D8); `advisory` is a file-wide sweep
@@ -248,8 +246,8 @@ async function auditNode(
     }
   }
 
-  // Recipe-owned per-node checks (e.g. non-semantic-binding, retired-file-key-binding)
-  // — undefined for a baseSource: none recipe (or a recipe with no checks).
+  // Recipe-owned per-node checks (e.g. non-semantic-binding) — undefined for
+  // a recipe with no checks.
   if (typeof runRecipeTier0Checks === 'function') {
     violations.push(...(await runRecipeTier0Checks(node, { hard })))
   }
@@ -322,10 +320,10 @@ async function walk(node: any, opts: any, out: any[]) {
  * (`design/registry.json`'s keys), derived Node-side by
  * `prepare-tier0-audit-options.js` before this call — feeds
  * `compositeRegionNamingViolation` (Option B, always advisory).
- * `semanticCollectionName` defaults to `'Semantic'`. `runRecipeTier0Checks`/
- * `runKitPatchesConformance` are the recipe's extension points, baked into
- * the bundle by `bundle-tier0-audit`'s generated entry — omit either for a
- * `baseSource: none` recipe.
+ * `semanticCollectionName` defaults to `'Semantic'`. `runRecipeTier0Checks`
+ * is the recipe's extension point, baked into the bundle by
+ * `bundle-tier0-audit`'s generated entry — omit it for a recipe with no
+ * checks.
  */
 export async function runTier0Audit(
   options: {
@@ -334,7 +332,6 @@ export async function runTier0Audit(
     compositeNamingHard?: boolean
     semanticCollectionName?: string
     runRecipeTier0Checks?: (node: any, ctx: { hard: boolean }) => Promise<any[]>
-    runKitPatchesConformance?: (modifiedNodes: any[]) => Promise<any[]> | any[]
   } = {}
 ) {
   const {
@@ -342,8 +339,7 @@ export async function runTier0Audit(
     compositeNames = [],
     compositeNamingHard = false,
     semanticCollectionName = 'Semantic',
-    runRecipeTier0Checks,
-    runKitPatchesConformance
+    runRecipeTier0Checks
   } = options
   const violations: any[] = []
   const spacingScale = await collectPrimitivesSpacingScale()
@@ -380,37 +376,7 @@ export async function runTier0Audit(
     }
   }
 
-  // Recipe-owned file-wide check (kit-patches-conformance): runs once per
-  // audit, not per node — omitted for a baseSource: none recipe.
-  if (typeof runKitPatchesConformance === 'function') {
-    const modifiedNodes = await collectModifiedKitCopyNodes()
-    violations.push(...(await runKitPatchesConformance(modifiedNodes)))
-  }
-
   return violations
-}
-
-/**
- * Recipe-owned file-wide checks (kit-patches-conformance) need the set of
- * kit-copy nodes modified since import, not a per-node predicate — this
- * marshals that set for whichever recipe's `runKitPatchesConformance` was
- * baked into the bundle.
- *
- * DORMANT — always returns `[]`, so kit-patches-conformance can never fire:
- * an unrecorded edit to a kit copy currently PASSES every audit. This is not a
- * bug to patch blind — it needs a "modified since import" signal that does not
- * yet exist in the pipeline: a per-node content hash (compared against
- * kit.lock's syncTimestamp) or an explicit plugin-data dirty marker, STAMPED
- * BY figma-sync at import time and verified against a live file (the deferred
- * Slice-14 work). Authoring the detector without that baseline risks
- * false-blocking legitimate kit instances (destructive — forces detaching, as
- * earlier tier-0 false positives did). The dormancy is disclosed in
- * figma-audit/SKILL.md so no skill or agent relies on protection that isn't
- * there. Once figma-sync stamps the baseline, this becomes a real lookup and
- * the gate goes live with no other audit-side change.
- */
-async function collectModifiedKitCopyNodes(): Promise<any[]> {
-  return []
 }
 
 /**
@@ -418,9 +384,8 @@ async function collectModifiedKitCopyNodes(): Promise<any[]> {
  * which no longer consumes a spacing scale (D24, revised 2026-07-05: every
  * non-zero gap/padding field must be bound, so there is no more on-scale/
  * off-scale literal distinction to check against). Still a live lookup of
- * the project file's local Primitives collection, same shape as
- * collectModifiedKitCopyNodes; returns [] if no Primitives collection exists
- * yet (unseeded project).
+ * the project file's local Primitives collection; returns [] if no
+ * Primitives collection exists yet (unseeded project).
  */
 async function collectPrimitivesSpacingScale(): Promise<number[]> {
   const collections = await figma.variables.getLocalVariableCollectionsAsync()

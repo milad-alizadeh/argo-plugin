@@ -3,17 +3,15 @@ import { composeStories } from '{{STORYBOOK_TEST_PACKAGE}}'
 import * as baseSmokeStories from '{{BASE_SMOKE_STORIES_GLOB_OR_INDEX}}'
 import { compareColor, comparePxInteger } from 'figma-design-kit'
 import { checkWaiver } from 'figma-design-kit'
-import kitSpecsByComponent from '{{KIT_SPECS_GLOB_OR_INDEX}}'
+import baseSpecsByComponent from '{{BASE_SPECS_GLOB_OR_INDEX}}'
 import waivers from '../../design/waivers.json'
-import kitPatches from '../../design/kit-patches.json'
 
 /**
  * Tier-1b base-congruence gate (D14): diffs our two snapshots against each
- * other — the KIT-COPY's dumped specs vs the rendered vendored shadcn code —
- * using the same D20 comparator as tier 1. Waiver- and patch-aware (D15): a
- * kit-patches.json entry means the divergence is a sanctioned local edit,
- * not drift; a waivers.json entry only excuses the EXACT pinned pair
- * (checkWaiver re-fails if observed values move again).
+ * other — the design file's dumped base-mirror specs vs the rendered vendored
+ * shadcn code — using the same D20 comparator as tier 1. Waiver-aware: a
+ * waivers.json entry only excuses the EXACT pinned pair (checkWaiver re-fails
+ * if observed values move again).
  *
  * D14: state coverage is enumerated, not assumed. Each dumped state is
  * force-applied before measuring — CDP forcePseudoState for
@@ -36,40 +34,34 @@ function findWaiver(component, variant, property) {
   return waivers.find((w) => w.component === component && w.variant === variant && w.property === property)
 }
 
-function isPatched(component, file) {
-  return Boolean(kitPatches[component]?.includes(file))
-}
-
 for (const [storyFile, storyModule] of Object.entries(baseSmokeStories)) {
   const composed = composeStories(storyModule)
-  const kitSpec = kitSpecsByComponent[storyFile]
+  const baseSpec = baseSpecsByComponent[storyFile]
 
   const coveredPairs = Object.keys(composed).flatMap((storyName) =>
-    STATES.filter((state) => kitSpec?.variants?.[storyName]?.states?.[state]).map((state) => [
+    STATES.filter((state) => baseSpec?.variants?.[storyName]?.states?.[state]).map((state) => [
       storyName,
       state
     ])
   )
 
   describe(`base-congruence: ${storyFile}`, () => {
-    // A smoke story with no dumped kit spec is dormant, not broken — an
+    // A smoke story with no dumped base-mirror spec is dormant, not broken — an
     // empty describe (zero its) is a Vitest failure, so emit an explicit todo.
     if (coveredPairs.length === 0) {
-      it.todo(`no dumped kit spec for ${storyFile} yet — figma-sync fills design/specs/kit`)
+      it.todo(`no dumped base-mirror spec for ${storyFile} yet — figma-sync fills design/specs`)
       return
     }
     for (const [storyName] of Object.entries(composed)) {
       for (const state of STATES) {
-        const stateSpec = kitSpec?.variants?.[storyName]?.states?.[state]
+        const stateSpec = baseSpec?.variants?.[storyName]?.states?.[state]
         if (!stateSpec) continue // uncovered state — not forceable, listed in the fixture per D14
 
-        it(`${storyName} (${state}) matches the kit-copy spec, or is a sanctioned patch/waiver`, async () => {
+        it(`${storyName} (${state}) matches the base-mirror spec, or is a sanctioned waiver`, async () => {
           // TODO(figma-sync): render the composed story, call forceState(page, selector, state),
           // then read getComputedStyle/getBoundingClientRect exactly like the tier-1 walker.
           const observedFill = undefined // TODO: getComputedStyle(el).backgroundColor
           const observedRadius = undefined // TODO: parseFloat(getComputedStyle(el).borderRadius)
-
-          if (isPatched(storyFile, '{{COMPONENT_FILE}}')) return // patch ≠ drift (D13/D15)
 
           const fill = compareColor(stateSpec.fill, observedFill)
           if (!fill.pass) {

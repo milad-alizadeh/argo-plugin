@@ -4,8 +4,10 @@
  * corpus header — not hand-authored synthetic shapes like `{remote: true,
  * key: 'kit-file-key:1:2'}`, which passed green while encoding the exact
  * wrong `key.startsWith(fileKey)` assumption this fixture exists to prevent
- * recurring). Re-capture via `argo design capture-kit-corpus` on kit upgrade
- * (design-upgrade/D15) so the fixture tracks the kit it certifies.
+ * recurring). The live-capture CLI was removed with the kit-subscription
+ * model (starter-file restructure, 2026-07-07) — the committed fixture still
+ * certifies the MECHANISM rules (detached-instance, kit-instance-override,
+ * stroke-scale, …) against real marshaled node shapes.
  *
  * Guardrail (YAGNI, R7): one pristine instance per rule category — this is
  * NOT a general snapshot framework.

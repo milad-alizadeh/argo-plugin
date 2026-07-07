@@ -63,8 +63,8 @@ inventory every time.
 
 ## 2. Build component-first (P1), then compose (P2)
 Walk BUILD-ORDER: `figma-create` each composite in dependency order — audit-gated,
-registered, anti-recreation UNCHANGED (inventory citation, kit-name-collision
-hard gate, RECONCILE-codegen denylist). An unmatched composite ESCALATES to a
+registered, anti-recreation UNCHANGED (inventory citation, the registry/alias
+collision hard check, RECONCILE-codegen denylist). An unmatched composite ESCALATES to a
 human — NEVER auto-`NEW` past the budget. Only when the components exist do you
 compose the screen from **instances** (not fresh frames). As you go, write the
 frame's Dev Mode annotation: the arrangement prose plus the `argo-screen`
@@ -153,16 +153,15 @@ Front-loading is the dominant token lever (composition-dominant screens cost
   inventory). P1/P2 read the committed registry + the component-resolution
   manifest — NEVER re-pull the tree "to check structure" mid-build (the single
   largest redundant spend).
-- **Pre-seed the component-resolution manifest** (region/composite → kit node id +
+- **Pre-seed the component-resolution manifest** (region/composite → node id +
   variant + REUSE/EXTEND/NEW verdict, generated from INVENTORY + registry) into
-  every designer session. Resolve by lookup; fire live `search_design_system` only
-  on a genuine miss.
-- **Never import a kit component by a guessed/remembered/committed key — resolve
-  it LIVE, and timeout-guard the import** (figma-create §"Reuse check", recipe
-  `importKit`). A stale key HANGS rather than errors, so an unguarded import is
-  the classic "designer stuck for ages" spiral — the timeout turns it into a
-  fast, loud failure that stop-the-line (R8) can act on. Re-resolve once, then
-  stop; never retry the same key.
+  every designer session. Resolve by lookup; fire a live component-page search
+  only on a genuine miss.
+- **Never instance a component from a guessed/remembered/committed node id —
+  resolve it LIVE** (figma-create §"check before you build"): everything is
+  local to the design file, so a stale id is a `getNodeByIdAsync` null / failed
+  `findAll`, which stop-the-line (R8) acts on. Re-resolve once, then stop; never
+  retry the same id.
 - **Author tier-0-compliant up front** (naming / Semantic binding / auto-layout)
   rather than create→audit→fix→re-audit round-trips.
 - **Capture screenshots inline** (`await node.screenshot()` in the finishing write

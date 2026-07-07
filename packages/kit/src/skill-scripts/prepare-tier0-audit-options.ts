@@ -15,7 +15,7 @@
 
 import { readFileSync, existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { registryComponentNames } from '../design-kit/kit-inventory.js'
+import { registryComponentNames } from '../design-kit/component-names.js'
 import { findArgoJson } from '../config/argo-json.js'
 
 function readOptionalJson(path: string): any {
@@ -34,7 +34,7 @@ function readOptionalJson(path: string): any {
  * when no argo.json/design block is found (unconfigured project) — every
  * caller below treats that as "use the mechanism's own defaults".
  */
-function findDesignBlock(cwd: string): Record<string, any> | null {
+export function findDesignBlock(cwd: string): Record<string, any> | null {
   const found = findArgoJson(cwd)
   const entries = Object.entries(found?.config?.design ?? {})
   if (entries.length === 0) return null
@@ -47,18 +47,13 @@ function findDesignBlock(cwd: string): Record<string, any> | null {
 
 export function deriveTier0AuditOptions({ cwd, componentNames = [] }: { cwd: string; componentNames?: string[] }) {
   const registry = readOptionalJson(join(cwd, 'design', 'registry.json'))
-  const kitLock = readOptionalJson(join(cwd, 'design', 'kit.lock'))
   const designBlock = findDesignBlock(cwd)
-
-  const recipe = designBlock?.recipe ?? null
 
   return {
     componentNames,
     compositeNames: registryComponentNames(registry),
     semanticCollectionName: designBlock?.semanticCollectionName ?? 'Semantic',
-    recipe,
-    kitPatches: readOptionalJson(join(cwd, 'design', 'kit-patches.json')) ?? {},
-    retiredKitVariableKeys: Array.isArray(kitLock?.retiredVariableKeys) ? kitLock.retiredVariableKeys : []
+    recipe: designBlock?.recipe ?? null
   }
 }
 

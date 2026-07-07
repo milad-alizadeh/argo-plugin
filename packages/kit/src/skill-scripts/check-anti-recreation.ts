@@ -10,14 +10,13 @@
  * folded into `record-audit-receipt.js`'s per-run `violationCount` — that
  * flow re-checks the SAME `componentNames` on every re-audit of an already-
  * built component, which would self-collide against its own alias-map entry
- * (`findNewNameAliasCollision` has no self-exclusion, unlike
- * `findKitNameCollisions` — by design, since it only ever runs once, before
- * a name is committed to anything).
+ * (`findNewNameAliasCollision` has no self-exclusion — by design, since it
+ * only ever runs once, before a name is committed to anything).
  */
 
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { findNewNameAliasCollision } from '../design-kit/kit-inventory.js'
+import { findNewNameAliasCollision } from '../design-kit/component-names.js'
 
 function readOptionalJson(path: string): any {
   if (!existsSync(path)) return undefined

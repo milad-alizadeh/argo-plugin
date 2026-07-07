@@ -25,8 +25,8 @@ the reference silently stops responding to theme changes.
   even where the Semantic value currently aliases the exact Primitive you
   wanted. If the Semantic layer doesn't expose it yet, add the Semantic
   token first (in Figma, then synced), don't reach around it.
-- Base/kit components are exempt — they legitimately bind kit variables
-  directly (the tier-0 audit's library-source distinction, §8).
+- Vendored base components (the shadcn mirrors) are exempt — their source
+  is vendored as-is from upstream and keeps shadcn's own token references.
 
 ### Example ESLint config snippet
 

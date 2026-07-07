@@ -100,7 +100,7 @@ its detail view. "New session" in `RailHeader` opens the session-type picker.
 ### Component sub-parts
 
 - **`RailHeader`** = project-switcher dropdown (`composite`, reused in settings)
-  + new-session button (`layout`, kit `Button` instance).
+  + new-session button (`layout`, base `Button` instance).
 - **`SessionCard`** = status pill (`composite`, reused everywhere a session
   status shows) + title/subtitle block (`layout`) + unread dot (`layout`).
-- **`RailFooter`** = avatar (kit instance) + settings icon-button (`layout`).
+- **`RailFooter`** = avatar (base-component instance) + settings icon-button (`layout`).

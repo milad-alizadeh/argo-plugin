@@ -15,34 +15,8 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { writeDesignJson } from './lib/write-design-json.js'
-import { findKitNameCollisions } from '../design-kit/kit-inventory.js'
 import { resolveRepoRoot } from '../lib/repo-root.js'
 import { appKeyForCwd, readSessionWriteCount, writeSessionReceiptEntry } from '../lib/session-guard.js'
-
-/**
- * kit-awareness (kit-awareness.md §"Enforcement"): reads the three optional,
- * project-committed files a collision check needs and folds any unwaived
- * match into the receipt's violationCount — riding the existing
- * design-guard-stop.js rail rather than a new hook (the Figma sandbox can't
- * read a committed file or call `search_design_system`). Every input is
- * optional and fails open (absent/unreadable/malformed ⇒ ignored, never
- * thrown, never a fabricated violation).
- */
-function readOptionalJson(path: string): any {
-  if (!existsSync(path)) return undefined
-  try {
-    return JSON.parse(readFileSync(path, 'utf8'))
-  } catch {
-    return undefined
-  }
-}
-
-function countKitNameCollisions(componentNames: string[], cwd: string): number {
-  const inventory = readOptionalJson(join(cwd, 'design', 'kit-inventory.json'))
-  const registry = readOptionalJson(join(cwd, 'design', 'registry.json'))
-  const waivers = readOptionalJson(join(cwd, 'design', 'waivers.json'))
-  return findKitNameCollisions(componentNames, { inventory, registry, waivers }).length
-}
 
 /**
  * `writeCounterAtAudit` is read from `.argo/design-guard.json`'s current
@@ -55,8 +29,7 @@ function countKitNameCollisions(componentNames: string[], cwd: string): number {
  * design-guard-stop.js to find it). Reading both off the same `cwd` silently
  * missed the guard state in that layout, defaulting `writeCounterAtAudit`
  * to 0 forever — resolveRepoRoot finds the real repo root for this one read
- * while `cwd` keeps governing every app-scoped path (design/, kit-inventory,
- * etc).
+ * while `cwd` keeps governing every app-scoped path (design/, etc).
  */
 export function recordAuditReceipt(
   { componentNames = [], violations = [] }: { componentNames?: string[]; violations?: { severity?: string }[] } = {},
@@ -65,13 +38,11 @@ export function recordAuditReceipt(
   if (!cwd) throw new Error('recordAuditReceipt: cwd is required')
 
   const repoRoot = resolveRepoRoot(cwd)
-  const kitNameCollisionCount = countKitNameCollisions(componentNames, cwd)
 
   // HARD-only (council ruling Q7, 2026-07-05): advisory findings belong to
   // the sweep report, never the receipt — counting them blocked a clean run
   // on advisory-only stroke-scale hits (the D05 red-gate incident).
-  const hardViolations = violations.filter((v) => v?.severity !== 'advisory')
-  const violationCount = hardViolations.length + kitNameCollisionCount
+  const violationCount = violations.filter((v) => v?.severity !== 'advisory').length
 
   // Per-session-design-gate.md: when this run is attributed to a session,
   // record into that session's OWN receipt (`.argo/audit-receipts/<sid>.json`),

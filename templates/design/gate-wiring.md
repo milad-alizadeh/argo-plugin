@@ -3,7 +3,7 @@
 This project has no CI and no pre-push hooks for design gates (D21): design
 verification runs in exactly two places — **(a)** per-slice inside gated
 builds, via the host's existing test command (no new git hooks), and **(b)**
-on-demand via `/argo:figma-audit` and paired upgrades (`/argo:design-upgrade`).
+on-demand via `/argo:figma-audit` and starter refreshes (`/argo:design-upgrade`).
 
 ## (a) Tiers that register as ordinary test projects
 
@@ -14,7 +14,7 @@ covers them automatically, same as any other test in the project.
 | Tier | What | Where it lives | Runs via |
 |---|---|---|---|
 | 1 — spec-diff | story-walking tests vs `design/specs/*.json` | `{{SPEC_DIFF_WALKER_DIR}}` | `{{TEST_CMD}}` |
-| 1b — base-congruence | same mechanism over base-component smoke stories (only applies when the installed recipe's `baseSource` is `external-library`, or `same-file` with vendored base code present; off entirely for `baseSource: none`, per D23) | `{{SPEC_DIFF_WALKER_DIR}}` (base-component fixtures) | `{{TEST_CMD}}` |
+| 1b — base-congruence | same mechanism over base-component smoke stories (vendored base code is the source of truth; the design file's starter-derived mirrors are held honest against it) | `{{SPEC_DIFF_WALKER_DIR}}` (base-component fixtures) | `{{TEST_CMD}}` |
 | 5 — token drift | regenerate `base.css`'s generated region from `tokens.json`, `git diff --exit-code` | `{{TOKEN_DRIFT_SCRIPT}}` | `{{TEST_CMD}}` or a dedicated script step |
 
 No new lefthook/pre-commit entries are needed for these three — they are
@@ -50,6 +50,6 @@ Invoke `test:vrt` at:
   (`{{LINT_CMD}}`) plus the design-pack's lint rule addition — see the
   installed recipe's `code-target/lint/design-lint.md` (e.g. the
   `shadcn-tailwind` recipe's — template dir
-  `templates/design/recipes/shadcn-tailwind-external-kit/code-target/lint/design-lint.md`).
+  `templates/design/recipes/shadcn-tailwind/code-target/lint/design-lint.md`).
   No separate wiring needed; it rides the lint job that's already a
   pre-commit gate.

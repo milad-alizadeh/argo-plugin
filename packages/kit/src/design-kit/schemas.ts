@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
 /** D15/D23: {component, variant, property, figmaValue, codeValue, sourceVersion, reason, date}.
- * sourceVersion is a generic design-source pin — the external-kit recipe maps it to the
- * kit.lock version; other recipes may pin to a different source of truth. */
+ * sourceVersion is a generic design-source pin (e.g. the Figma file version the drift
+ * was observed against). */
 export const WaiverSchema = z.object({
   component: z.string(),
   variant: z.string(),
@@ -12,33 +12,6 @@ export const WaiverSchema = z.object({
   sourceVersion: z.string(),
   reason: z.string(),
   date: z.string()
-})
-
-/** D13/D15: sanctioned local kit edits (component, file, description, date) */
-export const KitPatchSchema = z.object({
-  component: z.string(),
-  file: z.string(),
-  description: z.string(),
-  date: z.string()
-})
-
-/** D4: kit version, import date, library file key, freshness metadata */
-export const KitLockSchema = z.object({
-  kitVersion: z.string(),
-  importDate: z.string(),
-  libraryFileKey: z.string(),
-  fileVersion: z.string(),
-  lastModified: z.string(),
-  syncTimestamp: z.string(),
-  // `retiredVariableKeys` are keys from a superseded kit version (recorded by
-  // design-upgrade at swap time) so a stale binding left over from a Library
-  // Swap is still flagged by retiredFileKeyBindingViolation. (The kit
-  // library's own full variable-key manifest, `variableKeys`, was removed
-  // 2026-07-07 — the non-semantic-binding check never needed it: it fails
-  // open on any remote/library binding unconditionally, since kit internals
-  // are the framework's concern, not something project design work ever
-  // authors or binds.)
-  retiredVariableKeys: z.array(z.string()).optional()
 })
 
 /** D1: component key, node id, story id, import path, prop mapping */

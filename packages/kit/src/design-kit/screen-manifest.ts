@@ -18,7 +18,7 @@
  * frame's instance inventory via `use_figma` and feeds both here.
  */
 
-import { normalizeComponentName } from './kit-inventory.js'
+import { normalizeComponentName } from './component-names.js'
 
 /** One declared line: a registry component key, optional `xN` cardinality. */
 export type ManifestEntry = { name: string; count?: number }

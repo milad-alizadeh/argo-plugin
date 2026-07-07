@@ -16,7 +16,7 @@ describe('figma-design-kit package entrypoint', () => {
     expect(typeof figmaDesignKit.isNamedAuditTarget).toBe('function')
   })
 
-  it('no longer exports the external-kit-recipe-only schemas from the mechanism entrypoint', () => {
+  it('does not export the deleted kit-subscription schemas (kit.lock / kit-patches are gone)', () => {
     expect((figmaDesignKit as any).KitPatchSchema).toBeUndefined()
     expect((figmaDesignKit as any).KitLockSchema).toBeUndefined()
   })

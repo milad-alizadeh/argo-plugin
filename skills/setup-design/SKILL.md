@@ -92,32 +92,24 @@ parse the `<KEY>` segment out — store the bare key, never the whole URL. For
 cross-file instancing to work, the wireframe kit must be **published as a team
 library** (Professional plan); note this to the user if they add a kit key.
 
-## 0d. Entry mode — first run, update, or re-run
+## 0d. Entry mode — first run or re-run
 
 Mirrors `init` §1. Read the target app's `design.<app>` block in
-`.claude/argo.json` first; its `_meta` decides the mode (the design pack's
-lifecycle state lives inside the app's own block — per-app, so a monorepo
-can have apps at different setup versions; `init` owns the file itself and
-seeds inert `{}` blocks):
+`.claude/argo.json` first (`init` owns the file itself and seeds inert `{}`
+blocks):
 
 - **No `recipe` in the block (init-seeded inert `{}`, or block missing) —
-  first-run**: the full wizard below (§0a onward). (A block that has a
-  `recipe` but predates `_meta` tracking is treated as
-  `setupVersion: "0.0.0"` and falls into update mode below, which re-derives
-  every managed file from what's on disk — no separate adoption pass. A
-  legacy `design/config.json` is NOT read or migrated — no-legacy ruling: a
-  pre-kit project rips and re-inits.)
-- **`_meta.setupVersion` older than the plugin's version — update mode**:
-  diff-driven reconcile, touching ONLY files this pack manages
-  (`design.<app>._meta.managedFiles`), per the per-category strategy in §5a
-  below. Never auto-overwrite a file whose on-disk content no longer matches
-  what setup last derived (the user hand-edited it) — surface the conflict
-  and let them choose keep / overwrite / merge-manually.
-- **Current version — offer**: "design pack setup is current (vX.Y.Z) — re-run
-  detection anyway, or exit?" via AskUserQuestion.
+  first-run**: the full wizard below (§0a onward). A legacy
+  `design/config.json` is NOT read or migrated — no-legacy ruling: a pre-kit
+  project rips and re-inits.
+- **`recipe` already present — re-run offer**: "the design pack is already set
+  up for this app — re-run detection anyway (re-derive the shims/config), or
+  exit?" via AskUserQuestion. There is no version-comparison / migration mode:
+  the deterministic logic lives in the versioned `@argohq/kit`, so the files
+  this pack writes are static suggestions, never reconciled against a plugin
+  version.
 
-Never overwrite a hand-authored file in any mode. The plugin's current version
-is read from its own manifest, never hardcoded.
+Never overwrite a hand-authored file in any mode.
 
 ## 1. Detect the stack
 
@@ -280,8 +272,7 @@ routine `design-upgrade` re-runs on a kit swap, invoked here at t=0:
    matched component: `switch`/`toggle`, `badge`/`chip`/`tag`/`pill`,
    `collapsible`/`accordion`/`disclosure`, `dialog`/`modal`,
    `tabs`/`segmented`.
-3. Add `design/kit-inventory.json` to the block's `_meta.managedFiles`.
-4. **Refuse to hand off to `figma-create` if this file is missing** once
+3. **Refuse to hand off to `figma-create` if this file is missing** once
    an external-kit recipe is installed — the check-before-you-build flow
    (`figma-create/SKILL.md`) depends on it; report the gap and stop rather
    than silently letting the first `figma-create` run fly blind.
@@ -299,31 +290,16 @@ dependency pointing at the plugin cache. If `@argohq/kit` does not resolve
 here, stop and run `/argo:init` (or `bun install`) first — do not improvise
 a path dependency.
 
-## 5a. Update mode — per-category reconcile + migrations
+## 5a. Re-run
 
-When §0d selects update mode, reconcile the pack's managed surface by category
-(never a blind re-copy; never clobbering user values or hand-edits):
-
-1. **Regenerated templates** (category a: `tier0-audit.js`, walkers, the
-   `testing.md` amendment) — re-derive current content and diff against disk;
-   ask per batch (≤4 files/AskUserQuestion). Skip any file whose on-disk
-   content ≠ what setup last derived (hand-edited) → conflict prompt. (There
-   are NO migrations — no-legacy ruling: nothing detects or converts
-   prior-version shapes; a pre-kit project rips and re-inits.)
-2. **The `design.<app>` block in `.claude/argo.json`** (category b) — run
-   `mergeConfigShape(currentBlockShape, onDiskBlock)` (import from
-   `@argohq/kit`) against the app's block only; write the returned `merged`
-   object back into `design.<app>` via `JSON.stringify` of the whole config
-   (do NOT mutate its nested values in place — a freshly-added key may share
-   a reference with the template shape) and report `addedKeys` to the user.
-   Existing values (init's `root`/`componentsPath` included) are preserved
-   verbatim.
-3. **Foreign-file managed edits** (category d: `package.json` deps,
-   `.claude/tdd-guard/data/config.json`'s `ignorePatterns`) — re-run
-   the idempotent §3a/§5 checks; touch only the managed portion.
-4. **External Figma state** (category e) — out of scope for file reconcile:
-   Semantic-layer seeding is handled by §4a, and kit/shadcn version by
-   `design-upgrade` — print that one-line pointer rather than silently skipping.
+On a re-run (§0d), re-derive the pack's files (walker shims, the `design.<app>`
+block via `mergeConfigShape` from `@argohq/kit`, the idempotent §3a/§5 foreign-file
+checks) exactly as first-run does, and never overwrite a file whose on-disk
+content no longer matches what setup last wrote (hand-edited) — surface the
+conflict and let the user choose keep / overwrite / merge. There is no
+version-driven reconcile or migration: re-running is just first-run again,
+idempotent. External Figma state is out of scope here (Semantic-layer seeding is
+§4a; kit/shadcn version is `design-upgrade`).
 
 ## 6. Append the testing.md amendment — with consent
 
@@ -395,8 +371,8 @@ straight through). This is what proves the pack is ready for
    presentational component. Only if the project has zero renderable
    components, create a trivial one for this purpose.
 2. **Write its `.stories.tsx`** next to it (2–3 variants, plain args). This
-   story is a permanent installed artifact — record it in `_meta.managedFiles`;
-   it later doubles as the base-congruence smoke story.
+   story is a permanent installed artifact; it later doubles as the
+   base-congruence smoke story.
 3. **Run all three layers and require these exact outcomes:**
    - storybook project (`vitest run --project storybook`): every story test
      PASSES — a real browser render of the component.
@@ -448,27 +424,15 @@ Separately, offer to run `/argo:figma-audit` as a Figma-side smoke check —
 never run that one silently; the user may not have a Figma file connected
 yet.
 
-## 9. Report — and stamp `_meta`
+## 9. Report
 
-**Before reporting**, write the design pack's lifecycle state into the app's
-`design.<app>._meta` in `.claude/argo.json` (mirrors `init` §9 — same file,
-but this skill owns only the app's block):
-- `_meta.setupVersion` ← the plugin's CURRENT version (read from the plugin's
-  own `.claude-plugin/plugin.json`, never hardcoded).
-- `_meta.managedFiles` ← every path this run wrote or updated: the walker
-  shim paths emitted/chosen in §4, and `design/waivers.json`/`kit-patches.json`
-  if created (the tier-0 audit is bundled on demand, never a file this skill
-  writes into the project — nothing to list here for it; the `design.<app>`
-  block itself is lifecycle state, not a managed file; the kit dep is init's,
-  not this skill's). Update mode (§5a) may touch only these.
-  In **update mode**, merge this list with the existing `managedFiles` rather
-  than replacing it, so a file installed by an earlier run under a different
-  path isn't orphaned.
+There is no `_meta` lifecycle state to stamp — the files this pack writes are
+static suggestions, not artifacts reconciled against a plugin version.
 
-Then list exactly what was written/installed where (mirrors `init` §9):
-shadcn init result, Storybook/Vitest versions recorded, every template
-copied + its fill values, whether the testing.md
-amendment landed, whether tdd-guard's `ignorePatterns` was updated, the
-`design/` scaffolding created, and (in update mode) the design block's
-`addedKeys`. Verified by manual dry-run against a scratch
-project only — no host project lives in this repo to install into for real.
+List exactly what was written/installed where (mirrors `init` §9): shadcn init
+result, Storybook/Vitest versions recorded, every template copied + its fill
+values, whether the testing.md amendment landed, whether tdd-guard's
+`ignorePatterns` was updated, the `design/` scaffolding created, and (on a
+re-run) the design block's `addedKeys` from `mergeConfigShape`. Verified by
+manual dry-run against a scratch project only — no host project lives in this
+repo to install into for real.

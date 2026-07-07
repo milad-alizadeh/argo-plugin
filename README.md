@@ -92,10 +92,10 @@ The full stage-by-stage map — inputs, outputs, owners, and the two seams (the
 
 Safety guardrails run verbatim from the plugin (dependency-free, alive before any
 `npm install`). Everything else dispatches into `@argohq/kit` via
-`npx --no @argohq/kit argo-hook <name>` and **fails closed** — a missing or
-version-skewed kit blocks with the fix command (`bun install` / `/argo:init`,
-checked by `argo doctor`; plugin↔kit lockstep is pinned by `designLibrary` in
-`.claude-plugin/plugin.json`).
+`npx --no @argohq/kit argo-hook <name>` and **fails closed** — a missing kit
+blocks with the fix command (`bun install` / `/argo:init`). There is no
+plugin↔kit version handshake: the plugin and kit release together, so the hook
+just runs whatever kit is installed.
 
 ## Install
 
@@ -119,10 +119,12 @@ your repo. `/argo:setup-design` (optional, per app) wires the Figma-to-code desi
 pack: shadcn + Storybook, walker shims, tiered gates.
 
 **Auto-update:** third-party marketplaces don't auto-update by default — enable it
-in `/plugin` → Marketplaces or via `extraKnownMarketplaces` in settings. Then
-`/argo:update` reconciles a set-up project with the installed plugin version
-(update mode, no first-time wizard; no migrations — a project predating a breaking
-change is rip-and-re-init via a fresh `/argo:init`).
+in `/plugin` → Marketplaces or via `extraKnownMarketplaces` in settings. Updating
+the plugin (`claude plugin update argo@argo`) is the whole story — it brings the
+matching kit, and there is no repo-side reconcile step. The installed
+`.claude/rules/*.md` are static suggestions written once at `/argo:init`; they are
+never re-synced or migrated against a plugin version. If a project predates a
+breaking change, rip-and-re-init via a fresh `/argo:init`.
 
 ## The loop, day to day
 
@@ -201,7 +203,7 @@ One package, bin `argo`:
 
 | Surface | What |
 |---|---|
-| `argo init` / `argo update` / `argo doctor` | deterministic halves of the lifecycle skills; doctor checks plugin↔kit lockstep |
+| `argo init` | deterministic half of the /argo:init lifecycle skill |
 | `argo-hook <name>` | single-dispatch gate entry (lazy imports per gate) |
 | `argo design <cmd>` | design-pack tooling: audit bundling, receipts, region coverage, contract extraction |
 | `argo graph refresh` | graphify refresh (replaces the old copied script) |

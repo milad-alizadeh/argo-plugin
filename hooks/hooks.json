@@ -1,5 +1,5 @@
 {
-  "description": "Argo guardrails — plugin-side SAFETY hooks (destructive-git, pipe-to-shell, shell-source-write, lockfile, designer-spawn, session context) run verbatim from this directory; every kit GATE (red-proof, trust, design-commit, design-coverage, format-on-write, test-smell, design-guard) is dispatched through hooks/kit-dispatch.mjs — fail-closed (exit 2) when the project declares @argohq/kit but it is missing or version-skewed, allow-with-warning when the project is not argo-initialized so bootstrap (bun install) can proceed.",
+  "description": "Argo guardrails — plugin-side SAFETY hooks (destructive-git, pipe-to-shell, shell-source-write, lockfile, designer-spawn, session context) run verbatim from this directory; every kit GATE (red-proof, trust, design-commit, design-coverage, format-on-write, test-smell, design-guard) is dispatched through hooks/kit-dispatch.mjs — fail-closed (exit 2) when the project declares @argohq/kit but it is missing, allow-with-warning when the project is not argo-initialized so bootstrap (bun install) can proceed.",
   "hooks": {
     "PreToolUse": [
       {

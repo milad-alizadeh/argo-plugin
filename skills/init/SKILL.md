@@ -33,19 +33,16 @@ multiple-choice prompts, never a paragraph ending in "shall I?". Rules:
 - Prose is for two moments only: the opening one-liner ("detected X, Y, Z — a few
   questions") and the §9 report.
 
-## 1. Entry mode — first run, update, or re-run
+## 1. Entry mode — first run or re-run
 Read `.claude/argo.json` first; it decides the mode:
 
 - **Missing → first-run wizard**: the full flow below (§1b–§9).
-- **`setupVersion` older than the plugin's version → update mode**: diff-driven.
-  Re-derive what each managed file WOULD contain now, then for each file in the
-  config's `managedFiles` whose content would change, show the diff and ask
-  (one AskUserQuestion per batch of files). Touch ONLY `managedFiles`. If a
-  managed file's on-disk content no longer matches what setup last wrote (the
-  user hand-edited it), NEVER auto-update it — surface the conflict and let them
-  choose keep / overwrite / merge-manually.
-- **Current version → offer**: "setup is current (vX.Y.Z) — re-run detection
-  anyway, or exit?" via AskUserQuestion.
+- **Present → re-run offer**: "argo is already set up here — re-run detection
+  anyway (re-derive the rules/config), or exit?" via AskUserQuestion. There is
+  no version-comparison / migration mode: the plugin's real logic lives in the
+  versioned `@argohq/kit`, so the installed `.claude/rules/*.md` and config are
+  static suggestions written once here, not artifacts reconciled against a plugin
+  version. If the on-disk shape predates a breaking change, rip-and-re-init.
 
 Never overwrite a hand-authored file in any mode.
 
@@ -248,8 +245,8 @@ deterministically:
 
 Then register the link source once per machine (`cd <plugin repo>/packages/kit &&
 bun link`) if not already registered, and run `bun install` in the host project so
-the dep resolves. Verify: `npx --no -p @argohq/kit argo doctor --plugin-root
-"${CLAUDE_PLUGIN_ROOT}"` reports the lockstep check ok.
+the dep resolves. Verify the dep resolves: `npx --no -p @argohq/kit argo` prints
+its usage (the kit CLI is reachable).
 
 ## 7. graphify (conditional) — treat the graph as local build cache
 Only if the `graphify` CLI is present: run `graphify install --platform claude`
@@ -323,28 +320,22 @@ After the rules land, one short recommendation pass from the §2 stack evidence:
   this stack) — so the adopter sees exactly what is active vs dormant here.
 
 ## 9. Finalize `.claude/argo.json`, report + one-step revert
-`argo init` (§6d) seeded the skeleton; before reporting, complete it so the
-lifecycle machinery works (these fields ride the SAME `.claude/argo.json` — there
-is no separate argo-config.json):
+`argo init` (§6d) seeded the skeleton; before reporting, complete it (these fields
+ride the SAME `.claude/argo.json` — there is no separate argo-config.json):
 
 ```json
 {
   "landing": "merge",
-  "setupVersion": "<the plugin version that ran this setup>",
-  "managedFiles": [".claude/rules/testing.md", ".claude/rules/…", "…"],
   "design": { "…": {} }
 }
 ```
 
 - `landing` — from §6a's answer.
-- `setupVersion` — read from the plugin's own manifest, never hardcoded. The
-  session-start card compares it against the running plugin and nudges
-  `/argo:init` when setup falls behind; writing it wrong silences or
-  spams every future session.
-- `managedFiles` — every file THIS run wrote or updated (rules, hook configs,
-  tdd-guard instructions), repo-relative. Update mode (§1) may touch only these.
 - `design` — leave the CLI-seeded inert keys alone; `/argo:setup-design` owns
   their contents.
+
+There is NO `setupVersion`/`managedFiles` lifecycle state — the installed rules
+are static suggestions, never reconciled against a plugin version.
 
 Then report: list exactly what was written where, and how to re-run or revert.
 Be idempotent; every file this skill writes must be removable in one step.

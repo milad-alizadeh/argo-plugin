@@ -24,7 +24,7 @@ the bundled audit reads at call time, never as source it imports.
 | `spec-diff-walker/spec-diff.walker.spec-diff.js` | prefer `argo design emit-shims`; manual fill only for a bespoke shim | a THIN shim calling `runSpecDiffWalker` from `@argohq/kit/walkers`. Slots: `{{STORYBOOK_TEST_PACKAGE}}`/`{{STORIES_GLOB}}` as above; `{{DESIGN_SPECS_GLOB}}` ← glob of `design/specs/*.json` relative to the shim dir (`walkers.specsGlob`) — specs pair with stories by basename |
 | `gate-wiring.md` | always | `{{TEST_CMD}}`/`{{TYPECHECK_CMD}}`/`{{LINT_CMD}}` ← the project's real scripts; `{{SPEC_DIFF_WALKER_DIR}}`/`{{VRT_WALKER_DIR}}`/`{{TOKEN_DRIFT_SCRIPT}}` ← paths chosen above — copy the resulting wiring into the project's own docs/README, this file itself is not committed verbatim |
 | `testing-rule-amendment.md` | a `.claude/rules/testing.md` already exists (installed by `init`) | `{{SPEC_DIFF_WALKER_DIR}}`/`{{VRT_WALKER_DIR}}`/`{{EXT}}` as above — **append** to the existing file, with consent; never silently edit |
-| `config.example.json` | always (first install) — NOT copied to its own file: it is the shape reference for the app's `design.<app>` block in `.claude/argo.json` | merge its keys into the app's existing block (init's `root`/`componentsPath` are preserved), filling every `{{…}}` slot from setup-design's detection/AskUserQuestion wizard, including the `recipe` field (the chosen recipe's id, `shadcn-tailwind`) and `recipeConfig.*` (recipe-specific fields, e.g. `figma.kitLibraryFileKey`) — this block is the ONE place every other template's substitutions are sourced from. `figma.wireframeKitFileKey` (§0c-i) ← the bare file key of a lo-fi wireframe component library `figma-wireframe` instances from (parse it out of a pasted `figma.com/file/<KEY>/…` URL; optional — omit/leave placeholder to fall back to hand-drawn greyboxes). `componentsPath` ← the project's real generated-component output directory (a plain path prefix relative to the app root, e.g. `src/components`, not a glob — distinct from `{{COMPONENTS_GLOB}}` used by the lint template) — the kit's design-commit gate reads it to decide whether a commit touches generated component code and needs a fresh spec-diff receipt, and `argo design emit-shims` derives the default stories glob from it. `walkers.*` ← optional per-app overrides for emit-shims. The `_meta` block (`setupVersion`, `managedFiles`) is design-pack lifecycle state: it is filled at the END of a run (setup-design §9), NOT at initial merge — `setupVersion` ← the plugin's current version, `managedFiles` ← every path the run wrote. Update mode reads `_meta.setupVersion` to decide first-run vs reconcile |
+| `config.example.json` | always (first install) — NOT copied to its own file: it is the shape reference for the app's `design.<app>` block in `.claude/argo.json` | merge its keys into the app's existing block (init's `root`/`componentsPath` are preserved), filling every `{{…}}` slot from setup-design's detection/AskUserQuestion wizard, including the `recipe` field (the chosen recipe's id, `shadcn-tailwind`) and `recipeConfig.*` (recipe-specific fields, e.g. `figma.kitLibraryFileKey`) — this block is the ONE place every other template's substitutions are sourced from. `figma.wireframeKitFileKey` (§0c-i) ← the bare file key of a lo-fi wireframe component library `figma-wireframe` instances from (parse it out of a pasted `figma.com/file/<KEY>/…` URL; optional — omit/leave placeholder to fall back to hand-drawn greyboxes). `componentsPath` ← the project's real generated-component output directory (a plain path prefix relative to the app root, e.g. `src/components`, not a glob — distinct from `{{COMPONENTS_GLOB}}` used by the lint template) — the kit's design-commit gate reads it to decide whether a commit touches generated component code and needs a fresh spec-diff receipt, and `argo design emit-shims` derives the default stories glob from it. `walkers.*` ← optional per-app overrides for emit-shims. There is no `_meta` lifecycle block — the files this pack writes are static suggestions, never reconciled against a plugin version |
 
 **tdd-guard `ignorePatterns` (not a template — see §3a):** if the host
 project has tdd-guard installed, `setup-design` adds `design/**` to
@@ -67,19 +67,18 @@ is `@argohq/kit/reporters/playwright` the same way. Never an absolute
 breaks for other clones and on the next plugin update), and never a vendored
 copy.
 
-### Update mode — per-category reconcile strategy (§5a)
+### Re-run strategy (§5a)
 
-When `setup-design` re-runs against an app whose `design.<app>._meta.setupVersion`
-(in `.claude/argo.json`) is older than the plugin (§0d), it reconciles by
-category rather than re-running the wizard. This table mirrors the skill's
-§5a so the two don't drift:
+There is no version-driven update mode. When `setup-design` re-runs (§0d) it
+re-derives its files exactly as first-run does, category by category, never
+overwriting a hand-edit:
 
-| Category | Examples | Reconcile strategy |
+| Category | Examples | Re-run strategy |
 |---|---|---|
 | (a) Regenerated template | `vrt-walker/*`, `spec-diff` walker, `testing.md` amendment | Re-derive current content, diff vs disk, ask per batch (≤4/AskUserQuestion). A file whose on-disk content ≠ last-derived is hand-edited → conflict prompt (keep/overwrite/merge), never auto-overwrite. |
 | (b) Structured user-config | the `design.<app>` block in `.claude/argo.json` | `mergeConfigShape` (from `@argohq/kit`) against the app's block: add missing shape keys, preserve every existing value, never delete on-disk-only keys; write `merged` via `JSON.stringify`, report `addedKeys`. |
 | (d) Foreign-file managed edit | `package.json` deps, tdd-guard `config.json` `ignorePatterns` | Idempotent re-apply of only the managed portion. |
-| (e) External Figma state | Semantic-layer seeding | Out of scope for file reconcile — handled by §4a / `design-upgrade`; printed as a pointer, not silently skipped. |
+| (e) External Figma state | Semantic-layer seeding | Out of scope — handled by §4a / `design-upgrade`; printed as a pointer, not silently skipped. |
 
 **No migrations** (owner no-legacy ruling): nothing detects or converts
 prior-version shapes — a project carrying pre-kit state (vendored dirs,

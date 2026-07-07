@@ -14,7 +14,6 @@ import { fileURLToPath } from 'node:url'
  *   - project NOT argo-initialized (no package.json on the cwd ancestry
  *     declares @argohq/kit) → ALLOW (exit 0) with a one-line stderr warning
  *   - declared but unresolvable → BLOCK (exit 2) naming the fix
- *   - declared but version-skewed vs the installed kit → BLOCK (exit 2)
  *   - declared and resolvable → dispatch to the installed kit CLI, replaying
  *     stdin and propagating its exit code
  */
@@ -103,16 +102,6 @@ describe('kit-dispatch: armed project (declares @argohq/kit)', () => {
     expect(res.stderr).toMatch(/bun install/)
   })
 
-  it('blocks (exit 2) when the installed kit is version-skewed vs the declared range', () => {
-    writePkg(scratch, { name: 'armed-app', dependencies: { '@argohq/kit': '^0.2.0' } })
-    installFakeKit(scratch, { version: '0.1.1' })
-    const res = run(scratch)
-    expect(res.status).toBe(2)
-    expect(res.stderr).toMatch(/0\.2\.0/)
-    expect(res.stderr).toMatch(/0\.1\.1/)
-    expect(res.stderr).toMatch(/bun install/)
-  })
-
   it('stays armed when the declaration lives in an ancestor package.json (monorepo cwd)', () => {
     writePkg(scratch, { name: 'mono-root', dependencies: { '@argohq/kit': '^0.1.1' } })
     const nested = join(scratch, 'apps', 'web', 'src')
@@ -140,7 +129,7 @@ describe('kit-dispatch: armed + installed → dispatches to the kit CLI', () => 
     expect(res.status).toBe(2)
   })
 
-  it('accepts non-pinned ranges (workspace:*) without a skew false-positive', () => {
+  it('dispatches regardless of the declared range (no version check — workspace:*)', () => {
     writePkg(scratch, { name: 'armed-app', dependencies: { '@argohq/kit': 'workspace:*' } })
     installFakeKit(scratch, { version: '0.1.1', exitCode: 0 })
     const res = run(scratch)

@@ -13,7 +13,6 @@
  *     resolvable → ALLOW (exit 0) with a one-line warning: the project is not
  *     argo-initialized, there is nothing to enforce yet
  *   - declared but not installed → BLOCK (exit 2) naming the fix
- *   - declared but installed version skewed vs the declared range → BLOCK (exit 2)
  *   - resolvable → dispatch `argo-hook <event>` to the installed kit CLI,
  *     replaying stdin and propagating its exit code (fail-closed preserved)
  */
@@ -84,19 +83,6 @@ function findInstall(dirs) {
   return null
 }
 
-/**
- * Loose, dependency-free skew check: extract the base x.y.z from the declared
- * range; skewed when majors differ, or minors differ while major is 0. Ranges
- * without a pinned base (workspace:*, latest, *, file:, link:) are not checked.
- */
-function versionSkew(range, installed) {
-  const base = /(\d+)\.(\d+)\.(\d+)/.exec(range ?? '')
-  const got = /(\d+)\.(\d+)\.(\d+)/.exec(installed ?? '')
-  if (!base || !got) return false
-  if (base[1] !== got[1]) return true
-  return base[1] === '0' && base[2] !== got[2]
-}
-
 const raw = await readStdin().catch(() => '')
 let hookCwd
 try {
@@ -117,13 +103,6 @@ if (!declaration && !install) {
 if (!install) {
   process.stderr.write(
     `argo gates inactive: ${KIT} is declared (${declaration.dir}/package.json) but not installed — run bun install (or /argo:init)\n`
-  )
-  process.exit(2)
-}
-
-if (declaration && versionSkew(declaration.range, install.version)) {
-  process.stderr.write(
-    `argo gates inactive: installed ${KIT}@${install.version} does not match the declared range "${declaration.range}" — run bun install to realign\n`
   )
   process.exit(2)
 }

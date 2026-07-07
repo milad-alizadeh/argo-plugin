@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -68,36 +68,6 @@ describe('session-context — setup lifecycle nudges', () => {
     }
   })
 
-  it('nudges to re-run setup when argo.json was written by an older plugin version', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
-    try {
-      mkdirSync(join(dir, '.claude'), { recursive: true })
-      writeFileSync(
-        join(dir, '.claude', 'argo.json'),
-        JSON.stringify({ landing: 'merge', setupVersion: '0.1.0' })
-      )
-      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
-      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
-      expect(context).toContain('/argo:init')
-      expect(context).toContain('0.1.0')
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it('nudges when argo.json predates setup versioning (no setupVersion field)', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
-    try {
-      mkdirSync(join(dir, '.claude'), { recursive: true })
-      writeFileSync(join(dir, '.claude', 'argo.json'), JSON.stringify({ landing: 'merge' }))
-      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
-      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
-      expect(context).toContain('/argo:init')
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
   it('treats a legacy argo-config.json as NOT set up (no-legacy ruling: rip-and-re-init, no migration)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
     try {
@@ -112,17 +82,11 @@ describe('session-context — setup lifecycle nudges', () => {
     }
   })
 
-  it('stays silent when the setup is current (setupVersion matches the plugin version)', async () => {
+  it('stays silent (no SETUP nudge) once .claude/argo.json exists — no version comparison', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
     try {
-      const { version } = JSON.parse(
-        readFileSync(fileURLToPath(new URL('../.claude-plugin/plugin.json', import.meta.url)), 'utf8')
-      )
       mkdirSync(join(dir, '.claude'), { recursive: true })
-      writeFileSync(
-        join(dir, '.claude', 'argo.json'),
-        JSON.stringify({ landing: 'merge', setupVersion: version })
-      )
+      writeFileSync(join(dir, '.claude', 'argo.json'), JSON.stringify({ landing: 'merge' }))
       const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
       const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
       expect(context).not.toContain('SETUP:')
@@ -132,76 +96,19 @@ describe('session-context — setup lifecycle nudges', () => {
   })
 })
 
-describe('session-context — design-pack lifecycle nudge (.claude/argo.json design.<app>)', () => {
-  const pluginVersion = () =>
-    JSON.parse(readFileSync(fileURLToPath(new URL('../.claude-plugin/plugin.json', import.meta.url)), 'utf8')).version
-
-  const writeArgoJson = (dir, design) => {
-    mkdirSync(join(dir, '.claude'), { recursive: true })
-    writeFileSync(join(dir, '.claude', 'argo.json'), JSON.stringify({ landing: 'pr', design }))
-  }
-
-  it('stays silent when no design.<app> block carries a recipe (design pack never set up)', async () => {
+describe('session-context — no version/migration nudges (setup-version machinery removed)', () => {
+  it('never nudges /argo:setup-design for a set-up design.<app> block (design version nudges are gone)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'argo-dnudge-'))
     try {
-      writeArgoJson(dir, { '.': {} }) // init-seeded inert block
+      mkdirSync(join(dir, '.claude'), { recursive: true })
+      writeFileSync(
+        join(dir, '.claude', 'argo.json'),
+        JSON.stringify({ landing: 'pr', design: { '.': { root: '.', recipe: 'shadcn-tailwind' } } })
+      )
       const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
       const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
       expect(context).not.toContain('/argo:setup-design')
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it('treats a legacy design/config.json alone as NOT set up (no-legacy ruling — silent)', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'argo-dnudge-'))
-    try {
-      mkdirSync(join(dir, 'design'), { recursive: true })
-      writeFileSync(join(dir, 'design', 'config.json'), JSON.stringify({ recipe: 'shadcn-tailwind' }))
-      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
-      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
-      expect(context).not.toContain('/argo:setup-design')
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it('nudges /argo:setup-design when a design.<app> block has a recipe but predates _meta tracking', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'argo-dnudge-'))
-    try {
-      writeArgoJson(dir, { '.': { root: '.', componentsPath: 'src/components', recipe: 'shadcn-tailwind' } })
-      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
-      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
-      expect(context).toContain('/argo:setup-design')
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it('nudges when a design.<app> _meta.setupVersion is older than the plugin, naming the old version', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'argo-dnudge-'))
-    try {
-      writeArgoJson(dir, {
-        'apps/a': { root: 'apps/a', recipe: 'shadcn-tailwind', _meta: { setupVersion: '0.1.0', managedFiles: [] } },
-      })
-      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
-      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
-      expect(context).toContain('/argo:setup-design')
-      expect(context).toContain('0.1.0')
-    } finally {
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-
-  it('stays silent when every set-up design.<app> _meta.setupVersion matches the plugin version', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'argo-dnudge-'))
-    try {
-      writeArgoJson(dir, {
-        '.': { root: '.', recipe: 'shadcn-tailwind', _meta: { setupVersion: pluginVersion(), managedFiles: [] } },
-      })
-      const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
-      const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
-      expect(context).not.toContain('/argo:setup-design')
+      expect(context).not.toContain('SETUP:')
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }

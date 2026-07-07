@@ -4,7 +4,7 @@
  *   argo-hook <event>   — Claude Code hook dispatch (bash-pretooluse, post-edit-write,
  *                         design-guard-record, design-guard-stop)
  *   design <verb>       — skill-script CLI verbs (Slice 2)
- *   init | update | doctor | graph refresh — lifecycle verbs (Slices 4+)
+ *   init | graph refresh — lifecycle verbs (Slices 4+)
  *
  * Hook dispatch model: each hook module stays a standalone fail-closed script
  * (stdin JSON in, exit code out) — the dispatcher reads stdin ONCE and replays
@@ -111,22 +111,6 @@ switch (cmd) {
     console.log(JSON.stringify(report))
     break
   }
-  case 'update': {
-    const { runUpdate } = await import('../dist/cli/update.js')
-    const report = runUpdate({ hostRoot: flagValue(rest, '--host-root') ?? process.cwd() })
-    console.log(JSON.stringify(report))
-    break
-  }
-  case 'doctor': {
-    const { runDoctor } = await import('../dist/cli/doctor.js')
-    const result = runDoctor({ pluginRoot: flagValue(rest, '--plugin-root') ?? process.env.CLAUDE_PLUGIN_ROOT })
-    if (!result.ok) {
-      process.stderr.write(`${result.reason}\n`)
-      process.exit(1)
-    }
-    console.log(`doctor: ok — designLibrary ${result.declared} === installed kit ${result.installed}`)
-    break
-  }
   case 'graph': {
     if (rest[0] !== 'refresh') {
       process.stderr.write(`argo graph: unknown verb "${rest[0] ?? ''}" (known: refresh)\n`)
@@ -137,6 +121,6 @@ switch (cmd) {
     break
   }
   default:
-    process.stderr.write('usage: argo <argo-hook|design|init|update|doctor|graph> ...\n')
+    process.stderr.write('usage: argo <argo-hook|design|init|graph> ...\n')
     process.exit(cmd ? 1 : 0)
 }

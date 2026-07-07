@@ -36,10 +36,10 @@ describe('mergeConfigShape', () => {
   })
 
   it('treats a wholly-missing config as all-added, without throwing', () => {
-    const shape = { recipe: '{{R}}', _meta: { setupVersion: '{{V}}', managedFiles: [] } }
+    const shape = { recipe: '{{R}}', recipeConfig: { figma: { kitLibraryFileKey: '{{KIT}}' } } }
     const { merged, addedKeys } = mergeConfigShape(shape, undefined)
     expect(merged.recipe).toBe('{{R}}')
     expect(addedKeys).toContain('recipe')
-    expect(addedKeys).toContain('_meta')
+    expect(addedKeys).toContain('recipeConfig')
   })
 })

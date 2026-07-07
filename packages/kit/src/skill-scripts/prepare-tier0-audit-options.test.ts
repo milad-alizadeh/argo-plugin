@@ -77,6 +77,22 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
     }
   })
 
+  it("reads viewport from the app's design.<app> block when configured", () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
+    mkdirSync(join(cwd, '.claude'), { recursive: true })
+    writeFileSync(
+      join(cwd, '.claude', 'argo.json'),
+      JSON.stringify({ design: { '.': { root: '.', viewport: { width: 1440, height: 900 } } } }),
+      'utf8'
+    )
+    try {
+      const options = deriveTier0AuditOptions({ cwd })
+      expect(options.viewport).toEqual({ width: 1440, height: 900 })
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
   it('never reads or emits kit-subscription data (kit.lock / kit-patches.json are dead files)', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
     mkdirSync(join(cwd, 'design'), { recursive: true })

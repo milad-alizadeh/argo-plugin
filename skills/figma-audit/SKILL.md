@@ -96,13 +96,18 @@ none at all.
    name-based sweep used to match every same-named node in the file, e.g.
    auditing "Card" also swept a container frame literally named "Card"), and
    returns `{ componentNodeIds, componentNames, compositeNames,
-   semanticCollectionName, additionalAllowedCollectionNames, recipe }` —
-   `componentNodeIds` is the resolved authoritative target list;
-   `componentNames` on the way OUT holds only names that had no registry
-   entry (a fallback resolved sandbox-side by an unambiguous single-match
-   name lookup, never a blind multi-node sweep). Keep the whole object —
-   every DATA field the bundled script's completion value needs; never
-   hand-author a trimmed `{ componentNames: [...] }`.
+   semanticCollectionName, additionalAllowedCollectionNames, recipe,
+   viewport }` — `componentNodeIds` is the resolved authoritative target
+   list; `componentNames` on the way OUT holds only names that had no
+   registry entry (a fallback resolved sandbox-side by an unambiguous
+   single-match name lookup, never a blind multi-node sweep); `viewport`
+   is `{ width, height }` from `design.<app>.viewport` when configured
+   (undefined otherwise — opt-in, gates the `screen-viewport-mismatch`
+   check; not the unrelated `design.<app>.vrtEnvironment.viewport`
+   STRING, a different concept and owner: the Storybook/Playwright VRT
+   capture viewport). Keep the whole object — every DATA field the
+   bundled script's completion value needs; never hand-author a trimmed
+   `{ componentNames: [...] }`.
 3. **Bundle the audit for the returned `recipe` — never hand-assemble or
    paste raw source into `use_figma`.** Run `argo design bundle-tier0-audit
    --recipe <recipe>` (wraps `bundleTier0AuditForRecipe`), `cwd` set to the

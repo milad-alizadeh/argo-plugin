@@ -22,8 +22,14 @@ otherwise.
 
 **INDEPENDENCE — this is what makes you useful.** You are given ONLY:
 - the BUILT screen screenshot(s),
-- the PRD's `Visible in build? = yes|partial` requirement rows for this screen
-  (selected via the feature→screen matrix).
+- a checklist generated MECHANICALLY (`argo design completeness-checklist`) — the
+  PRD's `Visible in build? = yes|partial` requirements the feature→screen matrix
+  disposes `covered-by` this screen. You do NOT pick scope from the raw PRD; you
+  judge the given rows against the screenshot, nothing more.
+
+After ruling the checklist, the skill records that this check RAN via
+`argo design record-completeness --screen <name>` (existence proof for the stop
+gate — it does not gate on your verdict; `absent` flags still ship).
 
 You are NEVER given the arrangement note the builder authored (reading it would
 make you grade the plan against itself), nor the region-contract/deferral ledger

@@ -4,6 +4,7 @@ export { WaiverSchema, StoryMapEntrySchema } from './schemas.js'
 export { checkWaiver, invalidateWaivers } from './waivers.js'
 export { DEFAULT_COMPONENT_CATEGORIES, resolveComponentCategories, validateComponentCategories } from './component-categories.js'
 export { parseScreenManifest, classifyInstancePresence, summarizeInstancePresence } from './screen-manifest.js'
+export { parseRequirements, parseMatrix, selectChecklistForScreen } from './completeness-checklist.js'
 export {
   unboundFillViolations,
   unboundStrokeViolations,

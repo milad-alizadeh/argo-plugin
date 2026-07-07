@@ -201,6 +201,30 @@ describe('design-guard-stop — blocks Stop/SubagentStop on stale/missing audit 
     expect((await runHook(stopInput(cwd, { session_id: 'mine' }))).code).toBe(0)
   })
 
+  // P4b completeness must-exist gate (existence only).
+  function writeCompletenessState(cwd: string, sessionId: string, screens: Record<string, { composedAt: number; recordedAt: number | null }>) {
+    mkdirSync(join(cwd, '.argo', 'completeness'), { recursive: true })
+    writeFileSync(join(cwd, '.argo', 'completeness', `${sessionId}.json`), JSON.stringify({ screens }))
+  }
+
+  it('BLOCK: a composed screen whose completeness check never ran (audit otherwise clean)', async () => {
+    armDesignPack(cwd)
+    writeSessionState(cwd, 'mine', 2)
+    writeSessionReceipt(cwd, 'mine', { writeCountAtAudit: 2 })
+    writeCompletenessState(cwd, 'mine', { 'first-run': { composedAt: 1, recordedAt: null } })
+    const r = await runHook(stopInput(cwd, { session_id: 'mine' }))
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/without running the completeness check: first-run/)
+  })
+
+  it('PASS: composed screen with its completeness check recorded (content not inspected)', async () => {
+    armDesignPack(cwd)
+    writeSessionState(cwd, 'mine', 2)
+    writeSessionReceipt(cwd, 'mine', { writeCountAtAudit: 2 })
+    writeCompletenessState(cwd, 'mine', { 'first-run': { composedAt: 1, recordedAt: 2 } })
+    expect((await runHook(stopInput(cwd, { session_id: 'mine' }))).code).toBe(0)
+  })
+
   it('BLOCK: this session wrote again after its own audit (live count ahead of receipt)', async () => {
     armDesignPack(cwd)
     writeSessionState(cwd, 'mine', 4)

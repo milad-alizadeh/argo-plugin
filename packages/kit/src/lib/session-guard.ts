@@ -30,6 +30,7 @@ function canonical(p: string): string {
 
 const GUARD_SUBDIR = join('.argo', 'design-guard')
 const RECEIPT_SUBDIR = join('.argo', 'audit-receipts')
+const COMPLETENESS_SUBDIR = join('.argo', 'completeness')
 const PRUNE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000
 
 export function sessionStatePath(repoRoot: string, sessionId: string): string {
@@ -115,10 +116,61 @@ export function readSessionReceipt(repoRoot: string, sessionId: string): Session
   return r as SessionReceipt
 }
 
+// --- P4b completeness tracking (design-process-simplification.md) -----------
+// Per-session record of which screens this session COMPOSED and whether each
+// one's advisory completeness check (P4b design-verifier) has been RECORDED.
+// The stop gate blocks on a composed screen whose check never ran (existence
+// only — never on what the check found). Same per-session namespacing as the
+// write count/receipt, so concurrent design sessions never gate each other.
+
+export function completenessStatePath(repoRoot: string, sessionId: string): string {
+  return join(repoRoot, COMPLETENESS_SUBDIR, `${sessionId}.json`)
+}
+
+type CompletenessState = { screens: Record<string, { composedAt: number; recordedAt: number | null }> }
+
+function readCompletenessState(repoRoot: string, sessionId: string): CompletenessState {
+  const prior = readJsonSafe(completenessStatePath(repoRoot, sessionId))
+  return prior?.screens && typeof prior.screens === 'object' ? (prior as CompletenessState) : { screens: {} }
+}
+
+function writeCompletenessState(repoRoot: string, sessionId: string, state: CompletenessState): void {
+  mkdirSync(join(repoRoot, COMPLETENESS_SUBDIR), { recursive: true })
+  writeFileSync(completenessStatePath(repoRoot, sessionId), JSON.stringify(state))
+}
+
+/** Mark a screen as composed → its completeness check is now OWED. Re-composing
+ * a screen resets `recordedAt` to null (the prior check is stale against the new
+ * build), so the check must run again. */
+export function markScreenComposed(repoRoot: string, sessionId: string, screen: string, now: number): void {
+  const state = readCompletenessState(repoRoot, sessionId)
+  state.screens[screen] = { composedAt: now, recordedAt: null }
+  writeCompletenessState(repoRoot, sessionId, state)
+}
+
+/** Record that the completeness check RAN for a screen (existence proof; the
+ * result content is not stored here — the gate is content-free). A record for a
+ * screen never marked composed still lands (harmless), so ordering is forgiving. */
+export function recordScreenCompleteness(repoRoot: string, sessionId: string, screen: string, now: number): void {
+  const state = readCompletenessState(repoRoot, sessionId)
+  const prior = state.screens[screen]
+  state.screens[screen] = { composedAt: prior?.composedAt ?? now, recordedAt: now }
+  writeCompletenessState(repoRoot, sessionId, state)
+}
+
+/** Screens this session composed whose completeness check has not been recorded
+ * (or was invalidated by a re-compose). Empty when nothing is owed. */
+export function pendingCompletenessScreens(repoRoot: string, sessionId: string): string[] {
+  const state = readCompletenessState(repoRoot, sessionId)
+  return Object.entries(state.screens)
+    .filter(([, s]) => s.recordedAt === null)
+    .map(([screen]) => screen)
+}
+
 /** Best-effort prune of per-session files older than 14 days. Delete-if-old is
  * idempotent, so two sessions pruning the same dir concurrently is harmless. */
 export function pruneStaleSessionFiles(repoRoot: string, now: number, maxAgeMs: number = PRUNE_MAX_AGE_MS): void {
-  for (const sub of [GUARD_SUBDIR, RECEIPT_SUBDIR]) {
+  for (const sub of [GUARD_SUBDIR, RECEIPT_SUBDIR, COMPLETENESS_SUBDIR]) {
     const dir = join(repoRoot, sub)
     let entries: string[]
     try {

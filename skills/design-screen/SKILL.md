@@ -70,7 +70,9 @@ compose the screen from **instances** (not fresh frames). As you go, write the
 frame's Dev Mode annotation: the arrangement prose plus the `argo-screen`
 manifest block (the registry keys this screen requires, `xN`/`x0` as needed) —
 set it in the same `use_figma` write that composes, via
-`frame.annotations = [{ labelMarkdown: '```argo-screen\n…\n```' }]`.
+`frame.annotations = [{ labelMarkdown: '```argo-screen\n…\n```' }]`. Right after
+composing a screen, run `argo design mark-screen-composed --screen <name>` so the
+stop gate knows its P4b completeness check is owed (re-composing re-owes it).
 
 `design/registry.json` (component name → node id, committed on `main`) is the
 **code bridge** — the mapping that lets code generation resolve each instance to
@@ -108,13 +110,18 @@ No frozen contract; completeness is a cheap layered check:
   **advisory-loud**: the command exits non-zero when not clean so you notice and
   fix (or override at ship), but NO hook consumes that exit — tier-0 stays the
   one hard gate.
-- **(b) Advisory completeness check (must-exist, non-blocking on content):** a
-  checklist generated **mechanically from the PRD's `Visible in build?` rows
-  before the build**, diffed against the built screenshot after → present/absent
-  per requirement. It reads PRD rows + screenshots ONLY (never the arrangement
-  note, never this transcript) so it stays independent. You MAY override an
-  "absent" flag and ship, but the check artifact MUST exist — you cannot silently
-  skip running it (this closes the D01 "silent because skipped" gap without
+- **(b) Advisory completeness check (must-exist, non-blocking on content):**
+  generate the checklist **mechanically** with
+  `argo design completeness-checklist --screen <name> --prd <path>` — it selects
+  the PRD requirements the feature→screen matrix disposes `covered-by` this
+  screen whose `Visible in build?` is `yes`/`partial` (deterministic; the
+  verifier never picks its own scope). Spawn the **design-verifier** agent with
+  that checklist + the built screenshots ONLY (never the arrangement note, never
+  this transcript) → it rules each requirement present/absent. Then run
+  `argo design record-completeness --screen <name> --result '<summary>'`. You MAY
+  override an "absent" flag and ship, but the check MUST have RUN — the stop gate
+  blocks a composed screen whose completeness was never recorded (existence only,
+  never on what it found; closes the D01 "silent because skipped" gap without
   content-blocking). For a pure recompose of banked instances, (a) alone may
   suffice; for a NEW composite or high PRD-REQ density, always run (b).
 - **(c) You** make the ship call, informed by (a) + (b). Never cut the visual

@@ -11,7 +11,10 @@ import {
   readSessionWriteCount,
   writeSessionReceiptEntry,
   readSessionReceipt,
-  pruneStaleSessionFiles
+  pruneStaleSessionFiles,
+  markScreenComposed,
+  recordScreenCompleteness,
+  pendingCompletenessScreens
 } from './session-guard.js'
 
 describe('session-guard — per-session gate state, race-free by namespacing', () => {
@@ -73,5 +76,34 @@ describe('session-guard — per-session gate state, race-free by namespacing', (
 
   it('prune is a no-op (no throw) when the dirs do not exist', () => {
     expect(() => pruneStaleSessionFiles(join(repo, 'nope'), Date.now())).not.toThrow()
+  })
+
+  describe('P4b completeness tracking', () => {
+    it('a composed screen is pending until its completeness is recorded', () => {
+      markScreenComposed(repo, 'A', 'first-run', 1000)
+      expect(pendingCompletenessScreens(repo, 'A')).toEqual(['first-run'])
+      recordScreenCompleteness(repo, 'A', 'first-run', 1001)
+      expect(pendingCompletenessScreens(repo, 'A')).toEqual([])
+    })
+
+    it('re-composing a screen re-owes the check (recordedAt reset)', () => {
+      markScreenComposed(repo, 'A', 'first-run', 1000)
+      recordScreenCompleteness(repo, 'A', 'first-run', 1001)
+      expect(pendingCompletenessScreens(repo, 'A')).toEqual([])
+      markScreenComposed(repo, 'A', 'first-run', 1002) // built again → stale check
+      expect(pendingCompletenessScreens(repo, 'A')).toEqual(['first-run'])
+    })
+
+    it('tracks multiple screens independently and is isolated per session', () => {
+      markScreenComposed(repo, 'A', 'first-run', 1000)
+      markScreenComposed(repo, 'A', 'cockpit-main', 1000)
+      recordScreenCompleteness(repo, 'A', 'first-run', 1001)
+      expect(pendingCompletenessScreens(repo, 'A')).toEqual(['cockpit-main'])
+      expect(pendingCompletenessScreens(repo, 'B')).toEqual([]) // B never composed anything
+    })
+
+    it('pending is empty for a session that composed nothing', () => {
+      expect(pendingCompletenessScreens(repo, 'never')).toEqual([])
+    })
   })
 })

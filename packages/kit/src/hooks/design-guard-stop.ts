@@ -38,7 +38,13 @@ import { join } from 'node:path'
 import { makeBlock } from './lib/gate-block.js'
 import { findArgoJson, setUpDesignApps } from '../config/argo-json.js'
 import { resolveRepoRoot } from '../lib/repo-root.js'
-import { appKeyForRoot, readSessionReceipt, readSessionWriteCount, pruneStaleSessionFiles } from '../lib/session-guard.js'
+import {
+  appKeyForRoot,
+  readSessionReceipt,
+  readSessionWriteCount,
+  pruneStaleSessionFiles,
+  pendingCompletenessScreens
+} from '../lib/session-guard.js'
 
 const block = makeBlock('Design guard')
 
@@ -107,6 +113,18 @@ if (sessionId) {
     if (typeof entry.violationCount !== 'number' || entry.violationCount !== 0)
       block(`last audit found ${entry.violationCount ?? 'unknown'} violation(s) in ${appKey} — fix and re-audit before stopping`)
   }
+
+  // P4b completeness must-exist gate (existence only, never content): a screen
+  // this session COMPOSED must have had its advisory completeness check RUN
+  // (`argo design record-completeness`). This blocks a silent skip of the check,
+  // never on what the check found — the human may knowingly ship over `absent`
+  // flags; they may not skip running it. Re-composing a screen re-owes the check.
+  const pending = pendingCompletenessScreens(repoRoot, sessionId)
+  if (pending.length > 0)
+    block(
+      `screen(s) composed without running the completeness check: ${pending.join(', ')} — run the P4b design-verifier and \`argo design record-completeness\` before stopping (it does not have to come back all-present; it just has to run)`
+    )
+
   process.exit(0)
 }
 

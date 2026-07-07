@@ -22,7 +22,7 @@ import { join } from 'node:path'
 import { resolveRepoRoot } from '../lib/repo-root.js'
 import { findDesignBlock } from './prepare-tier0-audit-options.js'
 import { registryComponentNames } from '../design-kit/component-names.js'
-import { isKitPageName, buildKitRegistryEntries } from '../design-kit/registry-reconcile.js'
+import { kitPageIndices, buildKitRegistryEntries } from '../design-kit/registry-reconcile.js'
 import { readDesignJsonOrRebuild, writeDesignJson } from './lib/write-design-json.js'
 
 const API = 'https://api.figma.com/v1'
@@ -67,6 +67,7 @@ export type MarshaledComponent = {
   name: string
   nodeId: string
   pageName: string
+  pageIndex: number
   componentPropertyDefinitions?: Record<string, { type: string; variantOptions?: string[] }>
   description?: string
 }
@@ -86,13 +87,14 @@ const TRAVERSABLE_CONTAINER_TYPES = new Set(['SECTION', 'FRAME'])
  */
 export function marshalRestDocument(doc: RestDocument): MarshaledComponent[] {
   const out: MarshaledComponent[] = []
-  for (const page of doc.document.children ?? []) {
-    collect(page.children ?? [], page.name, doc, out)
-  }
+  const pages = doc.document.children ?? []
+  pages.forEach((page, pageIndex) => {
+    collect(page.children ?? [], page.name, pageIndex, doc, out)
+  })
   return out
 }
 
-function collect(nodes: RestNode[], pageName: string, doc: RestDocument, out: MarshaledComponent[]): void {
+function collect(nodes: RestNode[], pageName: string, pageIndex: number, doc: RestDocument, out: MarshaledComponent[]): void {
   for (const node of nodes) {
     if (COMPONENT_NODE_TYPES.has(node.type)) {
       const meta = doc.components?.[node.id] ?? doc.componentSets?.[node.id]
@@ -100,13 +102,14 @@ function collect(nodes: RestNode[], pageName: string, doc: RestDocument, out: Ma
         name: node.name,
         nodeId: node.id,
         pageName,
+        pageIndex,
         componentPropertyDefinitions: node.componentPropertyDefinitions,
         ...(meta?.description ? { description: meta.description } : {})
       })
       continue // never descend into a component's own subtree
     }
     if (TRAVERSABLE_CONTAINER_TYPES.has(node.type) && node.children) {
-      collect(node.children, pageName, doc, out)
+      collect(node.children, pageName, pageIndex, doc, out)
     }
   }
 }
@@ -119,15 +122,18 @@ function collect(nodes: RestNode[], pageName: string, doc: RestDocument, out: Ma
  */
 export function buildPullRegistryResult({
   liveComponents,
+  orderedPageNames,
   registry,
   now
 }: {
   liveComponents: MarshaledComponent[]
+  orderedPageNames: string[]
   registry: { components?: Record<string, unknown> }
   now: string
 }) {
   const existingNames = new Set(registryComponentNames(registry))
-  const kitComponents = liveComponents.filter((c) => isKitPageName(c.pageName))
+  const kitPages = kitPageIndices(orderedPageNames)
+  const kitComponents = liveComponents.filter((c) => kitPages.has(c.pageIndex))
   const customComponentCount = liveComponents.length - kitComponents.length
   const newEntries = buildKitRegistryEntries({ liveKitComponents: kitComponents, existingNames }, now)
   return { newEntries, kitComponentCount: kitComponents.length, customComponentCount }
@@ -145,13 +151,19 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const figmaToken = token(cwd)
   const doc = await fetchFile(fileKey, figmaToken)
   const liveComponents = marshalRestDocument(doc)
+  const orderedPageNames = (doc.document.children ?? []).map((p) => p.name)
 
   const registry = readDesignJsonOrRebuild<{ components?: Record<string, unknown> }>(cwd, 'registry.json', {
     rebuild: () => ({ components: {} })
   })
 
   const now = new Date().toISOString()
-  const { newEntries, kitComponentCount, customComponentCount } = buildPullRegistryResult({ liveComponents, registry, now })
+  const { newEntries, kitComponentCount, customComponentCount } = buildPullRegistryResult({
+    liveComponents,
+    orderedPageNames,
+    registry,
+    now
+  })
 
   const merged = { ...registry, components: { ...(registry.components ?? {}), ...newEntries } }
   writeDesignJson(cwd, 'registry.json', merged)

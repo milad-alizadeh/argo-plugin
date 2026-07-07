@@ -26,21 +26,59 @@ export function isScratchPageName(pageName: string): boolean {
   return pageName.startsWith('Scratch')
 }
 
+/** A section-separator page: name begins with 2+ dash/box-dash chars ('---', '------', '──── Wireframes ────'). */
+export function isDividerPageName(pageName: string): boolean {
+  return /^[─-]{2,}/.test(pageName.trim())
+}
+
 /**
- * By-exclusion, not a name list: the starter file's own internal page
- * names aren't recorded anywhere in this repo and are deliberately not
- * turned into project config (owner ruling: no config sprawl, no version
- * handshake). A page counts as "kit" unless it's one of this project's
- * own canonical pages (file-structure.md's page order) or a divider/
- * sandbox page. Fragile by design, see the plan's Risks section.
+ * Per-name exclusion of a project's OWN canonical pages (file-structure.md's
+ * page order) and divider/sandbox pages. Used as a within-band safety filter
+ * by `kitPageNames`, not as the primary kit/not-kit decision (that is
+ * positional, see `kitPageNames`).
  */
 export function isKitPageName(pageName: string): boolean {
-  if (pageName === 'Custom Components' || pageName === 'Foundations') return false
+  if (pageName === 'Custom Components' || pageName === 'Foundations' || pageName === 'Screens') return false
   if (isWireframePageName(pageName)) return false // Cover + W\d{2}
   if (/^D\d{2}(\b|\s)/.test(pageName)) return false // D\d{2} hi-fi groups
   if (isScratchPageName(pageName)) return false
-  if (/^[─-]{2,}/.test(pageName)) return false // divider pages (──── Wireframes ────, etc.)
+  if (isDividerPageName(pageName)) return false
   return true
+}
+
+/**
+ * Positional kit-page classifier. The shadcn starter groups its reusable
+ * primitives in the FIRST divider-delimited band: pages before the first
+ * separator are project/doc pages (Cover, Custom Components, Screens); the
+ * pages between the first and second separator are the primitives; everything
+ * from the second separator onward is the starter's demo sections
+ * (Examples/Blocks/Charts) and icon libraries (Lucide/Tabler/... Icons).
+ *
+ * Returns page INDICES, not names, and MUST be positional: the starter reuses
+ * primitive names for demo pages (this file has `Calendar`, `Sidebar`, and
+ * `Tooltip` as BOTH a real primitive page AND a later demo page), so a
+ * name-keyed result cannot tell the kit-band `Calendar` from the demo-band
+ * `Calendar` — both share the string. A name allowlist would separately need
+ * the per-file page list this project refuses to carry as config. Fails
+ * closed: a file with no divider structure yields no kit pages (better than
+ * enumerating every icon-library page as kit, which produced ~14k bogus
+ * entries before this fix).
+ */
+export function kitPageIndices(orderedPageNames: string[]): Set<number> {
+  const firstDivider = orderedPageNames.findIndex(isDividerPageName)
+  if (firstDivider === -1) return new Set()
+  let end = orderedPageNames.length
+  for (let i = firstDivider + 1; i < orderedPageNames.length; i++) {
+    if (isDividerPageName(orderedPageNames[i])) {
+      end = i
+      break
+    }
+  }
+  const kit = new Set<number>()
+  for (let i = firstDivider + 1; i < end; i++) {
+    if (isKitPageName(orderedPageNames[i])) kit.add(i)
+  }
+  return kit
 }
 
 export function reconcileRegistrySweep({

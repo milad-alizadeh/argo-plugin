@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { reconcileRegistrySweep, isScratchPageName, isKitPageName, extractVariantMatrix, buildKitRegistryEntries, isPascalCaseComponentName } from './registry-reconcile.js'
+import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, isPascalCaseComponentName } from './registry-reconcile.js'
 
 describe('reconcileRegistrySweep (design-memory-placement.md A3, figma-sync sweep)', () => {
   it('flags a live component with no registry entry (registry-unregistered)', () => {
@@ -77,6 +77,65 @@ describe('isKitPageName', () => {
   it('treats an arbitrary starter-owned page name as kit', () => {
     expect(isKitPageName('Buttons')).toBe(true)
     expect(isKitPageName('Overlays')).toBe(true)
+  })
+
+  it('excludes the project Screens page', () => {
+    expect(isKitPageName('Screens')).toBe(false)
+  })
+})
+
+describe('isDividerPageName', () => {
+  it('matches pure and labeled dash separators, not real page names', () => {
+    expect(isDividerPageName('---')).toBe(true)
+    expect(isDividerPageName('------')).toBe(true)
+    expect(isDividerPageName('──── Wireframes ────')).toBe(true)
+    expect(isDividerPageName('Buttons')).toBe(false)
+    expect(isDividerPageName('Calendar')).toBe(false)
+  })
+})
+
+describe('kitPageIndices (positional divider-band classifier)', () => {
+  // Mirrors the real shadcn starter's page order (verified live 2026-07-07).
+  const REAL = [
+    'Cover', 'About the libarary', 'Custom Components', 'Screens', '------',
+    'Accordion', 'Button', 'Calendar', 'Sidebar', 'Tooltip', '---',
+    'Examples', 'Dashboard', '---', 'Blocks', 'Sidebar', 'Calendar', '---',
+    'Charts', 'Tooltip', '---', 'Lucide Icons', 'Tabler Icons', 'HugeIcons'
+  ]
+
+  it('selects only the first band after the first divider', () => {
+    const kit = kitPageIndices(REAL)
+    // primitives band = indices 5..9 (Accordion, Button, Calendar, Sidebar, Tooltip)
+    expect([...kit].sort((a, b) => a - b)).toEqual([5, 6, 7, 8, 9])
+  })
+
+  it('is collision-proof: the kit-band Calendar/Sidebar/Tooltip are in, the demo ones are out', () => {
+    const kit = kitPageIndices(REAL)
+    expect(kit.has(7)).toBe(true) // kit-band Calendar
+    expect(kit.has(16)).toBe(false) // demo-band Calendar (same name, later index)
+    expect(kit.has(8)).toBe(true) // kit-band Sidebar
+    expect(kit.has(15)).toBe(false) // demo-band Sidebar
+  })
+
+  it('excludes icon-library pages (they live after the band)', () => {
+    const kit = kitPageIndices(REAL)
+    expect(kit.has(21)).toBe(false) // Lucide Icons
+    expect(kit.has(23)).toBe(false) // HugeIcons
+  })
+
+  it('excludes a project page that strays into the band via the safety filter', () => {
+    const kit = kitPageIndices(['Cover', '------', 'Button', 'Scratch - wip', 'Card', '---', 'Examples'])
+    // band = indices 2,3,4; Scratch (index 3) is safety-filtered out
+    expect([...kit].sort((a, b) => a - b)).toEqual([2, 4])
+  })
+
+  it('fails closed on a file with no divider structure (no kit pages, not every page)', () => {
+    expect(kitPageIndices(['Cover', 'Custom Components', 'Buttons', 'Lucide Icons']).size).toBe(0)
+  })
+
+  it('handles a band that runs to end-of-file with no closing divider', () => {
+    const kit = kitPageIndices(['Cover', '------', 'Button', 'Card'])
+    expect([...kit].sort((a, b) => a - b)).toEqual([2, 3])
   })
 })
 

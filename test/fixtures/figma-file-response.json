@@ -1,5 +1,5 @@
 {
-  "_fixtureNote": "Trimmed, hand-assembled from Figma REST API's documented GET /v1/files/:key response shape (https://www.figma.com/developers/api#files), NOT a live capture — no FIGMA_TOKEN/real starter file was available in this build environment. registry-covers-kit.md's own Risks section flags marshalRestDocument's field assumptions as unverified until a real fixture lands; this file is the placeholder that unblocks unit testing until that real fetch happens. Covers: one project-owned page (Custom Components, a COMPONENT), one kit page with a top-level COMPONENT_SET carrying componentPropertyDefinitions, one kit page with a component set nested inside a SECTION container (council traversal-depth finding), one Scratch page (excluded by isKitPageName), plus the document-root components/componentSets description maps (owner addendum).",
+  "_fixtureNote": "Trimmed, hand-assembled from Figma REST API's documented GET /v1/files/:key response shape (https://www.figma.com/developers/api#files), NOT a live capture. Mirrors the real shadcn starter's PAGE-BAND structure (verified live 2026-07-07): project/doc pages, a '------' separator, the primitives band, a '---' separator, then demo sections and icon-library pages. Exercises the positional kitPageIndices classifier including the name-collision case (Calendar appears as BOTH a kit-band primitive page AND a post-divider demo page — only the primitive is kit), a within-band Scratch page (excluded by the safety filter), an icon-library page (excluded by band), and a SECTION-nested component set (council traversal-depth finding). Root components/componentSets carry native descriptions (owner addendum).",
   "name": "Argo Design Kit Starter",
   "lastModified": "2026-07-01T00:00:00Z",
   "version": "123456789",
@@ -13,20 +13,11 @@
         "name": "Custom Components",
         "type": "CANVAS",
         "children": [
-          {
-            "id": "1:2",
-            "name": "SessionCard",
-            "type": "COMPONENT",
-            "componentPropertyDefinitions": {}
-          },
-          {
-            "id": "1:3",
-            "name": "Not A Component Frame",
-            "type": "FRAME",
-            "children": []
-          }
+          { "id": "1:2", "name": "SessionCard", "type": "COMPONENT", "componentPropertyDefinitions": {} },
+          { "id": "1:3", "name": "Not A Component Frame", "type": "FRAME", "children": [] }
         ]
       },
+      { "id": "9:1", "name": "------", "type": "CANVAS", "children": [] },
       {
         "id": "2:1",
         "name": "Buttons",
@@ -41,11 +32,7 @@
               "disabled": { "type": "BOOLEAN" }
             }
           },
-          {
-            "id": "2:3",
-            "name": "lucide/arrow-right",
-            "type": "COMPONENT"
-          }
+          { "id": "2:3", "name": "lucide/arrow-right", "type": "COMPONENT" }
         ]
       },
       {
@@ -62,32 +49,54 @@
                 "id": "3:3",
                 "name": "Dialog",
                 "type": "COMPONENT_SET",
-                "componentPropertyDefinitions": {
-                  "size": { "type": "VARIANT", "variantOptions": ["sm", "md"] }
-                }
+                "componentPropertyDefinitions": { "size": { "type": "VARIANT", "variantOptions": ["sm", "md"] } }
               }
             ]
           }
         ]
       },
       {
+        "id": "5:1",
+        "name": "Calendar",
+        "type": "CANVAS",
+        "children": [{ "id": "5:2", "name": "Calendar", "type": "COMPONENT", "componentPropertyDefinitions": {} }]
+      },
+      {
         "id": "4:1",
         "name": "Scratch - wip",
         "type": "CANVAS",
-        "children": [
-          {
-            "id": "4:2",
-            "name": "Throwaway",
-            "type": "COMPONENT"
-          }
-        ]
+        "children": [{ "id": "4:2", "name": "Throwaway", "type": "COMPONENT" }]
+      },
+      { "id": "9:2", "name": "---", "type": "CANVAS", "children": [] },
+      {
+        "id": "6:1",
+        "name": "Examples",
+        "type": "CANVAS",
+        "children": [{ "id": "6:2", "name": "DemoDashboard", "type": "COMPONENT" }]
+      },
+      {
+        "id": "7:1",
+        "name": "Calendar",
+        "type": "CANVAS",
+        "children": [{ "id": "7:2", "name": "CalendarDemo", "type": "COMPONENT" }]
+      },
+      { "id": "9:3", "name": "---", "type": "CANVAS", "children": [] },
+      {
+        "id": "8:1",
+        "name": "Lucide Icons",
+        "type": "CANVAS",
+        "children": [{ "id": "8:2", "name": "arrow-up", "type": "COMPONENT" }]
       }
     ]
   },
   "components": {
     "1:2": { "key": "componentkey-1-2", "name": "SessionCard", "description": "Session summary card used in the dashboard list." },
     "2:3": { "key": "componentkey-2-3", "name": "lucide/arrow-right", "description": "" },
-    "4:2": { "key": "componentkey-4-2", "name": "Throwaway", "description": "" }
+    "4:2": { "key": "componentkey-4-2", "name": "Throwaway", "description": "" },
+    "5:2": { "key": "componentkey-5-2", "name": "Calendar", "description": "Date picker calendar grid." },
+    "6:2": { "key": "componentkey-6-2", "name": "DemoDashboard", "description": "" },
+    "7:2": { "key": "componentkey-7-2", "name": "CalendarDemo", "description": "" },
+    "8:2": { "key": "componentkey-8-2", "name": "arrow-up", "description": "" }
   },
   "componentSets": {
     "2:2": { "key": "componentsetkey-2-2", "name": "Buttons", "description": "Primary/secondary/ghost button variants." },

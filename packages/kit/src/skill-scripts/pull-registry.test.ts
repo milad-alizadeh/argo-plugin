@@ -14,6 +14,7 @@ describe('marshalRestDocument', () => {
           name: 'SessionCard',
           nodeId: '1:2',
           pageName: 'Custom Components',
+          pageIndex: 0,
           componentPropertyDefinitions: {},
           description: 'Session summary card used in the dashboard list.'
         },
@@ -21,20 +22,22 @@ describe('marshalRestDocument', () => {
           name: 'Buttons',
           nodeId: '2:2',
           pageName: 'Buttons',
+          pageIndex: 2,
           componentPropertyDefinitions: {
             size: { type: 'VARIANT', variantOptions: ['sm', 'md', 'lg'] },
             disabled: { type: 'BOOLEAN' }
           },
           description: 'Primary/secondary/ghost button variants.'
         },
-        { name: 'lucide/arrow-right', nodeId: '2:3', pageName: 'Buttons', componentPropertyDefinitions: undefined },
+        { name: 'lucide/arrow-right', nodeId: '2:3', pageName: 'Buttons', pageIndex: 2, componentPropertyDefinitions: undefined },
         {
           name: 'Dialog',
           nodeId: '3:3',
           pageName: 'Overlays',
+          pageIndex: 3,
           componentPropertyDefinitions: { size: { type: 'VARIANT', variantOptions: ['sm', 'md'] } }
         },
-        { name: 'Throwaway', nodeId: '4:2', pageName: 'Scratch - wip', componentPropertyDefinitions: undefined }
+        { name: 'Throwaway', nodeId: '4:2', pageName: 'Scratch - wip', pageIndex: 5, componentPropertyDefinitions: undefined }
       ])
     )
   })
@@ -44,37 +47,51 @@ describe('marshalRestDocument', () => {
     expect(components.some((c) => c.name === 'Not A Component Frame')).toBe(false)
   })
 
-  it('returns exactly the 5 real components, no more', () => {
+  it('returns every real component across all pages (divider pages carry none)', () => {
     const components = marshalRestDocument(fixture as any)
-    expect(components).toHaveLength(5)
+    // 9 components: SessionCard, Buttons, lucide/arrow-right, Dialog, Calendar (kit),
+    // Throwaway, DemoDashboard, CalendarDemo, arrow-up. Marshaling keeps ALL of them;
+    // the kit/custom split happens later in buildPullRegistryResult.
+    expect(components).toHaveLength(9)
   })
 })
 
 describe('buildPullRegistryResult', () => {
-  it('classifies kit vs custom by page name and upserts only newly-seen kit components', () => {
+  it('classifies kit vs custom by divider band (positional, collision-proof) and upserts only newly-seen kit components', () => {
     const liveComponents = marshalRestDocument(fixture as any)
+    const orderedPageNames = (fixture as any).document.children.map((p: any) => p.name)
     const result = buildPullRegistryResult({
       liveComponents,
+      orderedPageNames,
       registry: { components: {} },
       now: '2026-07-07T00:00:00.000Z'
     })
-    // Custom Components (SessionCard) and Scratch (Throwaway, sandbox — never "kit") are non-kit pages.
-    expect(result.customComponentCount).toBe(2)
-    // Kit pages: Buttons (Buttons, lucide/arrow-right) and Overlays (Dialog).
-    expect(result.kitComponentCount).toBe(3)
-    expect(Object.keys(result.newEntries).sort()).toEqual(['Buttons', 'Dialog'])
+    // Non-kit: SessionCard (Custom Components, before the band), Throwaway (in-band Scratch,
+    // safety-filtered), DemoDashboard (Examples demo), CalendarDemo (a demo page named "Calendar"
+    // that collides by name with the kit Calendar but sits at a different page index), arrow-up
+    // (Lucide Icons page, after the band).
+    expect(result.customComponentCount).toBe(5)
+    // Kit band (between '------' and the next '---'): Buttons page (Buttons + lucide/arrow-right),
+    // Overlays (Dialog, nested inside a SECTION), Calendar (Calendar).
+    expect(result.kitComponentCount).toBe(4)
+    // lucide/-prefixed names are dropped by buildKitRegistryEntries.
+    expect(Object.keys(result.newEntries).sort()).toEqual(['Buttons', 'Calendar', 'Dialog'])
     expect(result.newEntries.Buttons.kind).toBe('kit')
     expect(result.newEntries.Buttons.description).toBe('Primary/secondary/ghost button variants.')
+    // Collision proof: the kit-band Calendar is registered with its description; the demo Calendar is not.
+    expect(result.newEntries.Calendar.description).toBe('Date picker calendar grid.')
   })
 
   it('leaves an already-registered kit component untouched', () => {
     const liveComponents = marshalRestDocument(fixture as any)
+    const orderedPageNames = (fixture as any).document.children.map((p: any) => p.name)
     const result = buildPullRegistryResult({
       liveComponents,
+      orderedPageNames,
       registry: { components: { Buttons: { nodeId: '2:2', kind: 'kit', status: 'audit-clean', lastSyncedAt: null, variantMatrix: {} } } },
       now: '2026-07-07T00:00:00.000Z'
     })
-    expect(Object.keys(result.newEntries)).toEqual(['Dialog'])
+    expect(Object.keys(result.newEntries).sort()).toEqual(['Calendar', 'Dialog'])
   })
 })
 

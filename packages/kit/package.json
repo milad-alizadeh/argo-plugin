@@ -1,8 +1,8 @@
 {
   "name": "@argohq/kit",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "type": "module",
-  "description": "Deterministic half of the argo plugin — hook gates, design-kit comparator, skill-script CLI, reporters. The plugin's skills/agents are the LLM half; this package is everything that must run as real code.",
+  "description": "Deterministic half of the argo plugin \u2014 hook gates, design-kit comparator, skill-script CLI, reporters. The plugin's skills/agents are the LLM half; this package is everything that must run as real code.",
   "bin": {
     "argo": "bin/argo.js"
   },
@@ -17,19 +17,58 @@
     "prepublishOnly": "bun run build"
   },
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
-    "./design-kit": { "types": "./dist/design-kit/index.d.ts", "default": "./dist/design-kit/index.js" },
-    "./design-kit/tier0-rules": { "types": "./dist/design-kit/tier0-rules.d.ts", "default": "./dist/design-kit/tier0-rules.js" },
-    "./design-kit/tier0-audit": { "types": "./dist/design-kit/tier0-audit.d.ts", "default": "./dist/design-kit/tier0-audit.js" },
-    "./design-kit/instance-presence": { "types": "./dist/design-kit/instance-presence.d.ts", "default": "./dist/design-kit/instance-presence.js" },
-    "./design-kit/staleness": { "types": "./dist/design-kit/staleness.d.ts", "default": "./dist/design-kit/staleness.js" },
-    "./design-kit/variant-shape-diff": { "types": "./dist/design-kit/variant-shape-diff.d.ts", "default": "./dist/design-kit/variant-shape-diff.js" },
-    "./design-kit/completeness-checklist": { "types": "./dist/design-kit/completeness-checklist.d.ts", "default": "./dist/design-kit/completeness-checklist.js" },
-    "./design-kit/shadcn-tailwind": { "types": "./dist/recipes/shadcn-tailwind/index.d.ts", "default": "./dist/recipes/shadcn-tailwind/index.js" },
-    "./design-kit/shadcn-tailwind/tier0-rules": { "types": "./dist/recipes/shadcn-tailwind/tier0-rules.d.ts", "default": "./dist/recipes/shadcn-tailwind/tier0-rules.js" },
-    "./design-kit/shadcn-tailwind/tier0-walker": { "types": "./dist/recipes/shadcn-tailwind/tier0-walker.d.ts", "default": "./dist/recipes/shadcn-tailwind/tier0-walker.js" },
-    "./walkers": { "types": "./dist/walkers/index.d.ts", "default": "./dist/walkers/index.js" },
-    "./reporters/playwright": { "types": "./dist/reporters/playwright/index.d.ts", "default": "./dist/reporters/playwright/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./design-kit": {
+      "types": "./dist/design-kit/index.d.ts",
+      "default": "./dist/design-kit/index.js"
+    },
+    "./design-kit/tier0-rules": {
+      "types": "./dist/design-kit/tier0-rules.d.ts",
+      "default": "./dist/design-kit/tier0-rules.js"
+    },
+    "./design-kit/tier0-audit": {
+      "types": "./dist/design-kit/tier0-audit.d.ts",
+      "default": "./dist/design-kit/tier0-audit.js"
+    },
+    "./design-kit/instance-presence": {
+      "types": "./dist/design-kit/instance-presence.d.ts",
+      "default": "./dist/design-kit/instance-presence.js"
+    },
+    "./design-kit/staleness": {
+      "types": "./dist/design-kit/staleness.d.ts",
+      "default": "./dist/design-kit/staleness.js"
+    },
+    "./design-kit/variant-shape-diff": {
+      "types": "./dist/design-kit/variant-shape-diff.d.ts",
+      "default": "./dist/design-kit/variant-shape-diff.js"
+    },
+    "./design-kit/completeness-checklist": {
+      "types": "./dist/design-kit/completeness-checklist.d.ts",
+      "default": "./dist/design-kit/completeness-checklist.js"
+    },
+    "./design-kit/shadcn-tailwind": {
+      "types": "./dist/recipes/shadcn-tailwind/index.d.ts",
+      "default": "./dist/recipes/shadcn-tailwind/index.js"
+    },
+    "./design-kit/shadcn-tailwind/tier0-rules": {
+      "types": "./dist/recipes/shadcn-tailwind/tier0-rules.d.ts",
+      "default": "./dist/recipes/shadcn-tailwind/tier0-rules.js"
+    },
+    "./design-kit/shadcn-tailwind/tier0-walker": {
+      "types": "./dist/recipes/shadcn-tailwind/tier0-walker.d.ts",
+      "default": "./dist/recipes/shadcn-tailwind/tier0-walker.js"
+    },
+    "./walkers": {
+      "types": "./dist/walkers/index.d.ts",
+      "default": "./dist/walkers/index.js"
+    },
+    "./reporters/playwright": {
+      "types": "./dist/reporters/playwright/index.d.ts",
+      "default": "./dist/reporters/playwright/index.js"
+    }
   },
   "files": [
     "bin",

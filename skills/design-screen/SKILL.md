@@ -157,6 +157,12 @@ Front-loading is the dominant token lever (composition-dominant screens cost
   variant + REUSE/EXTEND/NEW verdict, generated from INVENTORY + registry) into
   every designer session. Resolve by lookup; fire live `search_design_system` only
   on a genuine miss.
+- **Never import a kit component by a guessed/remembered/committed key — resolve
+  it LIVE, and timeout-guard the import** (figma-create §"Reuse check", recipe
+  `importKit`). A stale key HANGS rather than errors, so an unguarded import is
+  the classic "designer stuck for ages" spiral — the timeout turns it into a
+  fast, loud failure that stop-the-line (R8) can act on. Re-resolve once, then
+  stop; never retry the same key.
 - **Author tier-0-compliant up front** (naming / Semantic binding / auto-layout)
   rather than create→audit→fix→re-audit round-trips.
 - **Capture screenshots inline** (`await node.screenshot()` in the finishing write

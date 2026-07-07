@@ -88,13 +88,35 @@ file → skip; never invent one.
      **names and aliases** (e.g. `chip`/`tag`/`pill` → `Badge`,
      `accordion`/`disclosure` → `Collapsible`). A match → **live-confirm**
      its key and variant props via `search_design_system`/`get_metadata`
-     before importing (`importComponentByKeyAsync`) — inventory names are
-     browse hints only; keys are always resolved live, never trusted from
-     the committed file.
+     before importing — inventory names are browse hints only; **keys are
+     always resolved live, never guessed, reused from memory, or trusted from
+     the committed file** (a guessed/stale key is the #1 cause of a hung
+     import). Pick the importer by the inventory `type`:
+     `importComponentSetByKeyAsync` for a `COMPONENT_SET`,
+     `importComponentByKeyAsync` for a `COMPONENT`.
+  2a. **Timeout-guard EVERY import — a bad key HANGS, it does not error.**
+     `importComponent(Set)ByKeyAsync` on a stale/unpublished key stalls on a
+     fetch that never resolves, so it slips past both R8 ("if import fails")
+     and the anti-spiral rule (neither trips on a hang — only on an error).
+     Wrap every import in a timeout so a hang becomes a fast, loud failure:
+     ```js
+     async function importKit(key, kind /* 'set' | 'component' */, timeoutMs = 8000) {
+       const p = kind === 'set'
+         ? figma.importComponentSetByKeyAsync(key)
+         : figma.importComponentByKeyAsync(key)
+       return Promise.race([
+         p,
+         new Promise((_, rej) => setTimeout(
+           () => rej(new Error(`kit import timed out (${timeoutMs}ms) — key "${key}" is likely stale/unpublished; re-resolve LIVE via search_design_system, do NOT retry the same key`)),
+           timeoutMs))
+       ])
+     }
+     ```
   3. **Stop-the-line (R8):** if live confirmation or import of a chosen kit
-     component fails, **stop and report** — never fall back to building a
-     custom component to route around a broken import; that recreates the
-     exact duplication this check exists to prevent.
+     component fails **OR times out**, **stop and report** — re-resolve the key
+     live at most once, then stop; never retry the same key (figma-use Rule 14),
+     never fall back to building a custom component to route around a broken
+     import; that recreates the exact duplication this check exists to prevent.
   4. The run report MUST carry a **reuse-check line**: `reusing kit/X` |
      `extending kit/X by composition` | `closest kit matches A, B —
      insufficient because <concrete reason>, building custom`. This is the

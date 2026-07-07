@@ -71,7 +71,10 @@ wall-clock on call COUNT, not call size. Build accordingly:
   map for every subsequent frame. Never re-discover the same `wf-card` /
   `wf-panel-header` / icon per frame — blind per-frame rediscovery is pure
   waste (the same lesson `design-screen`'s resolution manifest encodes for
-  hi-fi).
+  hi-fi). Resolve keys LIVE (never a guessed/remembered key) and **timeout-guard
+  every `import…ByKeyAsync`** (figma-create's `importKit` recipe) — a stale key
+  HANGS rather than errors, the "stuck for ages" spiral; a timeout makes it fail
+  fast. Re-resolve once, then stop; never retry the same key.
 - **Inline verification.** Capture `await frame.screenshot()` in the SAME
   write call that finishes a frame; do not spend a separate round-trip on a
   `get_screenshot` per frame.

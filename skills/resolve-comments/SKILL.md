@@ -98,7 +98,7 @@ its page via the Plugin API (`figma.getNodeByIdAsync(nodeId)`, then walk
 | --- | --- | --- | --- |
 | `W##` (wireframe) | lo-fi wireframe | `figma-wireframe` — grayscale, lo-fi palette, kit instances, ONE typeface, no Semantic bindings | advisory (W pages are tier-0 exempt) |
 | `D##` (screen) | hi-fi screen | `figma-create` component-first screen path — composition from instances, bound spacing | **hard** tier-0 on the touched screen node |
-| `Custom Components` / `foundations/*` | component master | `figma-create` authoring rules — variant naming (D18), mode copies (D11), Semantic bindings, icons-as-instances | **hard** tier-0 named-component gate on the master |
+| `Custom Components` / `foundations/*` | component master | `figma-create` authoring rules — variant naming (D18), Semantic bindings, icons-as-instances | **hard** tier-0 named-component gate on the master |
 
 Component masters are the highest-stakes surface for a reason the other two lack:
 **editing a master ripples to every instance across every `D##` screen.** So a
@@ -133,7 +133,7 @@ last, one at a time):
 
 1. **Create the component master** from the flagged node (or the smallest
    subtree the comment scopes) under `figma-create`'s Authoring rules — variant
-   naming (D18), mode copies (D11), Semantic bindings, icons-as-instances — and
+   naming (D18), Semantic bindings, icons-as-instances — and
    register it in `design/registry.json` (the incremental upsert `figma-create`
    owns).
 2. **Replace the original with an instance** of the new master, so the screen is

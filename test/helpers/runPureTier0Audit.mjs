@@ -20,14 +20,11 @@ import {
   detachedInstanceViolation,
   nonSemanticNameViolation,
   variantNamingViolations,
-  modeCopyViolations,
   implicitLineHeightViolation,
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
   strokeScaleViolation
 } from '../../packages/kit/src/design-kit/tier0-rules.js'
-
-const SEMANTIC_COLLECTION_NAME = 'Semantic'
 
 export function auditPureNode(node, { semanticModes = [] } = {}) {
   const violations = []
@@ -69,10 +66,6 @@ export function auditPureNode(node, { semanticModes = [] } = {}) {
   if (nonSemanticName) report(nonSemanticName.rule, nonSemanticName.detail)
 
   for (const v of variantNamingViolations(node)) report(v.rule, v.detail)
-
-  if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') {
-    for (const v of modeCopyViolations(node, SEMANTIC_COLLECTION_NAME, semanticModes)) report(v.rule, v.detail)
-  }
 
   const lineHeight = implicitLineHeightViolation(node)
   if (lineHeight) report(lineHeight.rule, lineHeight.detail)

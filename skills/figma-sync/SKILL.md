@@ -83,10 +83,10 @@ behavior split — see `figma-to-code`'s presentation-regen seam).
    headless rebuilds never need live MCP access (C6). For every non-default
    Semantic mode: **do not** duplicate the frame — temporarily flip
    `explicitVariableModes` on the default-mode frame to that mode, capture,
-   then **revert** (D11, generalized to mode copies, 2026-07-05); a
-   single-mode Semantic collection has no non-default mode to capture, so
-   this degenerates to today's single-capture behavior. Screens never get a
-   hand-maintained mode duplicate, only components do.
+   then **revert** — the flip is capture-only and never persists (the owner
+   mandate forbids persistent explicit variable modes; mode-copy siblings are
+   retired). A single-mode Semantic collection has no non-default mode to
+   capture, so this degenerates to a single capture.
 5. **Export assets.** Icons/images via MCP asset tools (SVG optimized,
    `currentColor` where tokenized), committed alongside.
 6. **Build `story-map.json`.** Component key + node id → story id → import

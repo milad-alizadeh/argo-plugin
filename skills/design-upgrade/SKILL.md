@@ -31,7 +31,7 @@ either-side-only bump.
    they were authored in, then copy-paste them into the starter by hand in
    the Figma UI. Author/adjust the mirrors with the same conventions
    `figma-create` enforces (Semantic bindings, Auto Layout, D18 naming,
-   mode copies), then run `figma-audit` on them in the starter.
+  ), then run `figma-audit` on them in the starter.
 3. **Project opt-in.** Existing projects do NOT update automatically — their
    design file is an independent duplicate. A project adopts the refresh by
    either:

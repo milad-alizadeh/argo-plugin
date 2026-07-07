@@ -49,7 +49,6 @@ import {
   detachedInstanceViolation,
   nonSemanticNameViolation,
   variantNamingViolations,
-  modeCopyViolations,
   implicitLineHeightViolation,
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
@@ -224,14 +223,6 @@ async function auditNode(
   }
 
   for (const v of variantNamingViolations(node)) report(v.rule, v.detail)
-
-  if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') {
-    const siblings = (node.parent?.children ?? []).filter((sibling: any) => sibling !== node)
-    const insideComponentSet = node.parent?.type === 'COMPONENT_SET'
-    for (const v of modeCopyViolations({ type: node.type, name: node.name, siblings, insideComponentSet }, semanticCollectionId ?? '', semanticModes)) {
-      report(v.rule, v.detail)
-    }
-  }
 
   const lineHeight = implicitLineHeightViolation(node)
   if (lineHeight) report(lineHeight.rule, lineHeight.detail)
@@ -435,19 +426,11 @@ export async function runTier0Audit(
 }
 
 /**
- * D11 (generalized to mode copies, 2026-07-05): the mode-copy count is
- * DERIVED from the project's own Semantic collection at audit time, never a
- * hardcoded "Light"/"Dark" pair — `modes[0]` is the default mode the
- * component itself renders in; every mode after it needs a copy. Returns
- * `{ id: null, modes: [] }` if the Semantic collection (named
- * `semanticCollectionName`) doesn't exist yet (unseeded project), in which
- * case `modeCopyViolations` no-ops (nothing to check yet).
- *
- * Also returns the collection's real `id` (`VariableCollectionId:X:Y`) — a
- * node's `explicitVariableModes` is keyed by collection ID, never by name
- * (confirmed live, 2026-07-07: `modeCopyViolations` was comparing by name,
- * which can never match, so every mode copy in a file failed
- * `incorrect-mode-copy` regardless of how correctly it was authored).
+ * Resolves the project Semantic collection's real id
+ * (`VariableCollectionId:X:Y`) and ordered mode names; `{ id: null,
+ * modes: [] }` if the collection doesn't exist yet (unseeded project).
+ * Non-semantic-binding checks key off the id — a node's
+ * `explicitVariableModes` is keyed by collection ID, never by name.
  */
 async function collectSemanticModeNames(
   semanticCollectionName: string

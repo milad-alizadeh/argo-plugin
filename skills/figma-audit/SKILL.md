@@ -29,10 +29,7 @@ sandbox via `use_figma`; skipping that skill causes the usual hard-to-debug
 
 **Mechanism checks (every recipe):** unbound fills/strokes/radii/type,
 missing Auto Layout, detached instances, non-semantic names, D18 variant
-naming (`Size`→`size`, Title-Case→lowercase), missing or incorrect mode copy
-for **components only** (D11, generalized to mode copies, 2026-07-05: one
-copy per Semantic-collection mode beyond the default; a single-mode
-collection passes vacuously, zero copies required), explicit line-height
+naming (`Size`→`size`, Title-Case→lowercase), explicit line-height
 (D20), node-scoped story URLs (`?node-id=`, D1/C13), unbound Auto Layout
 gap/padding (D24, revised 2026-07-05: every non-zero `itemSpacing`/padding
 field must be bound to a Primitives or Semantic spacing variable — unbound

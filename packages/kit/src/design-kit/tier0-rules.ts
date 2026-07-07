@@ -242,39 +242,6 @@ export function variantNamingViolations(node: AnyNode): Violation[] {
   return violations
 }
 
-/**
- * D11 (generalized to mode copies, 2026-07-05): one visible instance copy per
- * mode of the project Semantic collection BEYOND the default mode (the
- * component itself renders in the default mode). `modes` is the Semantic
- * collection's ordered mode-name list; `modes[0]` is the default and is
- * skipped. A single-mode collection yields `modes.length === 1`, so this
- * returns `[]` vacuously — a dark-only project has zero copies to maintain.
- * node.siblings is resolved by the walker from node.parent.children (excluding
- * node itself).
- *
- * A variant COMPONENT inside a COMPONENT_SET is exempt: a set's children can
- * only be components, so an adjacent instance copy is structurally impossible
- * there — the mode copy is owed at the set level, where the walker checks it
- * against the set's page-level siblings. `node.insideComponentSet` is resolved
- * by the walker from node.parent.type.
- */
-export function modeCopyViolations(node: AnyNode, semanticCollectionId: string, modes: string[]): Violation[] {
-  if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return []
-  if (node.type === 'COMPONENT' && node.insideComponentSet) return []
-  const violations: Violation[] = []
-  for (const mode of (modes ?? []).slice(1)) {
-    const copy = (node.siblings ?? []).find((sibling: AnyNode) => sibling.name === `${node.name} (${mode})`)
-    if (!copy) {
-      violations.push({ rule: 'missing-mode-copy', detail: `component has no adjacent "${mode}" mode instance copy (D11)` })
-      continue
-    }
-    if (copy.explicitVariableModes?.[semanticCollectionId] == null) {
-      violations.push({ rule: 'incorrect-mode-copy', detail: `"${mode}" mode copy does not set the Semantic collection mode explicitly` })
-    }
-  }
-  return violations
-}
-
 export function implicitLineHeightViolation(node: AnyNode): Violation | null {
   if ('lineHeight' in node && node.lineHeight?.unit === 'AUTO') {
     return { rule: 'implicit-line-height', detail: 'text node uses implicit AUTO line-height; must be explicit (D20)' }

@@ -1,6 +1,6 @@
 ---
 name: figma-create
-description: Create a new component or screen in Figma following the design pack's authoring conventions — base instances, Semantic bindings only, Auto Layout, semantic names, D18 variant naming, mode copies for components — then self-audit, visually self-review against design intent, and fix violations before reporting done. Use when the user asks to design/create/mock up a new component or screen in Figma.
+description: Create a new component or screen in Figma following the design pack's authoring conventions — base instances, Semantic bindings only, Auto Layout, semantic names, D18 variant naming — then self-audit, visually self-review against design intent, and fix violations before reporting done. Use when the user asks to design/create/mock up a new component or screen in Figma.
 ---
 
 # figma-create
@@ -43,17 +43,6 @@ file → skip; never invent one.
 - **D18 variant naming** — component property `Size` → prop `size`;
   Title-Case variant values → lowercase literal unions. Mechanical, not
   judgment: name it this way from the start.
-- **Mode copies for components** (D11, generalized to mode copies, 2026-07-05)
-  — every component gets one visible instance copy per mode of the project's
-  Semantic collection BEYOND the default mode. The component itself renders
-  in the default mode; each additional mode gets a copy directly beneath it,
-  named `<Component> (<Mode>)`, with the Semantic collection's mode set to
-  that mode via `explicitVariableModes`. A single-mode Semantic collection
-  (e.g. a dark-only project whose sole mode is "Dark") needs zero copies: no
-  hand-maintained duplicates at all until a second mode exists. **Screens do
-  NOT get this** — a screen's non-default-mode rendering is a
-  `figma-sync`-time capture artifact, never a hand-maintained duplicate
-  frame.
 - **Icons come from the design system, used AS-IS** (2026-07-05, backed by
   the tier-0 `hand-drawn-icon` + `kit-instance-override` hard rules): every
   icon is an INSTANCE of the design file's own icon components — the Lucide
@@ -177,8 +166,8 @@ file → skip; never invent one.
     called on that instance at some point; `instance.overrides` keeps
     `explicitVariableModes` in its override history even after clearing
     the value back to `{}` → never call `setExplicitVariableModeForCollection`
-    on a base-component INSTANCE (mode copies use it on components you
-    author, per D11); if it already happened, recreate the instance —
+    on a base-component INSTANCE (the owner mandate forbids explicit
+    variable modes anywhere); if it already happened, recreate the instance —
     clearing the value does not clear the override history.**
 
 ## Component-first screen path (the screen brief is a required input)
@@ -235,7 +224,7 @@ component instead of building a second one under another name.
 ## Where things go
 
 Page placement follows `templates/design/file-structure.md`, the canonical
-file-organization convention: components (and their mode copies) go on the
+file-organization convention: components go on the
 `Custom Components` page; screens go on their `D<NN> <group>` page, mirroring
 the `W<NN> <group>` wireframe page of the same group 1:1.
 
@@ -246,7 +235,7 @@ op, no coordinate math:**
    `design.<app>` block in `.claude/argo.json` (`isCategoryInEnum` from
    `figma-design-kit/component-categories`) — an out-of-enum category is a
    stop-and-ask, never a silent new bucket.
-3. `appendChild` the component (and its mode copies, in a nested vertical
+3. `appendChild` the component (in a nested vertical
    Auto Layout beneath it) to that category's Auto-Layout WRAP frame on
    `Custom Components`. That's the entire placement step — the frame's fixed
    `itemSpacing` and `layoutWrap: 'WRAP'` do the rest; never compute a

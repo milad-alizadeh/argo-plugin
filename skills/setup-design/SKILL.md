@@ -35,11 +35,10 @@ AskUserQuestion, single question: "Is this Figma file on a Professional plan
 or higher?" **Why this gate exists (F10):** below Professional, variable
 collections are capped at **one mode**, and the starter model's theming IS
 modes on the design file's own local Semantic collection — a multi-theme
-project cannot work below Professional. Note (D11, generalized to mode
-copies, 2026-07-05): a single-mode Semantic collection is a legal project
-shape on its own — zero mode copies to maintain — so a deliberately
-single-theme project may proceed on a lower plan with that limitation stated
-plainly; for anything multi-theme this is a hard stop (D23). Do **not** cite
+project cannot work below Professional. Note: a single-mode Semantic collection is a legal project shape on its
+own, so a deliberately single-theme project may proceed on a lower plan
+with that limitation stated plainly; for anything multi-theme this is a
+hard stop (D23). Do **not** cite
 the Variables REST API as a workaround — the pipeline explicitly rejected it
 as Enterprise-gated; nothing in this pack depends on it. Do **not** propose
 consuming the starter as a subscribed team library either — Figma cannot

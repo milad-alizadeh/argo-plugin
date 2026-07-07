@@ -67,6 +67,7 @@ const DESIGN_VERBS = {
   'bundle-tier0-audit': '../dist/skill-scripts/bundle-tier0-audit.js',
   'prepare-tier0-audit-options': '../dist/skill-scripts/prepare-tier0-audit-options.js',
   'record-audit-receipt': '../dist/skill-scripts/record-audit-receipt.js',
+  'check-instance-presence': '../dist/skill-scripts/check-instance-presence.js',
   'capture-kit-inventory': '../dist/skill-scripts/capture-kit-inventory.js',
   'capture-kit-corpus': '../dist/skill-scripts/capture-kit-corpus.js',
   'emit-shims': '../dist/skill-scripts/emit-shims.js',

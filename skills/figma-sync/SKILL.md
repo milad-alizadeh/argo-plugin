@@ -50,25 +50,42 @@ behavior split — see `figma-to-code`'s presentation-regen seam).
    sync is explicitly out of scope (design doc "Rejected alternatives").
 
    **Registry-reconcile ride-along (design-memory-placement.md A3,
-   relocated here from `figma-audit` in Slice 4).** The live node-id walk
-   above already holds every top-level COMPONENT/COMPONENT_SET on Custom
-   Components — diff that same live list against `design/registry.json` via
+   relocated here from `figma-audit` in Slice 4; enumeration moved to
+   `pull-registry` in `registry-covers-kit.md`).** Run
+   `argo design pull-registry` as its own deterministic step first —
+   runnable standalone (after designers touch the file directly, not only
+   after a full sync) or as part of this procedure. It enumerates every
+   page over the REST API, classifies each live component's `kind` via
+   `isKitPageName` (by-exclusion: every page that isn't one of this
+   project's own canonical pages or a divider/sandbox page), and upserts
+   lean `kind: 'kit'` draft entries for any component the registry has
+   never seen — no live MCP session required for this part.
+
+   Division of labor: `pull-registry` owns **enumeration and kit-entry
+   upsert**, deterministically, no live session. The live node-id walk
+   above (already gathering `get_metadata` for the staleness sweep) stays
+   scoped to what genuinely needs a live session — diff that same live list
+   against the now-complete `design/registry.json` via
    `reconcileRegistrySweep` (import from `@argohq/kit/design-kit`), wired as
    ONE combined `use_figma` read with the staleness walk above, not two
    separate round-trips (this skill's own efficiency rule). It reports
    `registry-orphan` (entry whose nodeId no longer resolves AND whose name
    isn't found live) and `registry-unregistered` (live component absent
-   from the registry — an agent that crashed before its final upsert); the
-   category-dependent `registry-miscategorized` rule is gone along with the
-   `category` field. **Scratch-prefix page exclusion:** any top-level
-   component whose owning page name starts with `Scratch` (case-sensitive
-   prefix match, same style as `isWireframePageName`'s `W\d{2}` convention
-   in `tier0-rules.ts`) is excluded from the `registry-unregistered` sweep
+   from the registry — an agent that crashed before its final upsert, or a
+   `pull-registry` run that hasn't happened yet); the category-dependent
+   `registry-miscategorized` rule is gone along with the `category` field.
+   `lucide/*`/`demo/*` stay excluded from both `pull-registry`'s upsert and
+   this MCP-side sweep (same `PASCAL_EXEMPT_PREFIXES` check, enforced in
+   both places). **Scratch-prefix page exclusion:** any top-level component
+   whose owning page name starts with `Scratch` (case-sensitive prefix
+   match, same style as `isWireframePageName`'s `W\d{2}` convention in
+   `tier0-rules.ts`) is excluded from the `registry-unregistered` sweep
    entirely — sandbox work never generates registry-hygiene noise (design
    doc decision 4). Both findings are advisory, never blocking. Because the
    walk already holds the full node list, also re-resolve + persist any
    entry whose `nodeId` moved (a `combineAsVariants`/variant restructure
-   minted a new id — far more common than deletion) via
+   minted a new id — far more common than deletion, and not something
+   `pull-registry`'s name+id snapshot can resolve on its own) via
    `getNodeByIdAsync`/`findAll`, and stamp `syncedAtWriteCount`/
    `figmaFileVersion` on the registry header — this is a live-Figma-only
    concern the pure `reconcileRegistrySweep` function can't perform itself;

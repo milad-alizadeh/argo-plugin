@@ -1,0 +1,98 @@
+{
+  "_fixtureNote": "Trimmed, hand-assembled from Figma REST API's documented GET /v1/files/:key response shape (https://www.figma.com/developers/api#files), NOT a live capture — no FIGMA_TOKEN/real starter file was available in this build environment. registry-covers-kit.md's own Risks section flags marshalRestDocument's field assumptions as unverified until a real fixture lands; this file is the placeholder that unblocks unit testing until that real fetch happens. Covers: one project-owned page (Custom Components, a COMPONENT), one kit page with a top-level COMPONENT_SET carrying componentPropertyDefinitions, one kit page with a component set nested inside a SECTION container (council traversal-depth finding), one Scratch page (excluded by isKitPageName), plus the document-root components/componentSets description maps (owner addendum).",
+  "name": "Argo Design Kit Starter",
+  "lastModified": "2026-07-01T00:00:00Z",
+  "version": "123456789",
+  "document": {
+    "id": "0:0",
+    "name": "Document",
+    "type": "DOCUMENT",
+    "children": [
+      {
+        "id": "1:1",
+        "name": "Custom Components",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "1:2",
+            "name": "SessionCard",
+            "type": "COMPONENT",
+            "componentPropertyDefinitions": {}
+          },
+          {
+            "id": "1:3",
+            "name": "Not A Component Frame",
+            "type": "FRAME",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "2:1",
+        "name": "Buttons",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "2:2",
+            "name": "Buttons",
+            "type": "COMPONENT_SET",
+            "componentPropertyDefinitions": {
+              "size": { "type": "VARIANT", "variantOptions": ["sm", "md", "lg"] },
+              "disabled": { "type": "BOOLEAN" }
+            }
+          },
+          {
+            "id": "2:3",
+            "name": "lucide/arrow-right",
+            "type": "COMPONENT"
+          }
+        ]
+      },
+      {
+        "id": "3:1",
+        "name": "Overlays",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "3:2",
+            "name": "Overlay internals",
+            "type": "SECTION",
+            "children": [
+              {
+                "id": "3:3",
+                "name": "Dialog",
+                "type": "COMPONENT_SET",
+                "componentPropertyDefinitions": {
+                  "size": { "type": "VARIANT", "variantOptions": ["sm", "md"] }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "4:1",
+        "name": "Scratch - wip",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "4:2",
+            "name": "Throwaway",
+            "type": "COMPONENT"
+          }
+        ]
+      }
+    ]
+  },
+  "components": {
+    "1:2": { "key": "componentkey-1-2", "name": "SessionCard", "description": "Session summary card used in the dashboard list." },
+    "2:3": { "key": "componentkey-2-3", "name": "lucide/arrow-right", "description": "" },
+    "4:2": { "key": "componentkey-4-2", "name": "Throwaway", "description": "" }
+  },
+  "componentSets": {
+    "2:2": { "key": "componentsetkey-2-2", "name": "Buttons", "description": "Primary/secondary/ghost button variants." },
+    "3:3": { "key": "componentsetkey-3-3", "name": "Dialog", "description": "" }
+  },
+  "schemaVersion": 0,
+  "styles": {}
+}

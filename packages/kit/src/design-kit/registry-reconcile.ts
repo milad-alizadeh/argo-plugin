@@ -102,6 +102,8 @@ type LiveKitComponent = {
   name: string
   nodeId: string
   componentPropertyDefinitions?: Record<string, VariantPropertyDefinition>
+  /** Native Figma component description, owner addendum (registry-covers-kit.md). */
+  description?: string
 }
 type LeanKitEntry = {
   nodeId: string
@@ -109,6 +111,7 @@ type LeanKitEntry = {
   status: 'draft'
   lastSyncedAt: string
   variantMatrix: Record<string, string[]>
+  description?: string
 }
 
 /**
@@ -133,7 +136,8 @@ export function buildKitRegistryEntries(
       kind: 'kit',
       status: 'draft',
       lastSyncedAt: now,
-      variantMatrix: extractVariantMatrix(c.componentPropertyDefinitions)
+      variantMatrix: extractVariantMatrix(c.componentPropertyDefinitions),
+      ...(c.description ? { description: c.description } : {})
     }
   }
   return entries

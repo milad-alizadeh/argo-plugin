@@ -59,16 +59,27 @@ describe('RegistryEntrySchema (design-memory-placement.md, thin pointer index, s
     expect(RegistryEntrySchema.safeParse({ ...valid, status: 'orphaned' }).success).toBe(true)
   })
 
-  it('rejects an entry that still carries the dropped category/description/provenance fields as extras only if malformed variantMatrix accompanies them', () => {
+  it('rejects an entry that still carries the dropped category/provenance fields as extras only if malformed variantMatrix accompanies them', () => {
     // dropped fields are simply ignored by zod's default (non-strict) object parsing when the
     // required 5 are present — the drop is enforced by absence from the schema, not by rejection.
-    const withOldFields = { ...valid, category: 'controls', description: 'stale', provenance: { createdBy: 'x' } }
+    // description is no longer dropped (owner addendum), so it's exercised separately below.
+    const withOldFields = { ...valid, category: 'controls', provenance: { createdBy: 'x' } }
     expect(RegistryEntrySchema.safeParse(withOldFields).success).toBe(true)
   })
 
   it('rejects a missing variantMatrix', () => {
     const { variantMatrix, ...withoutVariantMatrix } = valid
     expect(RegistryEntrySchema.safeParse(withoutVariantMatrix).success).toBe(false)
+  })
+
+  it('accepts an optional description and retains it in the parsed output (owner addendum: registry entries carry Figma component descriptions)', () => {
+    const result = RegistryEntrySchema.safeParse({ ...valid, description: 'Primary action button.' })
+    expect(result.success).toBe(true)
+    expect(result.data?.description).toBe('Primary action button.')
+  })
+
+  it('accepts an entry with no description at all', () => {
+    expect(RegistryEntrySchema.safeParse(valid).success).toBe(true)
   })
 })
 

@@ -125,6 +125,23 @@ describe('buildKitRegistryEntries', () => {
     expect(entries).toEqual({})
   })
 
+  it('carries an optional description through onto the lean entry (owner addendum)', () => {
+    const now = '2026-07-07T00:00:00.000Z'
+    const entries = buildKitRegistryEntries(
+      { liveKitComponents: [{ name: 'Buttons', nodeId: '1:1', description: 'Primary/secondary/ghost button variants.' }], existingNames: new Set() },
+      now
+    )
+    expect(entries.Buttons.description).toBe('Primary/secondary/ghost button variants.')
+  })
+
+  it('omits description entirely from the lean entry when the live component has none', () => {
+    const entries = buildKitRegistryEntries(
+      { liveKitComponents: [{ name: 'Buttons', nodeId: '1:1' }], existingNames: new Set() },
+      '2026-07-07T00:00:00.000Z'
+    )
+    expect('description' in entries.Buttons).toBe(false)
+  })
+
   it('excludes lucide/* and demo/* live components entirely', () => {
     const entries = buildKitRegistryEntries(
       {

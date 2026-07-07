@@ -276,9 +276,17 @@ describe('variantNamingViolations', () => {
 })
 
 describe('modeCopyViolations (D11, generalized to mode copies)', () => {
+  // `explicitVariableModes` is keyed by the Semantic collection's real ID
+  // (`VariableCollectionId:X:Y`), never by its display name — Figma's own
+  // `ExplicitVariableModesMixin` shape. The second arg here is that ID, not
+  // the collection's name (a live bug, fixed 2026-07-07: comparing by name
+  // meant this could never match, so every mode copy in a file failed
+  // `incorrect-mode-copy` regardless of how correctly it was authored).
+  const SEMANTIC_ID = 'VariableCollectionId:372:453'
+
   it('flags a component with no adjacent copy for a non-default mode', () => {
     const node = { type: 'COMPONENT', name: 'Button', siblings: [] }
-    expect(modeCopyViolations(node, 'Semantic', ['Light', 'Dark'])).toEqual([
+    expect(modeCopyViolations(node, SEMANTIC_ID, ['Light', 'Dark'])).toEqual([
       { rule: 'missing-mode-copy', detail: 'component has no adjacent "Dark" mode instance copy (D11)' }
     ])
   })
@@ -288,7 +296,17 @@ describe('modeCopyViolations (D11, generalized to mode copies)', () => {
       name: 'Button',
       siblings: [{ name: 'Button (Dark)', explicitVariableModes: {} }]
     }
-    expect(modeCopyViolations(node, 'Semantic', ['Light', 'Dark'])).toEqual([
+    expect(modeCopyViolations(node, SEMANTIC_ID, ['Light', 'Dark'])).toEqual([
+      { rule: 'incorrect-mode-copy', detail: '"Dark" mode copy does not set the Semantic collection mode explicitly' }
+    ])
+  })
+  it('flags a mode copy keyed by the collection NAME instead of its ID (the regression case)', () => {
+    const node = {
+      type: 'COMPONENT',
+      name: 'Button',
+      siblings: [{ name: 'Button (Dark)', explicitVariableModes: { Semantic: 'dark-mode-id' } }]
+    }
+    expect(modeCopyViolations(node, SEMANTIC_ID, ['Light', 'Dark'])).toEqual([
       { rule: 'incorrect-mode-copy', detail: '"Dark" mode copy does not set the Semantic collection mode explicitly' }
     ])
   })
@@ -296,23 +314,23 @@ describe('modeCopyViolations (D11, generalized to mode copies)', () => {
     const node = {
       type: 'COMPONENT',
       name: 'Button',
-      siblings: [{ name: 'Button (Dark)', explicitVariableModes: { Semantic: 'dark-mode-id' } }]
+      siblings: [{ name: 'Button (Dark)', explicitVariableModes: { [SEMANTIC_ID]: 'dark-mode-id' } }]
     }
-    expect(modeCopyViolations(node, 'Semantic', ['Light', 'Dark'])).toEqual([])
+    expect(modeCopyViolations(node, SEMANTIC_ID, ['Light', 'Dark'])).toEqual([])
   })
   it('requires zero copies for a single-mode Semantic collection', () => {
     const node = { type: 'COMPONENT', name: 'Button', siblings: [] }
-    expect(modeCopyViolations(node, 'Semantic', ['Dark'])).toEqual([])
+    expect(modeCopyViolations(node, SEMANTIC_ID, ['Dark'])).toEqual([])
   })
   it('flags one violation per missing non-default mode copy, beyond the default', () => {
     const node = { type: 'COMPONENT', name: 'Button', siblings: [] }
-    expect(modeCopyViolations(node, 'Semantic', ['Light', 'Dark', 'High Contrast'])).toEqual([
+    expect(modeCopyViolations(node, SEMANTIC_ID, ['Light', 'Dark', 'High Contrast'])).toEqual([
       { rule: 'missing-mode-copy', detail: 'component has no adjacent "Dark" mode instance copy (D11)' },
       { rule: 'missing-mode-copy', detail: 'component has no adjacent "High Contrast" mode instance copy (D11)' }
     ])
   })
   it('ignores non-component/component-set node types', () => {
-    expect(modeCopyViolations({ type: 'FRAME', name: 'Screen', siblings: [] }, 'Semantic', ['Light', 'Dark'])).toEqual([])
+    expect(modeCopyViolations({ type: 'FRAME', name: 'Screen', siblings: [] }, SEMANTIC_ID, ['Light', 'Dark'])).toEqual([])
   })
 })
 

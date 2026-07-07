@@ -252,7 +252,7 @@ export function variantNamingViolations(node: AnyNode): Violation[] {
  * node.siblings is resolved by the walker from node.parent.children (excluding
  * node itself).
  */
-export function modeCopyViolations(node: AnyNode, semanticCollectionName: string, modes: string[]): Violation[] {
+export function modeCopyViolations(node: AnyNode, semanticCollectionId: string, modes: string[]): Violation[] {
   if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return []
   const violations: Violation[] = []
   for (const mode of (modes ?? []).slice(1)) {
@@ -261,7 +261,7 @@ export function modeCopyViolations(node: AnyNode, semanticCollectionName: string
       violations.push({ rule: 'missing-mode-copy', detail: `component has no adjacent "${mode}" mode instance copy (D11)` })
       continue
     }
-    if (copy.explicitVariableModes?.[semanticCollectionName] == null) {
+    if (copy.explicitVariableModes?.[semanticCollectionId] == null) {
       violations.push({ rule: 'incorrect-mode-copy', detail: `"${mode}" mode copy does not set the Semantic collection mode explicitly` })
     }
   }

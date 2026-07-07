@@ -66,7 +66,7 @@ async function auditNode(
     hard,
     spacingScale,
     semanticModes,
-    semanticCollectionName,
+    semanticCollectionId,
     insideInstance = false,
     compositeNames = [],
     compositeNamingHard = false,
@@ -75,7 +75,7 @@ async function auditNode(
     hard: boolean
     spacingScale: number[]
     semanticModes: string[]
-    semanticCollectionName: string
+    semanticCollectionId: string | null
     insideInstance?: boolean
     compositeNames?: string[]
     compositeNamingHard?: boolean
@@ -220,7 +220,7 @@ async function auditNode(
 
   if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') {
     const siblings = (node.parent?.children ?? []).filter((sibling: any) => sibling !== node)
-    for (const v of modeCopyViolations({ type: node.type, name: node.name, siblings }, semanticCollectionName, semanticModes)) {
+    for (const v of modeCopyViolations({ type: node.type, name: node.name, siblings }, semanticCollectionId ?? '', semanticModes)) {
       report(v.rule, v.detail)
     }
   }
@@ -343,7 +343,7 @@ export async function runTier0Audit(
   } = options
   const violations: any[] = []
   const spacingScale = await collectPrimitivesSpacingScale()
-  const semanticModes = await collectSemanticModeNames(semanticCollectionName)
+  const { id: semanticCollectionId, modes: semanticModes } = await collectSemanticModeNames(semanticCollectionName)
 
   if (componentNames?.length) {
     // Dynamic-page mode requires every page loaded before figma.root.findAll
@@ -359,7 +359,7 @@ export async function runTier0Audit(
       const matches = figma.root.findAll((n: any) => isNamedAuditTarget(n, name))
       for (const match of matches) {
         if (isWireframePageName(findOwningPage(match)?.name ?? '')) continue
-        await walk(match, { hard: true, spacingScale, semanticModes, semanticCollectionName, compositeNames, compositeNamingHard, runRecipeTier0Checks }, violations)
+        await walk(match, { hard: true, spacingScale, semanticModes, semanticCollectionId, compositeNames, compositeNamingHard, runRecipeTier0Checks }, violations)
       }
     }
   } else {
@@ -371,7 +371,7 @@ export async function runTier0Audit(
       // wording.
       if (isWireframePageName(page.name)) continue
       for (const topLevel of page.children) {
-        await walk(topLevel, { hard: false, spacingScale, semanticModes, semanticCollectionName, compositeNames, compositeNamingHard, runRecipeTier0Checks }, violations)
+        await walk(topLevel, { hard: false, spacingScale, semanticModes, semanticCollectionId, compositeNames, compositeNamingHard, runRecipeTier0Checks }, violations)
       }
     }
   }
@@ -408,14 +408,22 @@ async function collectPrimitivesSpacingScale(): Promise<number[]> {
  * D11 (generalized to mode copies, 2026-07-05): the mode-copy count is
  * DERIVED from the project's own Semantic collection at audit time, never a
  * hardcoded "Light"/"Dark" pair — `modes[0]` is the default mode the
- * component itself renders in; every mode after it needs a copy. Returns []
- * if the Semantic collection (named `semanticCollectionName`) doesn't exist
- * yet (unseeded project), in which case `modeCopyViolations` no-ops (nothing
- * to check yet).
+ * component itself renders in; every mode after it needs a copy. Returns
+ * `{ id: null, modes: [] }` if the Semantic collection (named
+ * `semanticCollectionName`) doesn't exist yet (unseeded project), in which
+ * case `modeCopyViolations` no-ops (nothing to check yet).
+ *
+ * Also returns the collection's real `id` (`VariableCollectionId:X:Y`) — a
+ * node's `explicitVariableModes` is keyed by collection ID, never by name
+ * (confirmed live, 2026-07-07: `modeCopyViolations` was comparing by name,
+ * which can never match, so every mode copy in a file failed
+ * `incorrect-mode-copy` regardless of how correctly it was authored).
  */
-async function collectSemanticModeNames(semanticCollectionName: string): Promise<string[]> {
+async function collectSemanticModeNames(
+  semanticCollectionName: string
+): Promise<{ id: string | null; modes: string[] }> {
   const collections = await figma.variables.getLocalVariableCollectionsAsync()
   const semantic = collections.find((c: any) => c.name === semanticCollectionName)
-  if (!semantic) return []
-  return semantic.modes.map((mode: any) => mode.name)
+  if (!semantic) return { id: null, modes: [] }
+  return { id: semantic.id, modes: semantic.modes.map((mode: any) => mode.name) }
 }

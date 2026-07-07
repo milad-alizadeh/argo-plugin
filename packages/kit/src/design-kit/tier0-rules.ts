@@ -144,7 +144,11 @@ export function missingAutoLayoutViolation(node: AnyNode): Violation | null {
     // frame is unaffected, so normal stacked content still flags (keeping the
     // D24 gap/padding-token leverage intact).
     const children: AnyNode[] = node.children ?? []
-    if (children.length >= 1 && children.every((c) => c?.layoutPositioning === 'ABSOLUTE')) return null
+    // Zero-child exemption (StatusDot false positive, 2026-07-07): a leaf
+    // shape has nothing to lay out — explicit, not implied via .every()'s
+    // vacuous pass, so the intent survives edits to the absolute-canvas check.
+    if (children.length === 0) return null
+    if (children.every((c) => c?.layoutPositioning === 'ABSOLUTE')) return null
     return { rule: 'missing-auto-layout', detail: 'frame-like node has no Auto Layout' }
   }
   return null

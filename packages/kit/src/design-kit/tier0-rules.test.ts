@@ -121,8 +121,8 @@ describe('unboundTypeViolation', () => {
 })
 
 describe('missingAutoLayoutViolation', () => {
-  it('flags a frame-like node with layoutMode NONE', () => {
-    const node = { type: 'FRAME', layoutMode: 'NONE' }
+  it('flags a frame-like node with layoutMode NONE and stacked content', () => {
+    const node = { type: 'FRAME', layoutMode: 'NONE', children: [{ layoutPositioning: 'AUTO' }] }
     expect(missingAutoLayoutViolation(node)).toEqual({ rule: 'missing-auto-layout', detail: 'frame-like node has no Auto Layout' })
   })
   it('passes a frame with Auto Layout', () => {
@@ -155,12 +155,13 @@ describe('missingAutoLayoutViolation', () => {
       detail: 'frame-like node has no Auto Layout'
     })
   })
-  it('still flags an empty no-Auto-Layout frame (no children is not an absolute canvas)', () => {
+  it('exempts a zero-child frame — a leaf shape has nothing to lay out', () => {
     const node = { type: 'FRAME', layoutMode: 'NONE', children: [] }
-    expect(missingAutoLayoutViolation(node)).toEqual({
-      rule: 'missing-auto-layout',
-      detail: 'frame-like node has no Auto Layout'
-    })
+    expect(missingAutoLayoutViolation(node)).toBeNull()
+  })
+  it('exempts a zero-child COMPONENT — leaf-shape variants like a status dot', () => {
+    const node = { type: 'COMPONENT', layoutMode: 'NONE', children: [] }
+    expect(missingAutoLayoutViolation(node)).toBeNull()
   })
 })
 

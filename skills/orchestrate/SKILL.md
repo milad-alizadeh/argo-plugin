@@ -97,6 +97,18 @@ mechanisms close those gaps without new tooling.
   (mirrors the builder no-wrapper rule in §1). The leaf rule itself lives in
   `agents/designer.md` (R1) and is backstopped by a hook there; this section
   only states the supervisor's obligation.
+- **Independent screen verification (supervisor-run, non-delegable).** A
+  screen build is NOT done when the designer reports done: the supervisor
+  screenshots the final screen itself and compares it against the original
+  reference at IDENTICAL frame size before accepting. Check specifically:
+  frame dimensions match the reference viewport exactly (a designer growing
+  the canvas to fit content is a defect, not a layout choice), no truncated
+  text anywhere (labels rendering "Runnin" for "Running"), no child
+  overflowing its container's bounds, full-bleed regions (rails, status
+  bars) actually reaching the edges they anchor to. The building agent's
+  self-audit and montage are inputs, never the acceptance — a live screen
+  shipped with all four of those defects past its own clean self-report.
+  Queue any failures back as ONE numbered fix list (R9 refinement lane).
 - **Two feedback lanes (R9).** Classify every ruling into exactly one lane
   the moment it's known:
   - **Stop-the-line** — a gate bug (a violation tagged

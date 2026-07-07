@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { deriveTier0AuditOptions } from './prepare-tier0-audit-options.js'
+import { deriveTier0AuditOptions, parseCliArgs } from './prepare-tier0-audit-options.js'
 
 describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation gate wiring)', () => {
   it('reads design/registry.json and passes its component names as compositeNames', () => {
@@ -80,5 +80,19 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }
+  })
+})
+
+describe('parseCliArgs (CLI flag parsing — must not silently no-op on a typo)', () => {
+  it('parses --componentNames as a JSON array', () => {
+    expect(parseCliArgs(['--componentNames', '["rail-session-card"]'])).toEqual({ componentNames: ['rail-session-card'] })
+  })
+
+  it('defaults to an empty array when no flag is given (the intentional file-wide-sweep case)', () => {
+    expect(parseCliArgs([])).toEqual({ componentNames: [] })
+  })
+
+  it('throws on an unrecognized flag instead of silently defaulting (e.g. the kebab-case typo --component-names)', () => {
+    expect(() => parseCliArgs(['--component-names', '["rail-session-card"]'])).toThrow(/unrecognized flag.*--component-names/)
   })
 })

@@ -62,10 +62,26 @@ export function deriveTier0AuditOptions({ cwd, componentNames = [] }: { cwd: str
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const args = process.argv.slice(2)
+/**
+ * A typo'd or unrecognized flag (e.g. `--component-names` instead of
+ * `--componentNames`) must not be silently swallowed into "no components
+ * given" — that reads as a legitimate file-wide sweep and lets a named audit
+ * run against an empty target, passing vacuously. Reject anything starting
+ * with `--` that isn't a known flag before falling back to the sweep default.
+ */
+export function parseCliArgs(args: string[]): { componentNames: string[] } {
+  const KNOWN_FLAGS = ['--componentNames']
+  const unknown = args.filter((a) => a.startsWith('--') && !KNOWN_FLAGS.includes(a))
+  if (unknown.length > 0)
+    throw new Error(`prepare-tier0-audit-options: unrecognized flag(s) ${unknown.join(', ')} — did you mean --componentNames?`)
+
   const namesIndex = args.indexOf('--componentNames')
   const componentNames = namesIndex === -1 ? [] : JSON.parse(args[namesIndex + 1])
+  return { componentNames }
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const { componentNames } = parseCliArgs(process.argv.slice(2))
   const options = deriveTier0AuditOptions({ cwd: process.cwd(), componentNames })
   console.log(JSON.stringify(options))
 }

@@ -6,5 +6,5 @@ One row per slice, updated as work lands.
 | --- | --- | --- | --- |
 | 1. isKitPageName classifier | done | pending | 8/8 tests pass |
 | 2. extractVariantMatrix + buildKitRegistryEntries + Pascal lock | done | pending | 13/13 tests pass |
-| 3. pull-registry CLI | pending | | |
+| 3. pull-registry CLI | done (fixture-verified) | pending | Fixture is hand-assembled from Figma's published REST API shape, clearly marked in `_fixtureNote` — no FIGMA_TOKEN/real starter file was available in this environment. marshalRestDocument/buildPullRegistryResult/token all unit-tested against it, no network. Live-fetch step itself is UNVERIFIED against a real response; re-run against the real starter file before trusting shape assumptions in production. |
 | 4. figma-sync SKILL.md wiring | pending | | |

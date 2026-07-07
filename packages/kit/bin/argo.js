@@ -72,6 +72,7 @@ const DESIGN_VERBS = {
   'record-completeness': '../dist/skill-scripts/record-completeness.js',
   'generate-token-manifest': '../dist/skill-scripts/generate-token-manifest.js',
   'emit-shims': '../dist/skill-scripts/emit-shims.js',
+  'pull-registry': '../dist/skill-scripts/pull-registry.js',
 }
 
 function runDesignVerb(verb, args) {

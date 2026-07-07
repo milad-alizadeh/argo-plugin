@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { reconcileRegistrySweep, isScratchPageName, isKitPageName } from './registry-reconcile.js'
+import { reconcileRegistrySweep, isScratchPageName, isKitPageName, extractVariantMatrix, buildKitRegistryEntries, isPascalCaseComponentName } from './registry-reconcile.js'
 
 describe('reconcileRegistrySweep (design-memory-placement.md A3, figma-sync sweep)', () => {
   it('flags a live component with no registry entry (registry-unregistered)', () => {
@@ -77,5 +77,71 @@ describe('isKitPageName', () => {
   it('treats an arbitrary starter-owned page name as kit', () => {
     expect(isKitPageName('Buttons')).toBe(true)
     expect(isKitPageName('Overlays')).toBe(true)
+  })
+})
+
+describe('extractVariantMatrix', () => {
+  it('keeps only VARIANT-typed property definitions and their options', () => {
+    const matrix = extractVariantMatrix({
+      size: { type: 'VARIANT', variantOptions: ['sm', 'md', 'lg'] },
+      disabled: { type: 'BOOLEAN' }
+    })
+    expect(matrix).toEqual({ size: ['sm', 'md', 'lg'] })
+  })
+})
+
+describe('buildKitRegistryEntries', () => {
+  it('builds a lean draft entry for a live kit component with no existing registry entry', () => {
+    const now = '2026-07-07T00:00:00.000Z'
+    const entries = buildKitRegistryEntries(
+      {
+        liveKitComponents: [
+          {
+            name: 'Buttons',
+            nodeId: '1:1',
+            componentPropertyDefinitions: { size: { type: 'VARIANT', variantOptions: ['sm', 'md'] } }
+          }
+        ],
+        existingNames: new Set()
+      },
+      now
+    )
+    expect(entries).toEqual({
+      Buttons: {
+        nodeId: '1:1',
+        kind: 'kit',
+        status: 'draft',
+        lastSyncedAt: now,
+        variantMatrix: { size: ['sm', 'md'] }
+      }
+    })
+  })
+
+  it('leaves an already-registered kit component out of the output entirely', () => {
+    const entries = buildKitRegistryEntries(
+      { liveKitComponents: [{ name: 'Buttons', nodeId: '1:1' }], existingNames: new Set(['Buttons']) },
+      '2026-07-07T00:00:00.000Z'
+    )
+    expect(entries).toEqual({})
+  })
+
+  it('excludes lucide/* and demo/* live components entirely', () => {
+    const entries = buildKitRegistryEntries(
+      {
+        liveKitComponents: [
+          { name: 'lucide/arrow-right', nodeId: '2:1' },
+          { name: 'demo/Playground', nodeId: '2:2' }
+        ],
+        existingNames: new Set()
+      },
+      '2026-07-07T00:00:00.000Z'
+    )
+    expect(entries).toEqual({})
+  })
+})
+
+describe('isPascalCaseComponentName (kit-name regression lock)', () => {
+  it('accepts a plausible kit top-level component/page name', () => {
+    expect(isPascalCaseComponentName('Buttons')).toBe(true)
   })
 })

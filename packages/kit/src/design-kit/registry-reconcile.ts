@@ -77,12 +77,66 @@ export function reconcileRegistrySweep({
   return violations
 }
 
+type VariantPropertyDefinition = { type: string; variantOptions?: string[] }
+
+/** Mirrors tier0-rules.ts's variantNamingViolations' read of the same node shape. */
+export function extractVariantMatrix(
+  componentPropertyDefinitions: Record<string, VariantPropertyDefinition> = {}
+): Record<string, string[]> {
+  const matrix: Record<string, string[]> = {}
+  for (const [propName, def] of Object.entries(componentPropertyDefinitions)) {
+    if (def.type === 'VARIANT' && Array.isArray(def.variantOptions)) matrix[propName] = def.variantOptions
+  }
+  return matrix
+}
+
 /** Icon components (lucide/*) and demo furniture keep their own naming conventions. */
 const PASCAL_EXEMPT_PREFIXES = ['lucide/', 'demo/']
 
 export function isPascalCaseComponentName(name: string): boolean {
   if (PASCAL_EXEMPT_PREFIXES.some((p) => name.startsWith(p))) return true
   return /^[A-Z][A-Za-z0-9]*$/.test(name)
+}
+
+type LiveKitComponent = {
+  name: string
+  nodeId: string
+  componentPropertyDefinitions?: Record<string, VariantPropertyDefinition>
+}
+type LeanKitEntry = {
+  nodeId: string
+  kind: 'kit'
+  status: 'draft'
+  lastSyncedAt: string
+  variantMatrix: Record<string, string[]>
+}
+
+/**
+ * Entries for kit components the registry has never seen, never
+ * overwrites an EXISTING kit entry's status/lastSyncedAt (that stays the
+ * pre-existing decision-8 staleness sweep's job, which already runs
+ * file-wide over every registry entry regardless of kind); this only
+ * fills the gap for a component with no entry at all. status: 'draft'
+ * (never audited, never synced before), figma-create's own upsert is
+ * the only writer of 'audit-clean', and only after its own self-audit.
+ */
+export function buildKitRegistryEntries(
+  { liveKitComponents, existingNames }: { liveKitComponents: LiveKitComponent[]; existingNames: Set<string> },
+  now: string
+): Record<string, LeanKitEntry> {
+  const entries: Record<string, LeanKitEntry> = {}
+  for (const c of liveKitComponents) {
+    if (existingNames.has(c.name)) continue
+    if (PASCAL_EXEMPT_PREFIXES.some((p) => c.name.startsWith(p))) continue
+    entries[c.name] = {
+      nodeId: c.nodeId,
+      kind: 'kit',
+      status: 'draft',
+      lastSyncedAt: now,
+      variantMatrix: extractVariantMatrix(c.componentPropertyDefinitions)
+    }
+  }
+  return entries
 }
 
 function toPascalCase(name: string): string {

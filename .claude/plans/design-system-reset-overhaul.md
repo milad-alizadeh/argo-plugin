@@ -735,3 +735,7 @@ given how much of Slices 3-4 depends on Slice 2's framing being right.
   D11 hard-fails every component (8/8 file-wide on the live migration). Make
   D11 not fire for the same-file recipe (or gate it behind an opt-in flag);
   add a regression test. Until it lands, orchestrators treat D11 as advisory.
+- **New kit task (live finding, 2026-07-07):** `missing-auto-layout` (tier-0)
+  unconditionally fails zero-child frames — a childless leaf shape (StatusDot's
+  colored dot variants) has nothing to lay out. Exempt frames with
+  `children.length === 0`; regression test with a zero-child COMPONENT.

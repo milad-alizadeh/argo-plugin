@@ -83,11 +83,28 @@ export function findDesignBlock(cwd: string): Record<string, any> | null {
   return entries.length === 1 ? (entries[0][1] as Record<string, any>) : null
 }
 
+/**
+ * Vendored kit components (`kind: "kit"`) are gate-verified MIRRORS of code we
+ * do not author, not authoring surfaces: their raw shadcn structure (unbound
+ * spacing on internal frames, auto-generated `Text`/`Frame` names) legitimately
+ * fails our tier-0 authoring rules, and we never rebind kit internals (see the
+ * insideInstance exemptions in tier0-rules.ts). Consolidating the whole kit
+ * into the registry (registry-covers-kit) put ~117 of them in range of the
+ * named hard-gate for the first time; the gate must skip them or it blocks
+ * forever on the vendor's structure. Custom (authored) components stay fully
+ * gated. The staleness sweep still tracks kit entries; only the tier-0 HARD
+ * gate exempts them.
+ */
+function isKitEntry(name: string, registry: any): boolean {
+  return registry?.components?.[name]?.kind === 'kit'
+}
+
 export function deriveTier0AuditOptions({ cwd, componentNames = [] }: { cwd: string; componentNames?: string[] }) {
   const registry = readOptionalJson(join(cwd, 'design', 'registry.json'))
   const designBlock = findDesignBlock(cwd)
   const recipe = designBlock?.recipe ?? null
-  const { componentNodeIds, unresolvedNames } = resolveComponentNodeIds(componentNames, registry)
+  const auditableNames = componentNames.filter((name) => !isKitEntry(name, registry))
+  const { componentNodeIds, unresolvedNames } = resolveComponentNodeIds(auditableNames, registry)
 
   return {
     componentNodeIds,

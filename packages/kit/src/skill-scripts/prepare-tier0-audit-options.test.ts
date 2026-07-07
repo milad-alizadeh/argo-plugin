@@ -133,6 +133,29 @@ describe('resolveComponentNodeIds (authoritative audit targeting, field bug fix)
   })
 })
 
+describe('deriveTier0AuditOptions kit exemption (vendored mirrors are not authoring surfaces)', () => {
+  it('drops kind:"kit" components from the hard-gate target list, keeps custom ones', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'audit-opts-kit-'))
+    mkdirSync(join(cwd, 'design'), { recursive: true })
+    writeFileSync(
+      join(cwd, 'design', 'registry.json'),
+      JSON.stringify({
+        components: {
+          Buttons: { nodeId: '73:1', kind: 'kit' },
+          SessionCard: { nodeId: '50:1', kind: 'custom' }
+        }
+      })
+    )
+    try {
+      const options = deriveTier0AuditOptions({ cwd, componentNames: ['Buttons', 'SessionCard'] })
+      expect(options.componentNodeIds).toEqual(['50:1']) // SessionCard only; Buttons (kit) exempt
+      expect(options.componentNames).toEqual([]) // neither falls through to the name-lookup fallback
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+})
+
 describe('parseCliArgs (CLI flag parsing — must not silently no-op on a typo)', () => {
   it('parses --componentNames as a JSON array', () => {
     expect(parseCliArgs(['--componentNames', '["rail-session-card"]'])).toEqual({ componentNames: ['rail-session-card'] })

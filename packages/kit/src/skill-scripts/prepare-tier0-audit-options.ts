@@ -51,22 +51,6 @@ export function deriveTier0AuditOptions({ cwd, componentNames = [] }: { cwd: str
   const designBlock = findDesignBlock(cwd)
 
   const recipe = designBlock?.recipe ?? null
-  const kitVariableKeys = Array.isArray(kitLock?.variableKeys) ? kitLock.variableKeys : []
-
-  // Self-announce an inert gate. The shadcn-tailwind recipe's
-  // non-semantic-binding check fails OPEN when the manifest is empty (remote ⇒
-  // kit, nonSemanticBindingViolation), so with no `kitVariableKeys` it silently
-  // verifies NOTHING — a remote token bound where a local Semantic one belongs
-  // (e.g. an icon inheriting its source library's own foreground variable)
-  // passes undetected. A silently-off hard check is worse than no check: it
-  // reads as protection. Surface it so the operator knows to populate the
-  // manifest (figma-sync) rather than trust a green run.
-  const warnings: string[] = []
-  if (recipe === 'shadcn-tailwind' && kitVariableKeys.length === 0) {
-    warnings.push(
-      'kit.lock variableKeys is empty — the non-semantic-binding check is INERT (remote variable bindings are NOT being verified). Run figma-sync to capture the kit library variable-key manifest so mis-bound remote tokens are caught.'
-    )
-  }
 
   return {
     componentNames,
@@ -74,9 +58,7 @@ export function deriveTier0AuditOptions({ cwd, componentNames = [] }: { cwd: str
     semanticCollectionName: designBlock?.semanticCollectionName ?? 'Semantic',
     recipe,
     kitPatches: readOptionalJson(join(cwd, 'design', 'kit-patches.json')) ?? {},
-    kitVariableKeys,
-    retiredKitVariableKeys: Array.isArray(kitLock?.retiredVariableKeys) ? kitLock.retiredVariableKeys : [],
-    warnings
+    retiredKitVariableKeys: Array.isArray(kitLock?.retiredVariableKeys) ? kitLock.retiredVariableKeys : []
   }
 }
 
@@ -85,6 +67,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const namesIndex = args.indexOf('--componentNames')
   const componentNames = namesIndex === -1 ? [] : JSON.parse(args[namesIndex + 1])
   const options = deriveTier0AuditOptions({ cwd: process.cwd(), componentNames })
-  for (const w of options.warnings ?? []) process.stderr.write(`argo tier0 WARNING: ${w}\n`)
   console.log(JSON.stringify(options))
 }

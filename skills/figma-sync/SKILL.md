@@ -47,17 +47,12 @@ the congruence gate, and the code-owned behavior of components that already run.
    `recipes/external-kit`-subpath `KitLockSchema` and write `design/kit.lock`
    from them — for any other `baseSource` there is no separate kit file, so
    this freshness metadata is just recorded, not schema-checked against a
-   kit lock.
-   **Capture `variableKeys` into `design/kit.lock`.** While dumping, collect the
-   kit library's own variable KEYS (the `key` of every variable defined in the
-   kit library file, `recipeConfig.figma.kitLibraryFileKey`) and write them to
-   `kit.lock.variableKeys` (and any keys retired by a version bump to
-   `retiredVariableKeys`). This is the manifest the recipe's non-semantic-binding
-   check needs: without it the check fails OPEN (every remote binding presumed
-   kit-legit) and silently verifies nothing — e.g. an icon left bound to its
-   source library's own foreground token instead of the local Semantic one would
-   slip through. Populating it here is what arms that check; a `prepare-tier0-
-   audit-options` run warns loudly whenever this manifest is still empty.
+   kit lock. There is no kit-library variable-key manifest to capture here —
+   the recipe's non-semantic-binding check fails OPEN on any remote/
+   library-sourced binding unconditionally (kit internals are the
+   framework's concern, never project design work's); `retiredVariableKeys`
+   is `design-upgrade`'s concern (recorded at Library Swap time), not
+   something this sync step captures.
 3. **Dump specs.** Per-variant×**state**×mode node metrics — including
    `layoutSizing` (D14/D20) — into `design/specs/<Component>.json`, for
    project components always, and for **used base components** only when

@@ -21,16 +21,14 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         semanticCollectionName: 'Semantic',
         recipe: null,
         kitPatches: {},
-        kitVariableKeys: [],
-        retiredKitVariableKeys: [],
-        warnings: []
+        retiredKitVariableKeys: []
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }
   })
 
-  it('fails open (empty compositeNames, {} kitPatches, [] variable keys, defaulted semanticCollectionName) when nothing is configured', () => {
+  it('fails open (empty compositeNames, {} kitPatches, [] retired variable keys, defaulted semanticCollectionName) when nothing is configured', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
     try {
       expect(deriveTier0AuditOptions({ cwd })).toEqual({
@@ -39,9 +37,7 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         semanticCollectionName: 'Semantic',
         recipe: null,
         kitPatches: {},
-        kitVariableKeys: [],
-        retiredKitVariableKeys: [],
-        warnings: []
+        retiredKitVariableKeys: []
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
@@ -66,7 +62,7 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
     }
   })
 
-  it('reads kitPatches, kitVariableKeys and retiredKitVariableKeys from design/kit-patches.json + design/kit.lock', () => {
+  it('reads kitPatches and retiredKitVariableKeys from design/kit-patches.json + design/kit.lock, ignoring kit.lock variableKeys entirely', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
     mkdirSync(join(cwd, 'design'), { recursive: true })
     writeFileSync(join(cwd, 'design', 'kit-patches.json'), JSON.stringify({ Button: ['button.tsx'] }), 'utf8')
@@ -79,43 +75,8 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
     try {
       const options = deriveTier0AuditOptions({ cwd })
       expect(options.kitPatches).toEqual({ Button: ['button.tsx'] })
-      expect(options.kitVariableKeys).toEqual(['abc123'])
       expect(options.retiredKitVariableKeys).toEqual(['def456'])
-    } finally {
-      rmSync(cwd, { recursive: true, force: true })
-    }
-  })
-
-  it('warns that the non-semantic-binding check is INERT when recipe is shadcn-tailwind and kit.lock has no variableKeys', () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
-    mkdirSync(join(cwd, '.claude'), { recursive: true })
-    writeFileSync(
-      join(cwd, '.claude', 'argo.json'),
-      JSON.stringify({ design: { '.': { root: '.', recipe: 'shadcn-tailwind' } } }),
-      'utf8'
-    )
-    try {
-      const options = deriveTier0AuditOptions({ cwd })
-      expect(options.kitVariableKeys).toEqual([])
-      expect(options.warnings).toHaveLength(1)
-      expect(options.warnings[0]).toMatch(/INERT/)
-    } finally {
-      rmSync(cwd, { recursive: true, force: true })
-    }
-  })
-
-  it('does NOT warn once kit.lock variableKeys is populated', () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
-    mkdirSync(join(cwd, '.claude'), { recursive: true })
-    mkdirSync(join(cwd, 'design'), { recursive: true })
-    writeFileSync(
-      join(cwd, '.claude', 'argo.json'),
-      JSON.stringify({ design: { '.': { root: '.', recipe: 'shadcn-tailwind' } } }),
-      'utf8'
-    )
-    writeFileSync(join(cwd, 'design', 'kit.lock'), JSON.stringify({ variableKeys: ['k1'] }), 'utf8')
-    try {
-      expect(deriveTier0AuditOptions({ cwd }).warnings).toEqual([])
+      expect(options).not.toHaveProperty('kitVariableKeys')
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }

@@ -32,7 +32,7 @@ describe('generateTier0AuditEntry', () => {
   it("for recipe 'shadcn-tailwind', imports the recipe's tier0-walker and curries options data into it", () => {
     const entry = generateTier0AuditEntry('shadcn-tailwind')
     expect(entry).toContain("from '@argohq/kit/design-kit/shadcn-tailwind/tier0-walker'")
-    expect(entry).toContain('options.kitVariableKeys')
+    expect(entry).not.toContain('options.kitVariableKeys')
     expect(entry).toContain('options.retiredKitVariableKeys')
     expect(entry).toContain('options.kitPatches')
     expect(entry.trim().split('\n').at(-1)!.trim()).toMatch(/^[A-Za-z_$][\w$]*$/)

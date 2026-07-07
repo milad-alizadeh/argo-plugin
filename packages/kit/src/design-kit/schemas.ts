@@ -30,15 +30,14 @@ export const KitLockSchema = z.object({
   fileVersion: z.string(),
   lastModified: z.string(),
   syncTimestamp: z.string(),
-  // The kit library's variable KEYS — the manifest the recipe's
-  // non-semantic-binding check needs to tell a legit kit-token binding from a
-  // stray remote one. Optional (a lock written before capture landed omits it),
-  // but WITHOUT it the check fails open (remote ⇒ kit) and silently verifies
-  // nothing. Captured from the kit library at figma-sync time.
   // `retiredVariableKeys` are keys from a superseded kit version (recorded by
   // design-upgrade at swap time) so a stale binding left over from a Library
-  // Swap is still flagged.
-  variableKeys: z.array(z.string()).optional(),
+  // Swap is still flagged by retiredFileKeyBindingViolation. (The kit
+  // library's own full variable-key manifest, `variableKeys`, was removed
+  // 2026-07-07 — the non-semantic-binding check never needed it: it fails
+  // open on any remote/library binding unconditionally, since kit internals
+  // are the framework's concern, not something project design work ever
+  // authors or binds.)
   retiredVariableKeys: z.array(z.string()).optional()
 })
 

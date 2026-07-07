@@ -5,8 +5,8 @@
  * functions (./tier0-rules.js). `bundle-tier0-audit`'s generated entry module
  * imports `runRecipeTier0Checks`/`runKitPatchesConformance` from here and
  * bakes them into the bundle `use_figma` runs, curried with the project's own
- * DATA (kit/retired variable keys, kit-patches.json contents) read Node-side
- * by `prepare-tier0-audit-options.js` and threaded back in via the options
+ * DATA (retired variable keys, kit-patches.json contents) read Node-side by
+ * `prepare-tier0-audit-options.js` and threaded back in via the options
  * object at call time — see design-kit/tier0-audit.js's doc comment for the
  * full data-flow.
  *
@@ -36,10 +36,9 @@ export async function runRecipeTier0Checks(
   node: any,
   {
     hard,
-    kitVariableKeys = [],
     retiredKitVariableKeys = [],
     semanticCollectionName = 'Semantic'
-  }: { hard: boolean; kitVariableKeys?: string[]; retiredKitVariableKeys?: string[]; semanticCollectionName?: string } = { hard: false }
+  }: { hard: boolean; retiredKitVariableKeys?: string[]; semanticCollectionName?: string } = { hard: false }
 ) {
   const violations: any[] = []
   const report = (rule: string, detail: string) => {
@@ -71,7 +70,7 @@ export async function runRecipeTier0Checks(
       key: variable.key,
       collectionName: collection?.name ?? null
     }
-    const nonSemantic = nonSemanticBindingViolation(marshaledVariable, kitVariableKeys, semanticCollectionName)
+    const nonSemantic = nonSemanticBindingViolation(marshaledVariable, semanticCollectionName)
     if (nonSemantic) report(nonSemantic.rule, nonSemantic.detail)
 
     const retiredKey = retiredFileKeyBindingViolation(marshaledVariable, retiredKitVariableKeys)

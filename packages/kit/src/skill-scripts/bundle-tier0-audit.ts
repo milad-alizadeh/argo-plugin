@@ -10,8 +10,8 @@
  * `@argohq/kit/design-kit/tier0-audit` plus (for a recipe with tier-0 checks)
  * that recipe's `runRecipeTier0Checks`/`runKitPatchesConformance` from
  * `@argohq/kit`, and wraps them so project DATA passed in `options` at call
- * time (kitVariableKeys, retiredKitVariableKeys, kitPatches,
- * semanticCollectionName) reaches the recipe functions too — functions can't
+ * time (retiredKitVariableKeys, kitPatches, semanticCollectionName) reaches
+ * the recipe functions too — functions can't
  * cross the `use_figma` data boundary, so they're baked into the bundle via
  * imports; only DATA flows through the options object the caller passes.
  *
@@ -58,7 +58,6 @@ export function generateTier0AuditEntry(recipe: string | null): string {
     '    ...options,',
     '    runRecipeTier0Checks: (node, ctx) => runRecipeTier0Checks(node, {',
     '      ...ctx,',
-    '      kitVariableKeys: options.kitVariableKeys,',
     '      retiredKitVariableKeys: options.retiredKitVariableKeys,',
     '      semanticCollectionName: options.semanticCollectionName',
     '    }),',

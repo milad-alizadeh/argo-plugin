@@ -9,41 +9,32 @@ type Variable = { remote?: boolean; key?: string; collectionName?: string | null
 
 /**
  * Relocated from templates/design/tier0-audit.js (was inline, kit-coupled).
- * A bound variable is either kit-sourced or bound to the project's actual
- * Semantic collection by name — anything else (including a local
- * Primitives-collection binding) is a non-Semantic binding.
+ * A bound variable is either remote (library-sourced — the framework's own
+ * kit internals, never authored or bound by project design work, so this
+ * check has no opinion on them) or bound to the project's actual Semantic
+ * collection by name — anything else (a LOCAL variable outside Semantic,
+ * e.g. a local Primitives-collection binding) is a non-Semantic binding.
  *
- * Kit-sourced detection (revised 2026-07-05): a remote Variable's `key` is a
- * plain 40-char hash with NO file-key prefix — live verification showed
- * `key.startsWith(fileKey)` never matches, which failed every legitimate kit
- * icon binding and forced instance detaching. The precise membership test is
- * against `kitVariableKeys`, the kit's variable-key manifest (kit.lock,
- * recorded at sync/seed time from importVariableByKeyAsync's own keys). When
- * no manifest exists yet (pre-first-sync), any remote binding counts as
- * kit-sourced — the design pack's model permits exactly one subscribed
- * library, so remote ⇒ kit until a manifest can say otherwise.
+ * Fails open on any remote/library binding, unconditionally (no manifest —
+ * removed 2026-07-07: the kit's ~1800-entry variable-key list bloated every
+ * audit call by ~79KB just to distinguish "kit-sourced" from "some other
+ * library", a distinction this check never needed to make — a remote
+ * binding is by definition not a local out-of-Semantic one, so it always
+ * passes here regardless of which library it came from).
  *
  * `variable.collectionName` — NOT presence of a variableCollectionId — is
- * the deciding field: live-Figma verification (Slice 14) confirmed that
- * checking only "has some local collection" is vacuous, since a component
- * bound directly to a local Primitives variable also has a
+ * the deciding field for a local binding: live-Figma verification (Slice 14)
+ * confirmed that checking only "has some local collection" is vacuous, since
+ * a component bound directly to a local Primitives variable also has a
  * variableCollectionId and would incorrectly pass.
  */
-export function nonSemanticBindingViolation(
-  variable: Variable,
-  kitVariableKeys: string[] | string | null = null,
-  semanticCollectionName = 'Semantic'
-) {
-  const manifest = Array.isArray(kitVariableKeys) && kitVariableKeys.length > 0 ? kitVariableKeys : null
-  const isKitSourced = Boolean(variable.remote && (!manifest || manifest.includes(variable.key as string)))
-  const isSemantic = !isKitSourced && variable.collectionName === semanticCollectionName
-  if (!isKitSourced && !isSemantic) {
-    return {
-      rule: 'non-semantic-binding',
-      detail: `bound to a non-${semanticCollectionName} variable outside the kit library`
-    }
+export function nonSemanticBindingViolation(variable: Variable, semanticCollectionName = 'Semantic') {
+  if (variable.remote) return null
+  if (variable.collectionName === semanticCollectionName) return null
+  return {
+    rule: 'non-semantic-binding',
+    detail: `bound to a non-${semanticCollectionName} variable outside the kit library`
   }
-  return null
 }
 
 /**

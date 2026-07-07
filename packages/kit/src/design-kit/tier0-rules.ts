@@ -251,9 +251,16 @@ export function variantNamingViolations(node: AnyNode): Violation[] {
  * returns `[]` vacuously — a dark-only project has zero copies to maintain.
  * node.siblings is resolved by the walker from node.parent.children (excluding
  * node itself).
+ *
+ * A variant COMPONENT inside a COMPONENT_SET is exempt: a set's children can
+ * only be components, so an adjacent instance copy is structurally impossible
+ * there — the mode copy is owed at the set level, where the walker checks it
+ * against the set's page-level siblings. `node.insideComponentSet` is resolved
+ * by the walker from node.parent.type.
  */
 export function modeCopyViolations(node: AnyNode, semanticCollectionId: string, modes: string[]): Violation[] {
   if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return []
+  if (node.type === 'COMPONENT' && node.insideComponentSet) return []
   const violations: Violation[] = []
   for (const mode of (modes ?? []).slice(1)) {
     const copy = (node.siblings ?? []).find((sibling: AnyNode) => sibling.name === `${node.name} (${mode})`)
@@ -405,7 +412,33 @@ export function compositeRegionNamingViolation(node: AnyNode, compositeNames: st
   }
 }
 
-export function gapPaddingSpacingViolations(node: AnyNode, _spacingScale?: unknown): Violation[] {
+export type GapPaddingCollectionsConfig = {
+  /** Project-configured Semantic collection name (`argo.json`'s `semanticCollectionName`); defaults to the literal `'Semantic'` for a project with no config. */
+  semanticCollectionName?: string
+  /** Project-configured Primitives collection name; defaults to the literal `'Primitives'` for a project with no config. */
+  primitivesCollectionName?: string
+  /**
+   * Recipe-declared allowlist of additional collection names a spacing
+   * binding may legally resolve to (e.g. shadcn-tailwind's `tw/gap`,
+   * `tw/padding`, `tw/margin`, `tw/space` family — a stock kit duplicate
+   * deliberately splits spacing tokens across these instead of a single
+   * Primitives/Semantic collection). Empty for a recipe that declares none.
+   */
+  additionalAllowedCollectionNames?: string[]
+}
+
+/**
+ * Live field bug (2026-07-07, first migration run): this check used to
+ * hardcode the literal collection names `"Primitives"`/`"Semantic"` — a
+ * stock kit duplicate that never renamed its Semantic collection (named
+ * `mode`) and splits spacing tokens across a `tw/*` collection family failed
+ * this check on every one of its own untouched components. No collection-
+ * name literals here now — every accepted name is configured/declared by the
+ * caller.
+ */
+export function gapPaddingSpacingViolations(node: AnyNode, config: GapPaddingCollectionsConfig = {}): Violation[] {
+  const { semanticCollectionName = 'Semantic', primitivesCollectionName = 'Primitives', additionalAllowedCollectionNames = [] } = config
+  const acceptedCollections = new Set([semanticCollectionName, primitivesCollectionName, ...additionalAllowedCollectionNames])
   // Nodes inside a library instance are exempt (2026-07-05): kit internals
   // bind the kit's own spacing collections (e.g. tw/gap) — not ours to
   // rebind; flagging them made pristine kit instances fail the hard gate.
@@ -422,13 +455,13 @@ export function gapPaddingSpacingViolations(node: AnyNode, _spacingScale?: unkno
       if (value !== 0) {
         violations.push({
           rule: 'gap-padding-unbound',
-          detail: `${field} value ${value} is an unbound literal; D24 requires binding a Primitives or Semantic spacing variable`
+          detail: `${field} value ${value} is an unbound literal; D24 requires binding a ${primitivesCollectionName} or ${semanticCollectionName} spacing variable`
         })
       }
-    } else if (collectionName !== 'Semantic' && collectionName !== 'Primitives') {
+    } else if (!acceptedCollections.has(collectionName)) {
       violations.push({
         rule: 'gap-padding-foreign-binding',
-        detail: `${field} is bound to a variable outside the project collections ("${collectionName}"); D24 requires a Primitives or Semantic spacing variable`
+        detail: `${field} is bound to a variable outside the project collections ("${collectionName}"); D24 requires a ${primitivesCollectionName} or ${semanticCollectionName} spacing variable`
       })
     }
   }

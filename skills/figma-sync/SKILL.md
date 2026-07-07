@@ -10,30 +10,12 @@ deterministic gate compares against (design-pack plan §4) — no gate ever
 talks to Figma directly, including during hands-off `build-plan` runs (C6).
 Builds on `figma:figma-use`.
 
-**Three-class source of truth (design-first, corrected).** Not everything in the
-product surface is Figma-authored — classify each region before you dump, using
-the host project's reuse authority (its reconciliation doc); never infer the
-class from the node alone:
-
-1. **Base primitives** (shadcn — Button, Switch, Badge, Dialog, Sonner…):
-   **code is the source of truth**, the design file's starter-derived mirrors
-   track it, and the tier-1b base-congruence gate holds them honest. Step 3's
-   base-component spec dump reads the mirror for gate fixtures — it is not a
-   source-of-truth flip.
-2. **Existing product composites** (e.g. `SessionTerminalView`/TerminalPanel,
-   `RosterRow`/SessionCard, `RosterView`/Rail, the activity feed, settings,
-   usage — anything already implemented in code): **code is the source of
-   truth**. Design-reconcile refreshes the visual language ONLY; the component
-   boundary and behavior stay code-owned and are **never regenerated from
-   Figma**. A region carrying a `RECONCILE` verdict is a Figma mirror for design
-   reference — `figma-to-code` **never queues it for generation**.
-3. **Net-new composites + screen composition**: **Figma is the source of
-   truth** — genuinely design-first. This skill dumps these into artifacts and
-   `figma-to-code` implements them, with code retaining downstream veto (Figma
-   has no compiler).
-
-Never invert class 1 or 2 to Figma-truth — that discards the shadcn vendoring,
-the congruence gate, and the code-owned behavior of components that already run.
+**Source of truth (one rule, every component).** Figma owns ALL visuals —
+tokens, variants, spacing, styling — for every component, base or custom,
+one-way Figma→code. Code owns ALL behavior — a11y, focus, state machines,
+base-ui/react wiring. Sync regenerates the presentation module only; it never
+touches the hand-owned behavior file (the generated-presentation/hand-owned-
+behavior split — see `figma-to-code`'s presentation-regen seam).
 
 ## Procedure
 
@@ -53,12 +35,49 @@ the congruence gate, and the code-owned behavior of components that already run.
    LLM sessions bind against (instead of enumerating ~1800 local
    primitives); commit it with the other artifacts in step 9. Never
    hand-edit it — the CLI is its one writer.
+2b. **Staleness sweep (design doc decision 8).** Layered staleness check
+   against the committed `design/registry.json`: file-version bump (from
+   step 2's freshness metadata) → a shallow diff of the freshly dumped
+   `design/tokens.json` against the previous snapshot (`diffVariableDefs`) →
+   a live node-id walk (`get_metadata`/`use_figma`) vs. every registry
+   entry's `nodeId` (`classifyNodeDrift`) → `classifyStaleness` combines the
+   three into `in-sync`/`presentation-drift`/`api-drift`/`orphaned` per
+   entry (kit's `design-kit/staleness` module — all pure functions, no
+   `figma.*` calls; this skill gathers the live snapshots). Stamp each
+   affected entry's `lastSyncedAt`/`status` in `design/registry.json`. End
+   with a **review-prompt printout** — list every entry that moved to
+   `out-of-sync`/`orphaned` — this is advisory, never a gate: auto-regen on
+   sync is explicitly out of scope (design doc "Rejected alternatives").
+
+   **Registry-reconcile ride-along (design-memory-placement.md A3,
+   relocated here from `figma-audit` in Slice 4).** The live node-id walk
+   above already holds every top-level COMPONENT/COMPONENT_SET on Custom
+   Components — diff that same live list against `design/registry.json` via
+   `reconcileRegistrySweep` (import from `@argohq/kit/design-kit`), wired as
+   ONE combined `use_figma` read with the staleness walk above, not two
+   separate round-trips (this skill's own efficiency rule). It reports
+   `registry-orphan` (entry whose nodeId no longer resolves AND whose name
+   isn't found live) and `registry-unregistered` (live component absent
+   from the registry — an agent that crashed before its final upsert); the
+   category-dependent `registry-miscategorized` rule is gone along with the
+   `category` field. **Scratch-prefix page exclusion:** any top-level
+   component whose owning page name starts with `Scratch` (case-sensitive
+   prefix match, same style as `isWireframePageName`'s `W\d{2}` convention
+   in `tier0-rules.ts`) is excluded from the `registry-unregistered` sweep
+   entirely — sandbox work never generates registry-hygiene noise (design
+   doc decision 4). Both findings are advisory, never blocking. Because the
+   walk already holds the full node list, also re-resolve + persist any
+   entry whose `nodeId` moved (a `combineAsVariants`/variant restructure
+   minted a new id — far more common than deletion) via
+   `getNodeByIdAsync`/`findAll`, and stamp `syncedAtWriteCount`/
+   `figmaFileVersion` on the registry header — this is a live-Figma-only
+   concern the pure `reconcileRegistrySweep` function can't perform itself;
+   the walker marshals `nodeIdResolves`/`pageName` per entry before calling
+   it.
 3. **Dump specs.** Per-variant×**state**×mode node metrics — including
    `layoutSizing` (D14/D20) — into `design/specs/<Component>.json`, for
-   project components always, and for **used base components** (the
-   starter's shadcn mirrors — their specs are the tier-1b base-congruence
-   gate's fixtures). Validate each entry against `StoryMapEntrySchema`'s
-   sibling shape where applicable.
+   every synced component, base or custom, uniformly. Validate each entry
+   against `StoryMapEntrySchema`'s sibling shape where applicable.
 4. **Capture reference screenshots.** Per variant×mode, into
    `design/screenshots/<Component>/<variant>.<mode>.png` — so tier 2 and
    headless rebuilds never need live MCP access (C6). For every non-default

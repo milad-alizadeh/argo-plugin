@@ -17,6 +17,44 @@ import { readFileSync, existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { registryComponentNames } from '../design-kit/component-names.js'
 import { findArgoJson } from '../config/argo-json.js'
+import { TW_COLLECTION_FAMILY } from '../recipes/shadcn-tailwind/tier0-rules.js'
+
+/**
+ * Recipe-declared spacing/binding collection allowlist, keyed by the app's
+ * `design.<app>.recipe` value (field bug fix, 2026-07-07 live D01 build) —
+ * a fixed characteristic of the recipe's starter file, not per-project
+ * config. `null`/unknown recipe gets no additional allowlist.
+ */
+const RECIPE_ADDITIONAL_ALLOWED_COLLECTION_NAMES: Record<string, string[]> = {
+  'shadcn-tailwind': TW_COLLECTION_FAMILY
+}
+
+/**
+ * Resolves each requested name to its registry `nodeId` (authoritative
+ * targeting, field bug fix — a name-based sweep matched every same-named
+ * node in the file, e.g. auditing "Card" also swept a container frame
+ * literally named "Card"). A name with no registry entry falls through to
+ * `unresolvedNames` — the sandbox-side name-lookup fallback in
+ * `runTier0Audit`, for a target (a foundation frame/SCREEN) that has no
+ * registry entry to resolve against.
+ */
+export function resolveComponentNodeIds(
+  componentNames: string[],
+  registry: any
+): { componentNodeIds: string[]; unresolvedNames: string[] } {
+  const components = registry?.components && typeof registry.components === 'object' ? registry.components : {}
+  const componentNodeIds: string[] = []
+  const unresolvedNames: string[] = []
+  for (const name of componentNames) {
+    const nodeId = components[name]?.nodeId
+    if (typeof nodeId === 'string' && nodeId) {
+      componentNodeIds.push(nodeId)
+    } else {
+      unresolvedNames.push(name)
+    }
+  }
+  return { componentNodeIds, unresolvedNames }
+}
 
 function readOptionalJson(path: string): any {
   if (!existsSync(path)) return undefined
@@ -48,12 +86,16 @@ export function findDesignBlock(cwd: string): Record<string, any> | null {
 export function deriveTier0AuditOptions({ cwd, componentNames = [] }: { cwd: string; componentNames?: string[] }) {
   const registry = readOptionalJson(join(cwd, 'design', 'registry.json'))
   const designBlock = findDesignBlock(cwd)
+  const recipe = designBlock?.recipe ?? null
+  const { componentNodeIds, unresolvedNames } = resolveComponentNodeIds(componentNames, registry)
 
   return {
-    componentNames,
+    componentNodeIds,
+    componentNames: unresolvedNames,
     compositeNames: registryComponentNames(registry),
     semanticCollectionName: designBlock?.semanticCollectionName ?? 'Semantic',
-    recipe: designBlock?.recipe ?? null
+    additionalAllowedCollectionNames: (recipe && RECIPE_ADDITIONAL_ALLOWED_COLLECTION_NAMES[recipe]) ?? [],
+    recipe
   }
 }
 

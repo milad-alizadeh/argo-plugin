@@ -16,34 +16,32 @@ describe('checkInstancePresence (P4a Node wrapper)', () => {
     }
   }
 
-  it('reads registry.json and reports a MISSING declared component as not clean', () => {
-    withRegistry({ 'rail-session-card': { nodeId: '1:1' }, topbar: { nodeId: '1:2' } }, (cwd) => {
+  it('reports an instance with no registry match as unresolved and not clean', () => {
+    withRegistry({ topbar: { nodeId: '1:2' } }, (cwd) => {
       const { summary } = checkInstancePresence({
         cwd,
-        annotationText: '```argo-screen\ntopbar\n```',
-        built: []
+        built: [{ nodeId: '9:9', name: 'rail-session-card', type: 'INSTANCE' }]
       })
       expect(summary.clean).toBe(false)
-      expect(summary.MISSING).toEqual(['topbar'])
+      expect(summary.unresolved).toEqual(['rail-session-card'])
     })
   })
 
-  it('is clean when the declared instance is present and built', () => {
+  it('is clean when every built instance resolves by nodeId', () => {
     withRegistry({ topbar: { nodeId: '1:2' } }, (cwd) => {
       const { summary } = checkInstancePresence({
         cwd,
-        annotationText: '```argo-screen\ntopbar\n```',
-        built: [{ name: 'topbar', type: 'INSTANCE', componentName: 'topbar', childCount: 3 }]
+        built: [{ nodeId: '1:2', name: 'topbar', type: 'INSTANCE' }]
       })
       expect(summary.clean).toBe(true)
-      expect(summary.present).toEqual(['topbar'])
+      expect(summary.resolved).toEqual(['topbar'])
     })
   })
 
-  it('is clean (nothing to check) when the frame has no manifest block', () => {
+  it('is clean (nothing to check) when the built inventory is empty', () => {
     withRegistry({ topbar: { nodeId: '1:2' } }, (cwd) => {
-      const { manifest, summary } = checkInstancePresence({ cwd, annotationText: 'just prose', built: [] })
-      expect(manifest).toEqual([])
+      const { results, summary } = checkInstancePresence({ cwd, built: [] })
+      expect(results).toEqual([])
       expect(summary.clean).toBe(true)
     })
   })

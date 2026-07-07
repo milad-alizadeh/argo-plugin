@@ -63,7 +63,6 @@ async function runHookChain(event) {
 // scripts keep their `import.meta.url === file://argv[1]` guard semantics.
 const DESIGN_VERBS = {
   'record-spec-diff-receipt': '../dist/skill-scripts/record-spec-diff-receipt.js',
-  'check-anti-recreation': '../dist/skill-scripts/check-anti-recreation.js',
   'bundle-tier0-audit': '../dist/skill-scripts/bundle-tier0-audit.js',
   'prepare-tier0-audit-options': '../dist/skill-scripts/prepare-tier0-audit-options.js',
   'record-audit-receipt': '../dist/skill-scripts/record-audit-receipt.js',

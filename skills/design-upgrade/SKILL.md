@@ -1,6 +1,6 @@
 ---
 name: design-upgrade
-description: The paired shadcn + starter-file refresh (D15) - manual shadcn merge into the vendored code, matching manual update of the maintained Figma starter file, project opt-in (re-duplicate the starter or paste deltas), congruence re-gate, waiver invalidation by sourceVersion. Use when the user asks to upgrade shadcn/the design starter, or when a new upstream shadcn release needs adopting.
+description: The paired shadcn + starter-file refresh (D15) - manual shadcn merge into the vendored code, matching manual update of the maintained Figma starter file, project opt-in (re-duplicate the starter or paste deltas), re-audit touched components, re-sync. Use when the user asks to upgrade shadcn/the design starter, or when a new upstream shadcn release needs adopting.
 ---
 
 # design-upgrade
@@ -45,19 +45,7 @@ either-side-only bump.
 4. **Re-run the tier-0 audit on the touched components** in the project
    file (`figma-audit`, named-component hard gate) — pasted components can
    carry stray literals or names; never assume a paste landed clean.
-5. **Re-run the congruence gate (tier 1b).** Use the recipe's
-   `design-source/base-congruence.walker.spec-diff.js` (already installed)
-   against freshly synced base-mirror specs (`figma-sync` the touched
-   components first). Any drift is fixed either in the vendored merge
-   (step 1) or in the mirrors (step 2/3) — never waived away silently.
-6. **Waiver invalidation by `sourceVersion`.** Call
-   `invalidateWaivers(waivers, newSourceVersion)` (from `@argohq/kit`'s
-   design-kit) — any waiver whose `sourceVersion` no longer matches is
-   dropped. A dropped waiver that still fails the congruence gate needs
-   either a new, freshly-pinned waiver (re-observe the actual current pair)
-   or a real fix — never silently re-add the old waiver under the new
-   version.
-7. **Re-sync.** Run `figma-sync` on the touched components so
+5. **Re-sync.** Run `figma-sync` on the touched components so
    `design/tokens.json`, `design/semantic-manifest.md`, specs, and
    screenshots reflect the refreshed file.
 

@@ -50,46 +50,41 @@ lands) — never wire it as a hard-fail.
 **Recipe checks (installed recipe only):** for `shadcn-tailwind`
 (`@argohq/kit/design-kit/shadcn-tailwind/tier0-walker`)
 — the non-Semantic-binding check: every color binding must resolve to a
-LOCAL variable in the project's Semantic collection (all variables live in
-the project's design file — the duplicated starter — so a remote binding is
-itself a violation, not something to fail open on); gap/padding (D24)
-accepts Primitives or Semantic spacing variables. A different recipe
-supplies its own check set, or none at all.
+LOCAL variable in the project's configured Semantic collection (all
+variables live in the project's design file — the duplicated starter — so a
+remote binding is itself a violation, not something to fail open on), or the
+recipe's declared `tw/*` collection family (`tw/gap`, `tw/padding`, `tw/font`,
+`tw/stroke-width`, `tw/border-radius`, `tw/border-width`, `tw/margin`,
+`tw/space` — a stock kit duplicate deliberately splits non-color tokens
+across these instead of folding them into Semantic); gap/padding (D24)
+accepts the configured Primitives/Semantic collections or that same `tw/*`
+family. No collection name is hardcoded — the Semantic collection name comes
+from `argo.json`'s `semanticCollectionName` (a stock kit duplicate never
+renames it from `mode`). A different recipe supplies its own check set, or
+none at all.
 
 ## Two modes
 
 1. **Named-component audit (hard gate, D8)** — when called with specific
    names (by `figma-sync`, `figma-create`, or the user), any violation on
-   those nodes **fails loud**. Matches by name against COMPONENT,
-   COMPONENT_SET, FRAME, and SECTION nodes — not components only, so a
-   SCREEN or foundation frame (e.g. `foundations/sticker-sheet`) can be
-   named-audited too, which `figma-create`'s own flow requires as a hard
-   gate. This is the mode other skills depend on — never soften it to
-   advisory.
+   those nodes **fails loud**. Targets by the registry's `nodeId` whenever
+   the name resolves there (authoritative — never a name-based sweep, which
+   used to match every same-named node in the file). A name with no registry
+   entry — a SCREEN or foundation frame (e.g. `foundations/sticker-sheet`),
+   which `figma-create`'s own flow requires as a hard gate — falls back to a
+   name lookup against COMPONENT, COMPONENT_SET, FRAME, and SECTION nodes,
+   but only when it resolves to EXACTLY one node; an ambiguous name reports
+   `ambiguous-audit-target-name` instead of silently auditing every match.
+   This is the mode other skills depend on — never soften it to advisory.
 2. **File-wide sweep (advisory)** — when run standalone with no component
    names, walks every top-level frame on every page and reports violations
    as **advisory** findings (un-synced frames, stray hygiene issues) — it
    informs, it doesn't block anything on its own. Also reports
    `unsectioned-component` (a component not a child of any category shelf
    frame on `Custom Components`) and `missing-component-description`.
-
-   **Registry-reconcile ride-along (design-memory-placement.md A3).** The
-   sweep already traverses every top-level COMPONENT/COMPONENT_SET — diff
-   that same live list against `design/registry.json` via
-   `reconcileRegistrySweep` (import from `@argohq/kit/design-kit`)
-   to catch drift a per-task incremental upsert can't see on its own:
-   `registry-orphan` (entry whose nodeId no longer resolves AND whose name
-   isn't found live), `registry-unregistered` (live component absent from
-   the registry — an agent that crashed before its final upsert), and
-   `registry-miscategorized` (live category disagrees with the entry). All
-   three are advisory, never blocking. Because the sweep already holds the
-   full node list, also re-resolve + persist any entry whose `nodeId` moved
-   (a `combineAsVariants`/variant restructure minted a new id — far more
-   common than deletion) via `getNodeByIdAsync`/`findAll`, and stamp
-   `syncedAtWriteCount`/`figmaFileVersion` on the registry header — this is
-   a live-Figma-only concern the pure `reconcileRegistrySweep` function
-   can't perform itself; the walker marshals `nodeIdResolves` per entry
-   before calling it.
+   Registry-reconcile is NOT part of this sweep — it moved to `figma-sync`'s
+   staleness step (design-system-reset-overhaul.md Slice 4), since both walk
+   the live component list against the registry in the same pass.
 
 ## Procedure
 
@@ -99,10 +94,18 @@ supplies its own check set, or none at all.
    `deriveTier0AuditOptions`) with `{ cwd: <host project root>,
    componentNames: [...] }` (or `[]` for a file-wide sweep). It reads
    `.claude/argo.json`'s `design.<app>` block and `design/registry.json`
-   Node-side (the sandbox can't read a committed file itself) and returns
-   `{ componentNames, compositeNames, semanticCollectionName, recipe }`.
-   Keep the whole object — every DATA field the bundled script's completion
-   value needs; never hand-author a trimmed `{ componentNames: [...] }`.
+   Node-side (the sandbox can't read a committed file itself), resolves each
+   requested name to its registry `nodeId` (authoritative targeting — a
+   name-based sweep used to match every same-named node in the file, e.g.
+   auditing "Card" also swept a container frame literally named "Card"), and
+   returns `{ componentNodeIds, componentNames, compositeNames,
+   semanticCollectionName, additionalAllowedCollectionNames, recipe }` —
+   `componentNodeIds` is the resolved authoritative target list;
+   `componentNames` on the way OUT holds only names that had no registry
+   entry (a fallback resolved sandbox-side by an unambiguous single-match
+   name lookup, never a blind multi-node sweep). Keep the whole object —
+   every DATA field the bundled script's completion value needs; never
+   hand-author a trimmed `{ componentNames: [...] }`.
 3. **Bundle the audit for the returned `recipe` — never hand-assemble or
    paste raw source into `use_figma`.** Run `argo design bundle-tier0-audit
    --recipe <recipe>` (wraps `bundleTier0AuditForRecipe`), `cwd` set to the

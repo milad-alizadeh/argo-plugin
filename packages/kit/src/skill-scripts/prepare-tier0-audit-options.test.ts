@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { deriveTier0AuditOptions, parseCliArgs } from './prepare-tier0-audit-options.js'
+import { deriveTier0AuditOptions, parseCliArgs, resolveComponentNodeIds } from './prepare-tier0-audit-options.js'
 
 describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation gate wiring)', () => {
-  it('reads design/registry.json and passes its component names as compositeNames', () => {
+  it('reads design/registry.json, resolves a requested name to its nodeId, and passes all entries as compositeNames', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
     mkdirSync(join(cwd, 'design'), { recursive: true })
     writeFileSync(
@@ -16,11 +16,27 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
 
     try {
       expect(deriveTier0AuditOptions({ cwd, componentNames: ['rail-session-card'] })).toEqual({
-        componentNames: ['rail-session-card'],
+        componentNodeIds: ['126:35'],
+        componentNames: [],
         compositeNames: ['rail-session-card', 'status-bar'],
         semanticCollectionName: 'Semantic',
+        additionalAllowedCollectionNames: [],
         recipe: null
       })
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('falls back to name-only for a target with no registry entry (e.g. an unregistered foundation frame)', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
+    mkdirSync(join(cwd, 'design'), { recursive: true })
+    writeFileSync(join(cwd, 'design', 'registry.json'), JSON.stringify({ components: {} }), 'utf8')
+
+    try {
+      const options = deriveTier0AuditOptions({ cwd, componentNames: ['foundations/sticker-sheet'] })
+      expect(options.componentNodeIds).toEqual([])
+      expect(options.componentNames).toEqual(['foundations/sticker-sheet'])
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }
@@ -30,9 +46,11 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
     try {
       expect(deriveTier0AuditOptions({ cwd })).toEqual({
+        componentNodeIds: [],
         componentNames: [],
         compositeNames: [],
         semanticCollectionName: 'Semantic',
+        additionalAllowedCollectionNames: [],
         recipe: null
       })
     } finally {
@@ -40,7 +58,7 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
     }
   })
 
-  it("reads semanticCollectionName and recipe from the app's design.<app> block in .claude/argo.json", () => {
+  it("reads semanticCollectionName and recipe from the app's design.<app> block in .claude/argo.json, and threads the recipe's collection allowlist", () => {
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
     mkdirSync(join(cwd, '.claude'), { recursive: true })
     writeFileSync(
@@ -53,6 +71,7 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
       const options = deriveTier0AuditOptions({ cwd })
       expect(options.semanticCollectionName).toBe('Argo Semantic')
       expect(options.recipe).toBe('shadcn-tailwind')
+      expect(options.additionalAllowedCollectionNames).toContain('tw/gap')
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }
@@ -76,6 +95,25 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }
+  })
+})
+
+describe('resolveComponentNodeIds (authoritative audit targeting, field bug fix)', () => {
+  it('resolves a registered name to its nodeId', () => {
+    const registry = { components: { Card: { nodeId: '99:1' } } }
+    expect(resolveComponentNodeIds(['Card'], registry)).toEqual({ componentNodeIds: ['99:1'], unresolvedNames: [] })
+  })
+
+  it('leaves an unregistered name for the name-lookup fallback instead of guessing', () => {
+    const registry = { components: {} }
+    expect(resolveComponentNodeIds(['foundations/sticker-sheet'], registry)).toEqual({
+      componentNodeIds: [],
+      unresolvedNames: ['foundations/sticker-sheet']
+    })
+  })
+
+  it('fails open (treats every name as unresolved) when the registry is absent', () => {
+    expect(resolveComponentNodeIds(['Card'], undefined)).toEqual({ componentNodeIds: [], unresolvedNames: ['Card'] })
   })
 })
 

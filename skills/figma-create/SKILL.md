@@ -223,24 +223,14 @@ step 2.
 `composite` region resolving to an instance) is **advisory** for now — the
 authoritative decomposition gate (Option C, a repo-side brief↔screen check)
 is deferred until its machine-readable brief schema + `story-map` region→
-instance mapping land. The ONE hard check that ships now is
-**anti-recreation**: a NEW component name that collides with an existing
-component — or a known alias in the host's reuse authority — is rejected. Never
-build a second component for something that already exists under another name;
-reuse or extend it instead.
+instance mapping land.
 
-**Anti-recreation check, mechanically (step 1 below, before building any NEW
-composite):** run `argo design check-anti-recreation --name "<proposed name>"`
-(wraps `checkNewNameAliasCollision`) from the host project root — it reads the host's
-`design/component-aliases.json` (seeded from `COMPONENT-INVENTORY.md`'s prose
-Aliases/synonyms column; format in
-`templates/design/component-aliases.example.json`) and hard-rejects a
-collision. Run this ONCE per NEW name, before any Figma write for it — never
-against an already-registered component's own name (the check has no
-self-exclusion; it's designed for a one-off pre-authoring gate, not a repeat
-audit). A collision **stops the line** exactly like the failed base-component
-lookup above: report it and do not build the component; reuse or extend the
-colliding entry instead.
+A NEW component name is checked against the flat registry directly
+(`design/registry.json`'s keys, via `registryComponentNames`) — not a
+separate alias map, and not a separate collision CLI verb. The "check before
+you build" registry read in step 1 of "Check before you build" above already
+covers this: a name collision there means reuse or extend the existing
+component instead of building a second one under another name.
 
 ## Where things go
 
@@ -288,11 +278,13 @@ re-read the file immediately before writing and merge only this component's
 key (never overwrite the whole file from a stale in-memory copy; flat
 concurrent designer sessions make last-write-wins a real entry-loss risk).
 Entry shape (`RegistryEntrySchema`, imported from `@argohq/kit/design-kit`):
-`{ nodeId, category, status: 'audit-clean', description, provenance: {
-createdBy: 'figma-create', lastTask, lastAudit: { auditedAt, clean: true }
-} }`. `status` is Figma-side lifecycle ONLY — this skill only ever writes
-`audit-clean` (the outcome of its own self-audit loop); `synced`/`coded` are
-owned by other skills' outputs and never written here.
+`{ nodeId, kind: 'kit' | 'custom', status: 'audit-clean', lastSyncedAt,
+variantMatrix }`. `status` is Figma-side lifecycle ONLY — this skill only ever
+writes `audit-clean` (the outcome of its own self-audit loop); `synced`/`coded`
+are owned by other skills' outputs and never written here. `category`,
+`description`, and audit `provenance` are gone (design-system-reset-overhaul.md
+Slice 4's slim 5-field schema) — `status: 'audit-clean'` is now the only
+committed audit-pass signal; there is no per-component `lastAudit` timestamp.
 
 ## Efficiency (round-trips are the cost driver)
 

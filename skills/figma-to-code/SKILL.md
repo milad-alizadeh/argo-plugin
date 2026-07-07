@@ -27,14 +27,6 @@ interactively.
   not: either the component doesn't exist in Figma yet (build it first via
   `figma-create`, then sync via `figma-sync`) or it was never synced (run
   `figma-sync`) — don't invent a mapping here.
-- **Never generate a code-owned composite** (`figma-sync`'s three-class model,
-  class 2 — an existing product composite carrying a `RECONCILE` verdict in the
-  host's reuse authority: `SessionTerminalView`/TerminalPanel, `RosterRow`/
-  SessionCard, the activity feed, settings, usage, …). Its Figma entry is a
-  design-reference mirror; the code boundary + behavior are code-owned and must
-  never be regenerated from Figma. Only class-3 net-new composites and screen
-  composition are generated here. If a target resolves to a `RECONCILE` region,
-  stop and skip it — the design refresh is applied to the existing code by hand.
 - **Never uses live MCP access during a hands-off `build-plan` run** (C6):
   all design context — tokens, specs, screenshots per variant×mode — comes
   from the **committed** artifacts `figma-sync` already wrote. If a needed
@@ -54,14 +46,10 @@ interactively.
    interactions) gets ordinary red/green tests same as any other code; the
    design pack does not replace that loop, it adds a *visual* acceptance
    layer on top.
-3. **Tier 1/1b — spec-diff + base-congruence.** Run the mechanism spec-diff
-   walker (`templates/design/spec-diff-walker/spec-diff.walker.spec-diff.js`,
+3. **Tier 1 — spec-diff.** Run the mechanism spec-diff walker
+   (`templates/design/spec-diff-walker/spec-diff.walker.spec-diff.js`,
    already installed by `setup-design`) against the new component's
-   stories, always. Also run tier 1b's base-congruence walker (installed
-   from the recipe's `design-source/base-congruence.walker.spec-diff.js`) —
-   vendored base code is the source of truth the design file's starter
-   mirrors are gated against (see `gate-wiring.md`'s tier-1b row). Fix any
-   drift the comparator reports before moving on.
+   stories, always. Fix any drift the comparator reports before moving on.
    **Then record the receipt** — the walker's exit code is the only accepted
    proof this tier passed, never your own reading of its output: run
    `argo design record-spec-diff-receipt --
@@ -72,6 +60,16 @@ interactively.
    requires this receipt to be fresh (within 10 minutes) and `exitCode: 0`
    before it will let a commit touching `componentsPath` land — re-run it
    immediately before committing, not once at the start of the session.
+3a. **Presentation-regen seam.** Every generated component splits into a
+   GENERATED presentation module (co-located, suffix convention e.g.
+   `Button.presentation.tsx` holding the cva/variant classes) and a
+   hand-owned behavior file (`Button.tsx`) that imports it; regen ever only
+   rewrites the `.presentation.tsx` file. Before regenerating, run
+   `diffVariantShape` (kit's `design-kit/variant-shape-diff`) against the
+   component's last-synced `variantMatrix` (`design/registry.json`'s entry)
+   vs. the freshly synced shape. A `changed: true` result STOPS and reports
+   to the owner — never silent regen. An unchanged shape proceeds to
+   regenerate the presentation file only.
 4. **Tier 2 — gestalt acceptance, D22 ordering.** Compare each story's
    rendered screenshot against the **committed** reference screenshot
    (light↔light, dark↔dark) and record a **structured PASS/FAIL verdict

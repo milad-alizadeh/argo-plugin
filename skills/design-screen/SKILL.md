@@ -24,28 +24,15 @@ inventory every time.
   and `Visible in build?` requirement rows define what each screen must DO. The
   PRD stays PURE semantic — product-owned, durable, independent of layout. It does
   NOT carry component names or arrangement.
-- **Arrangement lives in the design layer, on the frame.** The per-screen
-  "which components, arranged how" note is a **Figma Dev Mode annotation on the
-  screen frame** (`node.annotations`), not a brief file and not a PRD column
-  (Figma's own best practice: annotations convey design intent hard to capture
-  visually). It carries two things: free prose (the arrangement) and a
-  machine-readable **`argo-screen` manifest block** — a fenced list of the
-  registry component keys the screen requires, one per line, optional trailing
-  `xN` cardinality (`x0` = deliberately absent, e.g. an empty rail):
-
-  ````
-  ```argo-screen
-  stage-orb-scene
-  first-run-cta
-  rail-session-card x0
-  topbar
-  ```
-  ````
-
-  The manifest is what the P4a deterministic check reads. Reading it to grade the
-  builder is NOT the circularity the LLM check guards against — a structural
-  "did you build what you declared" check is legitimate; the ban on grading a
-  plan against itself is on the P4b advisory pass, which never sees this note.
+- **Arrangement lives in the design layer, on the frame — no manifest to
+  author.** There is no Dev Mode annotation contract here anymore (design doc
+  decision 9): P4a's deterministic check resolves every INSTANCE in the
+  composed frame's tree directly against `design/registry.json` by `nodeId` —
+  there is nothing to declare up front, so nothing to keep in sync with what
+  gets built. Reading the built tree to grade the builder is NOT the
+  circularity the LLM check guards against — a structural "does every instance
+  resolve" check is legitimate; the ban on grading a plan against itself is on
+  the P4b advisory pass, which never sees this tree data.
 
 ## 1. Preconditions — check all, fail loudly
 - **A PRD** for the feature (`.claude/prds/<feature>.md`) with a feature→screen
@@ -63,16 +50,13 @@ inventory every time.
 
 ## 2. Build component-first (P1), then compose (P2)
 Walk BUILD-ORDER: `figma-create` each composite in dependency order — audit-gated,
-registered, anti-recreation UNCHANGED (inventory citation, the registry/alias
-collision hard check, RECONCILE-codegen denylist). An unmatched composite ESCALATES to a
+registered, with the registry as the reuse authority (check it before proposing
+anything NEW). An unmatched composite ESCALATES to a
 human — NEVER auto-`NEW` past the budget. Only when the components exist do you
-compose the screen from **instances** (not fresh frames). As you go, write the
-frame's Dev Mode annotation: the arrangement prose plus the `argo-screen`
-manifest block (the registry keys this screen requires, `xN`/`x0` as needed) —
-set it in the same `use_figma` write that composes, via
-`frame.annotations = [{ labelMarkdown: '```argo-screen\n…\n```' }]`. Right after
-composing a screen, run `argo design mark-screen-composed --screen <name>` so the
-stop gate knows its P4b completeness check is owed (re-composing re-owes it).
+compose the screen from **instances** (not fresh frames) — no annotation write
+needed at all now. Right after composing a screen, run
+`argo design mark-screen-composed --screen <name>` so the stop gate knows its
+P4b completeness check is owed (re-composing re-owes it).
 
 `design/registry.json` (component name → node id, committed on `main`) is the
 **code bridge** — the mapping that lets code generation resolve each instance to
@@ -94,22 +78,20 @@ positioned) is exempt — auto-layout would be a no-op there.
 
 ## 4. Completeness — deterministic pre-check + advisory check, then you (P4)
 No frozen contract; completeness is a cheap layered check:
-- **(a) Deterministic instance-presence pre-check (cheap, advisory-loud):** assert
-  every component the frame's `argo-screen` manifest DECLARES resolves to a
-  **non-empty registry instance** on the built frame. Capture two things in ONE
-  `use_figma` read of the composed frame — its Dev Mode annotation text
-  (`node.annotations[*].labelMarkdown`) and a flat instance inventory (each
-  descendant's `{ name, type, componentName: mainComponent?.name, childCount:
-  children?.length }`) — then run
-  `argo design check-instance-presence --manifest '<annotation text>' --built '<inventory JSON>'`
-  (reads `design/registry.json` Node-side). It reports each declared component
-  `present` / `MISSING` / `HOLLOW` (a traced frame or empty instance shell) /
-  `UNREGISTERED`, with cardinality shortfalls as advisory warnings. A missing or
-  hollow component fails here, for free, before any LLM spend — the cheapest
-  catch, replacing the old region-coverage gate without a contract. It is
-  **advisory-loud**: the command exits non-zero when not clean so you notice and
-  fix (or override at ship), but NO hook consumes that exit — tier-0 stays the
-  one hard gate.
+- **(a) Deterministic instance-presence pre-check (cheap, advisory-loud):**
+  assert every INSTANCE in the composed frame's tree resolves to a
+  `design/registry.json` entry by `nodeId` — no declared list, no manifest.
+  Capture the frame's flat instance inventory in ONE `use_figma` read (each
+  descendant's `{ nodeId, name, type }` — no `componentName`/`childCount`
+  needed anymore, since there's no HOLLOW/cardinality concept), then run
+  `argo design check-instance-presence --built '<inventory JSON>'` (reads
+  `design/registry.json` Node-side). It reports each instance `resolved` or
+  `unresolved` (resolved by `nodeId` first, falling back to a normalized name
+  match). An unresolved instance fails here, for free, before any LLM spend —
+  the cheapest catch, replacing the old region-coverage gate without a
+  contract. It is **advisory-loud**: the command exits non-zero when not clean
+  so you notice and fix (or override at ship), but NO hook consumes that exit
+  — tier-0 stays the one hard gate.
 - **(b) Advisory completeness check (must-exist, non-blocking on content):**
   generate the checklist **mechanically** with
   `argo design completeness-checklist --screen <name> --prd <path>` — it selects
@@ -149,8 +131,8 @@ Front-loading is the dominant token lever (composition-dominant screens cost
 
 ## Cost discipline (hard rules)
 - **The full-tree read is reserved for the P4a instance-presence check ONLY** —
-  a single `use_figma` walk of the composed frame (annotation + instance
-  inventory). P1/P2 read the committed registry + the component-resolution
+  a single `use_figma` walk of the composed frame's flat instance inventory.
+  P1/P2 read the committed registry + the component-resolution
   manifest — NEVER re-pull the tree "to check structure" mid-build (the single
   largest redundant spend).
 - **Pre-seed the component-resolution manifest** (region/composite → node id +

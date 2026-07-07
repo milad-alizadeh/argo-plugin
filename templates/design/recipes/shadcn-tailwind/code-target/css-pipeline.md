@@ -41,7 +41,7 @@ identical `import tailwindcss from '@tailwindcss/vite'` +
    `import tailwindcss from '@tailwindcss/vite'` / `tailwindcss()`.
 3. **Any Vitest project that renders components directly rather than through
    `@storybook/addon-vitest`'s `storybookTest` plugin** — e.g. this recipe's
-   spec-diff/base-congruence walker project, if it isn't composed through the
+   spec-diff walker project, if it isn't composed through the
    Storybook config. A project wired via `storybookTest({ configDir:
    '.storybook' })` already inherits whatever `.storybook/main.ts` exports
    (Storybook's own Vite config is the thing that plugin builds on top of),

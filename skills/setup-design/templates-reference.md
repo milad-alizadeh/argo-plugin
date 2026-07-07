@@ -47,7 +47,6 @@ keyed off that recipe's declared design source/`codeTarget` (its
 
 | Template | Install when | Substitute / scope with |
 |---|---|---|
-| `design-source/base-congruence.walker.spec-diff.js` | always (for this recipe — vendored base code is the source of truth its design-file mirrors are gated against) | same substitutions as `spec-diff.walker.spec-diff.js`, plus `{{BASE_SMOKE_STORIES_GLOB_OR_INDEX}}` and `{{BASE_SPECS_GLOB_OR_INDEX}}` |
 | `code-target/lint/design-lint.md` | a lint config + component dir exist | `{{COMPONENTS_GLOB}}` ← the project's real components dir glob; `{{PRIMITIVE_TOKEN_PREFIX}}` ← the project's Primitive naming convention |
 | `code-target/token-writer.md` | always (for this recipe) | `{{TOKEN_FILE_PATH}}` ← `config.tokenFilePath` — `figma-sync`'s step 7 delegates to this doc instead of narrating the token-writer inline |
 | `code-target/css-pipeline.md` | always (for this recipe) | reference only, not filled with slots — states this recipe's `codeTarget` (Tailwind v4, `@tailwindcss/vite`) CSS-plugin detection/wiring detail that SKILL §7b delegates to instead of hardcoding a CSS tool into the generic skill; fills the `{{CSS_PLUGIN_IMPORT}}`/`{{CSS_PLUGIN_CALL}}` slots in `vrt-walker/vitest.vrt.config.js` and the equivalent plugin entry in `.storybook/main.ts`'s `viteFinal` |

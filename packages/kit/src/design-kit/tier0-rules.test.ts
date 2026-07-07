@@ -332,6 +332,10 @@ describe('modeCopyViolations (D11, generalized to mode copies)', () => {
   it('ignores non-component/component-set node types', () => {
     expect(modeCopyViolations({ type: 'FRAME', name: 'Screen', siblings: [] }, SEMANTIC_ID, ['Light', 'Dark'])).toEqual([])
   })
+  it('exempts a variant COMPONENT inside a COMPONENT_SET — a set can only contain components, so an adjacent instance copy is structurally impossible; the copy is owed at the set level', () => {
+    const node = { type: 'COMPONENT', name: 'Type=primary, State=default', insideComponentSet: true, siblings: [] }
+    expect(modeCopyViolations(node, SEMANTIC_ID, ['Light', 'Dark'])).toEqual([])
+  })
 })
 
 describe('implicitLineHeightViolation (D20)', () => {
@@ -495,14 +499,12 @@ describe('compositeRegionNamingViolation (Option B, design-first-council-ruling.
 })
 
 describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)', () => {
-  const spacingScale = [0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 128]
-
   it('flags an unbound non-zero literal', () => {
     const node = {
       layoutMode: 'HORIZONTAL',
       gapAndPadding: [{ field: 'itemSpacing', value: 8, bound: false }]
     }
-    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([
+    expect(gapPaddingSpacingViolations(node)).toEqual([
       { rule: 'gap-padding-unbound', detail: 'itemSpacing value 8 is an unbound literal; D24 requires binding a Primitives or Semantic spacing variable' }
     ])
   })
@@ -512,7 +514,7 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
       layoutMode: 'HORIZONTAL',
       gapAndPadding: [{ field: 'paddingTop', value: 0, bound: false }]
     }
-    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+    expect(gapPaddingSpacingViolations(node)).toEqual([])
   })
 
   it('passes a value bound to the Primitives collection', () => {
@@ -520,7 +522,7 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
       layoutMode: 'HORIZONTAL',
       gapAndPadding: [{ field: 'paddingLeft', value: 24, bound: true, collectionName: 'Primitives' }]
     }
-    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+    expect(gapPaddingSpacingViolations(node)).toEqual([])
   })
 
   it('passes a value bound to the Semantic collection', () => {
@@ -528,7 +530,7 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
       layoutMode: 'HORIZONTAL',
       gapAndPadding: [{ field: 'paddingLeft', value: 24, bound: true, collectionName: 'Semantic' }]
     }
-    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+    expect(gapPaddingSpacingViolations(node)).toEqual([])
   })
 
   it('flags a value bound to a collection outside Primitives/Semantic', () => {
@@ -536,7 +538,7 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
       layoutMode: 'HORIZONTAL',
       gapAndPadding: [{ field: 'paddingLeft', value: 24, bound: true, collectionName: 'Kit' }]
     }
-    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([
+    expect(gapPaddingSpacingViolations(node)).toEqual([
       { rule: 'gap-padding-foreign-binding', detail: 'paddingLeft is bound to a variable outside the project collections ("Kit"); D24 requires a Primitives or Semantic spacing variable' }
     ])
   })
@@ -547,7 +549,7 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
       layoutMode: 'HORIZONTAL',
       gapAndPadding: [{ field: 'itemSpacing', value: 7, bound: false }]
     }
-    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+    expect(gapPaddingSpacingViolations(node)).toEqual([])
   })
 
   it('ignores nodes with layoutMode NONE regardless of gapAndPadding contents', () => {
@@ -555,7 +557,7 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
       layoutMode: 'NONE',
       gapAndPadding: [{ field: 'itemSpacing', value: 7, bound: false }]
     }
-    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+    expect(gapPaddingSpacingViolations(node)).toEqual([])
   })
 
   it('ignores INSTANCE nodes themselves — their own gap/padding mirrors the component definition (kit tw/gap on the boundary node observed live)', () => {
@@ -564,7 +566,7 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
       layoutMode: 'HORIZONTAL',
       gapAndPadding: [{ field: 'itemSpacing', value: 8, bound: true, collectionName: 'tw/gap' }]
     }
-    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+    expect(gapPaddingSpacingViolations(node)).toEqual([])
   })
 
   it('ignores nodes inside a library instance — kit internals bind the kit\'s own spacing collections', () => {
@@ -573,6 +575,26 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
       insideInstance: true,
       gapAndPadding: [{ field: 'itemSpacing', value: 7, bound: true, collectionName: 'tw/gap' }]
     }
-    expect(gapPaddingSpacingViolations(node, spacingScale)).toEqual([])
+    expect(gapPaddingSpacingViolations(node)).toEqual([])
+  })
+
+  // Field bug regression (2026-07-07, live D01 build: a stock kit duplicate
+  // named its Semantic collection "mode" and never renamed it — the check
+  // used to hardcode "Semantic"/"Primitives" literally and hard-failed every
+  // one of the kit's own untouched components).
+  it('passes a value bound to a non-"Semantic" configured semantic collection name', () => {
+    const node = {
+      layoutMode: 'HORIZONTAL',
+      gapAndPadding: [{ field: 'paddingLeft', value: 24, bound: true, collectionName: 'mode' }]
+    }
+    expect(gapPaddingSpacingViolations(node, { semanticCollectionName: 'mode' })).toEqual([])
+  })
+
+  it('passes a value bound to a recipe-declared tw/* family collection', () => {
+    const node = {
+      layoutMode: 'HORIZONTAL',
+      gapAndPadding: [{ field: 'paddingLeft', value: 24, bound: true, collectionName: 'tw/padding' }]
+    }
+    expect(gapPaddingSpacingViolations(node, { additionalAllowedCollectionNames: ['tw/gap', 'tw/padding', 'tw/margin', 'tw/space'] })).toEqual([])
   })
 })

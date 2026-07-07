@@ -1,27 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { WaiverSchema, StoryMapEntrySchema, RegistryEntrySchema, RegistryHeaderSchema } from './schemas.js'
-
-describe('WaiverSchema', () => {
-  const valid = {
-    component: 'Button',
-    variant: 'primary',
-    property: 'borderRadius',
-    figmaValue: 8,
-    codeValue: 9,
-    sourceVersion: 'v12',
-    reason: 'known kit drift, tracked in issue #42',
-    date: '2026-07-04'
-  }
-
-  it('accepts the D15 shape (generic sourceVersion pin)', () => {
-    expect(WaiverSchema.safeParse(valid).success).toBe(true)
-  })
-
-  it('rejects a waiver missing sourceVersion', () => {
-    const { sourceVersion, ...missing } = valid
-    expect(WaiverSchema.safeParse(missing).success).toBe(false)
-  })
-})
+import { StoryMapEntrySchema, RegistryEntrySchema, RegistryHeaderSchema } from './schemas.js'
 
 describe('StoryMapEntrySchema', () => {
   it('accepts the D1 shape with prop mapping', () => {
@@ -46,21 +24,51 @@ describe('StoryMapEntrySchema', () => {
   })
 })
 
-describe('RegistryEntrySchema (design-memory-placement.md, thin pointer index)', () => {
+describe('RegistryEntrySchema (design-memory-placement.md, thin pointer index, slimmed Slice 4)', () => {
   const valid = {
     nodeId: '12:34',
-    category: 'controls',
+    kind: 'custom',
     status: 'audit-clean',
-    description: 'Primary call-to-action button',
-    provenance: { createdBy: 'figma-create', lastTask: 'build Button', lastAudit: { auditedAt: '2026-07-05T00:00:00Z', clean: true } }
+    lastSyncedAt: '2026-07-07T00:00:00Z',
+    variantMatrix: { size: ['sm', 'md', 'lg'] }
   }
 
-  it('accepts the thin pointer-index shape (reusing nodeId as the story-map join key)', () => {
+  it('accepts the slim 5-field shape (reusing nodeId as the story-map join key)', () => {
     expect(RegistryEntrySchema.safeParse(valid).success).toBe(true)
   })
 
-  it('rejects a status outside draft|audit-clean (synced/coded are derived, never stored)', () => {
+  it('accepts a null lastSyncedAt (never-synced entry)', () => {
+    expect(RegistryEntrySchema.safeParse({ ...valid, lastSyncedAt: null }).success).toBe(true)
+  })
+
+  it('accepts both kind values (kit vs custom)', () => {
+    expect(RegistryEntrySchema.safeParse({ ...valid, kind: 'kit' }).success).toBe(true)
+    expect(RegistryEntrySchema.safeParse({ ...valid, kind: 'custom' }).success).toBe(true)
+  })
+
+  it('rejects a kind outside kit|custom', () => {
+    expect(RegistryEntrySchema.safeParse({ ...valid, kind: 'controls' }).success).toBe(false)
+  })
+
+  it('rejects a status outside draft|audit-clean|out-of-sync|orphaned (synced/coded are derived, never stored)', () => {
     expect(RegistryEntrySchema.safeParse({ ...valid, status: 'synced' }).success).toBe(false)
+  })
+
+  it('accepts out-of-sync and orphaned statuses (decision 8 staleness classification)', () => {
+    expect(RegistryEntrySchema.safeParse({ ...valid, status: 'out-of-sync' }).success).toBe(true)
+    expect(RegistryEntrySchema.safeParse({ ...valid, status: 'orphaned' }).success).toBe(true)
+  })
+
+  it('rejects an entry that still carries the dropped category/description/provenance fields as extras only if malformed variantMatrix accompanies them', () => {
+    // dropped fields are simply ignored by zod's default (non-strict) object parsing when the
+    // required 5 are present — the drop is enforced by absence from the schema, not by rejection.
+    const withOldFields = { ...valid, category: 'controls', description: 'stale', provenance: { createdBy: 'x' } }
+    expect(RegistryEntrySchema.safeParse(withOldFields).success).toBe(true)
+  })
+
+  it('rejects a missing variantMatrix', () => {
+    const { variantMatrix, ...withoutVariantMatrix } = valid
+    expect(RegistryEntrySchema.safeParse(withoutVariantMatrix).success).toBe(false)
   })
 })
 

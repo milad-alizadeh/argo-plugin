@@ -36,6 +36,15 @@ describe('nonSemanticBindingViolation (starter-file model: local Semantic bindin
     })
   })
 
+  // Field bug regression (2026-07-07, live D01 build: a stock kit duplicate
+  // deliberately splits tokens across a tw/* collection family — the check
+  // hard-failed every one of the kit's own untouched components before this
+  // allowlist existed).
+  it('passes a local variable bound to a recipe-declared tw/* family collection', () => {
+    const variable = { remote: false, key: 'local:1:2', collectionName: 'tw/font' }
+    expect(nonSemanticBindingViolation(variable, 'Semantic')).toBeNull()
+  })
+
   it('uses the project-configured Semantic collection name for both the comparison and the message', () => {
     const variable = { remote: false, key: 'local:1:2', collectionName: 'Theme' }
     expect(nonSemanticBindingViolation(variable, 'Theme')).toBeNull()

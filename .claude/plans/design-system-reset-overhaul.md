@@ -720,3 +720,18 @@ given how much of Slices 3-4 depends on Slice 2's framing being right.
 - Light-mode value authoring (decision 6).
 - Any recipe other than `shadcn-tailwind` (recipe-pluggability is a separate,
   not-yet-started plan — `.claude/plans/recipe-contract.md`).
+
+## Post-review addendum (2026-07-07, from live migration + reviewer)
+
+- **Fix applied during review** (uncommitted, rides the slice commits):
+  `skills/design-screen/SKILL.md` P1 paragraph still cited the deleted
+  alias-collision hard check and RECONCILE-codegen denylist — reworded to
+  "registry as the reuse authority". This was Slice 2's own cross-check item;
+  reviewer flagged it merge-blocking.
+- **New kit task (small, post-slice-4):** revise tier-0 rule D11
+  (`missing-mode-copy`). Under the reset model files are authored dark-default
+  with light values carried by variables only; the owner mandate forbids
+  `explicitVariableModes` anywhere, so mode-copy siblings can never exist and
+  D11 hard-fails every component (8/8 file-wide on the live migration). Make
+  D11 not fire for the same-file recipe (or gate it behind an opt-in flag);
+  add a regression test. Until it lands, orchestrators treat D11 as advisory.

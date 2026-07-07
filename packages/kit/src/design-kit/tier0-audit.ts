@@ -64,18 +64,22 @@ async function auditNode(
   node: any,
   {
     hard,
-    spacingScale,
     semanticModes,
     semanticCollectionId,
+    semanticCollectionName = 'Semantic',
+    primitivesCollectionName = 'Primitives',
+    additionalAllowedCollectionNames = [],
     insideInstance = false,
     compositeNames = [],
     compositeNamingHard = false,
     runRecipeTier0Checks
   }: {
     hard: boolean
-    spacingScale: number[]
     semanticModes: string[]
     semanticCollectionId: string | null
+    semanticCollectionName?: string
+    primitivesCollectionName?: string
+    additionalAllowedCollectionNames?: string[]
     insideInstance?: boolean
     compositeNames?: string[]
     compositeNamingHard?: boolean
@@ -154,7 +158,10 @@ async function auditNode(
       if (!(field in node)) continue
       gapAndPadding.push(await marshalGapPaddingField(node, field))
     }
-    for (const v of gapPaddingSpacingViolations({ type: node.type, layoutMode: node.layoutMode, gapAndPadding, insideInstance }, spacingScale)) {
+    for (const v of gapPaddingSpacingViolations(
+      { type: node.type, layoutMode: node.layoutMode, gapAndPadding, insideInstance },
+      { semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames }
+    )) {
       report(v.rule, v.detail)
     }
   }
@@ -220,7 +227,8 @@ async function auditNode(
 
   if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') {
     const siblings = (node.parent?.children ?? []).filter((sibling: any) => sibling !== node)
-    for (const v of modeCopyViolations({ type: node.type, name: node.name, siblings }, semanticCollectionId ?? '', semanticModes)) {
+    const insideComponentSet = node.parent?.type === 'COMPONENT_SET'
+    for (const v of modeCopyViolations({ type: node.type, name: node.name, siblings, insideComponentSet }, semanticCollectionId ?? '', semanticModes)) {
       report(v.rule, v.detail)
     }
   }
@@ -314,8 +322,17 @@ async function walk(node: any, opts: any, out: any[]) {
 }
 
 /**
- * `options`: `componentNames`/`compositeNames` get a hard audit (D8, fails
+ * `options`: `componentNodeIds`/`componentNames` get a hard audit (D8, fails
  * loud) when set; omitted -> advisory file-wide sweep of un-synced frames.
+ * `componentNodeIds` is the authoritative target list — real Figma nodeIds
+ * resolved Node-side (by `prepare-tier0-audit-options.js`) against
+ * `design/registry.json`, never matched by name here. `componentNames` is
+ * ONLY a fallback for a target with no registry entry (e.g. an unregistered
+ * foundation frame/SCREEN) — resolved to a nodeId by an unambiguous
+ * single-match name lookup; an ambiguous name (more than one same-named
+ * node, or zero) reports `ambiguous-audit-target-name` instead of silently
+ * sweeping every match (the exact field bug this fixed: auditing "Card" used
+ * to also sweep a container frame literally named "Card").
  * `compositeNames` — the project's registered composite names
  * (`design/registry.json`'s keys), derived Node-side by
  * `prepare-tier0-audit-options.js` before this call — feeds
@@ -327,25 +344,30 @@ async function walk(node: any, opts: any, out: any[]) {
  */
 export async function runTier0Audit(
   options: {
+    componentNodeIds?: string[]
     componentNames?: string[]
     compositeNames?: string[]
     compositeNamingHard?: boolean
     semanticCollectionName?: string
+    primitivesCollectionName?: string
+    additionalAllowedCollectionNames?: string[]
     runRecipeTier0Checks?: (node: any, ctx: { hard: boolean }) => Promise<any[]>
   } = {}
 ) {
   const {
-    componentNames,
+    componentNodeIds = [],
+    componentNames = [],
     compositeNames = [],
     compositeNamingHard = false,
     semanticCollectionName = 'Semantic',
+    primitivesCollectionName = 'Primitives',
+    additionalAllowedCollectionNames = [],
     runRecipeTier0Checks
   } = options
   const violations: any[] = []
-  const spacingScale = await collectPrimitivesSpacingScale()
   const { id: semanticCollectionId, modes: semanticModes } = await collectSemanticModeNames(semanticCollectionName)
 
-  if (componentNames?.length) {
+  if (componentNodeIds.length || componentNames.length) {
     // Dynamic-page mode requires every page loaded before figma.root.findAll
     // can see nodes outside the currently-open page. loadAllPagesAsync is not
     // available in the use_figma sandbox — fall back to already-loaded pages
@@ -355,12 +377,45 @@ export async function runTier0Audit(
     } catch {
       /* sandbox: figma.root.findAll sees only loaded pages */
     }
+    const walkOpts = { hard: true, semanticModes, semanticCollectionId, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks }
+
+    // Authoritative path (field bug fix, 2026-07-07 live D01 build): target
+    // by the registry's real nodeId, resolved by the caller Node-side before
+    // this call ever runs — `getNodeByIdAsync` is unambiguous, unlike a
+    // name-based sweep, which matched every same-named node in the file
+    // (auditing "Card" also swept a container frame literally named "Card" —
+    // ~49 foreign violations from kit page furniture that shares the
+    // component's name but isn't it).
+    for (const nodeId of componentNodeIds) {
+      const match = await figma.getNodeByIdAsync(nodeId)
+      if (!match) {
+        violations.push({ severity: 'hard', rule: 'audit-target-not-found', nodeId, nodeName: null, detail: `no node resolves to nodeId "${nodeId}" — the registry entry may be stale` })
+        continue
+      }
+      if (isWireframePageName(findOwningPage(match)?.name ?? '')) continue
+      await walk(match, walkOpts, violations)
+    }
+
+    // Name-resolution fallback (ONLY for a target with no registry nodeId —
+    // e.g. a foundation frame/SCREEN never entered into design/registry.json).
+    // A name lookup resolves TO a nodeId here, confirmed by requiring an
+    // UNAMBIGUOUS single match — never a blind multi-node sweep, which is
+    // exactly the bug this fallback must not reintroduce.
     for (const name of componentNames) {
       const matches = figma.root.findAll((n: any) => isNamedAuditTarget(n, name))
-      for (const match of matches) {
-        if (isWireframePageName(findOwningPage(match)?.name ?? '')) continue
-        await walk(match, { hard: true, spacingScale, semanticModes, semanticCollectionId, compositeNames, compositeNamingHard, runRecipeTier0Checks }, violations)
+      if (matches.length !== 1) {
+        violations.push({
+          severity: 'hard',
+          rule: 'ambiguous-audit-target-name',
+          nodeId: null,
+          nodeName: name,
+          detail: `name "${name}" resolved to ${matches.length} node(s), not exactly 1 — register it in design/registry.json and target it by nodeId instead of by name`
+        })
+        continue
       }
+      const match = matches[0]
+      if (isWireframePageName(findOwningPage(match)?.name ?? '')) continue
+      await walk(match, walkOpts, violations)
     }
   } else {
     for (const page of figma.root.children) {
@@ -371,37 +426,12 @@ export async function runTier0Audit(
       // wording.
       if (isWireframePageName(page.name)) continue
       for (const topLevel of page.children) {
-        await walk(topLevel, { hard: false, spacingScale, semanticModes, semanticCollectionId, compositeNames, compositeNamingHard, runRecipeTier0Checks }, violations)
+        await walk(topLevel, { hard: false, semanticModes, semanticCollectionId, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks }, violations)
       }
     }
   }
 
   return violations
-}
-
-/**
- * Retained for signature compatibility with gapPaddingSpacingViolations,
- * which no longer consumes a spacing scale (D24, revised 2026-07-05: every
- * non-zero gap/padding field must be bound, so there is no more on-scale/
- * off-scale literal distinction to check against). Still a live lookup of
- * the project file's local Primitives collection; returns [] if no
- * Primitives collection exists yet (unseeded project).
- */
-async function collectPrimitivesSpacingScale(): Promise<number[]> {
-  const collections = await figma.variables.getLocalVariableCollectionsAsync()
-  const primitives = collections.find((c: any) => c.name === 'Primitives')
-  if (!primitives) return []
-
-  const values: number[] = []
-  for (const variableId of primitives.variableIds) {
-    const variable = await figma.variables.getVariableByIdAsync(variableId)
-    if (!variable) continue
-    if (!variable.scopes.includes('GAP') && !variable.scopes.includes('WIDTH_HEIGHT')) continue
-    const modeId = primitives.modes[0]?.modeId
-    const value = variable.valuesByMode[modeId]
-    if (typeof value === 'number') values.push(value)
-  }
-  return values.sort((a, b) => a - b)
 }
 
 /**

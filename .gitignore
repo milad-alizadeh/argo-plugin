@@ -7,3 +7,4 @@ node_modules/
 # checkout; `prepare` rebuilds it on a fresh install; npm ships it in the
 # tarball via `files` + `prepublishOnly`. See kit-typescript-migration.md.
 packages/kit/dist/
+.claude/worktrees/

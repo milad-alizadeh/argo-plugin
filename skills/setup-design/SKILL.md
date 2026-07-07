@@ -232,9 +232,7 @@ DATA (`design/registry.json`'s composite names) still flow through
 `argo design prepare-tier0-audit-options` at call time —
 see figma-audit/SKILL.md for the full procedure. Install the
 chosen recipe's remaining templates per their `templates-reference.md`
-install-when conditions: `design-source/base-congruence.walker.spec-diff.js`
-(always for `shadcn-tailwind` — vendored base code is the source of truth
-the design file's mirrors are gated against), `code-target/lint/design-lint.md`
+install-when conditions: `code-target/lint/design-lint.md`
 (only when a lint config and a components dir already exist), and
 `code-target/token-writer.md` (always, for whichever recipe is chosen). Ask
 where each walker directory should live (offer a sane default, e.g.
@@ -340,8 +338,7 @@ straight through). This is what proves the pack is ready for
    (e.g. shadcn `Button`). Only if the project has zero renderable
    components, create a trivial one for this purpose.
 2. **Write its `.stories.tsx`** next to it (2–3 variants, plain args). This
-   story is a permanent installed artifact; it later doubles as the
-   base-congruence smoke story.
+   story is a permanent installed artifact.
 3. **Run all three layers and require these exact outcomes:**
    - storybook project (`vitest run --project storybook`): every story test
      PASSES — a real browser render of the component.

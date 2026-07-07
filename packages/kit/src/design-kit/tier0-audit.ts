@@ -54,10 +54,12 @@ import {
   gapPaddingSpacingViolations,
   isNamedAuditTarget,
   isWireframePageName,
+  isDesignPageName,
   strokeScaleViolation,
   possibleGateFalsePositiveTag,
   compositeRegionNamingViolation,
-  emDashViolation
+  emDashViolation,
+  screenViewportMismatchViolation
 } from './tier0-rules.js'
 
 async function auditNode(
@@ -70,7 +72,9 @@ async function auditNode(
     insideInstance = false,
     compositeNames = [],
     compositeNamingHard = false,
-    runRecipeTier0Checks
+    runRecipeTier0Checks,
+    viewport,
+    isScreenFrame = false
   }: {
     hard: boolean
     semanticCollectionName?: string
@@ -80,6 +84,8 @@ async function auditNode(
     compositeNames?: string[]
     compositeNamingHard?: boolean
     runRecipeTier0Checks?: (node: any, ctx: { hard: boolean }) => Promise<any[]>
+    viewport?: { width: number; height: number }
+    isScreenFrame?: boolean
   }
 ) {
   const violations: any[] = []
@@ -141,6 +147,9 @@ async function auditNode(
 
   const autoLayout = missingAutoLayoutViolation(nodeCtx)
   if (autoLayout) report(autoLayout.rule, autoLayout.detail)
+
+  const viewportMismatch = screenViewportMismatchViolation(node, { isScreenFrame, viewport })
+  if (viewportMismatch) report(viewportMismatch.rule, viewportMismatch.detail)
 
   const handDrawnIcon = handDrawnIconViolation({ type: node.type, insideInstance })
   if (handDrawnIcon) report(handDrawnIcon.rule, handDrawnIcon.detail)
@@ -311,8 +320,11 @@ function findOwningPage(node: any) {
 async function walk(node: any, opts: any, out: any[]) {
   out.push(...(await auditNode(node, opts)))
   if ('children' in node) {
-    const childOpts =
-      node.type === 'INSTANCE' && !opts.insideInstance ? { ...opts, insideInstance: true } : opts
+    const childOpts = {
+      ...opts,
+      isScreenFrame: false,
+      insideInstance: node.type === 'INSTANCE' ? true : opts.insideInstance
+    }
     for (const child of node.children) await walk(child, childOpts, out)
   }
 }
@@ -348,6 +360,7 @@ export async function runTier0Audit(
     primitivesCollectionName?: string
     additionalAllowedCollectionNames?: string[]
     runRecipeTier0Checks?: (node: any, ctx: { hard: boolean }) => Promise<any[]>
+    viewport?: { width: number; height: number }
   } = {}
 ) {
   const {
@@ -358,7 +371,8 @@ export async function runTier0Audit(
     semanticCollectionName = 'Semantic',
     primitivesCollectionName = 'Primitives',
     additionalAllowedCollectionNames = [],
-    runRecipeTier0Checks
+    runRecipeTier0Checks,
+    viewport
   } = options
   const violations: any[] = []
 
@@ -372,7 +386,7 @@ export async function runTier0Audit(
     } catch {
       /* sandbox: figma.root.findAll sees only loaded pages */
     }
-    const walkOpts = { hard: true, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks }
+    const walkOpts = { hard: true, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks, viewport }
 
     // Authoritative path (field bug fix, 2026-07-07 live D01 build): target
     // by the registry's real nodeId, resolved by the caller Node-side before
@@ -387,8 +401,9 @@ export async function runTier0Audit(
         violations.push({ severity: 'hard', rule: 'audit-target-not-found', nodeId, nodeName: null, detail: `no node resolves to nodeId "${nodeId}" — the registry entry may be stale` })
         continue
       }
-      if (isWireframePageName(findOwningPage(match)?.name ?? '')) continue
-      await walk(match, walkOpts, violations)
+      const owningPageName = findOwningPage(match)?.name ?? ''
+      if (isWireframePageName(owningPageName)) continue
+      await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
     }
 
     // Name-resolution fallback (ONLY for a target with no registry nodeId —
@@ -409,8 +424,9 @@ export async function runTier0Audit(
         continue
       }
       const match = matches[0]
-      if (isWireframePageName(findOwningPage(match)?.name ?? '')) continue
-      await walk(match, walkOpts, violations)
+      const owningPageName = findOwningPage(match)?.name ?? ''
+      if (isWireframePageName(owningPageName)) continue
+      await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
     }
   } else {
     for (const page of figma.root.children) {
@@ -421,7 +437,21 @@ export async function runTier0Audit(
       // wording.
       if (isWireframePageName(page.name)) continue
       for (const topLevel of page.children) {
-        await walk(topLevel, { hard: false, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks }, violations)
+        await walk(
+          topLevel,
+          {
+            hard: false,
+            semanticCollectionName,
+            primitivesCollectionName,
+            additionalAllowedCollectionNames,
+            compositeNames,
+            compositeNamingHard,
+            runRecipeTier0Checks,
+            viewport,
+            isScreenFrame: isDesignPageName(page.name)
+          },
+          violations
+        )
       }
     }
   }

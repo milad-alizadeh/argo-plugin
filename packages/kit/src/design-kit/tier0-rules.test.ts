@@ -16,11 +16,13 @@ import {
   gapPaddingSpacingViolations,
   isNamedAuditTarget,
   isWireframePageName,
+  isDesignPageName,
   strokeScaleViolation,
   possibleGateFalsePositiveTag,
   unsectionedComponentViolation,
   missingComponentDescriptionViolation,
-  compositeRegionNamingViolation
+  compositeRegionNamingViolation,
+  screenViewportMismatchViolation
 } from './tier0-rules.js'
 
 describe('unboundFillViolations', () => {
@@ -346,6 +348,52 @@ describe('isWireframePageName', () => {
   })
   it('does not match a hi-fi screens page', () => {
     expect(isWireframePageName('Hi-fi / Screens')).toBe(false)
+  })
+})
+
+describe('isDesignPageName', () => {
+  it('matches a hi-fi screen page name (D<NN> <group>)', () => {
+    expect(isDesignPageName('D02 Onboarding')).toBe(true)
+  })
+  it('does not match a wireframe page name', () => {
+    expect(isDesignPageName('W02 Onboarding')).toBe(false)
+  })
+  it('does not match Custom Components', () => {
+    expect(isDesignPageName('Custom Components')).toBe(false)
+  })
+})
+
+describe('screenViewportMismatchViolation', () => {
+  it('flags a mismatched width/height when isScreenFrame is true and viewport is configured', () => {
+    const violation = screenViewportMismatchViolation(
+      { width: 1440, height: 1120 },
+      { isScreenFrame: true, viewport: { width: 1440, height: 900 } }
+    )
+    expect(violation).toEqual({
+      rule: 'screen-viewport-mismatch',
+      detail: 'screen frame is 1440x1120, expected 1440x900 (project canonical viewport)'
+    })
+  })
+
+  it('passes an exact match', () => {
+    const violation = screenViewportMismatchViolation(
+      { width: 1440, height: 900 },
+      { isScreenFrame: true, viewport: { width: 1440, height: 900 } }
+    )
+    expect(violation).toBeNull()
+  })
+
+  it('passes when isScreenFrame is false, even with a mismatch', () => {
+    const violation = screenViewportMismatchViolation(
+      { width: 1440, height: 1120 },
+      { isScreenFrame: false, viewport: { width: 1440, height: 900 } }
+    )
+    expect(violation).toBeNull()
+  })
+
+  it('passes when viewport is undefined, even with isScreenFrame true', () => {
+    const violation = screenViewportMismatchViolation({ width: 1440, height: 1120 }, { isScreenFrame: true })
+    expect(violation).toBeNull()
   })
 })
 

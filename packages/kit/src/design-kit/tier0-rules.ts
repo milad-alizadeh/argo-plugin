@@ -126,6 +126,40 @@ export function isWireframePageName(name: string): boolean {
   return /^W\d{2}(\b|\s)/.test(name) || name === 'Cover'
 }
 
+/**
+ * Hi-fi screen page naming (file-structure.md `D<NN> <group>`, mirroring
+ * isWireframePageName's `W<NN>` convention). Used to gate the
+ * screen-viewport-mismatch check to top-level screen frames only, never
+ * component-definition frames on Custom Components.
+ */
+export function isDesignPageName(name: string): boolean {
+  return /^D\d{2}(\b|\s)/.test(name)
+}
+
+/**
+ * A screen's top-level frame must exactly match the project's canonical
+ * viewport (opt-in via `design.<app>.viewport` in .claude/argo.json;
+ * skipped entirely when unconfigured, non-breaking for a project that
+ * hasn't set it). `isScreenFrame` is marshaled by the walker: true only
+ * for the top-level node of a walk whose owning page matches
+ * isDesignPageName, never for a descendant, and never for a
+ * component-definition frame on Custom Components. Fix (2026-07, live
+ * D02.1 build): a screen shipped at 1440x1120 instead of the project's
+ * 1440x900 because the designer grew the canvas to fit content instead of
+ * fitting content into the canvas.
+ */
+export function screenViewportMismatchViolation(
+  node: AnyNode,
+  { isScreenFrame, viewport }: { isScreenFrame: boolean; viewport?: { width: number; height: number } }
+): Violation | null {
+  if (!isScreenFrame || !viewport) return null
+  if (node.width === viewport.width && node.height === viewport.height) return null
+  return {
+    rule: 'screen-viewport-mismatch',
+    detail: `screen frame is ${node.width}x${node.height}, expected ${viewport.width}x${viewport.height} (project canonical viewport)`
+  }
+}
+
 export function missingAutoLayoutViolation(node: AnyNode): Violation | null {
   // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
   // kit internals structure their own layout — not ours to Auto-Layout.

@@ -102,9 +102,10 @@ mechanisms close those gaps without new tooling.
   never perform the fidelity comparison itself: it has already read the
   builder's report and cannot un-read it (the same contamination
   `agents/design-verifier.md` bars for completeness). Instead the supervisor
-  spawns a blind fidelity check: a fresh verifier agent given ONLY the
-  reference (brief/wireframe/original screenshot) and the built screenshot
-  at IDENTICAL frame size, never the transcript, never the self-report.
+  spawns `argo:fidelity-verifier`, a blind fidelity check given ONLY the
+  reference (brief/wireframe/original screenshot), the built screenshot
+  at IDENTICAL frame size, and a structural fact sheet (frame dimensions,
+  per-region node metrics) — never the transcript, never the self-report.
   The measurable subset is a tier-0 gate concern, not the verifier's job:
   frame dimensions vs the configured viewport (a designer growing the
   canvas to fit content is a defect, not a layout choice), text truncation

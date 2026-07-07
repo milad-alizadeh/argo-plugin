@@ -246,6 +246,20 @@ export function variantNamingViolations(node: AnyNode): Violation[] {
   return violations
 }
 
+/**
+ * Style-hygiene advisory (owner mandate, 2026-07-07): authored copy never
+ * carries an em dash. Inspects TEXT.characters only — layer/component names
+ * are naming-convention territory (nonSemanticNameViolation), not copy.
+ * `—` spelled as an escape so the character can't be silently
+ * normalized away by an editor touching this file.
+ */
+export function emDashViolation(node: AnyNode): Violation | null {
+  if (node.type === 'TEXT' && typeof node.characters === 'string' && node.characters.includes('\u2014')) {
+    return { rule: 'em-dash-in-text', detail: 'text contains an em dash; use a period, comma, colon, or · instead' }
+  }
+  return null
+}
+
 export function implicitLineHeightViolation(node: AnyNode): Violation | null {
   if ('lineHeight' in node && node.lineHeight?.unit === 'AUTO') {
     return { rule: 'implicit-line-height', detail: 'text node uses implicit AUTO line-height; must be explicit (D20)' }

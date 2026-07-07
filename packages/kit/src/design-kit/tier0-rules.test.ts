@@ -11,6 +11,7 @@ import {
   nonSemanticNameViolation,
   variantNamingViolations,
   implicitLineHeightViolation,
+  emDashViolation,
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
   isNamedAuditTarget,
@@ -285,6 +286,22 @@ describe('implicitLineHeightViolation (D20)', () => {
   })
   it('passes an explicit line-height', () => {
     expect(implicitLineHeightViolation({ lineHeight: { unit: 'PIXELS', value: 20 } })).toBeNull()
+  })
+})
+
+describe('emDashViolation', () => {
+  it('flags a TEXT node whose characters contain an em dash', () => {
+    const node = { type: 'TEXT', characters: 'Slice 3 — wire routes' }
+    expect(emDashViolation(node)).toEqual({
+      rule: 'em-dash-in-text',
+      detail: 'text contains an em dash; use a period, comma, colon, or · instead'
+    })
+  })
+  it('passes a TEXT node without an em dash', () => {
+    expect(emDashViolation({ type: 'TEXT', characters: 'Slice 3 · wire routes' })).toBeNull()
+  })
+  it('ignores non-TEXT nodes even when a name contains an em dash', () => {
+    expect(emDashViolation({ type: 'COMPONENT', name: 'Card — compact' })).toBeNull()
   })
 })
 

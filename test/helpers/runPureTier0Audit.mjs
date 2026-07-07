@@ -21,6 +21,7 @@ import {
   nonSemanticNameViolation,
   variantNamingViolations,
   implicitLineHeightViolation,
+  emDashViolation,
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
   strokeScaleViolation
@@ -69,6 +70,9 @@ export function auditPureNode(node) {
 
   const lineHeight = implicitLineHeightViolation(node)
   if (lineHeight) report(lineHeight.rule, lineHeight.detail)
+
+  const emDash = emDashViolation(node)
+  if (emDash) report(emDash.rule, emDash.detail)
 
   if (node.type === 'COMPONENT' && node.storyUrl) {
     const storyScope = storyUrlScopeViolation(node)

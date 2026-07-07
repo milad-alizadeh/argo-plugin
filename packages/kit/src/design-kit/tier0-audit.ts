@@ -56,7 +56,8 @@ import {
   isWireframePageName,
   strokeScaleViolation,
   possibleGateFalsePositiveTag,
-  compositeRegionNamingViolation
+  compositeRegionNamingViolation,
+  emDashViolation
 } from './tier0-rules.js'
 
 async function auditNode(
@@ -222,6 +223,14 @@ async function auditNode(
 
   const lineHeight = implicitLineHeightViolation(node)
   if (lineHeight) report(lineHeight.rule, lineHeight.detail)
+
+  // Always advisory regardless of `hard` (same pattern as composite-naming):
+  // a style-hygiene nit on authored copy, never a structural defect that
+  // should fail a named audit.
+  const emDash = emDashViolation(node)
+  if (emDash) {
+    violations.push({ severity: 'advisory', rule: emDash.rule, nodeId: node.id, nodeName: node.name, detail: emDash.detail })
+  }
 
   // getPluginData/getPluginDataKeys are unavailable in the use_figma sandbox
   // (private-plugin-only API) — storyUrl lives in shared plugin data, with a

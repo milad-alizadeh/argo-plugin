@@ -176,16 +176,26 @@ line format ("reusing base/X" / "extending base/X by composition" / "closest
 base matches...") stays unchanged — only the alias-collision paragraph is
 cut. Don't over-trim this section.
 
-5. **Field bug (found live 2026-07-07, first migration run):** the tier-0
-   gap/padding foreign-binding check hardcodes the collection names
-   `"Primitives"`/`"Semantic"` in @argohq/kit source instead of deriving them
-   from options. A stock kit duplicate names its semantic collection `mode`
-   (never renamed — owner mandate forbids restructuring kit collections), so
-   `tw/gap` and `tw/padding` bindings false-positive as foreign. Fix: thread
-   the configured collection name(s) (`argo.json` `semanticCollectionName`,
-   already repointed to `"mode"` in argo-v2) through to the check; no
-   name literals in tier-0 rules. Add a regression test with a
-   non-"Semantic" collection name.
+5. **Field bugs (found live 2026-07-07, first migration run — Card produced
+   2103 audit violations, nearly all tooling false positives):**
+   a. `gap-padding-foreign-binding` and `non-semantic-binding` hardcode the
+      accepted collection names `"Primitives"`/`"Semantic"`. A stock kit
+      duplicate names its semantic collection `mode` (never renamed — owner
+      mandate forbids restructuring kit collections) and deliberately splits
+      tokens across a `tw/*` collection family (`tw/gap`, `tw/padding`,
+      `tw/font`, `tw/stroke-width`, `tw/border-radius`, `tw/border-width`,
+      `tw/margin`, `tw/space`) — the kit's own untouched components fail the
+      check as shipped. Fix: parameterize the accepted-collections list per
+      recipe/config (`argo.json` `semanticCollectionName`, already `"mode"` in
+      argo-v2, plus a recipe-declared allowlist for the `tw/*` family); no
+      collection-name literals in tier0-rules. Regression tests: a
+      non-"Semantic" semantic name AND a `tw/*`-bound property both pass.
+   b. The audit's component targeting matches by NAME, so auditing "Card"
+      also swept a container frame literally named "Card" (kit page furniture:
+      demo composition, "View in Shadcn" links) — ~49 foreign violations from
+      nodes outside the component set. Fix: target audits by node id
+      (registry `nodeId`), never by name lookup; name lookup at most resolves
+      TO a node id which the caller confirms.
 
 ---
 

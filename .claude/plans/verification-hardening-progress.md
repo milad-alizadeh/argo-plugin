@@ -5,7 +5,7 @@ One row per slice, updated as work lands.
 | Slice | Status | Commit | Notes |
 | --- | --- | --- | --- |
 | 1. screen-viewport-mismatch (hard) | done | pending | 388/388 whole-package tests pass; build clean |
-| 2. text-truncation (hard) | pending | | |
+| 2. text-truncation (hard) | done | pending | 393/393 whole-package tests pass; R7 corpus updated |
 | 3. unclipped-overflow (advisory) | pending | | |
 | 4. viewport config threading | pending | | |
 | 5. doc verification + fidelity-verifier naming | pending | | |

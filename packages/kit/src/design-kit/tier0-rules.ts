@@ -99,6 +99,29 @@ export function unboundTypeViolation(node: AnyNode): Violation | null {
   return null
 }
 
+/**
+ * Deny the CONFIGURATION, not a computed overflow (same R10 denylist
+ * economics as kitInstanceOverrideViolation: a hard gate's false-positive
+ * cost is asymmetric, and there is no cheap, reliable Plugin-API signal
+ * for "is this text ACTIVELY overflowing right now" without a mutating
+ * resize-and-measure round trip, which this walker does not perform).
+ * `textTruncation: 'ENDING'` means Figma silently clips this label to an
+ * ellipsis whenever the rendered content doesn't fit its box, a
+ * landmine for any future content change (a longer label, a
+ * localization, a font substitution), which is exactly how a StatusPill
+ * shipped rendering "Runnin" instead of "Running" (2026-07, live D02.1
+ * build). The fix is never truncation: auto-resize the text or size the
+ * box to the content.
+ */
+export function textTruncationViolation(node: AnyNode): Violation | null {
+  if (node.type !== 'TEXT') return null
+  if (node.textTruncation !== 'ENDING') return null
+  return {
+    rule: 'text-truncation',
+    detail: 'text node is configured to truncate ("textTruncation: ENDING"), content can silently clip; auto-resize the text or size its box to the content instead'
+  }
+}
+
 const NAMED_AUDIT_TARGET_TYPES = new Set(['COMPONENT', 'COMPONENT_SET', 'FRAME', 'SECTION'])
 
 /**

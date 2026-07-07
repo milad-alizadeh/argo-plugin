@@ -38,4 +38,9 @@ describe('R7 inverse fixtures (must each hard-fail their target rule)', () => {
     const violations = runPureTier0Audit([corpus.inverse['stroke-scale-mismatch']])
     expect(violations.some((v) => v.rule === 'stroke-scale-mismatch')).toBe(true)
   })
+
+  it('flags a text node configured to truncate', () => {
+    const violations = runPureTier0Audit([corpus.inverse['text-truncation']])
+    expect(violations.some((v) => v.rule === 'text-truncation')).toBe(true)
+  })
 })

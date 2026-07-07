@@ -24,7 +24,8 @@ import {
   emDashViolation,
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
-  strokeScaleViolation
+  strokeScaleViolation,
+  textTruncationViolation
 } from '../../packages/kit/src/design-kit/tier0-rules.js'
 
 export function auditPureNode(node) {
@@ -39,6 +40,9 @@ export function auditPureNode(node) {
 
   const type = unboundTypeViolation(node)
   if (type) report(type.rule, type.detail)
+
+  const truncation = textTruncationViolation(node)
+  if (truncation) report(truncation.rule, truncation.detail)
 
   const autoLayout = missingAutoLayoutViolation(node)
   if (autoLayout) report(autoLayout.rule, autoLayout.detail)

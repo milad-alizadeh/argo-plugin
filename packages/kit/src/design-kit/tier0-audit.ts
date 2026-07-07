@@ -59,7 +59,8 @@ import {
   possibleGateFalsePositiveTag,
   compositeRegionNamingViolation,
   emDashViolation,
-  screenViewportMismatchViolation
+  screenViewportMismatchViolation,
+  textTruncationViolation
 } from './tier0-rules.js'
 
 async function auditNode(
@@ -144,6 +145,8 @@ async function auditNode(
   if (radius) report(radius.rule, radius.detail)
   const type = unboundTypeViolation(nodeCtx)
   if (type) report(type.rule, type.detail)
+  const truncation = textTruncationViolation(nodeCtx)
+  if (truncation) report(truncation.rule, truncation.detail)
 
   const autoLayout = missingAutoLayoutViolation(nodeCtx)
   if (autoLayout) report(autoLayout.rule, autoLayout.detail)

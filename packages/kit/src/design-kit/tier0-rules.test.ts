@@ -22,7 +22,8 @@ import {
   unsectionedComponentViolation,
   missingComponentDescriptionViolation,
   compositeRegionNamingViolation,
-  screenViewportMismatchViolation
+  screenViewportMismatchViolation,
+  textTruncationViolation
 } from './tier0-rules.js'
 
 describe('unboundFillViolations', () => {
@@ -394,6 +395,28 @@ describe('screenViewportMismatchViolation', () => {
   it('passes when viewport is undefined, even with isScreenFrame true', () => {
     const violation = screenViewportMismatchViolation({ width: 1440, height: 1120 }, { isScreenFrame: true })
     expect(violation).toBeNull()
+  })
+})
+
+describe('textTruncationViolation', () => {
+  it('flags a TEXT node with textTruncation ENDING', () => {
+    const violation = textTruncationViolation({ type: 'TEXT', textTruncation: 'ENDING' })
+    expect(violation).toEqual({
+      rule: 'text-truncation',
+      detail: 'text node is configured to truncate ("textTruncation: ENDING"), content can silently clip; auto-resize the text or size its box to the content instead'
+    })
+  })
+
+  it('passes a TEXT node with textTruncation DISABLED', () => {
+    expect(textTruncationViolation({ type: 'TEXT', textTruncation: 'DISABLED' })).toBeNull()
+  })
+
+  it('passes a TEXT node with no textTruncation field at all', () => {
+    expect(textTruncationViolation({ type: 'TEXT' })).toBeNull()
+  })
+
+  it('ignores a non-TEXT node even if it somehow carries textTruncation ENDING', () => {
+    expect(textTruncationViolation({ type: 'FRAME', textTruncation: 'ENDING' })).toBeNull()
   })
 })
 

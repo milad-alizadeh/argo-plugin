@@ -32,8 +32,8 @@ two levels of effort, and most frames only ever earn the first:
   roughly 5-15 nodes per frame. This is what you build while the layout is
   still a question.
 - **Converged frame (only after the user picks a direction).** The ONE
-  surviving frame per screen that `design-screen` P1 will freeze into the
-  region-contract earns the full treatment below: kit-instance masters on the
+  surviving frame per screen that `design-screen` takes as its layout
+  reference earns the full treatment below: kit-instance masters on the
   `W00` page, full sub-region decomposition of every content pane, exact kit
   icons, one-typeface / one-grammar discipline. Promote a single frame to this
   level; never every exploratory frame.
@@ -115,9 +115,10 @@ requirement — a state (empty/loading/error), a cardinality (3 projects), an
 affordance — is NOT expressed by a region the brief lists, the wireframe must
 add that region (and flag the brief gap), NOT quietly narrow to the brief. This
 is what keeps the wireframe an **independent, product-grounded completeness
-source** rather than a 1:1 brief echo: downstream, `design-screen` freezes this
-wireframe into the structural region-contract, and a contract that merely mirrors
-the brief makes the completeness gate circular theater. The wireframe is allowed
+source** rather than a 1:1 brief echo: downstream, `design-screen` uses this
+wireframe only as optional layout reference while the PRD's requirements stay the
+completeness oracle, so a wireframe that merely mirrors the brief adds nothing the
+PRD didn't already carry. The wireframe is allowed
 to be richer than the brief; it must never be poorer than the PRD.
 
 **No brief, no wireframe.** If a screen has no brief, stop and author the brief
@@ -145,8 +146,8 @@ observed failures:
 - **Kills the downstream inconsistency passes.** When every card/row/panel is an
   instance of ONE kit component (variations = variant props), variants can't drift
   into N hand-edited boxes that someone reconciles later. It also makes the
-  region decomposition survive into `design-screen`'s region-contract cleanly
-  (named instance boundaries flatten to first-class regions).
+  region decomposition read cleanly as `design-screen`'s layout reference
+  (named instance boundaries map directly to the components to build).
 
 Rules for kit use:
 - Instance the kit's rough primitives; set text/labels to the brief's region
@@ -276,9 +277,9 @@ side by side is a primary use, not an exception. Distinguish two things the
 
 **Converge on decision.** Once the user chooses a variant, delete the losers and
 keep the winner as the single current frame for that concern. Converging is what
-deletes variants — not the act of making a second one. Downstream (`design-screen`
-P1) freezes the CHOSEN frame into the region-contract, so only one variant per
-screen survives into hi-fi; variations live and die at the lo-fi stage, which is
+deletes variants — not the act of making a second one. Downstream, `design-screen`
+takes the CHOSEN frame as its layout reference, so only one variant per
+screen carries into hi-fi; variations live and die at the lo-fi stage, which is
 exactly where exploration is cheap.
 
 ## Iteration rule

@@ -112,15 +112,15 @@ file → skip; never invent one.
   needed for the screen doesn't exist yet as a component, stop and build
   the component first via this same flow — don't invent one-off styling
   inline in the screen. The **component-first screen path** below sequences
-  this: build the brief's `composite` regions before the screen so it composes
+  this: build the PRD's required components before the screen so it composes
   from instances. Inlining a `composite` as loose structure is the
-  reskin-the-wireframe smell the path exists to prevent. At compose time run the
-  **advisory** coverage diff (`region-contract.js` against the built tree) as a
-  self-check. The **authoritative** completeness gate now lives in
-  `/argo:design-screen` P5 (receipt-based coverage gate + isolated
-  design-verifier, where `present` requires a registry-backed instance so
-  coverage can't be met by tracing boxes) — a screen built outside that flow is
-  only advisory here.
+  reskin-the-wireframe smell the path exists to prevent. The **authoritative**
+  completeness check now lives in `/argo:design-screen` P4 (a deterministic
+  instance-presence pre-check — every PRD-required component must resolve to a
+  non-empty registry instance on the frame, so coverage can't be met by tracing
+  boxes — plus an advisory PRD-vs-screenshot completeness pass); the single hard
+  gate is the tier-0 audit. A screen built outside that flow gets none of those
+  checks here.
 - **No variant clipping after `combineAsVariants`** (live defect, 2026-07-05:
   status-pill labels observed truncated — "needs inpu", "interrupte").
   `combineAsVariants` can leave individual variants stretched to a frozen set

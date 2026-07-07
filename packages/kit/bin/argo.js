@@ -19,15 +19,11 @@ import { fileURLToPath } from 'node:url'
 
 const HOOK_CHAINS = {
   // Order: red-proof → trust → design-commit.
-  // design-contract-freeze-gate and design-coverage-gate were removed from the
-  // chain (design-process-simplification.md, 2026-07-07): the contract-freeze /
-  // region-coverage machinery is retired, so leaving the coverage gate armed
-  // would deadlock EVERY commit touching component source (it blocks whenever no
-  // per-screen coverage receipt exists, and the design flow no longer writes
-  // one). design-commit-gate (spec-diff receipt, the figma-to-code flow) is
-  // unaffected and stays. The two gate modules remain on disk for now
-  // (unreferenced); delete them + region-coverage/extract-region-contract/
-  // lint-contract-freeze in a follow-up cleanup pass.
+  // The contract-freeze / region-coverage gates are retired
+  // (design-process-simplification.md, 2026-07-07): the design flow no longer
+  // freezes a region-contract or writes a per-screen coverage receipt, so those
+  // gates are gone from the chain and their modules deleted. design-commit-gate
+  // (spec-diff receipt, the figma-to-code flow) is unaffected and stays.
   'bash-pretooluse': [
     '../dist/hooks/red-proof-gate.js',
     '../dist/hooks/trust-gate.js',
@@ -72,11 +68,6 @@ const DESIGN_VERBS = {
   'prepare-tier0-audit-options': '../dist/skill-scripts/prepare-tier0-audit-options.js',
   'record-audit-receipt': '../dist/skill-scripts/record-audit-receipt.js',
   'capture-kit-inventory': '../dist/skill-scripts/capture-kit-inventory.js',
-  'region-coverage': '../dist/skill-scripts/region-coverage.js',
-  'record-coverage-receipt': '../dist/skill-scripts/record-coverage-receipt.js',
-  'extract-region-contract': '../dist/skill-scripts/extract-region-contract.js',
-  'extract-built-regions': '../dist/skill-scripts/extract-built-regions.js',
-  'lint-contract-freeze': '../dist/skill-scripts/lint-contract-freeze.js',
   'capture-kit-corpus': '../dist/skill-scripts/capture-kit-corpus.js',
   'emit-shims': '../dist/skill-scripts/emit-shims.js',
 }

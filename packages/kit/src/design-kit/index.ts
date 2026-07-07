@@ -4,19 +4,6 @@ export { WaiverSchema, StoryMapEntrySchema } from './schemas.js'
 export { checkWaiver, invalidateWaivers } from './waivers.js'
 export { DEFAULT_COMPONENT_CATEGORIES, resolveComponentCategories, validateComponentCategories } from './component-categories.js'
 export {
-  classifyCoverage,
-  summarize,
-  reconcileBrief,
-  flattenToRegions,
-  buildRegionContract,
-  buildBuiltRegions,
-  screenMatchesReceipt,
-  evaluateCoverageReceipt,
-  coverageReceiptFilename,
-  deriveExpectedScreensFromStagedFiles,
-  lintContractFreeze
-} from './region-contract.js'
-export {
   unboundFillViolations,
   unboundStrokeViolations,
   unboundRadiusViolation,

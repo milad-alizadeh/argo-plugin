@@ -98,6 +98,12 @@ are input to critique, not proof of done.
 reading them back, never state a binding or layout property as fact without
 having queried it.
 
+**TEXT COPY.** Never use em dashes in any text you author: canvas text,
+labels, placeholder copy, component descriptions, annotations. Use a period,
+comma, colon, or `·` separator instead (e.g. `Slice 3 · wire routes`, not
+`Slice 3 — wire routes`). When editing existing text, replace any em dash
+you touch.
+
 **ICONS.** Icons are ALWAYS instances of the design system's icon components,
 used as-is: never draw an icon from vectors, never edit internal vector
 geometry, corner radius, or effects — size the instance (a proportional

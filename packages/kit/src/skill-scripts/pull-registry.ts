@@ -22,7 +22,7 @@ import { join } from 'node:path'
 import { resolveRepoRoot } from '../lib/repo-root.js'
 import { findDesignBlock } from './prepare-tier0-audit-options.js'
 import { registryComponentNames } from '../design-kit/component-names.js'
-import { kitPageIndices, buildKitRegistryEntries } from '../design-kit/registry-reconcile.js'
+import { kitPageIndices, buildKitRegistryEntries, detectChangedKitComponents } from '../design-kit/registry-reconcile.js'
 import { readDesignJsonOrRebuild, writeDesignJson } from './lib/write-design-json.js'
 
 const API = 'https://api.figma.com/v1'
@@ -138,7 +138,11 @@ export function buildPullRegistryResult({
   const kitComponents = liveComponents.filter((c) => kitPages.has(c.pageIndex))
   const customComponentCount = liveComponents.length - kitComponents.length
   const newEntries = buildKitRegistryEntries({ liveKitComponents: kitComponents, existingNames }, now)
-  return { newEntries, kitComponentCount: kitComponents.length, customComponentCount }
+  const changed = detectChangedKitComponents({
+    liveKitComponents: kitComponents,
+    registryComponents: (registry.components ?? {}) as Record<string, any>
+  })
+  return { newEntries, changed, kitComponentCount: kitComponents.length, customComponentCount }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -161,7 +165,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   })
 
   const now = new Date().toISOString()
-  const { newEntries, kitComponentCount, customComponentCount } = buildPullRegistryResult({
+  const { newEntries, changed, kitComponentCount, customComponentCount } = buildPullRegistryResult({
     liveComponents,
     orderedPageNames,
     nonKitPages,
@@ -169,10 +173,35 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     now
   })
 
-  const merged = { ...registry, components: { ...(registry.components ?? {}), ...newEntries } }
+  // Re-stamp components that drifted in Figma (manual edit): refresh their
+  // variantMatrix/description and flag out-of-sync so the change-scoped
+  // re-audit re-verifies exactly them, not the whole kit (directives 4 + 6).
+  const restamped: Record<string, any> = {}
+  for (const c of changed) {
+    const prev = (registry.components as Record<string, any>)?.[c.name] ?? {}
+    restamped[c.name] = {
+      ...prev,
+      variantMatrix: c.variantMatrix,
+      ...(c.description !== undefined ? { description: c.description } : {}),
+      status: 'out-of-sync',
+      lastSyncedAt: now
+    }
+  }
+
+  const merged = { ...registry, components: { ...(registry.components ?? {}), ...newEntries, ...restamped } }
   writeDesignJson(cwd, 'registry.json', merged)
 
   console.log(
-    JSON.stringify({ kitComponentCount, customComponentCount, newEntryCount: Object.keys(newEntries).length }, null, 2)
+    JSON.stringify(
+      {
+        kitComponentCount,
+        customComponentCount,
+        newEntryCount: Object.keys(newEntries).length,
+        changedCount: changed.length,
+        changed: changed.map((c) => ({ name: c.name, reasons: c.reasons }))
+      },
+      null,
+      2
+    )
   )
 }

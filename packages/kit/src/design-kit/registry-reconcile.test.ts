@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, isPascalCaseComponentName } from './registry-reconcile.js'
+import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, detectChangedKitComponents, isPascalCaseComponentName } from './registry-reconcile.js'
 
 describe('reconcileRegistrySweep (design-memory-placement.md A3, figma-sync sweep)', () => {
   it('flags a live component with no registry entry (registry-unregistered)', () => {
@@ -228,6 +228,43 @@ describe('buildKitRegistryEntries', () => {
       '2026-07-07T00:00:00.000Z'
     )
     expect(entries).toEqual({})
+  })
+})
+
+describe('detectChangedKitComponents (manual Figma edit capture, directive 6)', () => {
+  it('flags an existing kit component whose variantMatrix grew (a manually added variant)', () => {
+    const changed = detectChangedKitComponents({
+      liveKitComponents: [
+        { name: 'Button', nodeId: '73:1', componentPropertyDefinitions: { variant: { type: 'VARIANT', variantOptions: ['primary', 'secondary', 'ghost'] } } }
+      ],
+      registryComponents: { Button: { kind: 'kit', variantMatrix: { variant: ['primary', 'secondary'] } } }
+    })
+    expect(changed).toEqual([
+      { name: 'Button', reasons: ['variantMatrix changed'], variantMatrix: { variant: ['primary', 'secondary', 'ghost'] } }
+    ])
+  })
+
+  it('flags a description edited directly in Figma', () => {
+    const changed = detectChangedKitComponents({
+      liveKitComponents: [{ name: 'Card', nodeId: '1:1', description: 'New copy' }],
+      registryComponents: { Card: { kind: 'kit', variantMatrix: {}, description: 'Old copy' } }
+    })
+    expect(changed[0]).toMatchObject({ name: 'Card', reasons: ['description changed'], description: 'New copy' })
+  })
+
+  it('does not flag an unchanged component, a new one, or a custom entry', () => {
+    const changed = detectChangedKitComponents({
+      liveKitComponents: [
+        { name: 'Button', nodeId: '73:1', componentPropertyDefinitions: { variant: { type: 'VARIANT', variantOptions: ['primary'] } } },
+        { name: 'Brand', nodeId: '9:9' }, // new, no entry
+        { name: 'SessionCard', nodeId: '5:5', componentPropertyDefinitions: { size: { type: 'VARIANT', variantOptions: ['lg'] } } }
+      ],
+      registryComponents: {
+        Button: { kind: 'kit', variantMatrix: { variant: ['primary'] } },
+        SessionCard: { kind: 'custom', variantMatrix: {} } // custom, not a kit-drift concern here
+      }
+    })
+    expect(changed).toEqual([])
   })
 })
 

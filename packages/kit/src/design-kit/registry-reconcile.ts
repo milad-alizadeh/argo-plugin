@@ -204,6 +204,44 @@ export function buildKitRegistryEntries(
   return entries
 }
 
+export type ChangedKitComponent = {
+  name: string
+  reasons: string[]
+  variantMatrix: Record<string, string[]>
+  description?: string
+}
+
+/**
+ * Detects MANUAL out-of-band Figma edits to already-registered kit components
+ * (directive 6): a designer/human adds a button variant, renames a variant
+ * option, or edits the native description directly in Figma. Compares each
+ * live kit component's variantMatrix + description against its committed
+ * registry entry and reports the ones that drifted, with a human-readable
+ * reason. This is the change-set the change-scoped re-audit (directive 4)
+ * targets, so a manual edit is caught and re-verified without auditing the
+ * whole kit. Pure: the caller supplies the committed entries.
+ */
+export function detectChangedKitComponents({
+  liveKitComponents,
+  registryComponents
+}: {
+  liveKitComponents: LiveKitComponent[]
+  registryComponents: Record<string, { kind?: string; variantMatrix?: Record<string, string[]>; description?: string }>
+}): ChangedKitComponent[] {
+  const changed: ChangedKitComponent[] = []
+  for (const c of liveKitComponents) {
+    if (PASCAL_EXEMPT_PREFIXES.some((p) => c.name.startsWith(p))) continue
+    const entry = registryComponents[c.name]
+    if (!entry || entry.kind !== 'kit') continue // new or non-kit handled elsewhere
+    const liveMatrix = extractVariantMatrix(c.componentPropertyDefinitions)
+    const reasons: string[] = []
+    if (JSON.stringify(liveMatrix) !== JSON.stringify(entry.variantMatrix ?? {})) reasons.push('variantMatrix changed')
+    if ((c.description ?? '') !== (entry.description ?? '')) reasons.push('description changed')
+    if (reasons.length) changed.push({ name: c.name, reasons, variantMatrix: liveMatrix, ...(c.description ? { description: c.description } : {}) })
+  }
+  return changed
+}
+
 function toPascalCase(name: string): string {
   return name
     .split(/[\s_/-]+/)

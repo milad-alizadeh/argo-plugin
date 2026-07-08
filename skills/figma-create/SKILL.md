@@ -305,11 +305,21 @@ cheap without any extra caching on this skill's part.
    glow color that clashes with its own element's fill even though both are
    individually bound correctly):
    - **Numeric predicates are Layer A's job now (fidelity-geometry-verifier.md
-     Slice 12)** — run `figma-audit`'s named audit with `geometryCategories`
-     covering this component's category (icon stroke-thickness, bound-
+     Slice 12, per-target category fix 2026-07-08)** — run `figma-audit`'s
+     named audit, passing THIS component's own category in
+     `prepare-tier0-audit-options`'s `componentCategories` input (e.g.
+     `{ "TreeNode": "tree" }`, the category you just placed it under, per
+     "Where things go" below) alongside `componentNames`. The gate checks
+     THAT category against the project's `design.<app>.geometryCategories`
+     enum — never omit `componentCategories` and expect the geometry pass to
+     run, and never pass it for a component whose category genuinely has no
+     rows (list/tree/table/nav): a rowless component (Button, Badge, Tooltip)
+     is correctly NEVER geometry-checked, so passing its category here is a
+     harmless no-op, but passing the WRONG category would wrongly arm
+     `missing-role-tags` against it. Covers icon stroke-thickness, bound-
      spacing gaps, sibling alignment, clipping, and the rest of the
      role-tagged geometry checks — see `figma-audit/SKILL.md`'s "Geometry
-     checks (Layer A)" section). A `hard` geometry violation blocks exactly
+     checks (Layer A)" section. A `hard` geometry violation blocks exactly
      like every other tier-0 hard-fail — fix and re-audit before proceeding,
      never eyeball what the gate already checks.
    - **Cadence (the montage is the mandatory deliverable, not the prose):**

@@ -24,8 +24,14 @@
  *   (fidelity-geometry-verifier.md), symmetric with `runRecipeTier0Checks`
  *   but subtree-shaped, not per-node: called once per named-audit root with
  *   the WHOLE marshaled subtree (`marshalGeometryTree`), never in the
- *   file-wide sweep. Omit for a target with no geometry-relevant category —
- *   the guarded call below no-ops and the marshal cost is never paid.
+ *   file-wide sweep. Gated PER TARGET, not per call — `options.geometryCategories`
+ *   (the project's fixed enum of row-shaped categories) and
+ *   `options.targetCategories` (nodeId/name -> that target's OWN resolved
+ *   category, caller-supplied — see `prepare-tier0-audit-options.js`) decide
+ *   whether THIS target's marshal cost is paid and whether it's judged
+ *   against the geometry rules at all; omitting either, or a target whose
+ *   category isn't in the enum, means zero geometry violations for it
+ *   (including `missing-role-tags`) — never a blanket per-call switch.
  *
  * Reports violations as { severity: 'hard' | 'advisory', rule, nodeId, nodeName, detail }.
  * `hard` fails the calling skill loud (D8); `advisory` is a file-wide sweep
@@ -81,7 +87,8 @@ import {
   crossAxisAnchorOffsetViolations,
   hugOverflowViolations,
   touchTargetViolation,
-  wcagContrastCheckViolation
+  wcagContrastCheckViolation,
+  geometryViolationsForTarget
 } from './geometry-rules.js'
 
 async function auditNode(
@@ -370,11 +377,14 @@ function marshalGeometryTree(node: any): any {
  * a fixed order, over one marshaled subtree, and maps each rule's plain
  * `{ rule, detail, nodeId? }` return into the full violation shape
  * (`severity`/`nodeId`/`nodeName`) `runTier0Audit`'s callers already expect.
- * Every geometry rule is `hard` — this closure is only ever wired in when
- * the caller has already opted this target's category into
- * `geometryCategories` (bundle-tier0-audit.ts), so there is no separate
- * per-rule severity to compute here. Called once per named-audit root, not
- * per node (see geometry-rules.ts's own doc comment for why).
+ * Every geometry rule is `hard` — there is no separate per-rule severity to
+ * compute here, because `runTier0Audit`'s per-target dispatch
+ * (`geometryViolationsForTarget`, geometry-rules.ts) only ever calls this
+ * closure for a target whose OWN resolved category (`targetCategories`) is
+ * a member of `geometryCategories` — never merely because
+ * `geometryCategories` is non-empty somewhere in the call. Called once per
+ * named-audit root, not per node (see geometry-rules.ts's own doc comment
+ * for why).
  */
 export function composeGeometryChecks({ geometryTolerancePx = 1 }: { geometryTolerancePx?: number } = {}): (root: any) => any[] {
   return (root: any) => {
@@ -516,7 +526,12 @@ async function walk(node: any, opts: any, out: any[]) {
  * `semanticCollectionName` defaults to `'Semantic'`. `runRecipeTier0Checks`
  * is the recipe's extension point, baked into the bundle by
  * `bundle-tier0-audit`'s generated entry — omit it for a recipe with no
- * checks.
+ * checks. `geometryCategories`/`targetCategories` gate the geometry pass
+ * PER TARGET (bug fix, 2026-07-08 merge review) — see
+ * `options.runGeometryChecks(root)` above; `targetCategories` keys by
+ * whichever string addressed the target (`componentNodeIds` -> nodeId,
+ * `componentNames` -> name), caller-supplied via
+ * `prepare-tier0-audit-options.js`'s `componentCategories` input.
  */
 export async function runTier0Audit(
   options: {
@@ -530,6 +545,8 @@ export async function runTier0Audit(
     runRecipeTier0Checks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean }) => Promise<any[]>
     viewport?: { width: number; height: number }
     runGeometryChecks?: (root: any) => any[]
+    geometryCategories?: string[]
+    targetCategories?: Record<string, string>
   } = {}
 ) {
   const {
@@ -542,7 +559,9 @@ export async function runTier0Audit(
     additionalAllowedCollectionNames = [],
     runRecipeTier0Checks,
     viewport,
-    runGeometryChecks
+    runGeometryChecks,
+    geometryCategories = [],
+    targetCategories = {}
   } = options
   const violations: any[] = []
 
@@ -574,8 +593,14 @@ export async function runTier0Audit(
       const owningPageName = findOwningPage(match)?.name ?? ''
       if (isWireframePageName(owningPageName)) continue
       await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
+      // Per-target opt-in (bug fix, 2026-07-08 merge review): geometryCategories
+      // gates by THIS target's own resolved category (targetCategories[nodeId]),
+      // never by "geometryCategories is non-empty somewhere in this call" — the
+      // old whole-call boolean hard-failed missing-role-tags on every rowless
+      // component (Button/Badge/Tooltip) the moment a project configured any
+      // geometryCategories at all. See geometry-rules.ts's geometryViolationsForTarget.
       if (typeof runGeometryChecks === 'function') {
-        violations.push(...runGeometryChecks(marshalGeometryTree(match)))
+        violations.push(...geometryViolationsForTarget(marshalGeometryTree(match), targetCategories[nodeId], geometryCategories, runGeometryChecks))
       }
     }
 
@@ -601,7 +626,7 @@ export async function runTier0Audit(
       if (isWireframePageName(owningPageName)) continue
       await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
       if (typeof runGeometryChecks === 'function') {
-        violations.push(...runGeometryChecks(marshalGeometryTree(match)))
+        violations.push(...geometryViolationsForTarget(marshalGeometryTree(match), targetCategories[name], geometryCategories, runGeometryChecks))
       }
     }
   } else {

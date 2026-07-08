@@ -8,7 +8,9 @@ import {
   crossAxisAnchorOffsetViolations,
   hugOverflowViolations,
   touchTargetViolation,
-  wcagContrastCheckViolation
+  wcagContrastCheckViolation,
+  isGeometryCheckedCategory,
+  geometryViolationsForTarget
 } from './geometry-rules.js'
 
 function row(name: string, contentStartX: number, id = name) {
@@ -326,5 +328,49 @@ describe('wcagContrastCheckViolation', () => {
   it('skips (fails open) when no ancestor has a resolvable SOLID fill', () => {
     const node = { id: 'n1', type: 'TEXT', fontSize: 16, fills: BLACK_FILL }
     expect(wcagContrastCheckViolation(node, [])).toBeNull()
+  })
+})
+
+describe('isGeometryCheckedCategory (per-target opt-in — fixes the whole-call boolean bug)', () => {
+  it('is true when the target category is a member of geometryCategories', () => {
+    expect(isGeometryCheckedCategory('tree', ['tree', 'list'])).toBe(true)
+  })
+
+  it('is false when the target category is not a member', () => {
+    expect(isGeometryCheckedCategory('primitive', ['tree', 'list'])).toBe(false)
+  })
+
+  it('is false when the target has no resolved category at all (undefined or null)', () => {
+    expect(isGeometryCheckedCategory(undefined, ['tree', 'list'])).toBe(false)
+    expect(isGeometryCheckedCategory(null, ['tree', 'list'])).toBe(false)
+  })
+
+  it('is false when geometryCategories is empty (unconfigured project)', () => {
+    expect(isGeometryCheckedCategory('tree', [])).toBe(false)
+  })
+})
+
+describe('geometryViolationsForTarget (fixes the bug: geometryCategories used to gate the WHOLE call, not each target)', () => {
+  // Stands in for composeGeometryChecks's real missing-role-tags behavior —
+  // geometry-rules.ts must not import tier0-audit.ts (circular), so the real
+  // closure is injected by the caller; this stub exercises the GATE, which is
+  // the actual fix under test.
+  const alwaysFlagsMissingRoleTags = () => [
+    { severity: 'hard', rule: 'missing-role-tags', nodeId: 'root', nodeName: 'target', detail: 'no role tags' }
+  ]
+
+  it('a target whose category is NOT in geometryCategories produces NO violations, even when untagged (e.g. a rowless Button)', () => {
+    const violations = geometryViolationsForTarget({ id: 'root', name: 'Button' }, 'primitive', ['tree'], alwaysFlagsMissingRoleTags)
+    expect(violations).toEqual([])
+  })
+
+  it('a target whose category IS in geometryCategories still runs the geometry pass', () => {
+    const violations = geometryViolationsForTarget({ id: 'root', name: 'TreeNode' }, 'tree', ['tree'], alwaysFlagsMissingRoleTags)
+    expect(violations.some((v) => v.rule === 'missing-role-tags')).toBe(true)
+  })
+
+  it('a target with no resolved category produces NO violations (fails open, never guesses)', () => {
+    const violations = geometryViolationsForTarget({ id: 'root', name: 'Unknown' }, undefined, ['tree'], alwaysFlagsMissingRoleTags)
+    expect(violations).toEqual([])
   })
 })

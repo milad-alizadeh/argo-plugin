@@ -237,3 +237,37 @@ export function wcagContrastCheckViolation(node: any, ancestors: any[]): Geometr
   if (!violation) return null
   return { rule: violation.rule, nodeId: node.id, detail: violation.detail }
 }
+
+/**
+ * Per-target opt-in gate (fixes the whole-call boolean bug, 2026-07-08 merge
+ * review): `geometryCategories` is the project's FIXED enum of categories
+ * that structurally have rows (list/tree/table/nav) — whether THIS ONE
+ * audited target's own resolved category is a member of it, never whether
+ * `geometryCategories` is merely non-empty SOMEWHERE in the call. A target
+ * with no resolved category at all (`category` undefined/null) fails
+ * closed — never guesses a category to make the check run.
+ */
+export function isGeometryCheckedCategory(category: string | null | undefined, geometryCategories: string[]): boolean {
+  return typeof category === 'string' && category.length > 0 && geometryCategories.includes(category)
+}
+
+/**
+ * The actual per-target dispatch the bug fix wires into `runTier0Audit`'s
+ * named-audit loops (`tier0-audit.ts`): a target whose own category isn't a
+ * geometry-checked category produces ZERO geometry violations — including
+ * `missing-role-tags` — no matter how the marshaled tree is shaped (a plain
+ * Button/Badge/Tooltip is never expected to carry `#content-start`/`#rail`/
+ * `#anchor` tags, so it must never be judged against that expectation).
+ * `composeChecks` is the real `composeGeometryChecks(...)` closure from
+ * `tier0-audit.ts`, injected by the caller (this module must not import
+ * that one — it's the other direction of the dependency).
+ */
+export function geometryViolationsForTarget(
+  root: any,
+  category: string | null | undefined,
+  geometryCategories: string[],
+  composeChecks: (root: any) => any[]
+): any[] {
+  if (!isGeometryCheckedCategory(category, geometryCategories)) return []
+  return composeChecks(root)
+}

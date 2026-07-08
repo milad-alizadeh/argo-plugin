@@ -12,6 +12,7 @@ import {
   tier0CompletionIdentifier,
   generateTier0PrimeScript,
   generateTier0ReplayScript,
+  tier0CacheKeys,
   TIER0_CACHE_NAMESPACE
 } from './bundle-tier0-audit.js'
 
@@ -181,6 +182,91 @@ describe('in-Figma bundle cache scripts (item A — prime once, replay tiny)', (
 
   it('rejects an unsafe completion identifier', () => {
     expect(() => generateTier0ReplayScript('foo(); danger', 'H', '{}')).toThrow()
+  })
+
+  it('scopes cache keys per session so concurrent designers do not collide, and falls back to base keys with no session', () => {
+    const base = tier0CacheKeys()
+    expect(base).toEqual({ srcKey: 'bundleSrc', hashKey: 'bundleHash' })
+    // No session id must equal an explicit null/empty — single-designer path.
+    expect(tier0CacheKeys(null)).toEqual(base)
+    expect(tier0CacheKeys('')).toEqual(base)
+
+    const a = tier0CacheKeys('sess-A')
+    const b = tier0CacheKeys('sess-B')
+    expect(a.srcKey).toBe('bundleSrc:sess-A')
+    expect(a.hashKey).toBe('bundleHash:sess-A')
+    // The whole point: two concurrent designers never share a key.
+    expect(a.srcKey).not.toBe(b.srcKey)
+    expect(a.hashKey).not.toBe(b.hashKey)
+    expect(a.srcKey).not.toBe(base.srcKey)
+  })
+
+  it('prime + replay embed the SAME per-session key (so a session replays its own prime) and different sessions are isolated', () => {
+    const primeA = generateTier0PrimeScript('runTier0Audit;', 'H', 'sess-A')
+    const replayA = generateTier0ReplayScript('runTier0Audit', 'H', '{}', 'sess-A')
+    const replayB = generateTier0ReplayScript('runTier0Audit', 'H', '{}', 'sess-B')
+
+    // A's prime writes the key A's replay reads.
+    expect(primeA).toContain('bundleSrc:sess-A')
+    expect(primeA).toContain('bundleHash:sess-A')
+    expect(replayA).toContain('bundleSrc:sess-A')
+    expect(replayA).toContain('bundleHash:sess-A')
+
+    // B's replay never touches A's slot — no cross-talk, no spurious miss.
+    expect(replayB).toContain('bundleSrc:sess-B')
+    expect(replayB).not.toContain('sess-A')
+  })
+
+  it('CLI --session isolates concurrent writers; a replay under a DIFFERENT session reads a different key (would cache-miss), the SAME session matches', () => {
+    const cwd = projectDirWithKit()
+    const outPath = join(cwd, '..', `${cwd.split('/').pop()}-sess.js`)
+    try {
+      const primeA = spawnSync(
+        'node',
+        [CLI, '--out', outPath, '--emit', 'prime', '--session', 'A'],
+        { cwd, encoding: 'utf8' }
+      )
+      expect(primeA.status).toBe(0)
+      const primeAScript = JSON.parse(primeA.stdout).script
+      expect(primeAScript).toContain('bundleSrc:A')
+
+      const replayA = spawnSync(
+        'node',
+        [CLI, '--out', outPath, '--emit', 'replay', '--options', '{}', '--session', 'A'],
+        { cwd, encoding: 'utf8' }
+      )
+      const replayB = spawnSync(
+        'node',
+        [CLI, '--out', outPath, '--emit', 'replay', '--options', '{}', '--session', 'B'],
+        { cwd, encoding: 'utf8' }
+      )
+      expect(JSON.parse(replayA.stdout).script).toContain('bundleSrc:A')
+      // B reads its own key, never A's — so it can't read A's mid-write value.
+      expect(JSON.parse(replayB.stdout).script).toContain('bundleSrc:B')
+      expect(JSON.parse(replayB.stdout).script).not.toContain('bundleSrc:A')
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+      rmSync(outPath, { force: true })
+      rmSync(`${outPath}.hash`, { force: true })
+    }
+  })
+
+  it('CLI reads CLAUDE_CODE_SESSION_ID from the env when --session is absent', () => {
+    const cwd = projectDirWithKit()
+    const outPath = join(cwd, '..', `${cwd.split('/').pop()}-env.js`)
+    try {
+      const prime = spawnSync('node', [CLI, '--out', outPath, '--emit', 'prime'], {
+        cwd,
+        encoding: 'utf8',
+        env: { ...process.env, CLAUDE_CODE_SESSION_ID: 'env-sess' }
+      })
+      expect(prime.status).toBe(0)
+      expect(JSON.parse(prime.stdout).script).toContain('bundleSrc:env-sess')
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+      rmSync(outPath, { force: true })
+      rmSync(`${outPath}.hash`, { force: true })
+    }
   })
 
   it('CLI --emit prime and --emit replay print ready-to-paste scripts', () => {

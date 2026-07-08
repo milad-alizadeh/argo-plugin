@@ -193,7 +193,11 @@ large, and always narrow a large subtree before reading — never dump the paren
         primed this session, or a kit rebuild changed the version hash), re-run
         the prime call, then the replay. The hash is kit-dist-content-aware, so
         a rebuilt kit invalidates the cache automatically — you cannot audit
-        with stale rule logic.
+        with stale rule logic. The cache slot on `figma.root` is keyed per
+        session (`CLAUDE_CODE_SESSION_ID`), so N designers fanning out over the
+        SAME Figma file each prime/replay their own slot with zero cross-talk —
+        re-priming after a miss lands under your own key, so every subsequent
+        replay in the session hits.
    - **Fallback (no cache):** if priming isn't possible, `--emit`-less
      `bundle-tier0-audit` still prints the bundle tmp path; read it once, paste
      it once, and on a re-audit reuse that same pasted content — do NOT re-read

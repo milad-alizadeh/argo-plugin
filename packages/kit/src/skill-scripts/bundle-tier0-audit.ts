@@ -219,44 +219,70 @@ const TIER0_CACHE_KEY_SRC = 'bundleSrc'
 const TIER0_CACHE_KEY_HASH = 'bundleHash'
 
 /**
+ * Per-writer cache keys. Concurrent designers fanned out over one Figma file
+ * share a single `figma.root`, so a global key means one designer's prime
+ * overwrites another's, and a replay reads a sibling's value (or a half-written
+ * one) → spurious hash-mismatch → fallback to a full ~31KB inline re-embed,
+ * defeating the optimization exactly under the parallelism it should help
+ * (observed live: 2/3 clean, the 3rd cache-missed twice). Scoping the
+ * shared-plugin-data keys by `CLAUDE_CODE_SESSION_ID` (mirrors the per-session
+ * `.argo/` design-guard state) gives each writer its own cache slot: N
+ * concurrent designers → N independent slots, zero cross-talk. No session id →
+ * the base keys, so a single-designer / test run is still 1-prime/N-replay.
+ */
+export function tier0CacheKeys(sessionId?: string | null): { srcKey: string; hashKey: string } {
+  const suffix = sessionId ? `:${sessionId}` : ''
+  return {
+    srcKey: `${TIER0_CACHE_KEY_SRC}${suffix}`,
+    hashKey: `${TIER0_CACHE_KEY_HASH}${suffix}`
+  }
+}
+
+/**
  * Prime script (paste ONCE per file session): embeds the bundle source a
  * single time as a JSON string literal, stores it + the version hash on
- * `figma.root`, and returns without running the audit. Store-only keeps this
- * well under the 50,000-char `use_figma` cap even for large recipe bundles
- * (embedding the source AND an executable copy in one call would risk the
- * cap). Re-audits then run via `generateTier0ReplayScript`.
+ * `figma.root` under the caller's per-session keys, and returns without running
+ * the audit. Store-only keeps this well under the 50,000-char `use_figma` cap
+ * even for large recipe bundles (embedding the source AND an executable copy in
+ * one call would risk the cap). Re-audits then run via
+ * `generateTier0ReplayScript` with the same `sessionId`.
  */
-export function generateTier0PrimeScript(bundled: string, hash: string): string {
+export function generateTier0PrimeScript(bundled: string, hash: string, sessionId?: string | null): string {
   const ns = JSON.stringify(TIER0_CACHE_NAMESPACE)
+  const { srcKey, hashKey } = tier0CacheKeys(sessionId)
   return [
     `const __tier0Src = ${JSON.stringify(bundled)};`,
-    `figma.root.setSharedPluginData(${ns}, ${JSON.stringify(TIER0_CACHE_KEY_HASH)}, ${JSON.stringify(hash)});`,
-    `figma.root.setSharedPluginData(${ns}, ${JSON.stringify(TIER0_CACHE_KEY_SRC)}, __tier0Src);`,
+    `figma.root.setSharedPluginData(${ns}, ${JSON.stringify(hashKey)}, ${JSON.stringify(hash)});`,
+    `figma.root.setSharedPluginData(${ns}, ${JSON.stringify(srcKey)}, __tier0Src);`,
     `return { primed: true, hash: ${JSON.stringify(hash)}, bytes: __tier0Src.length };`
   ].join('\n')
 }
 
 /**
  * Replay script (paste for EVERY audit and re-audit): reads the primed bundle
- * back from `figma.root`, guards on the version hash (a kit rebuild changes
- * `hash`, forcing a re-prime rather than silently auditing with stale logic),
- * reconstructs the audit function via `new Function`, and calls it with the
- * per-call options object. Returns `{ __tier0CacheMiss: true }` if the cache
- * is absent or stale — the caller re-runs the prime script, then this.
- * `optionsLiteral` is the JSON options object from `prepare-tier0-audit-options`.
+ * back from `figma.root` under the caller's per-session keys, guards on the
+ * version hash (a kit rebuild changes `hash`, forcing a re-prime rather than
+ * silently auditing with stale logic), reconstructs the audit function via
+ * `new Function`, and calls it with the per-call options object. Returns
+ * `{ __tier0CacheMiss: true }` if this session's cache is absent or stale — the
+ * caller re-runs the prime script (under the same `sessionId`), then this, so
+ * every subsequent replay in the session hits. `optionsLiteral` is the JSON
+ * options object from `prepare-tier0-audit-options`.
  */
 export function generateTier0ReplayScript(
   completionId: string,
   hash: string,
-  optionsLiteral: string
+  optionsLiteral: string,
+  sessionId?: string | null
 ): string {
   if (!BARE_IDENTIFIER.test(completionId)) {
     throw new Error(`generateTier0ReplayScript: invalid completion identifier "${completionId}"`)
   }
   const ns = JSON.stringify(TIER0_CACHE_NAMESPACE)
+  const { srcKey, hashKey } = tier0CacheKeys(sessionId)
   return [
-    `const __tier0Src = figma.root.getSharedPluginData(${ns}, ${JSON.stringify(TIER0_CACHE_KEY_SRC)});`,
-    `const __tier0Hash = figma.root.getSharedPluginData(${ns}, ${JSON.stringify(TIER0_CACHE_KEY_HASH)});`,
+    `const __tier0Src = figma.root.getSharedPluginData(${ns}, ${JSON.stringify(srcKey)});`,
+    `const __tier0Hash = figma.root.getSharedPluginData(${ns}, ${JSON.stringify(hashKey)});`,
     `if (!__tier0Src || __tier0Hash !== ${JSON.stringify(hash)}) return { __tier0CacheMiss: true };`,
     `const __tier0Audit = new Function(__tier0Src + ${JSON.stringify(`\nreturn ${completionId};`)})();`,
     `return await __tier0Audit(${optionsLiteral});`
@@ -308,15 +334,19 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const outPath = flag('--out')
   const emit = flag('--emit') // 'prime' | 'replay' | undefined
   const optionsLiteral = flag('--options') // JSON string, required for --emit replay
+  // Per-writer cache scope so concurrent designers in one Figma file don't
+  // collide on figma.root's shared plugin data. `--session` overrides the env
+  // (test hook); prod reads CLAUDE_CODE_SESSION_ID like the other design gates.
+  const sessionId = flag('--session') ?? process.env.CLAUDE_CODE_SESSION_ID ?? null
 
   try {
     const { bundled, bundlePath, cached, hash, completionId } = bundleTier0AuditForRecipe({ cwd, recipe, outPath })
 
     if (emit === 'prime') {
-      console.log(JSON.stringify({ script: generateTier0PrimeScript(bundled, hash), hash, cached }))
+      console.log(JSON.stringify({ script: generateTier0PrimeScript(bundled, hash, sessionId), hash, cached }))
     } else if (emit === 'replay') {
       if (!optionsLiteral) throw new Error('--emit replay requires --options <json-options-object>')
-      console.log(JSON.stringify({ script: generateTier0ReplayScript(completionId, hash, optionsLiteral), hash }))
+      console.log(JSON.stringify({ script: generateTier0ReplayScript(completionId, hash, optionsLiteral, sessionId), hash }))
     } else {
       console.log(JSON.stringify({ bundlePath, chars: bundled.length, cached, hash, completionId }))
     }

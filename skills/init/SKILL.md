@@ -61,7 +61,10 @@ JS); UI framework + whether a components dir exists; styling system + the **real
 token source file**; test runner + e2e tool + the real `lint`/`test` commands; the
 **observed** file-naming/folder convention (sample real names — don't impose);
 **monorepo layout** (workspaces in `package.json` / `pnpm-workspace.yaml` /
-`turbo.json` / multiple `apps/*`|`packages/*`); whether the `graphify` CLI is present.
+`turbo.json` / multiple `apps/*`|`packages/*`); whether the `graphify` CLI is present;
+whether the **context-mode** plugin is present (`enabledPlugins` in
+`.claude/settings.json`, or a `context-mode` MCP server registration). Both are
+context-optimizing tools whose routing rules §8a offers to make durable.
 
 ## 3. Classify greenfield vs brownfield
 Empty/near-empty repo → greenfield: defaults ON. Substantial existing tree →
@@ -290,6 +293,47 @@ Record the detected commands/paths (so skills/agents use real values, not
 placeholders) and the canonical loop: **scaffold → grill → plan → test-first build
 (interactive) or /argo:build-plan (automated, worktree-isolated) → review → debug →
 handoff.**
+
+## 8a. Durable tool-routing block (conditional — only for detected tools)
+context-mode and graphify both inject routing guidance per session (via their own
+hooks/skills), but injected context is **summarized away on `/compact`** — mid-long-session,
+Claude drifts back to raw `Read`/`grep`/`WebFetch` and the context savings evaporate. The
+fix is to keep the routing in the **project-root CLAUDE.md**, which survives compaction. A
+path-scoped `.claude/rules/*.md` would NOT work here — those load only when a matching file
+is read and get summarized like anything else — so this belongs in CLAUDE.md, not a rule
+template.
+
+Only if §2 detected the tool: **ask** (one AskUserQuestion, per-tool multiSelect) whether to
+add its durable routing block to CLAUDE.md. Skip a tool's block silently if that tool is
+absent. Append only the detected tools' sub-blocks under one `## Tool routing (kept durable
+across compaction)` heading:
+
+**graphify sub-block** (if graphify present):
+```markdown
+**graphify (knowledge graph):**
+- Code questions ("where does X live", "what depends on Y", architecture) → query the
+  graphify knowledge graph first when a `graphify-out/` exists; faster and more complete
+  than cold grep. Fall back to grep only if the graph doesn't answer.
+- Refresh only via `argo graph refresh` — single writer, on `main`, on-device.
+```
+
+**context-mode sub-block** (if context-mode present):
+```markdown
+**context-mode (context window):**
+- Processing data (filter/count/parse/aggregate/search) → `ctx_execute` /
+  `ctx_batch_execute`, `console.log` only the answer. Never read raw data into context
+  just to eyeball it.
+- Analyzing a file (not editing it) → `ctx_execute_file`. Native `Read` only when the
+  next step is `Edit`.
+- Web content → `ctx_fetch_and_index` then `ctx_search`. Never `WebFetch` raw pages.
+- Bash ONLY for: `git`, `mkdir`, `rm`, `mv`, `cd`, `ls`, install commands. Everything
+  else routes through the ctx tools.
+- On resume / after compaction → `ctx_search(sort: "timeline")` BEFORE asking the user.
+- Stats/health → the `/ctx-stats` and `/ctx-doctor` slash commands (not the bare phrase
+  "ctx stats", which grabs the skill instead of the tool).
+- Images/screenshots can't be sandboxed and reads-for-editing must be native — routing
+  has a real ceiling, don't force it.
+```
 
 ## 8b. Recommendations (read-only — propose, never install)
 After the rules land, one short recommendation pass from the §2 stack evidence:

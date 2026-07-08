@@ -362,6 +362,24 @@ export function marshalRowGroups(tree: any): any[] {
 }
 
 /**
+ * BFS from `tree`, grouping every row (marshalRowGroups' definition — a
+ * container child) by its nesting depth (root's direct rows are depth 0,
+ * a row's own nested rows are depth 1, etc.) — feeds
+ * indentAndRowConsistencyViolations, which needs same-depth siblings
+ * compared against each other, never across depths.
+ */
+export function groupRowsByDepth(tree: any): Map<number, any[]> {
+  const byDepth = new Map<number, any[]>()
+  const walk = (node: any, depth: number) => {
+    const rows = marshalRowGroups(node)
+    if (rows.length > 0) byDepth.set(depth, [...(byDepth.get(depth) ?? []), ...rows])
+    for (const row of rows) walk(row, depth + 1)
+  }
+  walk(tree, 0)
+  return byDepth
+}
+
+/**
  * Marshals a single Auto Layout gap/padding field (D24). boundVariables for a
  * number property is a single { id } object, not an array (unlike fills/
  * strokes) — resolved and marshaled explicitly, field by field, same

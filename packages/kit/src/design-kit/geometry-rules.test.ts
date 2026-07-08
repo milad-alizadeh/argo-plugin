@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { contentStartAlignmentViolations, railAnchorSpanViolation } from './geometry-rules.js'
+import {
+  contentStartAlignmentViolations,
+  railAnchorSpanViolation,
+  interRowContinuityViolations,
+  indentAndRowConsistencyViolations
+} from './geometry-rules.js'
 
 function row(name: string, contentStartX: number, id = name) {
   return { name, children: [{ id, name: 'Content #content-start', x: contentStartX }] }
@@ -76,5 +81,61 @@ describe('railAnchorSpanViolation', () => {
   it('passes null when no #rail tag is present (missing-role-tags owns that gap)', () => {
     const tree = { name: 'List', children: [{ id: 'root-anchor', name: 'Root Anchor #anchor', y: 0, height: 16 }, ...rows] }
     expect(railAnchorSpanViolation(tree, rows, 1)).toBeNull()
+  })
+})
+
+describe('interRowContinuityViolations', () => {
+  it('flags a 40px gap against a 16px itemSpacing + 1px tolerance', () => {
+    const rows = [
+      { id: 'row-1', name: 'Row 1', y: 0, height: 24 },
+      { id: 'row-2', name: 'Row 2', y: 64, height: 24 }
+    ]
+    expect(interRowContinuityViolations(rows, 16, 1)).toEqual([
+      { rule: 'rail-continuity-gap', nodeId: 'row-2', detail: 'gap of 40px between row "Row 1" and "Row 2" exceeds the configured itemSpacing (16px) + tolerance' }
+    ])
+  })
+
+  it('passes a gap of exactly itemSpacing', () => {
+    const rows = [
+      { id: 'row-1', name: 'Row 1', y: 0, height: 24 },
+      { id: 'row-2', name: 'Row 2', y: 40, height: 24 }
+    ]
+    expect(interRowContinuityViolations(rows, 16, 1)).toEqual([])
+  })
+})
+
+describe('indentAndRowConsistencyViolations', () => {
+  it('flags a same-depth row indented +8px', () => {
+    const rowsByDepth = new Map([
+      [0, [
+        { id: 'row-1', name: 'Row 1', x: 24, height: 32 },
+        { id: 'row-2', name: 'Row 2', x: 32, height: 32 }
+      ]]
+    ])
+    expect(indentAndRowConsistencyViolations(rowsByDepth, 1)).toEqual([
+      { rule: 'indent-inconsistent', nodeId: 'row-2', detail: 'depth 0 row "Row 2" is indented to x=32, expected x=24 (matching its depth siblings)' }
+    ])
+  })
+
+  it('flags a same-depth row 4px taller', () => {
+    const rowsByDepth = new Map([
+      [0, [
+        { id: 'row-1', name: 'Row 1', x: 24, height: 32 },
+        { id: 'row-2', name: 'Row 2', x: 24, height: 36 }
+      ]]
+    ])
+    expect(indentAndRowConsistencyViolations(rowsByDepth, 1)).toEqual([
+      { rule: 'row-height-inconsistent', nodeId: 'row-2', detail: 'depth 0 row "Row 2" has height 36, expected 32' }
+    ])
+  })
+
+  it('passes matching x and height at the same depth', () => {
+    const rowsByDepth = new Map([
+      [0, [
+        { id: 'row-1', name: 'Row 1', x: 24, height: 32 },
+        { id: 'row-2', name: 'Row 2', x: 24, height: 32 }
+      ]]
+    ])
+    expect(indentAndRowConsistencyViolations(rowsByDepth, 1)).toEqual([])
   })
 })

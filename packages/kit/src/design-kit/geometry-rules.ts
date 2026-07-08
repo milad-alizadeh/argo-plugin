@@ -64,3 +64,48 @@ export function railAnchorSpanViolation(tree: any, rows: any[], tolerancePx: num
     detail: `rail spans y=${actualStart}..${actualEnd}, expected y=${expectedStart}..${expectedEnd} (parent anchor to last-child anchor center) — overshoot or undershoot`
   }
 }
+
+/**
+ * No vertical gap between consecutive rows' own bounding boxes beyond
+ * itemSpacing + tolerancePx — a real rendered gap larger than the row
+ * container's own configured gap means the rail visually breaks.
+ */
+export function interRowContinuityViolations(rows: any[], itemSpacing: number, tolerancePx: number): GeometryViolation[] {
+  const violations: GeometryViolation[] = []
+  for (let i = 1; i < rows.length; i++) {
+    const gap = rows[i].y - (rows[i - 1].y + rows[i - 1].height)
+    if (gap > itemSpacing + tolerancePx) {
+      violations.push({
+        rule: 'rail-continuity-gap',
+        nodeId: rows[i].id,
+        detail: `gap of ${gap}px between row "${rows[i - 1].name}" and "${rows[i].name}" exceeds the configured itemSpacing (${itemSpacing}px) + tolerance`
+      })
+    }
+  }
+  return violations
+}
+
+/**
+ * Every row at the same tree DEPTH must share one x-offset delta from its
+ * parent depth (indent step), and rows at any one depth must share one
+ * height and one itemSpacing — computed from the marshaled rows, no
+ * hardcoded step value (a project's indent unit is whatever its rows
+ * actually render at).
+ */
+export function indentAndRowConsistencyViolations(rowsByDepth: Map<number, any[]>, tolerancePx: number): GeometryViolation[] {
+  const violations: GeometryViolation[] = []
+  for (const [depth, rows] of rowsByDepth) {
+    if (rows.length < 2) continue
+    const baselineX = rows[0].x
+    const baselineHeight = rows[0].height
+    for (const row of rows.slice(1)) {
+      if (Math.abs(row.x - baselineX) > tolerancePx) {
+        violations.push({ rule: 'indent-inconsistent', nodeId: row.id, detail: `depth ${depth} row "${row.name}" is indented to x=${row.x}, expected x=${baselineX} (matching its depth siblings)` })
+      }
+      if (Math.abs(row.height - baselineHeight) > tolerancePx) {
+        violations.push({ rule: 'row-height-inconsistent', nodeId: row.id, detail: `depth ${depth} row "${row.name}" has height ${row.height}, expected ${baselineHeight}` })
+      }
+    }
+  }
+  return violations
+}

@@ -13,7 +13,7 @@ import {
   unboundFillViolations,
   unboundStrokeViolations,
   unboundRadiusViolation,
-  unboundTypeViolation,
+  textStyleRequiredViolation,
   missingAutoLayoutViolation,
   handDrawnIconViolation,
   kitInstanceOverrideViolation,
@@ -39,7 +39,7 @@ export function auditPureNode(node) {
   const radius = unboundRadiusViolation(node)
   if (radius) report(radius.rule, radius.detail)
 
-  const type = unboundTypeViolation(node)
+  const type = textStyleRequiredViolation(node)
   if (type) report(type.rule, type.detail)
 
   const truncation = textTruncationViolation(node)

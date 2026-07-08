@@ -75,7 +75,7 @@
           "type": "TEXT",
           "name": "Title",
           "fontName": { "family": "Inter" },
-          "boundVariables": { "fontSize": { "id": "v4" } },
+          "textStyleId": "S:ramp-title-1",
           "lineHeight": { "unit": "PIXELS", "value": 20 },
           "textTruncation": "DISABLED",
           "children": []

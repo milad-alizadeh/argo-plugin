@@ -3,7 +3,7 @@ import {
   unboundFillViolations,
   unboundStrokeViolations,
   unboundRadiusViolation,
-  unboundTypeViolation,
+  textStyleRequiredViolation,
   missingAutoLayoutViolation,
   handDrawnIconViolation,
   kitInstanceOverrideViolation,
@@ -107,22 +107,32 @@ describe('unboundRadiusViolation', () => {
   })
 })
 
-describe('unboundTypeViolation', () => {
-  it('flags a text node with no bound fontSize', () => {
+describe('textStyleRequiredViolation', () => {
+  it('flags a text node with no text style and no bindings', () => {
     const node = { fontName: { family: 'Inter' }, boundVariables: {} }
-    expect(unboundTypeViolation(node)).toEqual({ rule: 'unbound-type', detail: 'text node font size has no bound variable' })
+    expect(textStyleRequiredViolation(node)).toEqual({
+      rule: 'text-style-required',
+      detail: 'text node has no defined text style; apply a preset text style from the type ramp'
+    })
   })
-  it('passes a text node with a bound fontSize', () => {
+  it('flags a text node that binds a raw fontSize variable instead of a text style', () => {
     const node = { fontName: { family: 'Inter' }, boundVariables: { fontSize: { id: '1:2' } } }
-    expect(unboundTypeViolation(node)).toBeNull()
+    expect(textStyleRequiredViolation(node)).toEqual({
+      rule: 'text-style-required',
+      detail: 'text node binds raw fontSize/lineHeight variables instead of a defined text style; apply a preset text style from the type ramp'
+    })
   })
-  it('passes a text node styled with a shared text style, even with no bound fontSize', () => {
+  it('flags a text node that binds a raw lineHeight variable instead of a text style', () => {
+    const node = { fontName: { family: 'Inter' }, boundVariables: { lineHeight: { id: '3:4' } } }
+    expect(textStyleRequiredViolation(node)?.rule).toBe('text-style-required')
+  })
+  it('passes a text node styled with a shared text style', () => {
     const node = { fontName: { family: 'Inter' }, boundVariables: {}, textStyleId: 'S:abc123' }
-    expect(unboundTypeViolation(node)).toBeNull()
+    expect(textStyleRequiredViolation(node)).toBeNull()
   })
-  it('passes a text node inside a library instance — kit internals bind their own kit collections', () => {
+  it('passes a text node inside a library instance — kit internals carry their own text styling', () => {
     const node = { fontName: { family: 'Inter' }, boundVariables: {}, insideInstance: true }
-    expect(unboundTypeViolation(node)).toBeNull()
+    expect(textStyleRequiredViolation(node)).toBeNull()
   })
 })
 

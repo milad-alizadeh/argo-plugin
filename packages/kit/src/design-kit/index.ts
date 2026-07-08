@@ -10,7 +10,7 @@ export {
   unboundFillViolations,
   unboundStrokeViolations,
   unboundRadiusViolation,
-  unboundTypeViolation,
+  textStyleRequiredViolation,
   missingAutoLayoutViolation,
   detachedInstanceViolation,
   nonSemanticNameViolation,

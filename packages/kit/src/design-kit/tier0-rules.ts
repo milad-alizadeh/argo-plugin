@@ -82,23 +82,29 @@ export function unboundRadiusViolation(node: AnyNode): Violation | null {
 }
 
 /**
- * Passes a text node bound directly to a fontSize variable OR carrying a
- * shared text style (the pack's own text-styling convention) — `textStyleId`
- * is `figma.mixed` (an object) when mixed across a range, and `''` when
- * unset, so only a non-empty string counts as "styled" (fix: 2026-07,
- * closed a 45-hit false-positive class on a properly text-styled sheet).
+ * Requires a text node to carry a defined shared text style (a preset from
+ * the type ramp) — a raw `fontSize`/`lineHeight` variable binding is NOT
+ * sufficient. A preset text style bundles size, line-height, weight and
+ * letter-spacing as one reusable decision, so authoring against the ramp
+ * (rather than picking scale tokens à la carte) is what keeps typography
+ * consistent (owner mandate, 2026-07-08). `textStyleId` is `figma.mixed`
+ * (an object) when mixed across a range, and `''` when unset, so only a
+ * non-empty string counts as "styled".
  */
-export function unboundTypeViolation(node: AnyNode): Violation | null {
+export function textStyleRequiredViolation(node: AnyNode): Violation | null {
   // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
-  // kit internals bind the kit's own type collections — not ours to rebind.
+  // kit internals carry the kit's own text styling — not ours to restyle.
   if (node.insideInstance) return null
   if (!('fontName' in node)) return null
-  const hasBoundFontSize = Boolean(node.boundVariables?.fontSize)
   const hasTextStyle = typeof node.textStyleId === 'string' && node.textStyleId !== ''
-  if (!hasBoundFontSize && !hasTextStyle) {
-    return { rule: 'unbound-type', detail: 'text node font size has no bound variable' }
+  if (hasTextStyle) return null
+  const boundRaw = Boolean(node.boundVariables?.fontSize || node.boundVariables?.lineHeight)
+  return {
+    rule: 'text-style-required',
+    detail: boundRaw
+      ? 'text node binds raw fontSize/lineHeight variables instead of a defined text style; apply a preset text style from the type ramp'
+      : 'text node has no defined text style; apply a preset text style from the type ramp'
   }
-  return null
 }
 
 /**

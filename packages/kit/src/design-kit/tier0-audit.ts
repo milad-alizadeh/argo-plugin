@@ -68,9 +68,20 @@ import {
   emDashViolation,
   screenViewportMismatchViolation,
   textTruncationViolation,
-  unclippedOverflowViolations
+  unclippedOverflowViolations,
+  missingRoleTagsViolation
 } from './tier0-rules.js'
-import { roleTagOf } from './role-tags.js'
+import { roleTagOf, findAllByRole } from './role-tags.js'
+import {
+  contentStartAlignmentViolations,
+  railAnchorSpanViolation,
+  interRowContinuityViolations,
+  indentAndRowConsistencyViolations,
+  loadBearingVisibilityViolations,
+  crossAxisAnchorOffsetViolations,
+  hugOverflowViolations,
+  touchTargetViolation
+} from './geometry-rules.js'
 
 async function auditNode(
   node: any,
@@ -352,6 +363,47 @@ function marshalGeometryTree(node: any): any {
 }
 
 /**
+ * Composes the geometry pass's `runGeometryChecks(root)` closure
+ * (fidelity-geometry-verifier.md Slice 9) — calls every geometry rule, in
+ * a fixed order, over one marshaled subtree, and maps each rule's plain
+ * `{ rule, detail, nodeId? }` return into the full violation shape
+ * (`severity`/`nodeId`/`nodeName`) `runTier0Audit`'s callers already expect.
+ * Every geometry rule is `hard` — this closure is only ever wired in when
+ * the caller has already opted this target's category into
+ * `geometryCategories` (bundle-tier0-audit.ts), so there is no separate
+ * per-rule severity to compute here. Called once per named-audit root, not
+ * per node (see geometry-rules.ts's own doc comment for why).
+ */
+export function composeGeometryChecks({ geometryTolerancePx = 1 }: { geometryTolerancePx?: number } = {}): (root: any) => any[] {
+  return (root: any) => {
+    const violations: any[] = []
+    const report = (v: { rule: string; detail: string; nodeId?: string } | null | undefined) => {
+      if (!v) return
+      violations.push({ severity: 'hard', rule: v.rule, nodeId: v.nodeId ?? root.id, nodeName: root.name, detail: v.detail })
+    }
+
+    report(missingRoleTagsViolation(root, { requiresRoleTags: true }))
+
+    const rows = marshalRowGroups(root)
+    for (const v of contentStartAlignmentViolations(rows, geometryTolerancePx)) report(v)
+    report(railAnchorSpanViolation(root, rows, geometryTolerancePx))
+    const itemSpacing = typeof root.itemSpacing === 'number' ? root.itemSpacing : 0
+    for (const v of interRowContinuityViolations(rows, itemSpacing, geometryTolerancePx)) report(v)
+    for (const v of indentAndRowConsistencyViolations(groupRowsByDepth(root), geometryTolerancePx)) report(v)
+    for (const v of loadBearingVisibilityViolations(collectRoleTaggedWithAncestors(root))) report(v)
+    for (const v of crossAxisAnchorOffsetViolations(rows, geometryTolerancePx)) report(v)
+    for (const containerLikeNode of [root, ...rows]) {
+      for (const v of hugOverflowViolations(containerLikeNode)) report(v)
+    }
+    for (const hitTarget of findAllByRole(root, 'hit-target')) {
+      report(touchTargetViolation(hitTarget))
+    }
+
+    return violations
+  }
+}
+
+/**
  * Rows = the marshaled tree's own direct children that are themselves
  * containers (have children) — the flat per-item unit every list/tree/
  * table/nav category renders. A leaf-only tree (no rows) yields [].
@@ -387,7 +439,7 @@ export function groupRowsByDepth(tree: any): Map<number, any[]> {
  * which needs each role-tagged node's opacity/clip ancestor chain, not just
  * the node itself.
  */
-function collectRoleTaggedWithAncestors(tree: any): { node: any; ancestors: any[] }[] {
+export function collectRoleTaggedWithAncestors(tree: any): { node: any; ancestors: any[] }[] {
   const out: { node: any; ancestors: any[] }[] = []
   const walk = (node: any, ancestors: any[]) => {
     if (roleTagOf(node) !== null) out.push({ node, ancestors })

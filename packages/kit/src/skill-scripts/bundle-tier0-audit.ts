@@ -37,19 +37,37 @@ const RECIPE_ENTRIES: Record<string, { importPath: string }> = {
  * value (e.g. `'shadcn-tailwind'`); `null`/unknown ⇒ mechanism-only entry, no
  * recipe checks.
  */
+// Composed the same way in both branches below (fidelity-geometry-verifier.md
+// Slice 9): the geometry pass only runs when the caller's own options opted
+// in with a non-empty geometryCategories — a project/target that never
+// configures it never pays the marshal cost (composeGeometryChecks is
+// itself pure geometry-rules.js/role-tags.js logic, no Figma-specific
+// wiring beyond what runTier0Audit already threads through options).
+const GEOMETRY_CHECKS_FIELD =
+  '    runGeometryChecks: Array.isArray(options.geometryCategories) && options.geometryCategories.length > 0\n' +
+  '      ? composeGeometryChecks({ geometryTolerancePx: options.geometryTolerancePx })\n' +
+  '      : undefined'
+
 export function generateTier0AuditEntry(recipe: string | null): string {
   const recipeEntry = recipe ? RECIPE_ENTRIES[recipe] : null
 
   if (!recipeEntry) {
     return [
-      "import { runTier0Audit } from '@argohq/kit/design-kit/tier0-audit'",
+      "import { runTier0Audit, composeGeometryChecks } from '@argohq/kit/design-kit/tier0-audit'",
       '',
-      'runTier0Audit'
+      'async function tier0AuditWithGeometry(options = {}) {',
+      '  return runTier0Audit({',
+      '    ...options,',
+      GEOMETRY_CHECKS_FIELD,
+      '  })',
+      '}',
+      '',
+      'tier0AuditWithGeometry'
     ].join('\n')
   }
 
   return [
-    "import { runTier0Audit } from '@argohq/kit/design-kit/tier0-audit'",
+    "import { runTier0Audit, composeGeometryChecks } from '@argohq/kit/design-kit/tier0-audit'",
     `import { runRecipeTier0Checks } from '${recipeEntry.importPath}'`,
     '',
     'async function tier0AuditWithRecipe(options = {}) {',
@@ -58,7 +76,8 @@ export function generateTier0AuditEntry(recipe: string | null): string {
     '    runRecipeTier0Checks: (node, ctx) => runRecipeTier0Checks(node, {',
     '      ...ctx,',
     '      semanticCollectionName: options.semanticCollectionName',
-    '    })',
+    '    }),',
+    GEOMETRY_CHECKS_FIELD,
     '  })',
     '}',
     '',

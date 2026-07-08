@@ -16,14 +16,15 @@
  * that light/dark differ exactly where the spec says they should.
  */
 import { describe, it, expect } from 'vitest'
-import {
-  compareColor,
-  comparePxInteger,
-  compareHugDimension,
-  convertLineHeight,
-  convertLetterSpacing,
-  resolveBoxModel,
-} from '../design-kit/index.js'
+// Import the comparator/conversion helpers from their own modules, NOT the
+// design-kit barrel: this walker is bundled for a real browser (the host
+// `spec-diff` vitest project runs in chromium), and the barrel re-exports
+// `schemas.ts` -> `zod`. Vite's browser dep-optimizer then tries to resolve
+// zod from the symlinked kit's own node_modules and fails (ENOENT), so the
+// whole walker module fails to load. comparator.ts + conversion-table.ts are
+// dependency-free, so importing them directly keeps zod out of the bundle.
+import { compareColor, comparePxInteger, compareHugDimension } from '../design-kit/comparator.js'
+import { convertLineHeight, convertLetterSpacing, resolveBoxModel } from '../design-kit/conversion-table.js'
 
 type StoryModule = any
 type ComposeStories = (storyModule: StoryModule) => Record<string, any>

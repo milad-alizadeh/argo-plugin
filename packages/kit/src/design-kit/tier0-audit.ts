@@ -410,6 +410,7 @@ export async function runTier0Audit(
     additionalAllowedCollectionNames?: string[]
     runRecipeTier0Checks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean }) => Promise<any[]>
     viewport?: { width: number; height: number }
+    pageId?: string
   } = {}
 ) {
   const {
@@ -421,7 +422,8 @@ export async function runTier0Audit(
     primitivesCollectionName = 'Primitives',
     additionalAllowedCollectionNames = [],
     runRecipeTier0Checks,
-    viewport
+    viewport,
+    pageId
   } = options
   const violations: any[] = []
 
@@ -478,13 +480,26 @@ export async function runTier0Audit(
       await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
     }
   } else {
-    for (const page of figma.root.children) {
+    // `pageId` (D25, 2026-07-08): scopes the advisory sweep to ONE page,
+    // set via `figma.setCurrentPageAsync` here — the only page switch this
+    // script performs, honoring the "at most once per use_figma call" rule.
+    // A whole-file sweep (`pageId` omitted) walks every page's node tree in
+    // one script; on a large file (100+ components across 50+ pages) that
+    // single call can exceed the transport's size/time budget and drop
+    // mid-execution with no partial result. figma-audit/SKILL.md's
+    // file-wide-sweep procedure now fans this out — one read-only call to
+    // list page ids, then N parallel `use_figma` calls (one per page) each
+    // passing `pageId` — instead of ever invoking the whole-file branch on a
+    // file of any real size.
+    const pages = pageId ? [await figma.getNodeByIdAsync(pageId)].filter(Boolean) : figma.root.children
+    for (const page of pages) {
       // Wireframe-page exemption (figma-wireframe/SKILL.md): wireframe
       // surface pages (`W<NN> <group>`) and `Cover` are never code-synced,
       // so ALL tier-0 checks are skipped for their nodes, not just fill/
       // stroke — the whole gate is exempt, per the skill's documented
       // wording.
       if (isWireframePageName(page.name)) continue
+      if (pageId) await figma.setCurrentPageAsync(page)
       for (const topLevel of page.children) {
         await walk(
           topLevel,

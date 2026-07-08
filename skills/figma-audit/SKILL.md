@@ -140,13 +140,39 @@ none at all.
    and is under `use_figma`'s 50,000-char cap. Nothing is written into the
    host project's `design/` dir — the bundle lands at a cached tmp path this
    command prints; read that file and paste ITS content into `use_figma`,
-   never a hand-assembled source module. Execute it via `use_figma`, calling
-   the completion value with the FULL options object from step 2. **Tag this
-   call `figma-read-only` in `skillNames`** (fidelity-geometry-verifier.md
-   Slice 13, same mechanism as figma-wireframe's `figma-wireframe` tag): the
-   audit itself never mutates the file, so this call must not arm the
-   design-guard write counter — omit the tag and every plain audit run (no
-   actual fix) forces a spurious audit-owed nudge.
+   never a hand-assembled source module.
+   - **Named audit (mode 1):** execute the bundle in ONE `use_figma` call,
+     calling the completion value with the FULL options object from step 2
+     unchanged.
+   - **File-wide sweep (mode 2): fan out one `use_figma` call per page —
+     never one call walking the whole file.** `runTier0Audit` accepts an
+     options field `pageId`; when set, it scopes the sweep to that single
+     page (and is the only page switch the script performs, honoring the
+     "`setCurrentPageAsync` at most once per call" rule). Walking every page
+     of a file with 100+ components in one script risks exceeding the
+     `use_figma` transport's size/time budget — it fails atomically with no
+     partial result, indistinguishable from a real error. Instead:
+     (a) one read-only `use_figma` call returning `figma.root.children.map(p
+     => ({id: p.id, name: p.name}))`; (b) exclude wireframe pages (`W<NN>
+     …`/`Cover`, already skipped inside the audit but cheaper to drop before
+     spending a call) and any project-configured icon-library pages
+     (`nonKitPages`, e.g. `*Icons`/`*Icon`) — these are raw vector glyph
+     libraries outside the design pack's governance, not something this
+     sweep should spend calls auditing; (c) emit the remaining pages as N
+     parallel `use_figma` tool-use blocks in ONE assistant message (per
+     figma-use's page-switching fan-out rule), each running the bundle with
+     `{ ...optionsFromStep2, pageId: '<page id>' }` and returning `{ page:
+     name, total, bySeverity, byRule, violations }`; (d) if the file is
+     large, batch pages across a few messages rather than one message with
+     dozens of blocks. Concatenate every page's `violations` array before
+     recording the receipt (step 5) and reporting (step 4) — the receipt
+     must reflect the WHOLE sweep, not one page.
+   Execute it via `use_figma`. **Tag every call `figma-read-only` in
+   `skillNames`** (fidelity-geometry-verifier.md Slice 13, same mechanism as
+   figma-wireframe's `figma-wireframe` tag): the audit itself never mutates
+   the file, so these calls must not arm the design-guard write counter —
+   omit the tag and every plain audit run (no actual fix) forces a spurious
+   audit-owed nudge.
 4. Report violations grouped by `severity`. For a named audit with any
    `hard` violation: **fail loud** — list every violation with its
    `nodeId`/`nodeName`/`rule`/`detail`, and do not report success. For an

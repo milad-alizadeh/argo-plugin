@@ -731,6 +731,37 @@ describe('hugOverflowViolations (universal per-node, no tags/config)', () => {
     }
     expect(hugOverflowViolations(fixed)).toEqual([])
   })
+
+  it('skips hidden children — they do not render, so they cannot overflow', () => {
+    const node = {
+      name: 'Breadcrumb', x: 24, y: 8, width: 125, height: 20,
+      layoutSizingHorizontal: 'HUG',
+      children: [{ name: 'Title', visible: false, x: 66, y: 0, width: 85, height: 20 }]
+    }
+    expect(hugOverflowViolations(node)).toEqual([])
+  })
+
+  it('tolerates sub-pixel float noise (0.1px epsilon)', () => {
+    const node = {
+      name: 'slot/close-button', x: 199, y: -6, width: 26, height: 26,
+      layoutSizingVertical: 'HUG',
+      children: [{ name: 'lucide/x', x: 6, y: 6, width: 14.000000953674316, height: 14.000000953674316 }]
+    }
+    expect(hugOverflowViolations(node)).toEqual([])
+  })
+
+  it('judges child bounds against the node dimensions, never node.x/node.y (different coordinate space)', () => {
+    // node.x = 100 must not inflate the bound: child at 90..190 inside a
+    // 120-wide HUG parent overflows regardless of where the parent sits
+    const node = {
+      name: 'Row', x: 100, y: 0, width: 120, height: 32,
+      layoutSizingHorizontal: 'HUG',
+      children: [{ name: 'Label', x: 90, y: 0, width: 100, height: 32 }]
+    }
+    expect(hugOverflowViolations(node)).toEqual([
+      { rule: 'hug-overflow-horizontal', detail: '"Row" is HUG-horizontal but child "Label" extends past its right edge' }
+    ])
+  })
 })
 
 describe('touchTargetViolation (interactive = has prototype reactions, no tag needed)', () => {

@@ -216,26 +216,17 @@ async function auditNode(
     })
     if (kitOverride) report(kitOverride.rule, kitOverride.detail)
 
-    if (main?.remote) {
-      // ADVISORY + top-level only (demoted 2026-07-05 after the first live
-      // sweep): nested kit-icon instances inside kit/authored instances
-      // re-flag the same glyph at every nesting level with unreliable
-      // native-size readings — per R10's false-positive economics this rule
-      // stays advisory until the corpus calibrates it; it never hard-fails.
-      if (!insideInstance) {
-        const strokeScaleShape = marshalIconStrokeScale(node, main)
-        if (strokeScaleShape) {
-          const strokeScale = strokeScaleViolation(strokeScaleShape)
-          if (strokeScale) {
-            violations.push({
-              severity: 'advisory',
-              rule: strokeScale.rule,
-              nodeId: node.id,
-              nodeName: node.name,
-              detail: strokeScale.detail
-            })
-          }
-        }
+    // Any resolvable main, remote OR local — the earlier `main?.remote` gate
+    // meant the check never ran in a duplicated-starter file (all icon mains
+    // are local there), which let 85 non-proportional icon strokes accumulate
+    // undetected. Hard on named audits (via report). Top-level only: nested
+    // kit-icon instances re-flag the same glyph at every nesting level with
+    // unreliable native-size readings.
+    if (main && !insideInstance) {
+      const strokeScaleShape = marshalIconStrokeScale(node, main)
+      if (strokeScaleShape) {
+        const strokeScale = strokeScaleViolation(strokeScaleShape)
+        if (strokeScale) report(strokeScale.rule, strokeScale.detail)
       }
     }
   }

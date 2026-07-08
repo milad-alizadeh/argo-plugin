@@ -504,13 +504,21 @@ export function compositeRegionNamingViolation(node: AnyNode, compositeNames: st
  * child's bounds escape it renders clipped or overflowing content — true for
  * any component, not just row-shaped ones.
  */
+// Sub-pixel float noise is endemic (icon instances measure e.g. 14.0000009px);
+// anything under a tenth of a pixel cannot render as visible overflow.
+const HUG_OVERFLOW_EPSILON_PX = 0.1
+
 export function hugOverflowViolations(node: AnyNode): Violation[] {
   const violations: Violation[] = []
   for (const child of node.children ?? []) {
-    if (node.layoutSizingHorizontal === 'HUG' && child.x + child.width > node.x + node.width) {
+    // hidden children don't render, so they can't overflow; child.x/child.y
+    // are already in the parent's coordinate space — the node's own width/
+    // height are the bounds, never node.x/node.y (a different coordinate space)
+    if (child.visible === false) continue
+    if (node.layoutSizingHorizontal === 'HUG' && child.x + child.width > node.width + HUG_OVERFLOW_EPSILON_PX) {
       violations.push({ rule: 'hug-overflow-horizontal', detail: `"${node.name}" is HUG-horizontal but child "${child.name}" extends past its right edge` })
     }
-    if (node.layoutSizingVertical === 'HUG' && child.y + child.height > node.y + node.height) {
+    if (node.layoutSizingVertical === 'HUG' && child.y + child.height > node.height + HUG_OVERFLOW_EPSILON_PX) {
       violations.push({ rule: 'hug-overflow-vertical', detail: `"${node.name}" is HUG-vertical but child "${child.name}" extends past its bottom edge` })
     }
   }

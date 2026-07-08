@@ -69,6 +69,15 @@ file → skip; never invent one.
   color (fills/strokes bound to a Semantic token). Anything else hard-fails
   the gate. No suitable icon in the file → pick the closest and flag it in
   the report; do not invent one.
+  **Sizing an icon means SCALE semantics, never a bare width/height resize**
+  (2026-07-08, after a live sweep found 85 icon instances carrying the
+  master's 2px stroke at 12-16px sizes): a width/height resize keeps the
+  absolute strokeWeight while the glyph shrinks — visually wrong, and a
+  `stroke-scale-mismatch` hard fail on named audits (the rule runs for
+  LOCAL icon mains too, not just remote ones). The Plugin API has no
+  scale-tool equivalent, so when placing an icon at a non-native size set
+  `strokeWeight = baseStroke * (size / nativeSize)` on its vectors in the
+  same write that resizes it.
 - **Icons inside components are SLOTS, not hard-placed glyphs** (2026-07-05):
   when a component you author contains an icon, expose it as an
   INSTANCE_SWAP component property (`addComponentProperty('icon',

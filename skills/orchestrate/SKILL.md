@@ -92,6 +92,18 @@ mechanisms close those gaps without new tooling.
   the fan-out that way, component runs first, the screen-composition run last,
   reading the now-existing components as instances. A screen run spawned before
   its components exist will trace the wireframe; don't spawn it early.
+- **Bank the canonical shell before the compose fan-out (build-order step).**
+  For a wave of screens that share layout chrome, the supervisor enforces
+  `design-screen`'s step 1b: after the shared composites exist and before the
+  parallel screen fan-out, ONE serial run assembles + audits a shell-only
+  template, and its `nodeId`, frame dimensions, and content-region slot map
+  are recorded once in the wave's BUILD-ORDER doc. Every fan-out screen then
+  `.clone()`s that banked nodeId and patches only its content region — none
+  re-reads the shell's (~101KB) metadata dump to rediscover structure. Do not
+  spawn the compose fan-out until the shell template is banked and recorded;
+  a screen spawned before it will hand-reconstruct the shell and re-pay the
+  scaffold cost (and re-open the stale-copy/backdrop-bleed defect classes) per
+  screen.
 - **Flat fan-out.** Spawn each `designer` directly from the main session, one
   per component, never route a designer's output through another designer
   (mirrors the builder no-wrapper rule in §1). The leaf rule itself lives in

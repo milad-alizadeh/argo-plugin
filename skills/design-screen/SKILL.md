@@ -129,22 +129,40 @@ that re-pays the composite-build cost per screen. Instead:
    never author the same NEW master). Each base master a wave touches must be
    `audit-clean` in `registry.json` before the wave starts. This amortizes the
    ~30–50k per-session context tax and banks the shared components once.
-2. **Compose fan-out (PARALLEL, ~3-wide).** Once a wave's composites are banked,
-   screens only place instances on their OWN frames — no shared master mutation,
-   so parallel compose is collision-free with no lock needed. Serialize ONLY the
-   P5 registry/receipt commit through the single on-device writer (integrator).
+1b. **Bank ONE canonical shell template per wave (SERIAL, before fan-out).**
+   Once the composites exist, assemble a single **shell-only** frame — the
+   layout chrome every screen in the wave shares (outer frame/backdrop + the
+   surrounding panels/bars around an empty content region), no
+   screen-specific content — and audit it clean. Record in the wave's
+   **BUILD-ORDER doc, once**: the shell template's `nodeId`, its frame
+   dimensions, and its content-region slot map (region name → child node id).
+   Fan-out screens then `.clone()` **that banked nodeId** and patch only the
+   content region from the recorded slot map — they NEVER re-read the shell's
+   metadata dump to rediscover its structure (a single such dump has run
+   ~101KB — banking the structure in the BUILD-ORDER pays that read once for
+   the whole wave, not once per screen). This is the structural form of the
+   clone-not-rebuild rule below, and it structurally forecloses the
+   stale-copy and backdrop-bleed defect classes that hit every screen that
+   hand-reconstructs the shell.
+2. **Compose fan-out (PARALLEL, ~3-wide).** Once a wave's composites AND the
+   canonical shell template (1b) are banked, screens only place instances on
+   their OWN frames — no shared master mutation, so parallel compose is
+   collision-free with no lock needed. Serialize ONLY the P5 registry/receipt
+   commit through the single on-device writer (integrator).
 
 Front-loading is the dominant token lever (composition-dominant screens cost
 ~75k, not ~300k); parallelism is a wall-time bonus, not the strategy.
 
 ## Cost discipline (hard rules)
-- **Clone the shared shell, never reconstruct it.** When a sibling screen
-  already carries the layout chrome the new screen shares (its outer
-  frame/backdrop and the surrounding panels/bars around the content region),
-  build the new screen by
-  `(await figma.getNodeByIdAsync('<sibling-screen-id>')).clone()`, then swap ONLY
-  the content region + the copy slots that differ. Do NOT re-derive the shared
-  chrome node-by-node from an inspected reference — that re-pays the whole
+- **Clone the shared shell, never reconstruct it.** Clone the wave's banked
+  canonical shell template (step 1b) by its recorded `nodeId` —
+  `(await figma.getNodeByIdAsync('<banked-shell-id>')).clone()` — or, if no
+  shell was banked, a sibling screen that already carries the shared layout
+  chrome (its outer frame/backdrop and the surrounding panels/bars around the
+  content region). Then swap ONLY the content region + the copy slots that
+  differ, driven by the recorded slot map — do NOT re-read the shell's
+  metadata to rediscover it, and do NOT re-derive the shared chrome
+  node-by-node from an inspected reference — that re-pays the whole
   scaffold cost and re-discovers the same Plugin API constraints (e.g. an
   absolute-positioned backdrop is rejected under a `layoutMode:NONE` parent;
   a SLOT node ignores `.resize()` — size the containing instance) on every

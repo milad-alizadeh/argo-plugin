@@ -170,17 +170,38 @@ large, and always narrow a large subtree before reading — never dump the paren
    host project's `design/` dir — the bundle lands at a cached tmp path this
    command prints; read that file and paste ITS content into `use_figma`,
    never a hand-assembled source module.
-   - **Efficiency — this is a large per-run token sink if mishandled:** the
-     bundle is tens of KB of opaque machine code. Do NOT read it to inspect or
-     reason about — it is inert; the only reason to materialize it is to hand
-     it to `use_figma`. Read it once, paste it once. On a **re-audit after a
-     fix**, the recipe is unchanged so the cached bundle at the same tmp path
-     is byte-identical — reuse that same pasted content, do NOT re-run
-     `bundle-tier0-audit`, re-read the file, or re-derive it. Re-embedding the
-     bundle on every audit call is pure token waste for zero information gain.
-   - **Named audit (mode 1):** execute the bundle in ONE `use_figma` call,
-     calling the completion value with the FULL options object from step 2
-     unchanged.
+   - **PREFERRED — prime-once / replay cache (biggest per-run token lever).**
+     The bundle is ~28KB of opaque machine code, and `use_figma` has no
+     module resolution or cached-script handle — historically the agent
+     re-pasted the whole ~28KB into *every* audit call, and the "re-run after
+     any fix" rule guarantees ≥2 embeds per run. Instead, embed it **once**
+     and replay it from an in-Figma cache (`figma.root` shared plugin data —
+     the only cross-call persistence `use_figma` exposes; `eval`/`new Function`
+     both run in that sandbox, verified live):
+     1. **Prime (once per file session):** run
+        `argo design bundle-tier0-audit --recipe <recipe> --emit prime` and
+        paste the printed `script` into ONE `use_figma` call. It stores the
+        bundle + a kit-version hash on `figma.root` and returns
+        `{ primed: true }`. This is the only call that carries the full ~28KB.
+     2. **Audit + every re-audit:** run
+        `argo design bundle-tier0-audit --recipe <recipe> --emit replay
+        --options '<the FULL options JSON from step 2>'` and paste the printed
+        `script`. It is **tiny** (<1KB): it reads the primed bundle back,
+        reconstructs the audit function via `new Function`, and runs it with
+        your options. No 28KB re-embed, ever.
+     3. **Cache-miss:** if a replay returns `{ __tier0CacheMiss: true }` (never
+        primed this session, or a kit rebuild changed the version hash), re-run
+        the prime call, then the replay. The hash is kit-dist-content-aware, so
+        a rebuilt kit invalidates the cache automatically — you cannot audit
+        with stale rule logic.
+   - **Fallback (no cache):** if priming isn't possible, `--emit`-less
+     `bundle-tier0-audit` still prints the bundle tmp path; read it once, paste
+     it once, and on a re-audit reuse that same pasted content — do NOT re-read
+     or re-derive it. Re-embedding the bundle every call is pure token waste.
+     Never read the bundle to inspect it — it is inert.
+   - **Named audit (mode 1):** execute the replay (or bundle) in ONE
+     `use_figma` call, calling the completion value with the FULL options
+     object from step 2 unchanged.
    - **File-wide sweep (mode 2): ONE `use_figma` call, options unchanged —
      no page fan-out needed.** Step 2's options already carry `sweepNodeIds`
      (every registry component) and `sweepPageNames` (additive, defaulting to

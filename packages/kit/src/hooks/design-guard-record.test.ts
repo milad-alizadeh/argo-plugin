@@ -205,4 +205,39 @@ describe('design-guard-record — PostToolUse on the Figma use_figma tool', () =
     const s = JSON.parse(readFileSync(join(cwd, '.argo', 'design-guard', 'mixed.json'), 'utf8'))
     expect(s.writeCount).toBe(1) // only the create write counted; the wireframe write did not
   })
+
+  // Read-only exemption (fidelity-geometry-verifier.md Slice 13, RESOLVED
+  // Option A): mirrors the wireframe exemption exactly — a pure-introspection
+  // use_figma call tags itself `figma-read-only` in `skillNames` so it
+  // doesn't arm the audit-owed gate. Same trust model: a mistagged write
+  // still gets caught by the NEXT real write's count.
+  it('does NOT bump the shared counter for a read-only call (skillNames string)', async () => {
+    armDesignPack(cwd)
+    const r = await runHook(postToolUseInput(cwd, { tool_input: { skillNames: 'figma-use,figma-read-only' } }))
+    expect(r.code).toBe(0)
+    expect(existsSync(join(cwd, '.argo', 'design-guard.json'))).toBe(false)
+  })
+
+  it('does NOT bump the per-session counter for a read-only call (skillNames array)', async () => {
+    armDesignPack(cwd)
+    const r = await runHook(
+      postToolUseInput(cwd, { session_id: 'ro-sess', tool_input: { skillNames: ['figma-use', 'figma-read-only'] } })
+    )
+    expect(r.code).toBe(0)
+    expect(existsSync(join(cwd, '.argo', 'design-guard', 'ro-sess.json'))).toBe(false)
+  })
+
+  it('does NOT emit the audit-owed nudge for a read-only call', async () => {
+    armDesignPack(cwd)
+    const r = await runHook(postToolUseInput(cwd, { tool_input: { skillNames: 'figma-read-only' } }))
+    expect(r.stdout.trim()).toBe('')
+  })
+
+  it('a real write in the same session STILL counts (exemption is per-call, not per-session)', async () => {
+    armDesignPack(cwd)
+    await runHook(postToolUseInput(cwd, { session_id: 'mixed-ro', tool_input: { skillNames: 'figma-read-only' } }))
+    await runHook(postToolUseInput(cwd, { session_id: 'mixed-ro', tool_input: { skillNames: 'figma-use,figma-create' } }))
+    const s = JSON.parse(readFileSync(join(cwd, '.argo', 'design-guard', 'mixed-ro.json'), 'utf8'))
+    expect(s.writeCount).toBe(1) // only the real write counted; the read-only call did not
+  })
 })

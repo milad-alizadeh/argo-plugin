@@ -150,7 +150,12 @@ none at all.
    host project's `design/` dir — the bundle lands at a cached tmp path this
    command prints; read that file and paste ITS content into `use_figma`,
    never a hand-assembled source module. Execute it via `use_figma`, calling
-   the completion value with the FULL options object from step 2.
+   the completion value with the FULL options object from step 2. **Tag this
+   call `figma-read-only` in `skillNames`** (fidelity-geometry-verifier.md
+   Slice 13, same mechanism as figma-wireframe's `figma-wireframe` tag): the
+   audit itself never mutates the file, so this call must not arm the
+   design-guard write counter — omit the tag and every plain audit run (no
+   actual fix) forces a spurious audit-owed nudge.
 4. Report violations grouped by `severity`. For a named audit with any
    `hard` violation: **fail loud** — list every violation with its
    `nodeId`/`nodeName`/`rule`/`detail`, and do not report success. For an

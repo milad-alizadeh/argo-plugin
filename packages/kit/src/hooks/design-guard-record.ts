@@ -87,6 +87,13 @@ function skillNamesFrom(toolInput: any): string[] {
 }
 if (skillNamesFrom(hook?.tool_input).some((s) => s.trim() === 'figma-wireframe')) process.exit(0)
 
+// Read-only exemption (mirrors the wireframe exemption immediately above): a
+// pure-introspection use_figma call (getNodeById + property reads, no
+// mutation) tags itself 'figma-read-only' in skillNames so it doesn't arm
+// the audit-owed gate. Same trust model as the wireframe tag — a mistagged
+// write still gets caught by the NEXT real write's count.
+if (skillNamesFrom(hook?.tool_input).some((s) => s.trim() === 'figma-read-only')) process.exit(0)
+
 // Per-session-design-gate.md: when the write is attributed to a session,
 // record it in that session's OWN file (`.argo/design-guard/<sid>.json`) and
 // touch nothing shared — this is what lets a concurrent design session write

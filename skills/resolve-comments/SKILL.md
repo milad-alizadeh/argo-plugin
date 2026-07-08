@@ -187,7 +187,12 @@ un-replied because the batch never got posted.
    non-null `nodeId` from `list` and run the canned resolver
    (`scripts/resolve-context.js`) over all of them in a single call: prepend one
    line defining the input (`const NODE_IDS = [ …ids… ]`) and pass the script
-   body **verbatim** — do not hand-author the resolution loop each run. It
+   body **verbatim** — do not hand-author the resolution loop each run. **Tag
+   the call `figma-read-only` in the `use_figma` `skillNames` parameter**
+   (fidelity-geometry-verifier.md Slice 13, same mechanism as figma-wireframe's
+   `figma-wireframe` tag): this is a pure introspection call (no mutation), and
+   the design-guard record hook reads the tag to skip the tier-0 write counter
+   for it — omit it and this read alone arms a spurious audit-owed gate. It
    returns `{ [nodeId]: { page, surface, nodeName, nodeType } }`, or
    `{ [nodeId]: { error } }` per id, with three properties that matter:
    - **Per-id isolation** — each id resolves in its own try/catch, so a pin on a
@@ -209,7 +214,8 @@ un-replied because the batch never got posted.
    the only reasoning in the run and it is cheap now. If drafting a *precise*
    edit for the fix-decisions needs live node detail (current fills, children,
    variant structure), gather it in **one more** batched read-only `use_figma`
-   call over just that fix-subset — never a round trip per thread. Each item is
+   call (also tagged `figma-read-only`) over just that fix-subset — never a
+   round trip per thread. Each item is
    `{ commentId, nodeId, page, surface, decision: 'fix'|'question', editPlan,
    replyText }`. Nothing writes in this phase.
 3. **Apply + reply — single writer, serial, one comment at a time.** Apply the
@@ -249,7 +255,8 @@ inherently sequential; the only concurrency worth having is inside the read
    so a re-sweep never re-triages your own `✅ Fixed`/question replies). If a
    scope argument was given, filter `openThreads` to it after classification.
 4. **Resolve context, then decide + draft** (see "Execution shape"). First run
-   **one** batched, read-only `use_figma` call over every non-null `nodeId`
+   **one** batched, read-only `use_figma` call (tagged `figma-read-only` in
+   `skillNames` — see "Execution shape" step 1) over every non-null `nodeId`
    using the canned resolver `scripts/resolve-context.js` (prepend
    `const NODE_IDS = [ …ids… ]`, pass the body verbatim). It returns
    `{ [nodeId]: { page, surface, nodeName, nodeType } | { error } }` per id —
@@ -257,7 +264,8 @@ inherently sequential; the only concurrency worth having is inside the read
    current page. Then decide fix-vs-question and draft the concrete edit +
    one-line reply for every thread **inline, in a single pass** — no subagent,
    no threshold. If a precise edit needs live node detail, gather it in one more
-   batched read-only call over just the fix-subset. Threads resolving to
+   batched read-only call (also tagged `figma-read-only`) over just the
+   fix-subset. Threads resolving to
    `unmatched`/`error` (unknown page, missing node) or a null `nodeId` (bare
    canvas pin) → treat as ambiguous/file-level: post a `❓` or route by the
    message, never guess a surface. Nothing writes in this phase. Collect the

@@ -70,6 +70,7 @@ import {
   textTruncationViolation,
   unclippedOverflowViolations
 } from './tier0-rules.js'
+import { roleTagOf } from './role-tags.js'
 
 async function auditNode(
   node: any,
@@ -377,6 +378,23 @@ export function groupRowsByDepth(tree: any): Map<number, any[]> {
   }
   walk(tree, 0)
   return byDepth
+}
+
+/**
+ * Depth-first walk over a marshaled geometry tree, accumulating an
+ * `ancestors` array (root-to-parent, in that order) for every node that
+ * carries any of the 4 role tags — feeds loadBearingVisibilityViolations,
+ * which needs each role-tagged node's opacity/clip ancestor chain, not just
+ * the node itself.
+ */
+function collectRoleTaggedWithAncestors(tree: any): { node: any; ancestors: any[] }[] {
+  const out: { node: any; ancestors: any[] }[] = []
+  const walk = (node: any, ancestors: any[]) => {
+    if (roleTagOf(node) !== null) out.push({ node, ancestors })
+    for (const child of node.children ?? []) walk(child, [...ancestors, node])
+  }
+  walk(tree, [])
+  return out
 }
 
 /**

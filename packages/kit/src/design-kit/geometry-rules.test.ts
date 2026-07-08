@@ -3,7 +3,8 @@ import {
   contentStartAlignmentViolations,
   railAnchorSpanViolation,
   interRowContinuityViolations,
-  indentAndRowConsistencyViolations
+  indentAndRowConsistencyViolations,
+  loadBearingVisibilityViolations
 } from './geometry-rules.js'
 
 function row(name: string, contentStartX: number, id = name) {
@@ -137,5 +138,49 @@ describe('indentAndRowConsistencyViolations', () => {
       ]]
     ])
     expect(indentAndRowConsistencyViolations(rowsByDepth, 1)).toEqual([])
+  })
+})
+
+describe('loadBearingVisibilityViolations', () => {
+  const clipper = { name: 'Clipper', clipsContent: true, x: 0, y: 0, width: 100, height: 100 }
+  const nonClipper = { name: 'NonClipper', clipsContent: false, x: 0, y: 0, width: 100, height: 100 }
+
+  it('passes a visible, opaque, unclipped node', () => {
+    const node = { id: 'n1', name: 'Icon #anchor', visible: true, opacity: 1, x: 10, y: 10, width: 10, height: 10 }
+    expect(loadBearingVisibilityViolations([{ node, ancestors: [clipper] }])).toEqual([])
+  })
+
+  it('flags visible: false', () => {
+    const node = { id: 'n1', name: 'Icon #anchor', visible: false, opacity: 1, x: 10, y: 10, width: 10, height: 10 }
+    expect(loadBearingVisibilityViolations([{ node, ancestors: [] }])).toEqual([
+      { rule: 'load-bearing-node-hidden', nodeId: 'n1', detail: '"Icon #anchor" is role-tagged but visible === false' }
+    ])
+  })
+
+  it('flags opacity: 0 on the node itself', () => {
+    const node = { id: 'n1', name: 'Icon #anchor', visible: true, opacity: 0, x: 10, y: 10, width: 10, height: 10 }
+    expect(loadBearingVisibilityViolations([{ node, ancestors: [] }])).toEqual([
+      { rule: 'load-bearing-node-transparent', nodeId: 'n1', detail: '"Icon #anchor" resolves to effective opacity 0' }
+    ])
+  })
+
+  it('flags opacity: 0 on an ancestor only (compounding)', () => {
+    const node = { id: 'n1', name: 'Icon #anchor', visible: true, opacity: 1, x: 10, y: 10, width: 10, height: 10 }
+    const transparentAncestor = { name: 'Wrapper', opacity: 0 }
+    expect(loadBearingVisibilityViolations([{ node, ancestors: [transparentAncestor] }])).toEqual([
+      { rule: 'load-bearing-node-transparent', nodeId: 'n1', detail: '"Icon #anchor" resolves to effective opacity 0' }
+    ])
+  })
+
+  it('flags a node positioned outside a clipsContent: true ancestor bounds', () => {
+    const node = { id: 'n1', name: 'Icon #anchor', visible: true, opacity: 1, x: 150, y: 10, width: 10, height: 10 }
+    expect(loadBearingVisibilityViolations([{ node, ancestors: [clipper] }])).toEqual([
+      { rule: 'load-bearing-node-clipped', nodeId: 'n1', detail: '"Icon #anchor" falls outside its clipping ancestor "Clipper"\'s bounds' }
+    ])
+  })
+
+  it('passes a node positioned outside a NON-clipping ancestor bounds', () => {
+    const node = { id: 'n1', name: 'Icon #anchor', visible: true, opacity: 1, x: 150, y: 10, width: 10, height: 10 }
+    expect(loadBearingVisibilityViolations([{ node, ancestors: [nonClipper] }])).toEqual([])
   })
 })

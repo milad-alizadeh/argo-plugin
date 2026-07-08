@@ -109,3 +109,34 @@ export function indentAndRowConsistencyViolations(rowsByDepth: Map<number, any[]
   }
   return violations
 }
+
+/**
+ * A role-tagged (load-bearing) node with correct coordinates but
+ * invisible/zero-opacity/ancestor-clipped is a pass-the-coordinate-check
+ * cheat — flag it explicitly rather than trusting geometry alone. Walks
+ * the ancestor chain the caller supplies (tier0-audit.ts's marshal keeps
+ * a parent pointer — see collectRoleTaggedWithAncestors) for opacity
+ * compounding and clip-boundary containment.
+ */
+export function loadBearingVisibilityViolations(taggedNodes: { node: any; ancestors: any[] }[]): GeometryViolation[] {
+  const violations: GeometryViolation[] = []
+  for (const { node, ancestors } of taggedNodes) {
+    if (node.visible === false) {
+      violations.push({ rule: 'load-bearing-node-hidden', nodeId: node.id, detail: `"${node.name}" is role-tagged but visible === false` })
+      continue
+    }
+    const effectiveOpacity = [node, ...ancestors].reduce((acc, n) => acc * (typeof n.opacity === 'number' ? n.opacity : 1), 1)
+    if (effectiveOpacity <= 0) {
+      violations.push({ rule: 'load-bearing-node-transparent', nodeId: node.id, detail: `"${node.name}" resolves to effective opacity ${effectiveOpacity}` })
+      continue
+    }
+    const clipper = ancestors.find((a) => a.clipsContent === true)
+    if (clipper) {
+      const outOfBounds = node.x < clipper.x || node.y < clipper.y || node.x + node.width > clipper.x + clipper.width || node.y + node.height > clipper.y + clipper.height
+      if (outOfBounds) {
+        violations.push({ rule: 'load-bearing-node-clipped', nodeId: node.id, detail: `"${node.name}" falls outside its clipping ancestor "${clipper.name}"'s bounds` })
+      }
+    }
+  }
+  return violations
+}

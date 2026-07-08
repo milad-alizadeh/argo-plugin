@@ -351,6 +351,17 @@ function marshalGeometryTree(node: any): any {
 }
 
 /**
+ * Rows = the marshaled tree's own direct children that are themselves
+ * containers (have children) — the flat per-item unit every list/tree/
+ * table/nav category renders. A leaf-only tree (no rows) yields [].
+ * Exported for the geometry-checks wiring (Slice 9) to call once and pass
+ * to every row-based rule (contentStartAlignmentViolations and friends).
+ */
+export function marshalRowGroups(tree: any): any[] {
+  return (tree.children ?? []).filter((c: any) => (c.children ?? []).length > 0)
+}
+
+/**
  * Marshals a single Auto Layout gap/padding field (D24). boundVariables for a
  * number property is a single { id } object, not an array (unlike fills/
  * strokes) — resolved and marshaled explicitly, field by field, same

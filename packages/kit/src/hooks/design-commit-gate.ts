@@ -18,7 +18,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { makeBlock } from './lib/gate-block.js'
-import { findArgoJson, armedDesignApps } from '../config/argo-json.js'
+import { findArgoJson, armedDesignApps, codeOwnedCodePaths, gatedComponentFiles } from '../config/argo-json.js'
 
 function readStdin(): Promise<string> {
   return new Promise((resolvePromise) => {
@@ -61,6 +61,19 @@ if (armed.length === 0) process.exit(0)
 const block = makeBlock('Design commit gate')
 
 for (const app of armed) {
+  // Code-owned component files (a Three.js scene, a live terminal — Figma holds
+  // only a screenshot) have no spec to diff against, so they never owe a
+  // spec-diff receipt, mirroring the tier-0 and figma-to-code exemptions. A
+  // commit touching ONLY code-owned component files under this app's
+  // componentsPath is not gated.
+  let registry: unknown
+  try {
+    registry = JSON.parse(readFileSync(join(app.designDir, 'registry.json'), 'utf8'))
+  } catch {
+    registry = undefined
+  }
+  if (gatedComponentFiles(app, codeOwnedCodePaths(registry)).length === 0) continue
+
   const receiptPath = join(app.designDir, 'spec-diff-receipt.json')
   if (!existsSync(receiptPath))
     block(`commit touches "${app.appKey}"'s "${app.block.componentsPath}" with no spec-diff receipt — run the spec-diff walker (argo design record-spec-diff-receipt) first`)

@@ -8,6 +8,8 @@ import {
   resolveComponentsPath,
   matchesStagedFile,
   armedDesignApps,
+  codeOwnedCodePaths,
+  gatedComponentFiles,
 } from './argo-json.js'
 
 /**
@@ -102,5 +104,27 @@ describe('armedDesignApps (what the commit gates consume)', () => {
     writeArgoJson({})
     const found = findArgoJson(repo)
     expect(armedDesignApps(found, ['src/components/Button.tsx'])).toHaveLength(0)
+  })
+})
+
+describe('codeOwnedCodePaths + gatedComponentFiles (spec-diff gate code-owned exemption)', () => {
+  const registry = {
+    components: {
+      SceneWallpaper: { kind: 'code-owned', codePath: 'src/components/scene/SceneWallpaper.tsx' },
+      Button: { kind: 'custom', nodeId: '1:1' }
+    }
+  }
+
+  it('collects only code-owned codePaths', () => {
+    expect(codeOwnedCodePaths(registry)).toEqual(new Set(['src/components/scene/SceneWallpaper.tsx']))
+    expect(codeOwnedCodePaths(undefined)).toEqual(new Set())
+  })
+
+  it('exempts a code-owned component file (no receipt owed) but still gates a normal one', () => {
+    const app = { block: { componentsPath: 'src/components' }, appRelativeStagedFiles: ['src/components/scene/SceneWallpaper.tsx'] } as any
+    expect(gatedComponentFiles(app, codeOwnedCodePaths(registry))).toEqual([])
+
+    const mixed = { block: { componentsPath: 'src/components' }, appRelativeStagedFiles: ['src/components/scene/SceneWallpaper.tsx', 'src/components/Button.tsx'] } as any
+    expect(gatedComponentFiles(mixed, codeOwnedCodePaths(registry))).toEqual(['src/components/Button.tsx'])
   })
 })

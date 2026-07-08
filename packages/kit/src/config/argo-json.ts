@@ -111,3 +111,30 @@ export function armedDesignApps(found: FoundArgoJson | null, stagedRepoRelativeP
   }
   return armed
 }
+
+/** App-relative `codePath`s of every `code-owned` registry entry — the files a
+ * commit may touch without owing a spec-diff receipt (Figma holds only a
+ * screenshot of them, so there is no spec to diff). */
+export function codeOwnedCodePaths(registry: unknown): Set<string> {
+  const out = new Set<string>()
+  const components = (registry as any)?.components
+  if (!components || typeof components !== 'object') return out
+  for (const entry of Object.values(components)) {
+    const e = entry as any
+    if (e?.kind === 'code-owned' && typeof e.codePath === 'string' && e.codePath) out.add(e.codePath)
+  }
+  return out
+}
+
+/**
+ * The staged component files (under the app's componentsPath) that STILL owe a
+ * spec-diff receipt: excludes code-owned codePaths, which are exempt — same as
+ * tier-0 and figma-to-code. An empty result means the commit touches only
+ * code-owned component files, so the app is not gated.
+ */
+export function gatedComponentFiles(app: ArmedDesignApp, exemptCodePaths: Set<string>): string[] {
+  const base = app.block.componentsPath as string
+  return app.appRelativeStagedFiles.filter(
+    (f) => (f === base || f.startsWith(`${base}/`)) && !exemptCodePaths.has(f)
+  )
+}

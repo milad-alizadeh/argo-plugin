@@ -53,10 +53,18 @@ Walk BUILD-ORDER: `figma-create` each composite in dependency order — audit-ga
 registered, with the registry as the reuse authority (check it before proposing
 anything NEW). An unmatched composite ESCALATES to a
 human — NEVER auto-`NEW` past the budget. Only when the components exist do you
-compose the screen from **instances** (not fresh frames) — no annotation write
-needed at all now. Right after composing a screen, run
-`argo design mark-screen-composed --screen <name>` so the stop gate knows its
-P4b completeness check is owed (re-composing re-owes it).
+compose the screen from **instances** (not fresh frames). Right after composing
+a screen, **mark its identity**: a screen frame is a plain FRAME with **no
+`description` field** (plain frames are not `PublishableMixin`), so screen
+identity rides a Dev Mode annotation, not the `@code-owned:` description model.
+Set a `@screen`-labelled annotation on the top-level frame
+(`node.setAnnotations([{ label: '@screen' }])`) AND run
+`argo design register-screen --node <frameId> --name <name> --cwd <app-dir>` to
+write its `kind:"screen"` entry into `design/registry.json` — that entry is what
+exempts the screen's own artboard from the 3 tier-0 rules it structurally always
+trips (`non-code-friendly-name`, `missing-auto-layout`, `non-semantic-binding`).
+Then run `argo design mark-screen-composed --screen <name>` so the stop gate
+knows its P4b completeness check is owed (re-composing re-owes it).
 
 `design/registry.json` (component name → node id, committed on `main`) is the
 **code bridge** — the mapping that lets code generation resolve each instance to

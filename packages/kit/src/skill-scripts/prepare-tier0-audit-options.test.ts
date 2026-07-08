@@ -26,7 +26,8 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         recipe: null,
         viewport: undefined,
         sweepNodeIds: [],
-        sweepPageNames: []
+        sweepPageNames: [],
+        screenNodeIds: []
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
@@ -61,7 +62,8 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         recipe: null,
         viewport: undefined,
         sweepNodeIds: [],
-        sweepPageNames: ['Screens']
+        sweepPageNames: ['Screens'],
+        screenNodeIds: []
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
@@ -143,6 +145,32 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
       expect(options.sweepNodeIds.sort()).toEqual(['50:1', '73:1'])
       expect(options.sweepPageNames).toEqual(['Screens'])
       expect(options.componentNodeIds).toEqual([])
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('derives screenNodeIds from kind:"screen" registry entries (both sweep and named audits)', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-screen-'))
+    mkdirSync(join(cwd, 'design'), { recursive: true })
+    writeFileSync(
+      join(cwd, 'design', 'registry.json'),
+      JSON.stringify({
+        components: {
+          Buttons: { nodeId: '73:1', kind: 'kit', adopted: true },
+          'D02.6 · Chat': { nodeId: '5319:1712', kind: 'screen', status: 'audit-clean' },
+          'D02.2 · Planner': { nodeId: '5319:3651', kind: 'screen', status: 'audit-clean' }
+        }
+      }),
+      'utf8'
+    )
+    try {
+      // Screen ids resolve in a sweep...
+      expect(deriveTier0AuditOptions({ cwd, componentNames: [] }).screenNodeIds.sort()).toEqual(['5319:1712', '5319:3651'])
+      // ...and in a named audit (so a screen audited by nodeId still gets its exemptions).
+      expect(deriveTier0AuditOptions({ cwd, componentNames: ['D02.6 · Chat'] }).screenNodeIds.sort()).toEqual(['5319:1712', '5319:3651'])
+      // Screens are NOT swept as ordinary components.
+      expect(deriveTier0AuditOptions({ cwd, componentNames: [] }).sweepNodeIds).toEqual(['73:1'])
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }

@@ -1,5 +1,58 @@
 import { describe, it, expect } from 'vitest'
-import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, detectChangedKitComponents, isPascalCaseComponentName, parseCodeOwnedPath, buildCodeOwnedEntries, deriveAdoption } from './registry-reconcile.js'
+import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, detectChangedKitComponents, isPascalCaseComponentName, parseCodeOwnedPath, buildCodeOwnedEntries, deriveAdoption, hasScreenAnnotation, buildScreenEntries } from './registry-reconcile.js'
+
+describe('hasScreenAnnotation', () => {
+  it('matches @screen in label or labelMarkdown on a word boundary', () => {
+    expect(hasScreenAnnotation([{ label: '@screen' }])).toBe(true)
+    expect(hasScreenAnnotation([{ label: 'note' }, { labelMarkdown: 'this is a @screen frame' }])).toBe(true)
+  })
+  it('does not match @screenshot (word boundary) or a missing/empty annotation list', () => {
+    expect(hasScreenAnnotation([{ label: '@screenshot' }])).toBe(false)
+    expect(hasScreenAnnotation([])).toBe(false)
+    expect(hasScreenAnnotation(undefined)).toBe(false)
+  })
+})
+
+describe('buildScreenEntries', () => {
+  const now = '2026-07-08T00:00:00.000Z'
+  it('emits a new kind:"screen" entry for an annotated frame', () => {
+    const { written, changed } = buildScreenEntries(
+      { liveScreenFrames: [{ name: 'Chat', nodeId: '5:1', annotations: [{ label: '@screen' }] }], registryComponents: {} },
+      now
+    )
+    expect(written.Chat).toEqual({ nodeId: '5:1', kind: 'screen', status: 'audit-clean', lastSyncedAt: now })
+    expect(changed).toEqual([{ name: 'Chat', reasons: ['new screen'] }])
+  })
+  it('skips frames without an @screen annotation', () => {
+    const { written } = buildScreenEntries(
+      { liveScreenFrames: [{ name: 'Plain', nodeId: '5:1', annotations: [{ label: 'note' }] }], registryComponents: {} },
+      now
+    )
+    expect(written).toEqual({})
+  })
+  it('is a no-op when the entry already exists at the same nodeId (preserves lastSyncedAt)', () => {
+    const { written, changed } = buildScreenEntries(
+      {
+        liveScreenFrames: [{ name: 'Chat', nodeId: '5:1', annotations: [{ label: '@screen' }] }],
+        registryComponents: { Chat: { kind: 'screen', nodeId: '5:1', status: 'audit-clean' } }
+      },
+      now
+    )
+    expect(written).toEqual({})
+    expect(changed).toEqual([])
+  })
+  it('rewrites when the nodeId drifted, preserving the prior status', () => {
+    const { written, changed } = buildScreenEntries(
+      {
+        liveScreenFrames: [{ name: 'Chat', nodeId: 'new', annotations: [{ label: '@screen' }] }],
+        registryComponents: { Chat: { kind: 'screen', nodeId: 'old', status: 'out-of-sync' } }
+      },
+      now
+    )
+    expect(written.Chat).toEqual({ nodeId: 'new', kind: 'screen', status: 'out-of-sync', lastSyncedAt: now })
+    expect(changed).toEqual([{ name: 'Chat', reasons: ['nodeId changed'] }])
+  })
+})
 
 describe('deriveAdoption (directive 3 refined — kit adoption from instance usage)', () => {
   it('marks a kit master as adopted when a project surface instances it (by set nodeId or a child-variant id)', () => {

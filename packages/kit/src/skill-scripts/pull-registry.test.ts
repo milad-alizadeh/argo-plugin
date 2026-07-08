@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { marshalRestDocument, buildPullRegistryResult, token } from './pull-registry.js'
+import { marshalRestDocument, marshalScreenFrames, buildPullRegistryResult, token } from './pull-registry.js'
 import fixture from '../../../../test/fixtures/figma-file-response.json' with { type: 'json' }
 
 describe('marshalRestDocument', () => {
@@ -107,6 +107,50 @@ describe('buildPullRegistryResult', () => {
       now: '2026-07-07T00:00:00.000Z'
     })
     expect(Object.keys(result.newEntries).sort()).toEqual(['Calendar', 'Dialog'])
+  })
+})
+
+describe('marshalScreenFrames', () => {
+  it('collects only top-level frames carrying an @screen annotation', () => {
+    const frames = marshalScreenFrames(fixture as any)
+    expect(frames).toEqual([{ name: 'D02.6 Chat', nodeId: '10:2', annotations: [{ label: '@screen' }] }])
+  })
+
+  it('ignores unmarked frames and the unrelated Custom Components frame', () => {
+    const frames = marshalScreenFrames(fixture as any)
+    expect(frames.some((f) => f.name === 'Unmarked Frame')).toBe(false)
+    expect(frames.some((f) => f.name === 'Not A Component Frame')).toBe(false)
+  })
+})
+
+describe('buildPullRegistryResult — screens', () => {
+  it('mirrors a live @screen annotation into a new kind:"screen" entry', () => {
+    const result = buildPullRegistryResult({
+      liveComponents: [],
+      liveScreenFrames: marshalScreenFrames(fixture as any),
+      orderedPageNames: [],
+      registry: { components: {} },
+      now: '2026-07-08T00:00:00.000Z'
+    })
+    expect(result.screenFrameCount).toBe(1)
+    expect(result.screenEntries['D02.6 Chat']).toEqual({
+      nodeId: '10:2',
+      kind: 'screen',
+      status: 'audit-clean',
+      lastSyncedAt: '2026-07-08T00:00:00.000Z'
+    })
+  })
+
+  it('is a no-op for an already-registered screen at the same nodeId', () => {
+    const result = buildPullRegistryResult({
+      liveComponents: [],
+      liveScreenFrames: marshalScreenFrames(fixture as any),
+      orderedPageNames: [],
+      registry: { components: { 'D02.6 Chat': { nodeId: '10:2', kind: 'screen', status: 'audit-clean', lastSyncedAt: 'old' } } },
+      now: '2026-07-08T00:00:00.000Z'
+    })
+    expect(result.screenEntries).toEqual({})
+    expect(result.screenChanged).toEqual([])
   })
 })
 

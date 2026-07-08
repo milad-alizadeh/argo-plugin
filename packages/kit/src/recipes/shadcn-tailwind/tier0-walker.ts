@@ -31,9 +31,15 @@ export async function runRecipeTier0Checks(
   {
     hard,
     semanticCollectionName = 'Semantic',
-    insideInstance = false
-  }: { hard: boolean; semanticCollectionName?: string; insideInstance?: boolean } = { hard: false }
+    insideInstance = false,
+    isScreenFrame = false
+  }: { hard: boolean; semanticCollectionName?: string; insideInstance?: boolean; isScreenFrame?: boolean } = { hard: false }
 ) {
+  // A registered screen's own top-level artboard is exempt: its background is
+  // bound to a library/theme token by design (matches the shipped shell every
+  // sibling screen clones). isScreenFrame is registry-derived, frame-only —
+  // descendants (isScreenFrame=false) are still gated.
+  if (isScreenFrame) return []
   // Kit internals are exempt (2026-07-07, consistent with the insideInstance
   // exemption on unbound-fill/stroke/radius/type): a kit sub-instance nested
   // inside an audited custom component (a Breadcrumb or icon-glyph swap)

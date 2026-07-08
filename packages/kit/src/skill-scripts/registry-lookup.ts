@@ -34,7 +34,7 @@ export type LookupResult = RegistryIndexEntry | { name: string; missing: true }
  */
 export function lookupRegistry(
   registry: any,
-  { names, search }: { names?: string[]; search?: string }
+  { names, search, kind }: { names?: string[]; search?: string; kind?: string }
 ): LookupResult[] {
   const components =
     registry?.components && typeof registry.components === 'object' ? (registry.components as Record<string, any>) : {}
@@ -56,10 +56,12 @@ export function lookupRegistry(
     })
   }
 
-  const all = Object.entries(components)
+  let all = Object.entries(components)
     .filter(([, entry]) => typeof entry?.nodeId === 'string')
     .map(([name, entry]) => compact(name, entry))
 
+  // `--kind` narrows to one classification (e.g. `--kind screen` lists screens).
+  if (kind) all = all.filter((e) => e.kind === kind)
   if (search) {
     const needle = search.toLowerCase()
     return all.filter((e) => e.name.toLowerCase().includes(needle))
@@ -79,16 +81,17 @@ function readOptionalJson(path: string): any {
 export interface CliArgs {
   names?: string[]
   search?: string
+  kind?: string
   cwd?: string
   help?: boolean
 }
 
 export function parseCliArgs(args: string[]): CliArgs {
   if (args.includes('--help') || args.includes('-h')) return { help: true }
-  const KNOWN_FLAGS = ['--names', '--search', '--cwd']
+  const KNOWN_FLAGS = ['--names', '--search', '--kind', '--cwd']
   const unknown = args.filter((a) => a.startsWith('--') && !KNOWN_FLAGS.includes(a))
   if (unknown.length > 0)
-    throw new Error(`registry-lookup: unrecognized flag(s) ${unknown.join(', ')} — known: --names, --search, --cwd, --help`)
+    throw new Error(`registry-lookup: unrecognized flag(s) ${unknown.join(', ')} — known: --names, --search, --kind, --cwd, --help`)
 
   const value = (name: string) => {
     const i = args.indexOf(name)
@@ -96,10 +99,12 @@ export function parseCliArgs(args: string[]): CliArgs {
   }
   const namesRaw = value('--names')
   const search = value('--search')
+  const kind = value('--kind')
   const cwd = value('--cwd')
   return {
     ...(namesRaw ? { names: JSON.parse(namesRaw) } : {}),
     ...(search ? { search } : {}),
+    ...(kind ? { kind } : {}),
     ...(cwd ? { cwd } : {})
   }
 }
@@ -111,19 +116,20 @@ heavy notes/variantMatrix prose) so a cold-start agent resolves components in on
 small call instead of a whole-file Read.
 
 Usage:
-  registry-lookup [--cwd <path>] [--names '<json-array>'] [--search <substr>]
+  registry-lookup [--cwd <path>] [--names '<json-array>'] [--search <substr>] [--kind <k>]
 
 Flags:
   --names   JSON array of exact component names; misses reported as {name,missing:true}.
   --search  case-insensitive substring filter over component names.
+  --kind    filter to one classification (kit | custom | code-owned | screen); e.g. --kind screen lists screens.
   --cwd     repo/workspace dir holding design/registry.json (default: cwd).
   --help,-h show this help.
 
 With no --names/--search, prints the full compact index.`
 
-export function registryLookup({ cwd, names, search }: { cwd: string; names?: string[]; search?: string }) {
+export function registryLookup({ cwd, names, search, kind }: { cwd: string; names?: string[]; search?: string; kind?: string }) {
   const registry = readOptionalJson(join(cwd, 'design', 'registry.json'))
-  return lookupRegistry(registry, { names, search })
+  return lookupRegistry(registry, { names, search, kind })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -137,7 +143,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (parsed.help) {
     console.log(USAGE)
   } else {
-    const results = registryLookup({ cwd: parsed.cwd ?? process.cwd(), names: parsed.names, search: parsed.search })
+    const results = registryLookup({ cwd: parsed.cwd ?? process.cwd(), names: parsed.names, search: parsed.search, kind: parsed.kind })
     console.log(JSON.stringify(results))
   }
 }

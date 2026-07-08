@@ -68,6 +68,7 @@ const DESIGN_VERBS = {
   'record-audit-receipt': '../dist/skill-scripts/record-audit-receipt.js',
   'check-instance-presence': '../dist/skill-scripts/check-instance-presence.js',
   'registry-lookup': '../dist/skill-scripts/registry-lookup.js',
+  'register-screen': '../dist/skill-scripts/register-screen.js',
   'completeness-checklist': '../dist/skill-scripts/completeness-checklist.js',
   'mark-screen-composed': '../dist/skill-scripts/mark-screen-composed.js',
   'record-completeness': '../dist/skill-scripts/record-completeness.js',

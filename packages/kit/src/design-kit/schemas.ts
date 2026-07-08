@@ -37,7 +37,7 @@ export const StoryMapEntrySchema = z.object({
  */
 export const RegistryEntrySchema = z.object({
   nodeId: z.string(),
-  kind: z.enum(['kit', 'custom', 'code-owned']),
+  kind: z.enum(['kit', 'custom', 'code-owned', 'screen']),
   status: z.enum(['draft', 'audit-clean', 'out-of-sync', 'orphaned']),
   lastSyncedAt: z.string().nullable(),
   variantMatrix: z.record(z.string(), z.array(z.string())),

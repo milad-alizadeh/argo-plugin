@@ -164,11 +164,20 @@ export function deriveTier0AuditOptions({
         // un-adopted (raw) kit masters are the vendored mirror nothing
         // instances (directive 3 refined) — keep both out of the scoped
         // file-wide sweep, not just named audits. Adopted kit and custom stay.
-        .filter((c: any) => c?.kind !== 'code-owned' && !(c?.kind === 'kit' && c?.adopted !== true))
+        .filter((c: any) => c?.kind !== 'code-owned' && c?.kind !== 'screen' && !(c?.kind === 'kit' && c?.adopted !== true))
         .map((c: any) => c?.nodeId)
         .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
     : []
   const sweepPageNames = isSweep ? (designBlock?.sweepPageNames ?? ['Screens']) : []
+
+  // Registered screens (kind:"screen") — the audit sets isScreenFrame from
+  // membership in this set (registry-driven identity, replacing the old
+  // page-name heuristic). Always derived (named audit AND sweep), so a screen
+  // audited by nodeId still gets its screen-frame exemptions.
+  const screenNodeIds = Object.values(registryComponents)
+    .filter((c: any) => c?.kind === 'screen')
+    .map((c: any) => c?.nodeId)
+    .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
 
   return {
     componentNodeIds,
@@ -187,7 +196,8 @@ export function deriveTier0AuditOptions({
     recipe,
     viewport: designBlock?.viewport,
     sweepNodeIds,
-    sweepPageNames
+    sweepPageNames,
+    screenNodeIds
   }
 }
 

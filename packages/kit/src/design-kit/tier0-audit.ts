@@ -96,7 +96,7 @@ async function auditNode(
     insideInstance?: boolean
     compositeNames?: string[]
     compositeNamingHard?: boolean
-    runRecipeTier0Checks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean }) => Promise<any[]>
+    runRecipeTier0Checks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean; isScreenFrame?: boolean }) => Promise<any[]>
     viewport?: { width: number; height: number }
     isScreenFrame?: boolean
     ancestorSolidFill?: any
@@ -303,7 +303,7 @@ async function auditNode(
   // Recipe-owned per-node checks (e.g. non-semantic-binding) — undefined for
   // a recipe with no checks.
   if (typeof runRecipeTier0Checks === 'function') {
-    violations.push(...(await runRecipeTier0Checks(node, { hard, insideInstance })))
+    violations.push(...(await runRecipeTier0Checks(node, { hard, insideInstance, isScreenFrame })))
   }
 
   return violations
@@ -414,11 +414,12 @@ export async function runTier0Audit(
     semanticCollectionName?: string
     primitivesCollectionName?: string
     additionalAllowedCollectionNames?: string[]
-    runRecipeTier0Checks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean }) => Promise<any[]>
+    runRecipeTier0Checks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean; isScreenFrame?: boolean }) => Promise<any[]>
     viewport?: { width: number; height: number }
     pageId?: string
     sweepNodeIds?: string[]
     sweepPageNames?: string[]
+    screenNodeIds?: string[]
   } = {}
 ) {
   const {
@@ -433,9 +434,28 @@ export async function runTier0Audit(
     viewport,
     pageId,
     sweepNodeIds = [],
-    sweepPageNames = []
+    sweepPageNames = [],
+    screenNodeIds = []
   } = options
   const violations: any[] = []
+  // Screen identity is registry-driven (design/registry.json entries with
+  // kind:"screen", resolved Node-side by prepare-tier0-audit-options): a
+  // top-level artboard is a screen frame iff its nodeId is registered as one.
+  // Replaces the old isDesignPageName(pageName) heuristic, which never armed on
+  // a project whose screens live on a page NOT named `D<NN> ...` (e.g. a
+  // "Screens" catch-all page).
+  const screenNodeIdSet = new Set(screenNodeIds)
+  // A top-level frame is a screen either by registry membership (Node-side
+  // derived, fast) OR by carrying a live `@screen` Dev Mode annotation on the
+  // canvas — the latter is the human/AI-facing marker (frames have no
+  // `description`, unlike code-owned components, so the annotation layer is
+  // where the marker lives) and makes a hand-annotated screen audit correctly
+  // BEFORE any registry sync. Mirrors the code-owned marker→registry model.
+  const hasScreenAnnotation = (n: any) =>
+    Array.isArray(n?.annotations) &&
+    n.annotations.some((a: any) => /@screen\b/.test(a?.label ?? '') || /@screen\b/.test(a?.labelMarkdown ?? ''))
+  const isScreenTopLevel = (match: any) =>
+    match?.parent?.type === 'PAGE' && (screenNodeIdSet.has(match.id) || hasScreenAnnotation(match))
 
   if (componentNodeIds.length || componentNames.length) {
     // Dynamic-page mode requires every page loaded before figma.root.findAll
@@ -467,7 +487,7 @@ export async function runTier0Audit(
       // isScreenFrame only when `match` is genuinely the page's top-level
       // frame (parent IS the page) — a registry nodeId can resolve to a node
       // NESTED under a design page, which must still be name/viewport-gated.
-      await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) && match.parent?.type === 'PAGE' }, violations)
+      await walk(match, { ...walkOpts, isScreenFrame: isScreenTopLevel(match) }, violations)
     }
 
     // Name-resolution fallback (ONLY for a target with no registry nodeId —
@@ -493,7 +513,7 @@ export async function runTier0Audit(
       // isScreenFrame only when `match` is genuinely the page's top-level
       // frame (parent IS the page) — a registry nodeId can resolve to a node
       // NESTED under a design page, which must still be name/viewport-gated.
-      await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) && match.parent?.type === 'PAGE' }, violations)
+      await walk(match, { ...walkOpts, isScreenFrame: isScreenTopLevel(match) }, violations)
     }
   } else if (pageId) {
     // Legacy single-page whole-page walk — explicit opt-in only, reachable
@@ -520,7 +540,7 @@ export async function runTier0Audit(
             compositeNamingHard,
             runRecipeTier0Checks,
             viewport,
-            isScreenFrame: isDesignPageName(page.name)
+            isScreenFrame: isScreenTopLevel(topLevel)
           },
           violations
         )
@@ -564,13 +584,13 @@ export async function runTier0Audit(
       }
       const owningPageName = findOwningPage(match)?.name ?? ''
       if (isWireframePageName(owningPageName)) continue
-      await walk(match, { ...sweepOpts, isScreenFrame: isDesignPageName(owningPageName) && match.parent?.type === 'PAGE' }, violations)
+      await walk(match, { ...sweepOpts, isScreenFrame: isScreenTopLevel(match) }, violations)
     }
     for (const page of figma.root.children) {
       if (!isDesignPageName(page.name) && !sweepPageNames.includes(page.name)) continue
       if (isWireframePageName(page.name)) continue
       for (const topLevel of page.children) {
-        await walk(topLevel, { ...sweepOpts, isScreenFrame: isDesignPageName(page.name) }, violations)
+        await walk(topLevel, { ...sweepOpts, isScreenFrame: isScreenTopLevel(topLevel) }, violations)
       }
     }
   }

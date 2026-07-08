@@ -154,6 +154,10 @@ describe('missingAutoLayoutViolation', () => {
     const node = { type: 'FRAME', layoutMode: 'NONE', insideInstance: true }
     expect(missingAutoLayoutViolation(node)).toBeNull()
   })
+  it('exempts a registered screen artboard (isScreenFrame) even with non-absolute stacked children', () => {
+    const node = { type: 'FRAME', layoutMode: 'NONE', isScreenFrame: true, children: [{ layoutPositioning: 'AUTO' }] }
+    expect(missingAutoLayoutViolation(node)).toBeNull()
+  })
   it('exempts an absolute-canvas frame — every child is absolutely positioned', () => {
     const node = {
       type: 'FRAME',

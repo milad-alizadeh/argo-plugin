@@ -22,7 +22,7 @@ import { join } from 'node:path'
 import { resolveRepoRoot } from '../lib/repo-root.js'
 import { findDesignBlock } from './prepare-tier0-audit-options.js'
 import { registryComponentNames } from '../design-kit/component-names.js'
-import { kitPageIndices, buildKitRegistryEntries, detectChangedKitComponents, buildCodeOwnedEntries } from '../design-kit/registry-reconcile.js'
+import { kitPageIndices, buildKitRegistryEntries, detectChangedKitComponents, buildCodeOwnedEntries, buildScreenEntries, hasScreenAnnotation } from '../design-kit/registry-reconcile.js'
 import { readDesignJsonOrRebuild, writeDesignJson } from './lib/write-design-json.js'
 
 const API = 'https://api.figma.com/v1'
@@ -55,6 +55,13 @@ type RestNode = {
   type: string
   children?: RestNode[]
   componentPropertyDefinitions?: Record<string, { type: string; variantOptions?: string[] }>
+  annotations?: Array<{ label?: string; labelMarkdown?: string }>
+}
+
+export type MarshaledScreenFrame = {
+  name: string
+  nodeId: string
+  annotations?: Array<{ label?: string; labelMarkdown?: string }>
 }
 type RestComponentMeta = { name: string; description?: string }
 type RestDocument = {
@@ -115,6 +122,27 @@ function collect(nodes: RestNode[], pageName: string, pageIndex: number, doc: Re
 }
 
 /**
+ * Collects the top-level frames (direct children of a PAGE) that carry an
+ * `@screen` Dev annotation — the screen-identity inputs `buildScreenEntries`
+ * mirrors into `kind:"screen"` registry entries. Screens are plain FRAMEs with
+ * no `description`, so unlike components the marker rides the annotation layer
+ * (see `hasScreenAnnotation`). Top-level only: `isScreenFrame` in the audit is
+ * frame-only (parent is PAGE), so a nested frame annotated `@screen` is not a
+ * screen for registry purposes.
+ */
+export function marshalScreenFrames(doc: RestDocument): MarshaledScreenFrame[] {
+  const out: MarshaledScreenFrame[] = []
+  for (const page of doc.document.children ?? []) {
+    for (const node of page.children ?? []) {
+      if (node.type === 'FRAME' && hasScreenAnnotation(node.annotations)) {
+        out.push({ name: node.name, nodeId: node.id, ...(node.annotations ? { annotations: node.annotations } : {}) })
+      }
+    }
+  }
+  return out
+}
+
+/**
  * Pure composition: classify each marshaled component's kind by its page
  * name, then build the upsert target for newly-seen kit components. Custom
  * (project-owned) components are counted but never upserted here — that
@@ -122,12 +150,14 @@ function collect(nodes: RestNode[], pageName: string, pageIndex: number, doc: Re
  */
 export function buildPullRegistryResult({
   liveComponents,
+  liveScreenFrames = [],
   orderedPageNames,
   nonKitPages,
   registry,
   now
 }: {
   liveComponents: MarshaledComponent[]
+  liveScreenFrames?: MarshaledScreenFrame[]
   orderedPageNames: string[]
   nonKitPages?: string[]
   registry: { components?: Record<string, unknown> }
@@ -145,7 +175,22 @@ export function buildPullRegistryResult({
   const { written: codeOwnedEntries, changed: codeOwnedChanged } = buildCodeOwnedEntries({ liveComponents, registryComponents }, now)
   const codeOwnedComponentCount = liveComponents.filter((c) => c.description && /@code-owned:/.test(c.description)).length
   const customComponentCount = liveComponents.length - kitComponents.length - codeOwnedComponentCount
-  return { newEntries, changed, codeOwnedEntries, codeOwnedChanged, kitComponentCount: kitComponents.length, customComponentCount, codeOwnedComponentCount }
+  // Screens: mirror live `@screen` Dev annotations on top-level frames into
+  // kind:"screen" entries (same new-or-drifted upsert as code-owned).
+  const { written: screenEntries, changed: screenChanged } = buildScreenEntries({ liveScreenFrames, registryComponents }, now)
+  const screenFrameCount = liveScreenFrames.length
+  return {
+    newEntries,
+    changed,
+    codeOwnedEntries,
+    codeOwnedChanged,
+    screenEntries,
+    screenChanged,
+    kitComponentCount: kitComponents.length,
+    customComponentCount,
+    codeOwnedComponentCount,
+    screenFrameCount
+  }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -160,6 +205,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const figmaToken = token(cwd)
   const doc = await fetchFile(fileKey, figmaToken)
   const liveComponents = marshalRestDocument(doc)
+  const liveScreenFrames = marshalScreenFrames(doc)
   const orderedPageNames = (doc.document.children ?? []).map((p) => p.name)
   const nonKitPages = Array.isArray(designBlock?.nonKitPages) ? (designBlock!.nonKitPages as string[]) : undefined
 
@@ -168,14 +214,25 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   })
 
   const now = new Date().toISOString()
-  const { newEntries, changed, codeOwnedEntries, codeOwnedChanged, kitComponentCount, customComponentCount, codeOwnedComponentCount } =
-    buildPullRegistryResult({
-      liveComponents,
-      orderedPageNames,
-      nonKitPages,
-      registry,
-      now
-    })
+  const {
+    newEntries,
+    changed,
+    codeOwnedEntries,
+    codeOwnedChanged,
+    screenEntries,
+    screenChanged,
+    kitComponentCount,
+    customComponentCount,
+    codeOwnedComponentCount,
+    screenFrameCount
+  } = buildPullRegistryResult({
+    liveComponents,
+    liveScreenFrames,
+    orderedPageNames,
+    nonKitPages,
+    registry,
+    now
+  })
 
   // Re-stamp components that drifted in Figma (manual edit): refresh their
   // variantMatrix/description and flag out-of-sync so the change-scoped
@@ -194,7 +251,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   // code-owned entries merged last: the @code-owned marker overrides any
   // positional kit/custom classification for the same name.
-  const merged = { ...registry, components: { ...(registry.components ?? {}), ...newEntries, ...restamped, ...codeOwnedEntries } }
+  const merged = { ...registry, components: { ...(registry.components ?? {}), ...newEntries, ...restamped, ...codeOwnedEntries, ...screenEntries } }
   writeDesignJson(cwd, 'registry.json', merged)
 
   console.log(
@@ -203,11 +260,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         kitComponentCount,
         customComponentCount,
         codeOwnedComponentCount,
+        screenFrameCount,
         newEntryCount: Object.keys(newEntries).length,
         changedCount: changed.length,
         changed: changed.map((c) => ({ name: c.name, reasons: c.reasons })),
         codeOwnedWritten: Object.keys(codeOwnedEntries),
-        codeOwnedChanged: codeOwnedChanged.map((c) => ({ name: c.name, reasons: c.reasons }))
+        codeOwnedChanged: codeOwnedChanged.map((c) => ({ name: c.name, reasons: c.reasons })),
+        screenWritten: Object.keys(screenEntries),
+        screenChanged: screenChanged.map((c) => ({ name: c.name, reasons: c.reasons }))
       },
       null,
       2

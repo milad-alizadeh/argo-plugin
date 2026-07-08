@@ -66,8 +66,9 @@ causes the usual hard-to-debug `use_figma` failures.
 matching `W<NN> <group>` page): don't invent a different page shape.
 
 **COLD-START.** Before creating anything, run `argo design registry-lookup` (the
-compact `{name, nodeId, kind, status, adopted}` index; `--names`/`--search` to
-filter) — NEVER `Read` `design/registry.json` whole. It grows with the project
+compact `{name, nodeId, kind, status, adopted}` index; `--names`/`--search`/
+`--kind` to filter — e.g. `--kind screen` lists the registered screens) — NEVER
+`Read` `design/registry.json` whole. It grows with the project
 (the per-component notes/variantMatrix prose dominate its size), so a raw Read
 burns thousands of tokens for a roster you can get compactly in one call. The
 verb reaches an existing component in ≤3 calls, not 15-20 discovery calls. When
@@ -75,6 +76,15 @@ building, browse the design file's base component pages (the
 starter's shadcn-mirror roster) before assuming nothing fits — see
 `skills/figma-create/SKILL.md`'s read-order for the full verify-before-use /
 heal-and-persist procedure.
+
+**SCREEN IDENTITY.** On creating a screen, mark it: a screen frame is a plain
+FRAME with **no `description` field** (plain frames are not `PublishableMixin`),
+so the `@code-owned:` description model does not apply. Set a `@screen`-labelled
+Dev Mode annotation on the top-level frame
+(`node.setAnnotations([{ label: '@screen' }])`) AND run
+`argo design register-screen --node <frameId> --name <name>` to write its
+`kind:"screen"` registry entry — that entry is what exempts the screen's own
+artboard from the 3 tier-0 rules it structurally always trips.
 
 **SELF-AUDIT (D8).** Every skill above ends with `figma-audit` in named-component
 hard-gate mode. Fix every violation it reports before reporting done, never

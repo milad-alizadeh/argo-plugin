@@ -86,6 +86,15 @@
         "name": "Lucide Icons",
         "type": "CANVAS",
         "children": [{ "id": "8:2", "name": "arrow-up", "type": "COMPONENT" }]
+      },
+      {
+        "id": "10:1",
+        "name": "Screens",
+        "type": "CANVAS",
+        "children": [
+          { "id": "10:2", "name": "D02.6 Chat", "type": "FRAME", "children": [], "annotations": [{ "label": "@screen" }] },
+          { "id": "10:3", "name": "Unmarked Frame", "type": "FRAME", "children": [] }
+        ]
       }
     ]
   },

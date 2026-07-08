@@ -7,6 +7,7 @@ const REGISTRY = {
     Buttons: { nodeId: '73:3681', kind: 'kit', status: 'draft', adopted: true, notes: 'a very long note '.repeat(50), variantMatrix: [1, 2, 3] },
     SessionCard: { nodeId: '5015:1', kind: 'code-owned', status: 'audit-clean', adopted: false, notes: 'x', variantMatrix: [] },
     StatusBar: { nodeId: '5015:2', kind: 'code-owned', status: 'audit-clean', adopted: true, notes: 'y' },
+    'D02.6 Chat': { nodeId: '5319:1712', kind: 'screen', status: 'audit-clean' },
     Broken: { kind: 'kit', status: 'draft' } // no nodeId
   }
 }
@@ -17,8 +18,20 @@ describe('lookupRegistry', () => {
     expect(out).toEqual([
       { name: 'Buttons', nodeId: '73:3681', kind: 'kit', status: 'draft', adopted: true },
       { name: 'SessionCard', nodeId: '5015:1', kind: 'code-owned', status: 'audit-clean', adopted: false },
-      { name: 'StatusBar', nodeId: '5015:2', kind: 'code-owned', status: 'audit-clean', adopted: true }
+      { name: 'StatusBar', nodeId: '5015:2', kind: 'code-owned', status: 'audit-clean', adopted: true },
+      { name: 'D02.6 Chat', nodeId: '5319:1712', kind: 'screen', status: 'audit-clean' }
     ])
+  })
+
+  it('filters to one classification with --kind (e.g. --kind screen lists screens)', () => {
+    expect(lookupRegistry(REGISTRY, { kind: 'screen' })).toEqual([
+      { name: 'D02.6 Chat', nodeId: '5319:1712', kind: 'screen', status: 'audit-clean' }
+    ])
+    expect(lookupRegistry(REGISTRY, { kind: 'code-owned' }).map((e) => e.name)).toEqual(['SessionCard', 'StatusBar'])
+  })
+
+  it('composes --kind with --search', () => {
+    expect(lookupRegistry(REGISTRY, { kind: 'code-owned', search: 'bar' }).map((e) => e.name)).toEqual(['StatusBar'])
   })
 
   it('strips the heavy notes/variantMatrix fields (the ~80% of the file that made a raw Read cost ~14k tokens)', () => {
@@ -65,6 +78,9 @@ describe('parseCliArgs', () => {
   })
   it('parses --search and --cwd', () => {
     expect(parseCliArgs(['--search', 'bar', '--cwd', '/repo'])).toMatchObject({ search: 'bar', cwd: '/repo' })
+  })
+  it('parses --kind', () => {
+    expect(parseCliArgs(['--kind', 'screen'])).toMatchObject({ kind: 'screen' })
   })
   it('surfaces --help without throwing', () => {
     expect(parseCliArgs(['--help'])).toMatchObject({ help: true })

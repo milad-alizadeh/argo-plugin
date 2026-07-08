@@ -195,6 +195,13 @@ export function missingAutoLayoutViolation(node: AnyNode): Violation | null {
   // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
   // kit internals structure their own layout — not ours to Auto-Layout.
   if (node.insideInstance) return null
+  // A registered screen's own top-level artboard is exempt: a 1440x900 screen
+  // frame is a fixed canvas, not a stacked-content container, and its
+  // documented ABSOLUTE-children carve-out is structurally unreachable
+  // (layoutPositioning='ABSOLUTE' requires the parent's layoutMode!=='NONE').
+  // isScreenFrame is set from registry membership by the walker, frame-only —
+  // descendants are still gated.
+  if (node.isScreenFrame) return null
   // INSTANCE nodes are exempt (revised 2026-07-05): an instance's layoutMode
   // mirrors its main component — locally-authored components are already
   // audited at their definition, and kit-library instances (single-vector

@@ -323,6 +323,64 @@ export function buildCodeOwnedEntries(
 }
 
 /**
+ * A screen's identity marker (mirror of `@code-owned:`, which lives in a
+ * component's `description`). Plain FRAME nodes are NOT PublishableMixin, so
+ * they have no `description` field — the marker lives instead on a Dev Mode
+ * `@screen` annotation (frames support AnnotationsMixin). True when any of the
+ * frame's annotations carries `@screen` in its `label`/`labelMarkdown`. Pure and
+ * deterministic — screen classification is a function of the live annotation
+ * alone, never hand-maintained. Same word-boundary match the live tier-0 audit
+ * uses (`tier0-audit.ts`'s `hasScreenAnnotation`).
+ */
+export function hasScreenAnnotation(annotations?: Array<{ label?: string; labelMarkdown?: string }>): boolean {
+  if (!Array.isArray(annotations)) return false
+  return annotations.some((a) => /@screen\b/.test(a?.label ?? '') || /@screen\b/.test(a?.labelMarkdown ?? ''))
+}
+
+type LiveScreenFrame = { name: string; nodeId: string; annotations?: Array<{ label?: string; labelMarkdown?: string }> }
+type ScreenEntry = { nodeId: string; kind: 'screen'; status: string; lastSyncedAt: string }
+
+/**
+ * Deterministic derivation of `kind:"screen"` registry entries from the live
+ * top-level frames carrying an `@screen` Dev annotation — the screen analog of
+ * `buildCodeOwnedEntries`. Emits an entry to write ONLY when new or drifted
+ * (nodeId changed), so a repeat pull is a no-op preserving `lastSyncedAt`.
+ * `status` is preserved from any existing entry, else `audit-clean` — a
+ * registered screen's own artboard false positives are tier-0 exempt, so
+ * "clean" is its resting state (identical rationale to code-owned).
+ */
+export function buildScreenEntries(
+  {
+    liveScreenFrames,
+    registryComponents
+  }: {
+    liveScreenFrames: LiveScreenFrame[]
+    registryComponents: Record<string, { kind?: string; nodeId?: string; status?: string }>
+  },
+  now: string
+): { written: Record<string, ScreenEntry>; changed: Array<{ name: string; reasons: string[] }> } {
+  const written: Record<string, ScreenEntry> = {}
+  const changed: Array<{ name: string; reasons: string[] }> = []
+  for (const f of liveScreenFrames) {
+    if (!hasScreenAnnotation(f.annotations)) continue
+    const prev = registryComponents[f.name]
+    const reasons: string[] = []
+    if (!prev || prev.kind !== 'screen') reasons.push('new screen')
+    else if (prev.nodeId !== f.nodeId) reasons.push('nodeId changed')
+    if (reasons.length === 0) continue
+    written[f.name] = {
+      ...prev,
+      nodeId: f.nodeId,
+      kind: 'screen',
+      status: (prev?.status as string) ?? 'audit-clean',
+      lastSyncedAt: now
+    }
+    changed.push({ name: f.name, reasons })
+  }
+  return { written, changed }
+}
+
+/**
  * Derives kit ADOPTION (directive 3 refined, 2026-07-08) from live instance
  * usage: a kit master is "adopted" when a project surface (a custom/code-owned
  * component or a composed screen) instances it. figma-sync's reconcile walk

@@ -246,6 +246,21 @@ composition sheet — if you find yourself styling anything directly on the
 screen frame beyond `layout` containers, a composite is missing: go back to
 step 2.
 
+4. **Mark the screen's identity.** A screen frame is a plain FRAME, and plain
+   frames are NOT `PublishableMixin` — they have **no `description` field**, so
+   the `@code-owned:` marker-in-description model cannot be reused. Screen
+   identity lives instead on a Dev Mode **annotation** (frames support
+   `AnnotationsMixin`): set an annotation whose label contains **`@screen`** on
+   the top-level screen frame (`node.setAnnotations([{ label: '@screen' }])`),
+   AND register it: `argo design register-screen --node <frameId> --name
+   "<screen slug>" --cwd <app-dir>`. This writes a `kind:"screen"` entry into
+   `design/registry.json` and is what makes the tier-0 audit exempt the screen's
+   own artboard from the 3 rules it structurally always trips
+   (`non-code-friendly-name`, `missing-auto-layout`, `non-semantic-binding`).
+   The annotation is the live marker (pull-registry re-syncs it); the registry
+   entry is the fast path the audit reads. Registered screens are addressable
+   via `argo design registry-lookup --kind screen`.
+
 **What is enforced this round vs. advisory.** Brief-compliance (every
 `composite` region resolving to an instance) is **advisory** for now — the
 authoritative decomposition gate (Option C, a repo-side brief↔screen check)

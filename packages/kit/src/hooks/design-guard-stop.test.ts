@@ -58,6 +58,11 @@ function writeSessionReceipt(
   writeFileSync(join(cwd, '.argo', 'audit-receipts', `${sessionId}.json`), JSON.stringify({ timestamp: Date.now(), writeCountAtAudit, apps }))
 }
 
+function writePendingAck(cwd: string, sessionId: string, { reason = 'deferring to a follow-up', writeCountAtAck }: { reason?: string; writeCountAtAck: number }) {
+  mkdirSync(join(cwd, '.argo', 'pending-ack'), { recursive: true })
+  writeFileSync(join(cwd, '.argo', 'pending-ack', `${sessionId}.json`), JSON.stringify({ reason, ackedAt: Date.now(), writeCountAtAck }))
+}
+
 function armDesignPackMonorepo(cwd: string, appRoot: string) {
   mkdirSync(join(cwd, '.claude'), { recursive: true })
   writeFileSync(
@@ -256,6 +261,25 @@ describe('design-guard-stop — blocks Stop/SubagentStop on stale/missing audit 
     armDesignPack(cwd)
     writeGuardState(cwd) // legacy sessionless writes recorded, no receipt
     const r = await runHook(stopInput(cwd)) // no session_id at all
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/no audit receipt/)
+  })
+
+  // Slice 14: "park with acknowledged pending work" affordance — a stop-gate
+  // escape hatch, checked before the normal receipt/violation blocking logic.
+  it('PASS: a valid ack at the current write count exits 0 with no receipt present', async () => {
+    armDesignPack(cwd)
+    writeSessionState(cwd, 'mine', 2)
+    writePendingAck(cwd, 'mine', { writeCountAtAck: 2 })
+    const r = await runHook(stopInput(cwd, { session_id: 'mine' }))
+    expect(r.code).toBe(0)
+  })
+
+  it('BLOCK: an ack recorded BEFORE a subsequent write (stale) still blocks', async () => {
+    armDesignPack(cwd)
+    writePendingAck(cwd, 'mine', { writeCountAtAck: 1 }) // acked at write count 1
+    writeSessionState(cwd, 'mine', 2) // then wrote again, past the ack
+    const r = await runHook(stopInput(cwd, { session_id: 'mine' }))
     expect(r.code).toBe(2)
     expect(r.stderr).toMatch(/no audit receipt/)
   })

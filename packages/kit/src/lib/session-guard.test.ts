@@ -14,7 +14,10 @@ import {
   pruneStaleSessionFiles,
   markScreenComposed,
   recordScreenCompleteness,
-  pendingCompletenessScreens
+  pendingCompletenessScreens,
+  pendingAckPath,
+  recordPendingAck,
+  readPendingAck
 } from './session-guard.js'
 
 describe('session-guard — per-session gate state, race-free by namespacing', () => {
@@ -104,6 +107,28 @@ describe('session-guard — per-session gate state, race-free by namespacing', (
 
     it('pending is empty for a session that composed nothing', () => {
       expect(pendingCompletenessScreens(repo, 'never')).toEqual([])
+    })
+  })
+
+  describe('pending-ack affordance (Slice 14 — park with acknowledged pending work)', () => {
+    it('records and reads back an ack with the reason, timestamp, and write count at ack time', () => {
+      bumpSessionWriteCount(repo, 'A', 1000) // write count is now 1
+      recordPendingAck(repo, 'A', 'deferring the contrast fix to a follow-up', 2000)
+      expect(readPendingAck(repo, 'A')).toEqual({
+        reason: 'deferring the contrast fix to a follow-up',
+        ackedAt: 2000,
+        writeCountAtAck: 1
+      })
+      expect(existsSync(pendingAckPath(repo, 'A'))).toBe(true)
+    })
+
+    it('returns undefined for a session with no ack', () => {
+      expect(readPendingAck(repo, 'never')).toBeUndefined()
+    })
+
+    it('is isolated per session', () => {
+      recordPendingAck(repo, 'A', 'reason A', 1000)
+      expect(readPendingAck(repo, 'B')).toBeUndefined()
     })
   })
 })

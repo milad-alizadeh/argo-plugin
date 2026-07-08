@@ -31,6 +31,7 @@ function canonical(p: string): string {
 const GUARD_SUBDIR = join('.argo', 'design-guard')
 const RECEIPT_SUBDIR = join('.argo', 'audit-receipts')
 const COMPLETENESS_SUBDIR = join('.argo', 'completeness')
+const PENDING_ACK_SUBDIR = join('.argo', 'pending-ack')
 const PRUNE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000
 
 export function sessionStatePath(repoRoot: string, sessionId: string): string {
@@ -167,10 +168,37 @@ export function pendingCompletenessScreens(repoRoot: string, sessionId: string):
     .map(([screen]) => screen)
 }
 
+// --- Slice 14: "park with acknowledged pending work" affordance -------------
+// A stop-gate escape hatch, not a new workflow: one session-scoped
+// acknowledgment file, checked by the stop gate BEFORE its normal blocking
+// logic. One ack covers every outstanding write-owed debt in the session it's
+// recorded for; a NEW write after the ack re-arms the gate (the stop gate
+// compares `writeCountAtAck` against the session's LIVE write count), so this
+// can't be used to permanently silence the gate.
+
+export function pendingAckPath(repoRoot: string, sessionId: string): string {
+  return join(repoRoot, PENDING_ACK_SUBDIR, `${sessionId}.json`)
+}
+
+/** Owner-acknowledged deferred work for this session — a real reason string,
+ * never a blank rubber stamp (the CLI/stop-gate caller rejects an empty
+ * string before this is ever called). */
+export function recordPendingAck(repoRoot: string, sessionId: string, reason: string, now: number): void {
+  mkdirSync(join(repoRoot, PENDING_ACK_SUBDIR), { recursive: true })
+  writeFileSync(
+    pendingAckPath(repoRoot, sessionId),
+    JSON.stringify({ reason, ackedAt: now, writeCountAtAck: readSessionWriteCount(repoRoot, sessionId) ?? 0 })
+  )
+}
+
+export function readPendingAck(repoRoot: string, sessionId: string): { reason: string; ackedAt: number; writeCountAtAck: number } | undefined {
+  return readJsonSafe(pendingAckPath(repoRoot, sessionId))
+}
+
 /** Best-effort prune of per-session files older than 14 days. Delete-if-old is
  * idempotent, so two sessions pruning the same dir concurrently is harmless. */
 export function pruneStaleSessionFiles(repoRoot: string, now: number, maxAgeMs: number = PRUNE_MAX_AGE_MS): void {
-  for (const sub of [GUARD_SUBDIR, RECEIPT_SUBDIR, COMPLETENESS_SUBDIR]) {
+  for (const sub of [GUARD_SUBDIR, RECEIPT_SUBDIR, COMPLETENESS_SUBDIR, PENDING_ACK_SUBDIR]) {
     const dir = join(repoRoot, sub)
     let entries: string[]
     try {

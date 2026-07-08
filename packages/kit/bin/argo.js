@@ -74,6 +74,7 @@ const DESIGN_VERBS = {
   'emit-shims': '../dist/skill-scripts/emit-shims.js',
   'pull-registry': '../dist/skill-scripts/pull-registry.js',
   'assemble-fidelity-rubric': '../dist/skill-scripts/assemble-fidelity-rubric.js',
+  'ack-pending-work': '../dist/skill-scripts/ack-pending-work.js',
 }
 
 function runDesignVerb(verb, args) {

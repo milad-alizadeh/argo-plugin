@@ -43,7 +43,8 @@ import {
   readSessionReceipt,
   readSessionWriteCount,
   pruneStaleSessionFiles,
-  pendingCompletenessScreens
+  pendingCompletenessScreens,
+  readPendingAck
 } from '../lib/session-guard.js'
 
 const block = makeBlock('Design guard')
@@ -98,6 +99,15 @@ if (sessionId) {
   // actually wrote always has a per-session file (the record hook writes one),
   // so this can't be used to dodge a real debt.
   if (liveCount === null || liveCount === 0) process.exit(0)
+
+  // Slice 14 ("park with acknowledged pending work"): an owner-acknowledged
+  // ack covering every write up to `liveCount` parks the session instead of
+  // blocking it — short-circuits the receipt/violation checks entirely. A
+  // STALE ack (writeCountAtAck behind liveCount — more writes happened after
+  // acking) falls through to the normal blocking logic unchanged; a write
+  // after the ack re-arms the gate on the very next write.
+  const ack = readPendingAck(repoRoot, sessionId)
+  if (ack && ack.writeCountAtAck === liveCount) process.exit(0)
 
   const receipt =
     readSessionReceipt(repoRoot, sessionId) ??

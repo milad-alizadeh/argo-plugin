@@ -107,16 +107,24 @@ export function findDesignBlock(cwd: string): Record<string, any> | null {
  * A file-wide sweep (`componentNames` input empty) is now SCOPED, not
  * literal-whole-file (D26, 2026-07-08): every registry-listed component
  * (`sweepNodeIds`, kit or custom — directive 3 above still applies, no
- * blanket kit exemption) plus the project's composed-screen pages
- * (`sweepPageNames`, from `design.<app>.sweepPageNames`, defaulting to
- * `['Screens']` — the canonical page name for a project's D<NN> composed
- * screens, already special-cased in registry-reconcile.ts's
- * `isKitPageName`). Auditing every top-level frame on every one of a starter
- * file's 50+ pages (kit primitives, demo/example pages, icon libraries) was
- * both noisy (near-entirely stock shadcn content nobody in the project
- * touched) and, on a file this size, a `use_figma` transport risk (one
- * script walking the whole tree can exceed the size/time budget and drop
- * mid-execution with no partial result). A NAMED audit's targets
+ * blanket kit exemption) plus the project's composed-screen pages. The
+ * actual project convention for a composed screen's page is `D<NN> <group>`
+ * (file-structure.md, `isDesignPageName` in tier0-rules.ts) — ONE page per
+ * screen, never a single page literally named "Screens" — so
+ * `runTier0Audit` matches those pages directly via `isDesignPageName`
+ * regardless of `sweepPageNames`. `sweepPageNames` (from
+ * `design.<app>.sweepPageNames`, defaulting to `['Screens']`) is ADDITIVE
+ * on top of that — for a project with a genuine literal catch-all page (or
+ * any other non-`D<NN>` naming choice) it wants included too — never the
+ * sole mechanism (council-review finding, 2026-07-08: gating the whole
+ * scoped-sweep page match on a literal `sweepPageNames` equality check meant
+ * the "screens" half of the sweep matched zero pages on every project using
+ * the real `D<NN>` convention). Auditing every top-level frame on every one
+ * of a starter file's 50+ pages (kit primitives, demo/example pages, icon
+ * libraries) was both noisy (near-entirely stock shadcn content nobody in
+ * the project touched) and, on a file this size, a `use_figma` transport
+ * risk (one script walking the whole tree can exceed the size/time budget
+ * and drop mid-execution with no partial result). A NAMED audit's targets
  * (`componentNodeIds`/`unresolvedNames` above) are unaffected — this only
  * widens what a bare sweep (empty `componentNames` input) implies.
  */

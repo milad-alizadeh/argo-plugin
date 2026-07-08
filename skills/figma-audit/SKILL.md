@@ -91,22 +91,30 @@ none at all.
 2. **File-wide sweep (advisory), SCOPED to registry + screens (D26,
    2026-07-08)** — when run standalone with no component names, walks every
    registry-listed component (`design/registry.json`'s full entry set — kit
-   or custom, no exemption; directive 3 still applies) plus the project's
-   composed-screen pages (`design.<app>.sweepPageNames`, defaulting to
-   `['Screens']`) and reports violations as **advisory** findings (un-synced
-   frames, stray hygiene issues) — it informs, it doesn't block anything on
-   its own. This is NOT a literal every-page walk: a starter file's kit
-   primitive pages, demo/example pages, and icon libraries are almost
-   entirely stock content nobody in the project touched, and auditing them
-   was pure noise (hundreds of findings on unedited shadcn content). Also
-   reports `unsectioned-component` (a component not a child of any category
-   shelf frame on `Custom Components`) and `missing-component-description`.
+   or custom, no exemption; directive 3 still applies) plus every page
+   matching the project's real composed-screen convention, `D<NN> <group>`
+   (`isDesignPageName`, file-structure.md — matched directly, unconditionally,
+   never gated on config) plus, additively, any page named in
+   `design.<app>.sweepPageNames` (defaulting to `['Screens']`, for a project
+   that also wants a literal catch-all page included) — and reports
+   violations as **advisory** findings (un-synced frames, stray hygiene
+   issues) — it informs, it doesn't block anything on its own. This is NOT a
+   literal every-page walk: a starter file's kit primitive pages,
+   demo/example pages, and icon libraries are almost entirely stock content
+   nobody in the project touched, and auditing them was pure noise (hundreds
+   of findings on unedited shadcn content). Also reports
+   `unsectioned-component` (a component not a child of any category shelf
+   frame on `Custom Components`) and `missing-component-description`.
    Registry-reconcile is NOT part of this sweep — it moved to `figma-sync`'s
    staleness step (design-system-reset-overhaul.md Slice 4), since both walk
    the live component list against the registry in the same pass. A project
-   that genuinely wants every page walked can still pass `pageId` (single
-   page) or omit both `sweepNodeIds`/`sweepPageNames` (whole file) directly
-   to `runTier0Audit` — an explicit opt-in, never this skill's default.
+   that genuinely wants every page walked can still pass `pageId` directly to
+   `runTier0Audit` — an explicit opt-in, never this skill's default; there is
+   no longer a way to silently fall through to a whole-file walk (council-
+   review finding, 2026-07-08 — the earlier gate on `sweepNodeIds.length ||
+   sweepPageNames.length` fell through to the legacy whole-file branch
+   whenever both scoped inputs resolved empty; the scoped-sweep branch is now
+   reached whenever `pageId` is absent, full stop).
 
 ## Procedure
 
@@ -159,9 +167,11 @@ none at all.
      unchanged.
    - **File-wide sweep (mode 2): ONE `use_figma` call, options unchanged —
      no page fan-out needed.** Step 2's options already carry `sweepNodeIds`
-     (every registry component) and `sweepPageNames` (defaulting to
-     `['Screens']`); `runTier0Audit` resolves every `sweepNodeIds` entry via
-     `loadAllPagesAsync` + `getNodeByIdAsync`, which finds a node on any
+     (every registry component) and `sweepPageNames` (additive, defaulting to
+     `['Screens']`); `runTier0Audit` matches every `D<NN> <group>` page
+     directly (`isDesignPageName`) regardless of `sweepPageNames`, and
+     resolves every `sweepNodeIds` entry via `loadAllPagesAsync` +
+     `getNodeByIdAsync`, which finds a node on any
      loaded page WITHOUT switching `figma.currentPage` — so, unlike a
      whole-file walk, the scoped sweep's total audited surface (a project's
      own ~100-200 components/screens, not every top-level frame on a

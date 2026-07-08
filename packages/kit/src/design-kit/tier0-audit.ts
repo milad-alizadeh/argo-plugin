@@ -483,23 +483,61 @@ export async function runTier0Audit(
       if (isWireframePageName(owningPageName)) continue
       await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
     }
-  } else if (sweepNodeIds.length || sweepPageNames.length) {
-    // Scoped sweep (D26, 2026-07-08): the DEFAULT file-wide sweep now covers
-    // only every registry-listed component (`sweepNodeIds`, derived by
+  } else if (pageId) {
+    // Legacy single-page whole-page walk — explicit opt-in only, reachable
+    // ONLY when a caller passes `pageId` (D25, 2026-07-08). This is no
+    // longer reachable as a silent fallback: the scoped-sweep branch below
+    // is now the sole default whenever neither a named audit nor `pageId` is
+    // requested, so an empty/misconfigured `sweepNodeIds`/`sweepPageNames`
+    // can never accidentally degrade into a whole-file walk (council-review
+    // finding, 2026-07-08 — the previous `else if (sweepNodeIds.length ||
+    // sweepPageNames.length) ... else { legacy }` gate silently fell through
+    // to this branch whenever both scoped inputs resolved empty).
+    const page = await figma.getNodeByIdAsync(pageId)
+    if (page && !isWireframePageName(page.name)) {
+      await figma.setCurrentPageAsync(page)
+      for (const topLevel of page.children) {
+        await walk(
+          topLevel,
+          {
+            hard: false,
+            semanticCollectionName,
+            primitivesCollectionName,
+            additionalAllowedCollectionNames,
+            compositeNames,
+            compositeNamingHard,
+            runRecipeTier0Checks,
+            viewport,
+            isScreenFrame: isDesignPageName(page.name)
+          },
+          violations
+        )
+      }
+    }
+  } else {
+    // Scoped sweep (D26, 2026-07-08) — the sole DEFAULT file-wide sweep path
+    // now: every registry-listed component (`sweepNodeIds`, derived by
     // `prepare-tier0-audit-options.js` from ALL of `design/registry.json` —
-    // kit or custom, no exemption) plus the project's own composed-screen
-    // pages (`sweepPageNames`, e.g. `['Screens']`) — not literally every
-    // top-level frame on every page of a starter file. Kit primitive pages,
-    // demo/example pages, and icon libraries were never something this
-    // sweep should spend calls on: almost entirely stock content nobody in
-    // the project touched, and on a 50+ page file, large enough to risk the
-    // `use_figma` transport's size/time budget in one whole-file walk (the
-    // exact failure this scoping also incidentally fixes, by shrinking the
-    // walked surface rather than chunking it). `loadAllPagesAsync` resolves
-    // every `sweepNodeIds` entry regardless of which page it lives on
-    // without ever switching `figma.currentPage` — so, unlike the legacy
-    // `pageId` branch below, this can audit the whole scoped surface in ONE
-    // `use_figma` call.
+    // kit or custom, no exemption) plus every composed-screen page. A page
+    // is in scope when it matches the project's real `D<NN> <group>` screen
+    // convention (`isDesignPageName`, file-structure.md) OR is explicitly
+    // named in `sweepPageNames` (additive — e.g. a project with a literal
+    // "Screens" catch-all page, or any other non-`D<NN>` convention it wants
+    // included). Matching by `isDesignPageName` unconditionally (not gating
+    // the whole branch on `sweepPageNames` being non-empty) fixes a council-
+    // review finding: the earlier default `sweepPageNames: ['Screens']`
+    // matched a literal page named "Screens", which does not exist in this
+    // project's convention of one page per screen (`D01 Onboarding`, `D02
+    // Home`, ...) — so the "screens" half of the sweep silently matched zero
+    // pages. Kit primitive pages, demo/example pages, and icon libraries
+    // stay out of scope: almost entirely stock content nobody in the project
+    // touched, and on a 50+ page file, large enough to risk the `use_figma`
+    // transport's size/time budget in one whole-file walk (the exact
+    // failure this scoping also incidentally fixes, by shrinking the walked
+    // surface rather than chunking it). `loadAllPagesAsync` resolves every
+    // `sweepNodeIds` entry regardless of which page it lives on without
+    // ever switching `figma.currentPage` — so this can audit the whole
+    // scoped surface in ONE `use_figma` call.
     try {
       await figma.loadAllPagesAsync()
     } catch {
@@ -517,46 +555,10 @@ export async function runTier0Audit(
       await walk(match, { ...sweepOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
     }
     for (const page of figma.root.children) {
-      if (!sweepPageNames.includes(page.name)) continue
+      if (!isDesignPageName(page.name) && !sweepPageNames.includes(page.name)) continue
       if (isWireframePageName(page.name)) continue
       for (const topLevel of page.children) {
         await walk(topLevel, { ...sweepOpts, isScreenFrame: isDesignPageName(page.name) }, violations)
-      }
-    }
-  } else {
-    // Legacy whole-file sweep — kept as an explicit opt-in escape hatch
-    // (neither `sweepNodeIds` nor `sweepPageNames` set), never the default
-    // path `prepare-tier0-audit-options.js` wires up anymore (see the scoped
-    // branch above). `pageId` (D25, 2026-07-08) scopes it to ONE page, set
-    // via `figma.setCurrentPageAsync` here — the only page switch this
-    // script performs, honoring the "at most once per use_figma call" rule —
-    // for a caller that still wants to walk a page's every frame regardless
-    // of registry membership.
-    const pages = pageId ? [await figma.getNodeByIdAsync(pageId)].filter(Boolean) : figma.root.children
-    for (const page of pages) {
-      // Wireframe-page exemption (figma-wireframe/SKILL.md): wireframe
-      // surface pages (`W<NN> <group>`) and `Cover` are never code-synced,
-      // so ALL tier-0 checks are skipped for their nodes, not just fill/
-      // stroke — the whole gate is exempt, per the skill's documented
-      // wording.
-      if (isWireframePageName(page.name)) continue
-      if (pageId) await figma.setCurrentPageAsync(page)
-      for (const topLevel of page.children) {
-        await walk(
-          topLevel,
-          {
-            hard: false,
-            semanticCollectionName,
-            primitivesCollectionName,
-            additionalAllowedCollectionNames,
-            compositeNames,
-            compositeNamingHard,
-            runRecipeTier0Checks,
-            viewport,
-            isScreenFrame: isDesignPageName(page.name)
-          },
-          violations
-        )
       }
     }
   }

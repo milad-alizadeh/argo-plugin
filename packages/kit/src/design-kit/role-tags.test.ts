@@ -18,6 +18,10 @@ describe('roleTagOf', () => {
     expect(roleTagOf({ name: 'Checkbox #hit-target' })).toBe('hit-target')
   })
 
+  it('recognizes #row', () => {
+    expect(roleTagOf({ name: 'TreeNode #row' })).toBe('row')
+  })
+
   it('returns null for an untagged name', () => {
     expect(roleTagOf({ name: 'Row Content' })).toBe(null)
   })

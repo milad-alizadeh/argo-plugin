@@ -46,14 +46,20 @@ lands) — never wire it as a hard-fail.
 
 **Geometry checks (Layer A, fidelity-geometry-verifier.md, opt-in via
 `design.<app>.geometryCategories`, hard gate).** Subtree-scoped checks over
-role-tagged nodes (`#content-start`/`#rail`/`#anchor`/`#hit-target` layer-name
-suffixes a component author adds): every row's `#content-start` sits at the
-same x, a `#rail` spans exactly from the parent `#anchor` to the last row's
-`#anchor` center, consecutive rows don't gap past `itemSpacing` +
-`geometryTolerancePx`, same-depth rows share one indent/height, a role-tagged
-node isn't hidden/transparent/clipped (a coordinate-only cheat), same-depth
-`#anchor`s share one y-offset from their row top, a HUG-sized node's children
-don't overflow it, and a `#hit-target` node is at least 24x24px (configurable).
+role-tagged nodes (`#row`/`#content-start`/`#rail`/`#anchor`/`#hit-target`
+layer-name suffixes a component author adds): rows are DECLARED via `#row`,
+never inferred from DOM shape (an internal frame that merely has children is
+not a row); depth is derived by clustering rows on their own `#content-start`
+x (no DOM-nesting inference, no variant-property read) — rows sharing a
+content-start x are one depth. Then: rows within a depth cluster share one
+content-start x, distinct depths are evenly spaced by one derived indent unit,
+a `#rail` spans exactly from the parent `#anchor` to the last row's `#anchor`
+center, consecutive rows don't gap past `itemSpacing` + `geometryTolerancePx`,
+a role-tagged node isn't hidden/transparent/clipped (a coordinate-only cheat),
+same-depth `#anchor`s share one y-offset from their row top, a HUG-sized node's
+children don't overflow it, and a `#hit-target` node is at least 24x24px
+(configurable). Row HEIGHT is NOT required to be uniform (kind-varying height,
+e.g. a 28px phase row next to a 36px agent row, is legitimate).
 `missing-role-tags` fires once, at the audited root, when the target's
 category is in `geometryCategories` but it carries zero role-tagged
 descendants — the "arm the geometry pass" precondition. Runs once per

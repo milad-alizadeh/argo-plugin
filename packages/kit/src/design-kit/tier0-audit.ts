@@ -55,7 +55,7 @@ import {
   unboundFillViolations,
   unboundStrokeViolations,
   unboundRadiusViolation,
-  unboundTypeViolation,
+  textStyleRequiredViolation,
   missingAutoLayoutViolation,
   handDrawnIconViolation,
   kitInstanceOverrideViolation,
@@ -77,12 +77,13 @@ import {
   unclippedOverflowViolations,
   missingRoleTagsViolation
 } from './tier0-rules.js'
-import { roleTagOf } from './role-tags.js'
+import { roleTagOf, findAllByRole } from './role-tags.js'
 import {
+  clusterRowsByContentStartX,
   contentStartAlignmentViolations,
   railAnchorSpanViolation,
   interRowContinuityViolations,
-  indentAndRowConsistencyViolations,
+  indentStepUniformityViolations,
   loadBearingVisibilityViolations,
   crossAxisAnchorOffsetViolations,
   hugOverflowViolations,
@@ -171,7 +172,7 @@ async function auditNode(
   for (const v of unboundStrokeViolations(nodeCtx)) report(v.rule, v.detail)
   const radius = unboundRadiusViolation(nodeCtx)
   if (radius) report(radius.rule, radius.detail)
-  const type = unboundTypeViolation(nodeCtx)
+  const type = textStyleRequiredViolation(nodeCtx)
   if (type) report(type.rule, type.detail)
   // Advisory, never hard (live calibration 2026-07-07): `textTruncation:
   // ENDING` is Figma's INTENTIONAL ellipsis setting — tree labels, long
@@ -396,12 +397,13 @@ export function composeGeometryChecks({ geometryTolerancePx = 1 }: { geometryTol
 
     report(missingRoleTagsViolation(root, { requiresRoleTags: true }))
 
-    const rows = marshalRowGroups(root)
-    for (const v of contentStartAlignmentViolations(rows, geometryTolerancePx)) report(v)
+    const rows = marshalRows(root)
+    const clusters = clusterRowsByContentStartX(rows, geometryTolerancePx)
+    for (const v of contentStartAlignmentViolations(clusters, geometryTolerancePx)) report(v)
     report(railAnchorSpanViolation(root, rows, geometryTolerancePx))
     const itemSpacing = typeof root.itemSpacing === 'number' ? root.itemSpacing : 0
     for (const v of interRowContinuityViolations(rows, itemSpacing, geometryTolerancePx)) report(v)
-    for (const v of indentAndRowConsistencyViolations(groupRowsByDepth(root), geometryTolerancePx)) report(v)
+    for (const v of indentStepUniformityViolations(clusters, geometryTolerancePx)) report(v)
     const roleTagged = collectRoleTaggedWithAncestors(root)
     for (const v of loadBearingVisibilityViolations(roleTagged)) report(v)
     for (const v of crossAxisAnchorOffsetViolations(rows, geometryTolerancePx)) report(v)
@@ -420,32 +422,18 @@ export function composeGeometryChecks({ geometryTolerancePx = 1 }: { geometryTol
 }
 
 /**
- * Rows = the marshaled tree's own direct children that are themselves
- * containers (have children) — the flat per-item unit every list/tree/
- * table/nav category renders. A leaf-only tree (no rows) yields [].
- * Exported for the geometry-checks wiring (Slice 9) to call once and pass
- * to every row-based rule (contentStartAlignmentViolations and friends).
+ * Rows = every #row-declared node in the subtree (role-tags.ts), sorted by y
+ * for deterministic paint order. Replaces the old marshalRowGroups' "any
+ * child with children" heuristic entirely (geometry-row-model-fix.md) — a
+ * real component instance's internal frames (StatusDot, summary, ProgressBar,
+ * connector) are never mistaken for rows now, because nothing infers row-ness
+ * from DOM shape. Depth is likewise no longer inferred from DOM nesting; it
+ * is derived downstream by clustering rows on their own #content-start x.
  */
-export function marshalRowGroups(tree: any): any[] {
-  return (tree.children ?? []).filter((c: any) => (c.children ?? []).length > 0)
-}
-
-/**
- * BFS from `tree`, grouping every row (marshalRowGroups' definition — a
- * container child) by its nesting depth (root's direct rows are depth 0,
- * a row's own nested rows are depth 1, etc.) — feeds
- * indentAndRowConsistencyViolations, which needs same-depth siblings
- * compared against each other, never across depths.
- */
-export function groupRowsByDepth(tree: any): Map<number, any[]> {
-  const byDepth = new Map<number, any[]>()
-  const walk = (node: any, depth: number) => {
-    const rows = marshalRowGroups(node)
-    if (rows.length > 0) byDepth.set(depth, [...(byDepth.get(depth) ?? []), ...rows])
-    for (const row of rows) walk(row, depth + 1)
-  }
-  walk(tree, 0)
-  return byDepth
+export function marshalRows(tree: any): any[] {
+  return findAllByRole(tree, 'row')
+    .slice()
+    .sort((a: any, b: any) => (a.y ?? 0) - (b.y ?? 0))
 }
 
 /**

@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
+  clusterRowsByContentStartX,
   contentStartAlignmentViolations,
   railAnchorSpanViolation,
   interRowContinuityViolations,
-  indentAndRowConsistencyViolations,
+  indentStepUniformityViolations,
   loadBearingVisibilityViolations,
   crossAxisAnchorOffsetViolations,
   hugOverflowViolations,
@@ -17,31 +18,54 @@ function row(name: string, contentStartX: number, id = name) {
   return { name, children: [{ id, name: 'Content #content-start', x: contentStartX }] }
 }
 
-describe('contentStartAlignmentViolations', () => {
-  it('passes 3 sibling rows with matching content-start x', () => {
-    const rows = [row('Row 1', 24), row('Row 2', 24), row('Row 3', 24)]
-    expect(contentStartAlignmentViolations(rows, 1)).toEqual([])
+describe('clusterRowsByContentStartX', () => {
+  it('groups 3 rows all at x=24 into one cluster of 3', () => {
+    const clusters = clusterRowsByContentStartX([row('Row 1', 24), row('Row 2', 24), row('Row 3', 24)], 1)
+    expect(clusters.length).toBe(1)
+    expect(clusters[0].x).toBe(24)
+    expect(clusters[0].rows.length).toBe(3)
   })
 
-  it('flags a row shifted by icon presence, citing that row\'s node id', () => {
-    const rows = [row('Row 1', 24), row('Row 2', 40), row('Row 3', 24)]
-    const violations = contentStartAlignmentViolations(rows, 1)
-    expect(violations).toEqual([
+  it('splits rows at x=24,24,48 into two clusters, sorted ascending', () => {
+    const clusters = clusterRowsByContentStartX([row('Row 1', 24), row('Row 2', 24), row('Row 3', 48)], 1)
+    expect(clusters.map((c) => c.x)).toEqual([24, 48])
+    expect(clusters[0].rows.length).toBe(2)
+    expect(clusters[1].rows.length).toBe(1)
+  })
+
+  it('joins rows within tolerance (23,24 with tol 1) into one cluster', () => {
+    const clusters = clusterRowsByContentStartX([row('Row 1', 23), row('Row 2', 24)], 1)
+    expect(clusters.length).toBe(1)
+    expect(clusters[0].rows.length).toBe(2)
+  })
+
+  it('excludes a row missing #content-start, not a crash', () => {
+    const clusters = clusterRowsByContentStartX([row('Row 1', 24), { name: 'Row 2', children: [] }, row('Row 3', 24)], 1)
+    expect(clusters.length).toBe(1)
+    expect(clusters[0].rows.length).toBe(2)
+  })
+})
+
+describe('contentStartAlignmentViolations (defense-in-depth invariant on hand-built clusters)', () => {
+  it('flags a row in a cluster whose actual content-start x deviates from cluster.x', () => {
+    // Constructed directly, bypassing clusterRowsByContentStartX, to exercise the invariant.
+    const cluster = { x: 24, rows: [row('Row 1', 24), row('Row 2', 40, 'Row 2')] }
+    expect(contentStartAlignmentViolations([cluster], 1)).toEqual([
       {
         rule: 'content-start-misaligned',
         nodeId: 'Row 2',
-        detail: 'row "Row 2"\'s #content-start is at x=40, expected x=24 (matching its first sibling) — a conditional leading element likely shifted this row\'s content'
+        detail: 'row "Row 2"\'s #content-start is at x=40, expected x=24 (matching its depth cluster) — a conditional leading element likely shifted this row\'s content'
       }
     ])
   })
 
-  it('passes a single row (nothing to compare)', () => {
-    expect(contentStartAlignmentViolations([row('Row 1', 24)], 1)).toEqual([])
+  it('passes a clean cluster', () => {
+    const cluster = { x: 24, rows: [row('Row 1', 24), row('Row 2', 24)] }
+    expect(contentStartAlignmentViolations([cluster], 1)).toEqual([])
   })
 
-  it('skips a row missing #content-start entirely, not a crash', () => {
-    const rows = [row('Row 1', 24), { name: 'Row 2', children: [] }, row('Row 3', 24)]
-    expect(contentStartAlignmentViolations(rows, 1)).toEqual([])
+  it('passes a singleton cluster (nothing to compare)', () => {
+    expect(contentStartAlignmentViolations([{ x: 24, rows: [row('Row 1', 24)] }], 1)).toEqual([])
   })
 })
 
@@ -111,39 +135,25 @@ describe('interRowContinuityViolations', () => {
   })
 })
 
-describe('indentAndRowConsistencyViolations', () => {
-  it('flags a same-depth row indented +8px', () => {
-    const rowsByDepth = new Map([
-      [0, [
-        { id: 'row-1', name: 'Row 1', x: 24, height: 32 },
-        { id: 'row-2', name: 'Row 2', x: 32, height: 32 }
-      ]]
-    ])
-    expect(indentAndRowConsistencyViolations(rowsByDepth, 1)).toEqual([
-      { rule: 'indent-inconsistent', nodeId: 'row-2', detail: 'depth 0 row "Row 2" is indented to x=32, expected x=24 (matching its depth siblings)' }
+describe('indentStepUniformityViolations', () => {
+  const cluster = (x: number, rowId = `row-at-${x}`) => ({ x, rows: [{ id: rowId, name: `Row ${x}`, x }] })
+
+  it('passes with fewer than 3 clusters (needs 2 deltas to compare)', () => {
+    expect(indentStepUniformityViolations([cluster(0), cluster(24)], 1)).toEqual([])
+  })
+
+  it('passes 3 evenly-spaced clusters (x=0,24,48)', () => {
+    expect(indentStepUniformityViolations([cluster(0), cluster(24), cluster(48)], 1)).toEqual([])
+  })
+
+  it('flags an uneven third step (x=0,24,60), citing the third cluster\'s first row', () => {
+    expect(indentStepUniformityViolations([cluster(0), cluster(24), cluster(60, 'row-60')], 1)).toEqual([
+      { rule: 'indent-step-inconsistent', nodeId: 'row-60', detail: 'indent step from x=24 to x=60 is 36px, expected 24px (matching the first indent step)' }
     ])
   })
 
-  it('flags a same-depth row 4px taller', () => {
-    const rowsByDepth = new Map([
-      [0, [
-        { id: 'row-1', name: 'Row 1', x: 24, height: 32 },
-        { id: 'row-2', name: 'Row 2', x: 24, height: 36 }
-      ]]
-    ])
-    expect(indentAndRowConsistencyViolations(rowsByDepth, 1)).toEqual([
-      { rule: 'row-height-inconsistent', nodeId: 'row-2', detail: 'depth 0 row "Row 2" has height 36, expected 32' }
-    ])
-  })
-
-  it('passes matching x and height at the same depth', () => {
-    const rowsByDepth = new Map([
-      [0, [
-        { id: 'row-1', name: 'Row 1', x: 24, height: 32 },
-        { id: 'row-2', name: 'Row 2', x: 24, height: 32 }
-      ]]
-    ])
-    expect(indentAndRowConsistencyViolations(rowsByDepth, 1)).toEqual([])
+  it('passes a step exactly at tolerance', () => {
+    expect(indentStepUniformityViolations([cluster(0), cluster(24), cluster(49)], 1)).toEqual([])
   })
 })
 

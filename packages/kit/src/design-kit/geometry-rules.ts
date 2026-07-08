@@ -13,29 +13,61 @@ import { wcagContrastViolation } from './contrast.js'
 
 export type GeometryViolation = { rule: string; detail: string; nodeId?: string }
 
+export type RowCluster = { x: number; rows: any[] }
+
 /**
- * Every sibling row at the same depth under `rows` (already-resolved by the
- * caller — see marshalRowGroups in tier0-audit.ts) must place its
- * #content-start descendant at the SAME absolute x. A conditional leading
- * icon that shifts one row's content relative to its siblings is exactly
- * what this catches — collapses the task's two separate bullets ("sibling
- * content-start x alignment" and "fixed-slot invariant for conditional
- * leading elements") into one predicate, they reduce to the same check.
+ * Groups rows by their own #content-start x — the row's rendered indent
+ * IS its depth signal (geometry-row-model-fix.md: no DOM-nesting inference,
+ * no separate depth tag, no component-specific variant read; the earlier
+ * DOM-nesting model false-fired 40× on a real flat instance-list tree). A
+ * row within tolerancePx of a cluster's anchor x (the first row assigned to
+ * it) joins that cluster; anything further starts a new one. Clusters are
+ * returned sorted ascending by x, so cluster[0] is the shallowest depth.
+ * A row with no #content-start descendant is skipped (missing-role-tags'
+ * job to flag total absence, not this function's).
  */
-export function contentStartAlignmentViolations(rows: any[], tolerancePx: number): GeometryViolation[] {
-  const starts = rows
-    .map((row) => ({ row, node: findAllByRole(row, 'content-start')[0] }))
-    .filter((r) => r.node)
-  if (starts.length < 2) return []
-  const baseline = starts[0].node.x
+export function clusterRowsByContentStartX(rows: any[], tolerancePx: number): RowCluster[] {
+  const withStart = rows
+    .map((row) => ({ row, x: findAllByRole(row, 'content-start')[0]?.x }))
+    .filter((r): r is { row: any; x: number } => typeof r.x === 'number')
+    .sort((a, b) => a.x - b.x)
+  const clusters: RowCluster[] = []
+  for (const { row, x } of withStart) {
+    const current = clusters[clusters.length - 1]
+    if (current && x - current.x <= tolerancePx) {
+      current.rows.push(row)
+    } else {
+      clusters.push({ x, rows: [row] })
+    }
+  }
+  return clusters
+}
+
+/**
+ * Every row WITHIN one x-cluster (same declared depth, see
+ * clusterRowsByContentStartX) must place its own #content-start at the
+ * cluster's baseline x. By construction, clusterRowsByContentStartX only
+ * ever assigns a row to a cluster it's already within tolerance of — so
+ * fed pipeline-produced clusters this is a defense-in-depth invariant on the
+ * clustering guarantee, not dead code: it is independently meaningful and
+ * independently tested against hand-built clusters that violate the
+ * invariant directly (geometry-row-model-fix.md, Known Limitation). A
+ * conditional leading element that shifts a row's content instead lands it
+ * in its own singleton cluster, caught by indentStepUniformityViolations.
+ */
+export function contentStartAlignmentViolations(clusters: RowCluster[], tolerancePx: number): GeometryViolation[] {
   const violations: GeometryViolation[] = []
-  for (const { row, node } of starts.slice(1)) {
-    if (Math.abs(node.x - baseline) > tolerancePx) {
-      violations.push({
-        rule: 'content-start-misaligned',
-        nodeId: node.id,
-        detail: `row "${row.name}"'s #content-start is at x=${node.x}, expected x=${baseline} (matching its first sibling) — a conditional leading element likely shifted this row's content`
-      })
+  for (const cluster of clusters) {
+    if (cluster.rows.length < 2) continue
+    for (const row of cluster.rows) {
+      const node = findAllByRole(row, 'content-start')[0]
+      if (node && Math.abs(node.x - cluster.x) > tolerancePx) {
+        violations.push({
+          rule: 'content-start-misaligned',
+          nodeId: node.id,
+          detail: `row "${row.name}"'s #content-start is at x=${node.x}, expected x=${cluster.x} (matching its depth cluster) — a conditional leading element likely shifted this row's content`
+        })
+      }
     }
   }
   return violations
@@ -87,25 +119,28 @@ export function interRowContinuityViolations(rows: any[], itemSpacing: number, t
 }
 
 /**
- * Every row at the same tree DEPTH must share one x-offset delta from its
- * parent depth (indent step), and rows at any one depth must share one
- * height and one itemSpacing — computed from the marshaled rows, no
- * hardcoded step value (a project's indent unit is whatever its rows
- * actually render at).
+ * Distinct content-start-x cluster values, sorted ascending, must be evenly
+ * spaced by ONE indent unit — derived from the first two clusters' delta,
+ * never hardcoded (a project's indent unit is whatever its rows actually
+ * render at). Needs at least 3 clusters (2 deltas) to have anything to
+ * compare; row-height uniformity is deliberately NOT checked here (dropped
+ * per geometry-row-model-fix.md — kind-varying row height, e.g. 28px phase
+ * vs 36px agent rows, is legitimate).
  */
-export function indentAndRowConsistencyViolations(rowsByDepth: Map<number, any[]>, tolerancePx: number): GeometryViolation[] {
+export function indentStepUniformityViolations(clusters: RowCluster[], tolerancePx: number): GeometryViolation[] {
+  if (clusters.length < 3) return []
+  const sorted = [...clusters].sort((a, b) => a.x - b.x)
+  const unit = sorted[1].x - sorted[0].x
   const violations: GeometryViolation[] = []
-  for (const [depth, rows] of rowsByDepth) {
-    if (rows.length < 2) continue
-    const baselineX = rows[0].x
-    const baselineHeight = rows[0].height
-    for (const row of rows.slice(1)) {
-      if (Math.abs(row.x - baselineX) > tolerancePx) {
-        violations.push({ rule: 'indent-inconsistent', nodeId: row.id, detail: `depth ${depth} row "${row.name}" is indented to x=${row.x}, expected x=${baselineX} (matching its depth siblings)` })
-      }
-      if (Math.abs(row.height - baselineHeight) > tolerancePx) {
-        violations.push({ rule: 'row-height-inconsistent', nodeId: row.id, detail: `depth ${depth} row "${row.name}" has height ${row.height}, expected ${baselineHeight}` })
-      }
+  for (let i = 2; i < sorted.length; i++) {
+    const delta = sorted[i].x - sorted[i - 1].x
+    if (Math.abs(delta - unit) > tolerancePx) {
+      const citedRow = sorted[i].rows[0]
+      violations.push({
+        rule: 'indent-step-inconsistent',
+        nodeId: citedRow?.id,
+        detail: `indent step from x=${sorted[i - 1].x} to x=${sorted[i].x} is ${delta}px, expected ${unit}px (matching the first indent step)`
+      })
     }
   }
   return violations

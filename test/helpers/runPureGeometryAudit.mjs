@@ -10,12 +10,13 @@
  * packages/kit/src/design-kit/geometry-rules.js and tier0-rules.js).
  */
 import { missingRoleTagsViolation } from '../../packages/kit/src/design-kit/tier0-rules.js'
-import { roleTagOf } from '../../packages/kit/src/design-kit/role-tags.js'
+import { roleTagOf, findAllByRole } from '../../packages/kit/src/design-kit/role-tags.js'
 import {
+  clusterRowsByContentStartX,
   contentStartAlignmentViolations,
   railAnchorSpanViolation,
   interRowContinuityViolations,
-  indentAndRowConsistencyViolations,
+  indentStepUniformityViolations,
   loadBearingVisibilityViolations,
   crossAxisAnchorOffsetViolations,
   hugOverflowViolations,
@@ -23,21 +24,11 @@ import {
   wcagContrastCheckViolation
 } from '../../packages/kit/src/design-kit/geometry-rules.js'
 
-/** Mirrors tier0-audit.ts's marshalRowGroups. */
-function marshalRowGroups(tree) {
-  return (tree.children ?? []).filter((c) => (c.children ?? []).length > 0)
-}
-
-/** Mirrors tier0-audit.ts's groupRowsByDepth. */
-function groupRowsByDepth(tree) {
-  const byDepth = new Map()
-  const walk = (node, depth) => {
-    const rows = marshalRowGroups(node)
-    if (rows.length > 0) byDepth.set(depth, [...(byDepth.get(depth) ?? []), ...rows])
-    for (const row of rows) walk(row, depth + 1)
-  }
-  walk(tree, 0)
-  return byDepth
+/** Mirrors tier0-audit.ts's marshalRows. */
+function marshalRows(tree) {
+  return findAllByRole(tree, 'row')
+    .slice()
+    .sort((a, b) => (a.y ?? 0) - (b.y ?? 0))
 }
 
 /** Mirrors tier0-audit.ts's collectRoleTaggedWithAncestors. */
@@ -61,12 +52,13 @@ export function runPureGeometryAudit(root, tolerancePx = 1) {
 
   report(missingRoleTagsViolation(root, { requiresRoleTags: true }))
 
-  const rows = marshalRowGroups(root)
-  for (const v of contentStartAlignmentViolations(rows, tolerancePx)) report(v)
+  const rows = marshalRows(root)
+  const clusters = clusterRowsByContentStartX(rows, tolerancePx)
+  for (const v of contentStartAlignmentViolations(clusters, tolerancePx)) report(v)
   report(railAnchorSpanViolation(root, rows, tolerancePx))
   const itemSpacing = typeof root.itemSpacing === 'number' ? root.itemSpacing : 0
   for (const v of interRowContinuityViolations(rows, itemSpacing, tolerancePx)) report(v)
-  for (const v of indentAndRowConsistencyViolations(groupRowsByDepth(root), tolerancePx)) report(v)
+  for (const v of indentStepUniformityViolations(clusters, tolerancePx)) report(v)
   const roleTagged = collectRoleTaggedWithAncestors(root)
   for (const v of loadBearingVisibilityViolations(roleTagged)) report(v)
   for (const v of crossAxisAnchorOffsetViolations(rows, tolerancePx)) report(v)

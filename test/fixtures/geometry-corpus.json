@@ -27,7 +27,7 @@
       },
       {
         "id": "row-0",
-        "name": "Row 0",
+        "name": "Row 0 #row",
         "x": 0,
         "y": 0,
         "width": 300,
@@ -57,7 +57,7 @@
       },
       {
         "id": "row-1",
-        "name": "Row 1",
+        "name": "Row 1 #row",
         "x": 0,
         "y": 48,
         "width": 300,
@@ -87,7 +87,7 @@
       },
       {
         "id": "row-2",
-        "name": "Row 2",
+        "name": "Row 2 #row",
         "x": 0,
         "y": 96,
         "width": 300,
@@ -143,123 +143,6 @@
         }
       ]
     },
-    "content-start-misaligned": {
-      "id": "root",
-      "name": "List",
-      "itemSpacing": 16,
-      "children": [
-        {
-          "id": "root-anchor",
-          "name": "Root Anchor #anchor",
-          "x": 0,
-          "y": 0,
-          "width": 16,
-          "height": 16,
-          "visible": true,
-          "opacity": 1
-        },
-        {
-          "id": "rail",
-          "name": "Connector #rail",
-          "x": 4,
-          "y": 8,
-          "width": 2,
-          "height": 104,
-          "visible": true,
-          "opacity": 1
-        },
-        {
-          "id": "row-0",
-          "name": "Row 0",
-          "x": 0,
-          "y": 0,
-          "width": 300,
-          "height": 32,
-          "children": [
-            {
-              "id": "row-0-anchor",
-              "name": "Dot #anchor",
-              "x": 4,
-              "y": 8,
-              "width": 16,
-              "height": 16,
-              "visible": true,
-              "opacity": 1
-            },
-            {
-              "id": "row-0-content",
-              "name": "Content #content-start",
-              "x": 24,
-              "y": 0,
-              "width": 200,
-              "height": 32,
-              "visible": true,
-              "opacity": 1
-            }
-          ]
-        },
-        {
-          "id": "row-1",
-          "name": "Row 1",
-          "x": 0,
-          "y": 48,
-          "width": 300,
-          "height": 32,
-          "children": [
-            {
-              "id": "row-1-anchor",
-              "name": "Dot #anchor",
-              "x": 4,
-              "y": 56,
-              "width": 16,
-              "height": 16,
-              "visible": true,
-              "opacity": 1
-            },
-            {
-              "id": "row-1-content",
-              "name": "Content #content-start",
-              "x": 40,
-              "y": 48,
-              "width": 200,
-              "height": 32,
-              "visible": true,
-              "opacity": 1
-            }
-          ]
-        },
-        {
-          "id": "row-2",
-          "name": "Row 2",
-          "x": 0,
-          "y": 96,
-          "width": 300,
-          "height": 32,
-          "children": [
-            {
-              "id": "row-2-anchor",
-              "name": "Dot #anchor",
-              "x": 4,
-              "y": 104,
-              "width": 16,
-              "height": 16,
-              "visible": true,
-              "opacity": 1
-            },
-            {
-              "id": "row-2-content",
-              "name": "Content #content-start",
-              "x": 24,
-              "y": 96,
-              "width": 200,
-              "height": 32,
-              "visible": true,
-              "opacity": 1
-            }
-          ]
-        }
-      ]
-    },
     "rail-anchor-span-mismatch": {
       "id": "root",
       "name": "List",
@@ -287,7 +170,7 @@
         },
         {
           "id": "row-0",
-          "name": "Row 0",
+          "name": "Row 0 #row",
           "x": 0,
           "y": 0,
           "width": 300,
@@ -317,7 +200,7 @@
         },
         {
           "id": "row-1",
-          "name": "Row 1",
+          "name": "Row 1 #row",
           "x": 0,
           "y": 48,
           "width": 300,
@@ -347,7 +230,7 @@
         },
         {
           "id": "row-2",
-          "name": "Row 2",
+          "name": "Row 2 #row",
           "x": 0,
           "y": 96,
           "width": 300,
@@ -404,7 +287,7 @@
         },
         {
           "id": "row-0",
-          "name": "Row 0",
+          "name": "Row 0 #row",
           "x": 0,
           "y": 0,
           "width": 300,
@@ -434,7 +317,7 @@
         },
         {
           "id": "row-1",
-          "name": "Row 1",
+          "name": "Row 1 #row",
           "x": 0,
           "y": 100,
           "width": 300,
@@ -464,241 +347,7 @@
         },
         {
           "id": "row-2",
-          "name": "Row 2",
-          "x": 0,
-          "y": 96,
-          "width": 300,
-          "height": 32,
-          "children": [
-            {
-              "id": "row-2-anchor",
-              "name": "Dot #anchor",
-              "x": 4,
-              "y": 104,
-              "width": 16,
-              "height": 16,
-              "visible": true,
-              "opacity": 1
-            },
-            {
-              "id": "row-2-content",
-              "name": "Content #content-start",
-              "x": 24,
-              "y": 96,
-              "width": 200,
-              "height": 32,
-              "visible": true,
-              "opacity": 1
-            }
-          ]
-        }
-      ]
-    },
-    "indent-inconsistent": {
-      "id": "root",
-      "name": "List",
-      "itemSpacing": 16,
-      "children": [
-        {
-          "id": "root-anchor",
-          "name": "Root Anchor #anchor",
-          "x": 0,
-          "y": 0,
-          "width": 16,
-          "height": 16,
-          "visible": true,
-          "opacity": 1
-        },
-        {
-          "id": "rail",
-          "name": "Connector #rail",
-          "x": 4,
-          "y": 8,
-          "width": 2,
-          "height": 104,
-          "visible": true,
-          "opacity": 1
-        },
-        {
-          "id": "row-0",
-          "name": "Row 0",
-          "x": 0,
-          "y": 0,
-          "width": 300,
-          "height": 32,
-          "children": [
-            {
-              "id": "row-0-anchor",
-              "name": "Dot #anchor",
-              "x": 4,
-              "y": 8,
-              "width": 16,
-              "height": 16,
-              "visible": true,
-              "opacity": 1
-            },
-            {
-              "id": "row-0-content",
-              "name": "Content #content-start",
-              "x": 24,
-              "y": 0,
-              "width": 200,
-              "height": 32,
-              "visible": true,
-              "opacity": 1
-            }
-          ]
-        },
-        {
-          "id": "row-1",
-          "name": "Row 1",
-          "x": 8,
-          "y": 48,
-          "width": 300,
-          "height": 32,
-          "children": [
-            {
-              "id": "row-1-anchor",
-              "name": "Dot #anchor",
-              "x": 4,
-              "y": 56,
-              "width": 16,
-              "height": 16,
-              "visible": true,
-              "opacity": 1
-            },
-            {
-              "id": "row-1-content",
-              "name": "Content #content-start",
-              "x": 24,
-              "y": 48,
-              "width": 200,
-              "height": 32,
-              "visible": true,
-              "opacity": 1
-            }
-          ]
-        },
-        {
-          "id": "row-2",
-          "name": "Row 2",
-          "x": 0,
-          "y": 96,
-          "width": 300,
-          "height": 32,
-          "children": [
-            {
-              "id": "row-2-anchor",
-              "name": "Dot #anchor",
-              "x": 4,
-              "y": 104,
-              "width": 16,
-              "height": 16,
-              "visible": true,
-              "opacity": 1
-            },
-            {
-              "id": "row-2-content",
-              "name": "Content #content-start",
-              "x": 24,
-              "y": 96,
-              "width": 200,
-              "height": 32,
-              "visible": true,
-              "opacity": 1
-            }
-          ]
-        }
-      ]
-    },
-    "row-height-inconsistent": {
-      "id": "root",
-      "name": "List",
-      "itemSpacing": 16,
-      "children": [
-        {
-          "id": "root-anchor",
-          "name": "Root Anchor #anchor",
-          "x": 0,
-          "y": 0,
-          "width": 16,
-          "height": 16,
-          "visible": true,
-          "opacity": 1
-        },
-        {
-          "id": "rail",
-          "name": "Connector #rail",
-          "x": 4,
-          "y": 8,
-          "width": 2,
-          "height": 104,
-          "visible": true,
-          "opacity": 1
-        },
-        {
-          "id": "row-0",
-          "name": "Row 0",
-          "x": 0,
-          "y": 0,
-          "width": 300,
-          "height": 32,
-          "children": [
-            {
-              "id": "row-0-anchor",
-              "name": "Dot #anchor",
-              "x": 4,
-              "y": 8,
-              "width": 16,
-              "height": 16,
-              "visible": true,
-              "opacity": 1
-            },
-            {
-              "id": "row-0-content",
-              "name": "Content #content-start",
-              "x": 24,
-              "y": 0,
-              "width": 200,
-              "height": 32,
-              "visible": true,
-              "opacity": 1
-            }
-          ]
-        },
-        {
-          "id": "row-1",
-          "name": "Row 1",
-          "x": 0,
-          "y": 48,
-          "width": 300,
-          "height": 40,
-          "children": [
-            {
-              "id": "row-1-anchor",
-              "name": "Dot #anchor",
-              "x": 4,
-              "y": 56,
-              "width": 16,
-              "height": 16,
-              "visible": true,
-              "opacity": 1
-            },
-            {
-              "id": "row-1-content",
-              "name": "Content #content-start",
-              "x": 24,
-              "y": 48,
-              "width": 200,
-              "height": 40,
-              "visible": true,
-              "opacity": 1
-            }
-          ]
-        },
-        {
-          "id": "row-2",
-          "name": "Row 2",
+          "name": "Row 2 #row",
           "x": 0,
           "y": 96,
           "width": 300,
@@ -755,7 +404,7 @@
         },
         {
           "id": "row-0",
-          "name": "Row 0",
+          "name": "Row 0 #row",
           "x": 0,
           "y": 0,
           "width": 300,
@@ -785,7 +434,7 @@
         },
         {
           "id": "row-1",
-          "name": "Row 1",
+          "name": "Row 1 #row",
           "x": 0,
           "y": 48,
           "width": 300,
@@ -815,7 +464,7 @@
         },
         {
           "id": "row-2",
-          "name": "Row 2",
+          "name": "Row 2 #row",
           "x": 0,
           "y": 96,
           "width": 300,
@@ -872,7 +521,7 @@
         },
         {
           "id": "row-0",
-          "name": "Row 0",
+          "name": "Row 0 #row",
           "x": 0,
           "y": 0,
           "width": 300,
@@ -902,7 +551,7 @@
         },
         {
           "id": "row-1",
-          "name": "Row 1",
+          "name": "Row 1 #row",
           "x": 0,
           "y": 48,
           "width": 300,
@@ -932,7 +581,7 @@
         },
         {
           "id": "row-2",
-          "name": "Row 2",
+          "name": "Row 2 #row",
           "x": 0,
           "y": 96,
           "width": 300,
@@ -989,7 +638,7 @@
         },
         {
           "id": "row-0",
-          "name": "Row 0",
+          "name": "Row 0 #row",
           "x": 0,
           "y": 0,
           "width": 300,
@@ -1019,7 +668,7 @@
         },
         {
           "id": "row-1",
-          "name": "Row 1",
+          "name": "Row 1 #row",
           "x": 0,
           "y": 48,
           "width": 100,
@@ -1050,7 +699,7 @@
         },
         {
           "id": "row-2",
-          "name": "Row 2",
+          "name": "Row 2 #row",
           "x": 0,
           "y": 96,
           "width": 300,
@@ -1107,7 +756,7 @@
         },
         {
           "id": "row-0",
-          "name": "Row 0",
+          "name": "Row 0 #row",
           "x": 0,
           "y": 0,
           "width": 300,
@@ -1137,7 +786,7 @@
         },
         {
           "id": "row-1",
-          "name": "Row 1",
+          "name": "Row 1 #row",
           "x": 0,
           "y": 48,
           "width": 300,
@@ -1167,7 +816,7 @@
         },
         {
           "id": "row-2",
-          "name": "Row 2",
+          "name": "Row 2 #row",
           "x": 0,
           "y": 96,
           "width": 300,
@@ -1234,7 +883,7 @@
         },
         {
           "id": "row-0",
-          "name": "Row 0",
+          "name": "Row 0 #row",
           "x": 0,
           "y": 0,
           "width": 300,
@@ -1264,7 +913,7 @@
         },
         {
           "id": "row-1",
-          "name": "Row 1",
+          "name": "Row 1 #row",
           "x": 0,
           "y": 48,
           "width": 300,
@@ -1294,7 +943,7 @@
         },
         {
           "id": "row-2",
-          "name": "Row 2",
+          "name": "Row 2 #row",
           "x": 0,
           "y": 96,
           "width": 300,
@@ -1354,6 +1003,264 @@
             "g": 1,
             "b": 1
           }
+        }
+      ]
+    },
+    "indent-step-inconsistent": {
+      "id": "root",
+      "name": "List",
+      "itemSpacing": 16,
+      "children": [
+        {
+          "id": "root-anchor",
+          "name": "Root Anchor #anchor",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "rail",
+          "name": "Connector #rail",
+          "x": 4,
+          "y": 8,
+          "width": 2,
+          "height": 104,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "row-0",
+          "name": "Row 0 #row",
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-0-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 8,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-0-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 0,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-1",
+          "name": "Row 1 #row",
+          "x": 0,
+          "y": 48,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-1-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 56,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-1-content",
+              "name": "Content #content-start",
+              "x": 48,
+              "y": 48,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-2",
+          "name": "Row 2 #row",
+          "x": 0,
+          "y": 96,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-2-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 104,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-2-content",
+              "name": "Content #content-start",
+              "x": 80,
+              "y": 96,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "regressions": {
+    "flatTreeNodeList": {
+      "id": "tree-view",
+      "name": "demo/tree-view",
+      "itemSpacing": 0,
+      "children": [
+        {
+          "id": "phase-0",
+          "name": "phase-0 #row",
+          "x": 12,
+          "y": 0,
+          "width": 340,
+          "height": 28,
+          "visible": true,
+          "opacity": 1,
+          "children": [
+            {
+              "id": "phase-0-content",
+              "name": "Content #content-start",
+              "x": 2949,
+              "y": 0,
+              "width": 200,
+              "height": 28,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "agent-1",
+          "name": "agent-1 #row",
+          "x": 12,
+          "y": 28,
+          "width": 340,
+          "height": 36,
+          "visible": true,
+          "opacity": 1,
+          "children": [
+            {
+              "id": "agent-1-content",
+              "name": "Content #content-start",
+              "x": 2973,
+              "y": 28,
+              "width": 200,
+              "height": 36,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "phase-2",
+          "name": "phase-2 #row",
+          "x": 12,
+          "y": 64,
+          "width": 340,
+          "height": 28,
+          "visible": true,
+          "opacity": 1,
+          "children": [
+            {
+              "id": "phase-2-content",
+              "name": "Content #content-start",
+              "x": 2949,
+              "y": 64,
+              "width": 200,
+              "height": 28,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "agent-3",
+          "name": "agent-3 #row",
+          "x": 12,
+          "y": 92,
+          "width": 340,
+          "height": 36,
+          "visible": true,
+          "opacity": 1,
+          "children": [
+            {
+              "id": "agent-3-content",
+              "name": "Content #content-start",
+              "x": 2973,
+              "y": 92,
+              "width": 200,
+              "height": 36,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "agent-4",
+          "name": "agent-4 #row",
+          "x": 12,
+          "y": 128,
+          "width": 340,
+          "height": 36,
+          "visible": true,
+          "opacity": 1,
+          "children": [
+            {
+              "id": "agent-4-content",
+              "name": "Content #content-start",
+              "x": 2973,
+              "y": 128,
+              "width": 200,
+              "height": 36,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "agent-5",
+          "name": "agent-5 #row",
+          "x": 12,
+          "y": 164,
+          "width": 340,
+          "height": 36,
+          "visible": true,
+          "opacity": 1,
+          "children": [
+            {
+              "id": "agent-5-content",
+              "name": "Content #content-start",
+              "x": 2973,
+              "y": 164,
+              "width": 200,
+              "height": 36,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
         }
       ]
     }

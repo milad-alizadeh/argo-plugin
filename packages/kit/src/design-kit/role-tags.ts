@@ -7,10 +7,10 @@
  * convention as `nonSemanticNameViolation`/`isDesignPageName` in
  * tier0-rules.ts — zero new Plugin-API surface.
  */
-export type Role = 'content-start' | 'rail' | 'anchor' | 'hit-target'
+export type Role = 'content-start' | 'rail' | 'anchor' | 'hit-target' | 'row'
 
-const ROLE_SUFFIX = /#(content-start|rail|anchor|hit-target)$/
-const ALL_ROLES: Role[] = ['content-start', 'rail', 'anchor', 'hit-target']
+const ROLE_SUFFIX = /#(content-start|rail|anchor|hit-target|row)$/
+const ALL_ROLES: Role[] = ['content-start', 'rail', 'anchor', 'hit-target', 'row']
 
 export function roleTagOf(node: { name?: string }): Role | null {
   const m = ROLE_SUFFIX.exec(String(node?.name ?? '').trim())

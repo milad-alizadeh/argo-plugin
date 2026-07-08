@@ -29,11 +29,9 @@ describe('generateTier0AuditEntry', () => {
     expect(entry).not.toMatch(/recipes\/shadcn-tailwind/)
   })
 
-  it('for recipe null, wires the geometry pass via composeGeometryChecks when geometryCategories is configured', () => {
-    const entry = generateTier0AuditEntry(null)
-    expect(entry).toContain('composeGeometryChecks')
-    expect(entry).toContain('options.geometryCategories')
-    expect(entry).toContain('options.geometryTolerancePx')
+  it('never wires the retired geometry pass (folded into per-node tier-0 rules)', () => {
+    expect(generateTier0AuditEntry(null)).not.toContain('composeGeometryChecks')
+    expect(generateTier0AuditEntry('shadcn-tailwind')).not.toContain('composeGeometryChecks')
   })
 
   it("for recipe 'shadcn-tailwind', imports the recipe's tier0-walker and curries options data into it", () => {

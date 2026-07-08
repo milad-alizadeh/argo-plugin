@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Layer B (fidelity-geometry-verifier.md Slice 10): mechanically merges a
+ * Blind VLM fidelity rubric assembly: mechanically merges a
  * category template's fixed visual criteria (`templates/design/category-
  * rubrics/<category>.md`, human-authored once per category) with brief-
  * NAMED requirements only — never the build transcript, never the
@@ -28,7 +28,7 @@ export function assembleFidelityRubric(
 
 /**
  * Cost lever (task's explicit ask): a category with zero visual criteria
- * never spawns the VLM agent — a plain button stays geometry-only.
+ * never spawns the VLM agent — a plain button stays tier-0-only.
  */
 export function shouldSpawnFidelityVerifier(rubric: FidelityRubric): boolean {
   return rubric.criteria.length > 0

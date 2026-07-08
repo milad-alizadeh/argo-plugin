@@ -25,7 +25,9 @@ import {
   screenViewportMismatchViolation,
   textTruncationViolation,
   unclippedOverflowViolations,
-  missingRoleTagsViolation
+  hugOverflowViolations,
+  touchTargetViolation,
+  textContrastViolation
 } from './tier0-rules.js'
 
 describe('unboundFillViolations', () => {
@@ -693,22 +695,115 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
   })
 })
 
-describe('missingRoleTagsViolation (geometry pass precondition)', () => {
-  it('flags a requiresRoleTags root with zero role-tagged descendants', () => {
-    const root = { name: 'List', children: [{ name: 'Row' }] }
-    expect(missingRoleTagsViolation(root, { requiresRoleTags: true })).toEqual({
-      rule: 'missing-role-tags',
-      detail: 'component is in a geometry-checked category but has no #content-start/#rail/#anchor tagged nodes'
+describe('hugOverflowViolations (universal per-node, no tags/config)', () => {
+  it('flags a HUG-horizontal node whose child extends past its right edge', () => {
+    const node = {
+      name: 'Row', x: 0, y: 0, width: 100, height: 32,
+      layoutSizingHorizontal: 'HUG',
+      children: [{ name: 'Label', x: 24, y: 0, width: 200, height: 32 }]
+    }
+    expect(hugOverflowViolations(node)).toEqual([
+      { rule: 'hug-overflow-horizontal', detail: '"Row" is HUG-horizontal but child "Label" extends past its right edge' }
+    ])
+  })
+
+  it('flags a HUG-vertical node whose child extends past its bottom edge', () => {
+    const node = {
+      name: 'Stack', x: 0, y: 0, width: 100, height: 32,
+      layoutSizingVertical: 'HUG',
+      children: [{ name: 'Body', x: 0, y: 8, width: 100, height: 64 }]
+    }
+    expect(hugOverflowViolations(node)).toEqual([
+      { rule: 'hug-overflow-vertical', detail: '"Stack" is HUG-vertical but child "Body" extends past its bottom edge' }
+    ])
+  })
+
+  it('passes contained children and non-HUG nodes', () => {
+    const contained = {
+      name: 'Row', x: 0, y: 0, width: 100, height: 32,
+      layoutSizingHorizontal: 'HUG', layoutSizingVertical: 'HUG',
+      children: [{ name: 'Label', x: 0, y: 0, width: 100, height: 32 }]
+    }
+    expect(hugOverflowViolations(contained)).toEqual([])
+    const fixed = {
+      name: 'Row', x: 0, y: 0, width: 100, height: 32,
+      children: [{ name: 'Label', x: 24, y: 0, width: 200, height: 32 }]
+    }
+    expect(hugOverflowViolations(fixed)).toEqual([])
+  })
+})
+
+describe('touchTargetViolation (interactive = has prototype reactions, no tag needed)', () => {
+  it('flags an interactive node smaller than 24x24', () => {
+    const node = { name: 'Close', width: 16, height: 16, reactions: [{ trigger: { type: 'ON_CLICK' } }] }
+    expect(touchTargetViolation(node)).toEqual({
+      rule: 'touch-target-too-small',
+      detail: '"Close" has prototype interactions but is 16x16px — below the 24x24px WCAG 2.5.8 minimum'
     })
   })
 
-  it('passes a requiresRoleTags root with at least one role-tagged descendant', () => {
-    const root = { name: 'List', children: [{ name: 'Row', children: [{ name: 'Icon #anchor' }] }] }
-    expect(missingRoleTagsViolation(root, { requiresRoleTags: true })).toBeNull()
+  it('passes an interactive node at or above 24x24', () => {
+    expect(touchTargetViolation({ name: 'OK', width: 24, height: 24, reactions: [{}] })).toBeNull()
   })
 
-  it('passes when requiresRoleTags is false (opt-in, non-breaking)', () => {
-    const root = { name: 'List', children: [{ name: 'Row' }] }
-    expect(missingRoleTagsViolation(root, { requiresRoleTags: false })).toBeNull()
+  it('passes a non-interactive node of any size (no reactions)', () => {
+    expect(touchTargetViolation({ name: 'Dot', width: 6, height: 6 })).toBeNull()
+    expect(touchTargetViolation({ name: 'Dot', width: 6, height: 6, reactions: [] })).toBeNull()
+  })
+
+  it('exempts kit-instance internals', () => {
+    expect(touchTargetViolation({ name: 'X', width: 8, height: 8, reactions: [{}], insideInstance: true })).toBeNull()
+  })
+})
+
+describe('textContrastViolation (wcag-contrast package math, deterministic-or-skip)', () => {
+  const solid = (r: number, g: number, b: number) => ({ type: 'SOLID', visible: true, opacity: 1, color: { r, g, b } })
+
+  it('flags low-contrast normal text against a resolved solid background', () => {
+    const node = {
+      type: 'TEXT', name: 'Hint', fontSize: 13,
+      fills: [solid(0.78, 0.78, 0.78)],
+      ancestorSolidFill: solid(1, 1, 1)
+    }
+    const v = textContrastViolation(node)
+    expect(v?.rule).toBe('wcag-contrast-fail')
+    expect(v?.detail).toContain('below the WCAG AA threshold (4.5:1')
+  })
+
+  it('applies the 3:1 large-text threshold at fontSize >= 24', () => {
+    const node = {
+      type: 'TEXT', name: 'Title', fontSize: 24,
+      fills: [solid(0.6, 0.6, 0.6)],
+      ancestorSolidFill: solid(1, 1, 1)
+    }
+    // 0.6 gray on white is ~2.8:1 — fails even the relaxed 3:1 large-text bar
+    expect(textContrastViolation(node)?.detail).toContain('(3:1')
+  })
+
+  it('passes sufficient contrast', () => {
+    const node = {
+      type: 'TEXT', name: 'Body', fontSize: 14,
+      fills: [solid(0.1, 0.1, 0.1)],
+      ancestorSolidFill: solid(1, 1, 1)
+    }
+    expect(textContrastViolation(node)).toBeNull()
+  })
+
+  it('skips (never guesses) when no solid ancestor background resolved', () => {
+    const node = { type: 'TEXT', name: 'Overlay', fontSize: 14, fills: [solid(1, 1, 1)] }
+    expect(textContrastViolation(node)).toBeNull()
+  })
+
+  it('skips semi-transparent fills, non-TEXT nodes, and kit internals', () => {
+    const translucent = {
+      type: 'TEXT', name: 'Ghost', fontSize: 14,
+      fills: [{ type: 'SOLID', visible: true, opacity: 0.4, color: { r: 0, g: 0, b: 0 } }],
+      ancestorSolidFill: solid(1, 1, 1)
+    }
+    expect(textContrastViolation(translucent)).toBeNull()
+    expect(textContrastViolation({ type: 'FRAME', name: 'F', fills: [solid(0.8, 0.8, 0.8)], ancestorSolidFill: solid(1, 1, 1) })).toBeNull()
+    expect(
+      textContrastViolation({ type: 'TEXT', name: 'K', fontSize: 12, fills: [solid(0.8, 0.8, 0.8)], ancestorSolidFill: solid(1, 1, 1), insideInstance: true })
+    ).toBeNull()
   })
 })

@@ -20,18 +20,12 @@
  *   checks (e.g. non-semantic-binding). Omit for a recipe with no checks —
  *   the guarded call below no-ops.
  *
- * `options.runGeometryChecks(root)` — the geometry pass extension point
- *   (fidelity-geometry-verifier.md), symmetric with `runRecipeTier0Checks`
- *   but subtree-shaped, not per-node: called once per named-audit root with
- *   the WHOLE marshaled subtree (`marshalGeometryTree`), never in the
- *   file-wide sweep. Gated PER TARGET, not per call — `options.geometryCategories`
- *   (the project's fixed enum of row-shaped categories) and
- *   `options.targetCategories` (nodeId/name -> that target's OWN resolved
- *   category, caller-supplied — see `prepare-tier0-audit-options.js`) decide
- *   whether THIS target's marshal cost is paid and whether it's judged
- *   against the geometry rules at all; omitting either, or a target whose
- *   category isn't in the enum, means zero geometry violations for it
- *   (including `missing-role-tags`) — never a blanket per-call switch.
+ * Universal per-node a11y/overflow checks (hug-overflow, touch-target on
+ * nodes with prototype reactions, WCAG text contrast via the `wcag-contrast`
+ * package) run on EVERY audited node — no role tags, no category config;
+ * the contrast check resolves a text node's background deterministically
+ * (nearest fully-opaque solid ancestor fill, threaded down the walk) and
+ * SKIPS when it can't, never guesses.
  *
  * Reports violations as { severity: 'hard' | 'advisory', rule, nodeId, nodeName, detail }.
  * `hard` fails the calling skill loud (D8); `advisory` is a file-wide sweep
@@ -75,22 +69,10 @@ import {
   screenViewportMismatchViolation,
   textTruncationViolation,
   unclippedOverflowViolations,
-  missingRoleTagsViolation
-} from './tier0-rules.js'
-import { roleTagOf, findAllByRole } from './role-tags.js'
-import {
-  clusterRowsByContentStartX,
-  contentStartAlignmentViolations,
-  railAnchorSpanViolation,
-  interRowContinuityViolations,
-  indentStepUniformityViolations,
-  loadBearingVisibilityViolations,
-  crossAxisAnchorOffsetViolations,
   hugOverflowViolations,
   touchTargetViolation,
-  wcagContrastCheckViolation,
-  geometryViolationsForTarget
-} from './geometry-rules.js'
+  textContrastViolation
+} from './tier0-rules.js'
 
 async function auditNode(
   node: any,
@@ -104,7 +86,8 @@ async function auditNode(
     compositeNamingHard = false,
     runRecipeTier0Checks,
     viewport,
-    isScreenFrame = false
+    isScreenFrame = false,
+    ancestorSolidFill = null
   }: {
     hard: boolean
     semanticCollectionName?: string
@@ -116,6 +99,7 @@ async function auditNode(
     runRecipeTier0Checks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean }) => Promise<any[]>
     viewport?: { width: number; height: number }
     isScreenFrame?: boolean
+    ancestorSolidFill?: any
   }
 ) {
   const violations: any[] = []
@@ -165,7 +149,8 @@ async function auditNode(
   // object (confirmed live 2026-07-05, threw on COMPONENT_SET). Rule
   // functions only ever READ nodeCtx.
   const nodeCtx = new Proxy(node, {
-    get: (target: any, prop: string) => (prop === 'insideInstance' ? insideInstance : target[prop])
+    get: (target: any, prop: string) =>
+      prop === 'insideInstance' ? insideInstance : prop === 'ancestorSolidFill' ? ancestorSolidFill : target[prop]
   })
 
   for (const v of unboundFillViolations(nodeCtx)) report(v.rule, v.detail)
@@ -174,6 +159,14 @@ async function auditNode(
   if (radius) report(radius.rule, radius.detail)
   const type = textStyleRequiredViolation(nodeCtx)
   if (type) report(type.rule, type.detail)
+  // Universal per-node a11y/overflow checks (no tags, no config — folded in
+  // from the retired geometry layer; only the genuinely component-agnostic
+  // subset survived).
+  for (const v of hugOverflowViolations(nodeCtx)) report(v.rule, v.detail)
+  const touchTarget = touchTargetViolation(nodeCtx)
+  if (touchTarget) report(touchTarget.rule, touchTarget.detail)
+  const contrast = textContrastViolation(nodeCtx)
+  if (contrast) report(contrast.rule, contrast.detail)
   // Advisory, never hard (live calibration 2026-07-07): `textTruncation:
   // ENDING` is Figma's INTENTIONAL ellipsis setting — tree labels, long
   // session names, and similar deliberately truncate; a live audit found ~65
@@ -338,120 +331,6 @@ function marshalIconStrokeScale(node: any, main: any) {
   return { instanceSize: node.width, nativeSize: main.width, resolvedStrokeWeight, baseStrokeWeight }
 }
 
-/**
- * Builds ONE plain-object subtree per audited component root, carrying
- * every field the geometry rules read directly off the real Plugin API
- * node (x/y/width/height come from absoluteBoundingBox, already resolved
- * post-layout — no live-measurement round trip needed, unlike the
- * text-clipping gap figma-create's step-4 doc calls out as untestable).
- * Runs once per named-audit root, not per node — the geometry rules
- * consume the WHOLE tree at once (see geometry-rules.ts's doc comment for
- * why a per-node walk can't express sibling/row comparisons).
- */
-function marshalGeometryTree(node: any): any {
-  const box = node.absoluteBoundingBox ?? {}
-  return {
-    id: node.id,
-    name: node.name,
-    type: node.type,
-    x: box.x,
-    y: box.y,
-    width: box.width,
-    height: box.height,
-    visible: node.visible,
-    opacity: node.opacity,
-    clipsContent: node.clipsContent,
-    layoutSizingHorizontal: node.layoutSizingHorizontal,
-    layoutSizingVertical: node.layoutSizingVertical,
-    itemSpacing: node.itemSpacing,
-    layoutMode: node.layoutMode,
-    fills: node.fills,
-    characters: node.type === 'TEXT' ? node.characters : undefined,
-    fontSize: node.type === 'TEXT' ? node.fontSize : undefined,
-    children: (node.children ?? []).map(marshalGeometryTree)
-  }
-}
-
-/**
- * Composes the geometry pass's `runGeometryChecks(root)` closure
- * (fidelity-geometry-verifier.md Slice 9) — calls every geometry rule, in
- * a fixed order, over one marshaled subtree, and maps each rule's plain
- * `{ rule, detail, nodeId? }` return into the full violation shape
- * (`severity`/`nodeId`/`nodeName`) `runTier0Audit`'s callers already expect.
- * Every geometry rule is `hard` — there is no separate per-rule severity to
- * compute here, because `runTier0Audit`'s per-target dispatch
- * (`geometryViolationsForTarget`, geometry-rules.ts) only ever calls this
- * closure for a target whose OWN resolved category (`targetCategories`) is
- * a member of `geometryCategories` — never merely because
- * `geometryCategories` is non-empty somewhere in the call. Called once per
- * named-audit root, not per node (see geometry-rules.ts's own doc comment
- * for why).
- */
-export function composeGeometryChecks({ geometryTolerancePx = 1 }: { geometryTolerancePx?: number } = {}): (root: any) => any[] {
-  return (root: any) => {
-    const violations: any[] = []
-    const report = (v: { rule: string; detail: string; nodeId?: string } | null | undefined) => {
-      if (!v) return
-      violations.push({ severity: 'hard', rule: v.rule, nodeId: v.nodeId ?? root.id, nodeName: root.name, detail: v.detail })
-    }
-
-    report(missingRoleTagsViolation(root, { requiresRoleTags: true }))
-
-    const rows = marshalRows(root)
-    const clusters = clusterRowsByContentStartX(rows, geometryTolerancePx)
-    for (const v of contentStartAlignmentViolations(clusters, geometryTolerancePx)) report(v)
-    report(railAnchorSpanViolation(root, rows, geometryTolerancePx))
-    const itemSpacing = typeof root.itemSpacing === 'number' ? root.itemSpacing : 0
-    for (const v of interRowContinuityViolations(rows, itemSpacing, geometryTolerancePx)) report(v)
-    for (const v of indentStepUniformityViolations(clusters, geometryTolerancePx)) report(v)
-    const roleTagged = collectRoleTaggedWithAncestors(root)
-    for (const v of loadBearingVisibilityViolations(roleTagged)) report(v)
-    for (const v of crossAxisAnchorOffsetViolations(rows, geometryTolerancePx)) report(v)
-    for (const containerLikeNode of [root, ...rows]) {
-      for (const v of hugOverflowViolations(containerLikeNode)) report(v)
-    }
-    // #hit-target opt-in (resolved decision 3): touch-target sizing AND
-    // WCAG contrast both scope to the same tag, reusing the same
-    // ancestor-tracked walk loadBearingVisibilityViolations already needed.
-    const hitTargets = roleTagged.filter((rt) => roleTagOf(rt.node) === 'hit-target')
-    for (const { node: hitTarget } of hitTargets) report(touchTargetViolation(hitTarget))
-    for (const { node: hitTarget, ancestors } of hitTargets) report(wcagContrastCheckViolation(hitTarget, ancestors))
-
-    return violations
-  }
-}
-
-/**
- * Rows = every #row-declared node in the subtree (role-tags.ts), sorted by y
- * for deterministic paint order. Replaces the old marshalRowGroups' "any
- * child with children" heuristic entirely (geometry-row-model-fix.md) — a
- * real component instance's internal frames (StatusDot, summary, ProgressBar,
- * connector) are never mistaken for rows now, because nothing infers row-ness
- * from DOM shape. Depth is likewise no longer inferred from DOM nesting; it
- * is derived downstream by clustering rows on their own #content-start x.
- */
-export function marshalRows(tree: any): any[] {
-  return findAllByRole(tree, 'row')
-    .slice()
-    .sort((a: any, b: any) => (a.y ?? 0) - (b.y ?? 0))
-}
-
-/**
- * Depth-first walk over a marshaled geometry tree, accumulating an
- * `ancestors` array (root-to-parent, in that order) for every node that
- * carries any of the 4 role tags — feeds loadBearingVisibilityViolations,
- * which needs each role-tagged node's opacity/clip ancestor chain, not just
- * the node itself.
- */
-export function collectRoleTaggedWithAncestors(tree: any): { node: any; ancestors: any[] }[] {
-  const out: { node: any; ancestors: any[] }[] = []
-  const walk = (node: any, ancestors: any[]) => {
-    if (roleTagOf(node) !== null) out.push({ node, ancestors })
-    for (const child of node.children ?? []) walk(child, [...ancestors, node])
-  }
-  walk(tree, [])
-  return out
-}
 
 /**
  * Marshals a single Auto Layout gap/padding field (D24). boundVariables for a
@@ -486,10 +365,18 @@ function findOwningPage(node: any) {
 async function walk(node: any, opts: any, out: any[]) {
   out.push(...(await auditNode(node, opts)))
   if ('children' in node) {
+    // Nearest fully-opaque solid fill wins — feeds textContrastViolation's
+    // deterministic background resolution; anything ambiguous (mixed fills,
+    // translucency) leaves the inherited value, and the rule itself skips
+    // when even that is absent.
+    const ownSolid = Array.isArray(node.fills)
+      ? node.fills.find((f: any) => f?.type === 'SOLID' && f.visible !== false && (f.opacity ?? 1) >= 1)
+      : undefined
     const childOpts = {
       ...opts,
       isScreenFrame: false,
-      insideInstance: node.type === 'INSTANCE' ? true : opts.insideInstance
+      insideInstance: node.type === 'INSTANCE' ? true : opts.insideInstance,
+      ancestorSolidFill: ownSolid ?? opts.ancestorSolidFill ?? null
     }
     for (const child of node.children) await walk(child, childOpts, out)
   }
@@ -514,12 +401,7 @@ async function walk(node: any, opts: any, out: any[]) {
  * `semanticCollectionName` defaults to `'Semantic'`. `runRecipeTier0Checks`
  * is the recipe's extension point, baked into the bundle by
  * `bundle-tier0-audit`'s generated entry — omit it for a recipe with no
- * checks. `geometryCategories`/`targetCategories` gate the geometry pass
- * PER TARGET (bug fix, 2026-07-08 merge review) — see
- * `options.runGeometryChecks(root)` above; `targetCategories` keys by
- * whichever string addressed the target (`componentNodeIds` -> nodeId,
- * `componentNames` -> name), caller-supplied via
- * `prepare-tier0-audit-options.js`'s `componentCategories` input.
+ * checks.
  */
 export async function runTier0Audit(
   options: {
@@ -532,9 +414,6 @@ export async function runTier0Audit(
     additionalAllowedCollectionNames?: string[]
     runRecipeTier0Checks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean }) => Promise<any[]>
     viewport?: { width: number; height: number }
-    runGeometryChecks?: (root: any) => any[]
-    geometryCategories?: string[]
-    targetCategories?: Record<string, string>
   } = {}
 ) {
   const {
@@ -546,10 +425,7 @@ export async function runTier0Audit(
     primitivesCollectionName = 'Primitives',
     additionalAllowedCollectionNames = [],
     runRecipeTier0Checks,
-    viewport,
-    runGeometryChecks,
-    geometryCategories = [],
-    targetCategories = {}
+    viewport
   } = options
   const violations: any[] = []
 
@@ -581,15 +457,6 @@ export async function runTier0Audit(
       const owningPageName = findOwningPage(match)?.name ?? ''
       if (isWireframePageName(owningPageName)) continue
       await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
-      // Per-target opt-in (bug fix, 2026-07-08 merge review): geometryCategories
-      // gates by THIS target's own resolved category (targetCategories[nodeId]),
-      // never by "geometryCategories is non-empty somewhere in this call" — the
-      // old whole-call boolean hard-failed missing-role-tags on every rowless
-      // component (Button/Badge/Tooltip) the moment a project configured any
-      // geometryCategories at all. See geometry-rules.ts's geometryViolationsForTarget.
-      if (typeof runGeometryChecks === 'function') {
-        violations.push(...geometryViolationsForTarget(marshalGeometryTree(match), targetCategories[nodeId], geometryCategories, runGeometryChecks))
-      }
     }
 
     // Name-resolution fallback (ONLY for a target with no registry nodeId —
@@ -613,9 +480,6 @@ export async function runTier0Audit(
       const owningPageName = findOwningPage(match)?.name ?? ''
       if (isWireframePageName(owningPageName)) continue
       await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
-      if (typeof runGeometryChecks === 'function') {
-        violations.push(...geometryViolationsForTarget(marshalGeometryTree(match), targetCategories[name], geometryCategories, runGeometryChecks))
-      }
     }
   } else {
     for (const page of figma.root.children) {

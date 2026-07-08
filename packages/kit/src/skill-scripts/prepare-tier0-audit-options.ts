@@ -95,37 +95,12 @@ export function findDesignBlock(cwd: string): Record<string, any> | null {
  * The insideInstance exemptions in tier0-rules.ts still spare kit internals a
  * designer only instances.
  */
-/**
- * Per-target category map (bug fix, 2026-07-08 merge review): `componentCategories`
- * (caller-supplied, name -> category — the caller already knows this, e.g.
- * figma-create just placed the component under that category's shelf,
- * design-memory-placement.md Mechanism 1; `design/registry.json` itself
- * carries no `category` field, dropped by design-system-reset-overhaul.md
- * Slice 4's flat registry) resolves into `targetCategories`, keyed by BOTH
- * the requested name AND its resolved nodeId (when one exists) — so
- * `runTier0Audit`'s per-target gate (`geometryViolationsForTarget`,
- * geometry-rules.ts) can look a target up by whichever string it walked the
- * result with (`componentNodeIds` -> nodeId, `componentNames` -> name).
- */
-function resolveTargetCategories(componentCategories: Record<string, string>, registry: any): Record<string, string> {
-  const components = registry?.components && typeof registry.components === 'object' ? registry.components : {}
-  const targetCategories: Record<string, string> = {}
-  for (const [name, category] of Object.entries(componentCategories)) {
-    targetCategories[name] = category
-    const nodeId = components[name]?.nodeId
-    if (typeof nodeId === 'string' && nodeId) targetCategories[nodeId] = category
-  }
-  return targetCategories
-}
-
 export function deriveTier0AuditOptions({
   cwd,
-  componentNames = [],
-  componentCategories = {}
+  componentNames = []
 }: {
   cwd: string
   componentNames?: string[]
-  componentCategories?: Record<string, string>
 }) {
   const registry = readOptionalJson(join(cwd, 'design', 'registry.json'))
   const designBlock = findDesignBlock(cwd)
@@ -139,10 +114,7 @@ export function deriveTier0AuditOptions({
     semanticCollectionName: designBlock?.semanticCollectionName ?? 'Semantic',
     additionalAllowedCollectionNames: (recipe && RECIPE_ADDITIONAL_ALLOWED_COLLECTION_NAMES[recipe]) ?? [],
     recipe,
-    viewport: designBlock?.viewport,
-    geometryTolerancePx: designBlock?.geometryTolerancePx ?? 1,
-    geometryCategories: Array.isArray(designBlock?.geometryCategories) ? designBlock.geometryCategories : [],
-    targetCategories: resolveTargetCategories(componentCategories, registry)
+    viewport: designBlock?.viewport
   }
 }
 
@@ -153,21 +125,19 @@ export function deriveTier0AuditOptions({
  * run against an empty target, passing vacuously. Reject anything starting
  * with `--` that isn't a known flag before falling back to the sweep default.
  */
-export function parseCliArgs(args: string[]): { componentNames: string[]; componentCategories: Record<string, string> } {
-  const KNOWN_FLAGS = ['--componentNames', '--componentCategories']
+export function parseCliArgs(args: string[]): { componentNames: string[] } {
+  const KNOWN_FLAGS = ['--componentNames']
   const unknown = args.filter((a) => a.startsWith('--') && !KNOWN_FLAGS.includes(a))
   if (unknown.length > 0)
     throw new Error(`prepare-tier0-audit-options: unrecognized flag(s) ${unknown.join(', ')} — did you mean --componentNames?`)
 
   const namesIndex = args.indexOf('--componentNames')
   const componentNames = namesIndex === -1 ? [] : JSON.parse(args[namesIndex + 1])
-  const categoriesIndex = args.indexOf('--componentCategories')
-  const componentCategories = categoriesIndex === -1 ? {} : JSON.parse(args[categoriesIndex + 1])
-  return { componentNames, componentCategories }
+  return { componentNames }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { componentNames, componentCategories } = parseCliArgs(process.argv.slice(2))
-  const options = deriveTier0AuditOptions({ cwd: process.cwd(), componentNames, componentCategories })
+  const { componentNames } = parseCliArgs(process.argv.slice(2))
+  const options = deriveTier0AuditOptions({ cwd: process.cwd(), componentNames })
   console.log(JSON.stringify(options))
 }

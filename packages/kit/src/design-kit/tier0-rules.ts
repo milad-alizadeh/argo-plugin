@@ -17,7 +17,7 @@
  * typing to the module's own logic, not a full Figma domain model).
  */
 
-import { hasAnyRoleTag } from './role-tags.js'
+import { rgb as wcagContrastRatio } from 'wcag-contrast'
 
 export type Violation = { rule: string; detail: string }
 type AnyNode = Record<string, any>
@@ -500,22 +500,72 @@ export function compositeRegionNamingViolation(node: AnyNode, compositeNames: st
 }
 
 /**
- * Geometry-pass precondition (fidelity-geometry-verifier.md Slice 1): a
- * component in a category opted into geometry checks (`geometryCategories`)
- * but carrying zero role-tagged descendants at all can't run any geometry
- * rule (they all key off `#content-start`/`#rail`/`#anchor`) — flag it once,
- * at the named-audit ROOT only, same wiring shape as
- * `screenViewportMismatchViolation`'s `isScreenFrame` gate, not a per-node
- * check. `requiresRoleTags` is resolved by the caller from the target's
- * category membership in `geometryCategories` — opt-in, so a category that
- * never geometry-checks (e.g. a plain Button) is unaffected.
+ * Universal per-node check (no tags, no config): a HUG-sized node whose
+ * child's bounds escape it renders clipped or overflowing content — true for
+ * any component, not just row-shaped ones.
  */
-export function missingRoleTagsViolation(root: AnyNode, { requiresRoleTags }: { requiresRoleTags: boolean }): Violation | null {
-  if (!requiresRoleTags) return null
-  if (hasAnyRoleTag(root)) return null
+export function hugOverflowViolations(node: AnyNode): Violation[] {
+  const violations: Violation[] = []
+  for (const child of node.children ?? []) {
+    if (node.layoutSizingHorizontal === 'HUG' && child.x + child.width > node.x + node.width) {
+      violations.push({ rule: 'hug-overflow-horizontal', detail: `"${node.name}" is HUG-horizontal but child "${child.name}" extends past its right edge` })
+    }
+    if (node.layoutSizingVertical === 'HUG' && child.y + child.height > node.y + node.height) {
+      violations.push({ rule: 'hug-overflow-vertical', detail: `"${node.name}" is HUG-vertical but child "${child.name}" extends past its bottom edge` })
+    }
+  }
+  return violations
+}
+
+const MIN_TOUCH_TARGET_PX = 24 // WCAG 2.5.8 target-size AA minimum
+
+/**
+ * Universal per-node check: interactivity comes from the node's own
+ * prototype `reactions` (a real Plugin-API signal) — no role tag, no config.
+ * Kit-instance internals are exempt (their sizing is the kit's, not ours).
+ */
+export function touchTargetViolation(node: AnyNode): Violation | null {
+  if (node.insideInstance) return null
+  if (!((node.reactions?.length ?? 0) > 0)) return null
+  if (node.width >= MIN_TOUCH_TARGET_PX && node.height >= MIN_TOUCH_TARGET_PX) return null
   return {
-    rule: 'missing-role-tags',
-    detail: 'component is in a geometry-checked category but has no #content-start/#rail/#anchor tagged nodes'
+    rule: 'touch-target-too-small',
+    detail: `"${node.name}" has prototype interactions but is ${node.width}x${node.height}px — below the ${MIN_TOUCH_TARGET_PX}x${MIN_TOUCH_TARGET_PX}px WCAG 2.5.8 minimum`
+  }
+}
+
+const to255 = (c: { r: number; g: number; b: number }): [number, number, number] => [
+  Math.round(c.r * 255),
+  Math.round(c.g * 255),
+  Math.round(c.b * 255)
+]
+
+/**
+ * Universal per-node WCAG AA text-contrast check — the ratio math is the
+ * `wcag-contrast` npm package (spec formula, not hand-rolled); only the
+ * Figma-side background resolution is ours (`ancestorSolidFill`, threaded
+ * down the walk from the nearest ancestor with a fully-opaque solid fill).
+ * Deterministic-or-skip: no resolvable solid background, a semi-transparent
+ * fill, or any compositing ambiguity means SKIP, never guess — a wrong
+ * hard violation costs more than a missed advisory (same asymmetry as
+ * kitInstanceOverrideViolation's denylist economics).
+ */
+export function textContrastViolation(node: AnyNode): Violation | null {
+  if (node.insideInstance) return null
+  if (node.type !== 'TEXT') return null
+  const bg = node.ancestorSolidFill
+  if (!bg || bg.type !== 'SOLID' || bg.visible === false || (bg.opacity ?? 1) < 1) return null
+  if (!Array.isArray(node.fills)) return null // figma.mixed — skip, never guess
+  const fill = node.fills.find((f: any) => f?.type === 'SOLID' && f.visible !== false)
+  if (!fill || (fill.opacity ?? 1) < 1) return null
+  if (typeof node.fontSize !== 'number') return null // figma.mixed sizes — skip
+  const ratio = wcagContrastRatio(to255(fill.color), to255(bg.color))
+  const isLargeText = node.fontSize >= 24
+  const threshold = isLargeText ? 3 : 4.5
+  if (ratio >= threshold) return null
+  return {
+    rule: 'wcag-contrast-fail',
+    detail: `"${node.name}" text contrast ${ratio.toFixed(2)}:1 is below the WCAG AA threshold (${threshold}:1 for ${isLargeText ? 'large' : 'normal'} text)`
   }
 }
 

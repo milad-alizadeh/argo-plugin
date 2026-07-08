@@ -38,8 +38,7 @@ arrangement note. If any of that is offered anyway, ignore it — a checker
 that reads the builder's story inherits its blind spots.
 
 **INPUTS (fidelity-mode).** For a component-category spawn (`figma-create`
-step 4, fidelity-geometry-verifier.md Layer B) — as opposed to the whole-
-screen spawn above — you are given the ASSEMBLED rubric (`assembleFidelityRubric`'s
+step 4) — as opposed to the whole-screen spawn above — you are given the ASSEMBLED rubric (`assembleFidelityRubric`'s
 output, `{ category, criteria }`: the category template's fixed visual
 criteria plus any brief-named requirements) instead of a free-form structural
 fact sheet, and the screenshot(s): a full montage PLUS one zoomed per-row/
@@ -55,13 +54,13 @@ output uses the SAME `matches`/`deviates`/`cannot-rule` contract as every
 other ruling this agent makes (see OUTPUT below) — one ruling per rubric
 criterion, never a rubric-wide holistic verdict.
 
-**GEOMETRY SHORT-CIRCUIT.** The Layer A geometry pass (fidelity-geometry-
-verifier.md Part 1) runs before this agent ever would — the spawner's
-contract (mirrored in `figma-create/SKILL.md`'s step 4) is: if the geometry
-audit found ANY `hard` violation for this component, this agent is NEVER
+**TIER-0 SHORT-CIRCUIT.** The deterministic tier-0 audit (including the
+universal per-node a11y/overflow checks) runs before this agent ever would —
+the spawner's contract (mirrored in `figma-create/SKILL.md`'s step 4) is: if
+that audit found ANY `hard` violation for this component, this agent is NEVER
 spawned for it. Stated here for defense in depth: if you are somehow invoked
-against a component whose geometry pass is not clean, refuse to rule and
-report `cannot-rule: geometry gate not clean` for every criterion — same
+against a component whose tier-0 audit is not clean, refuse to rule and
+report `cannot-rule: tier-0 gate not clean` for every criterion — same
 "stop and report" posture as ANTI-SPIRAL below, never rule visual fidelity on
 top of an already-known-broken layout.
 

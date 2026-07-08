@@ -2,7 +2,7 @@
   "name": "@argohq/kit",
   "version": "0.18.0",
   "type": "module",
-  "description": "Deterministic half of the argo plugin \u2014 hook gates, design-kit comparator, skill-script CLI, reporters. The plugin's skills/agents are the LLM half; this package is everything that must run as real code.",
+  "description": "Deterministic half of the argo plugin — hook gates, design-kit comparator, skill-script CLI, reporters. The plugin's skills/agents are the LLM half; this package is everything that must run as real code.",
   "bin": {
     "argo": "bin/argo.js"
   },
@@ -80,6 +80,7 @@
   },
   "dependencies": {
     "tdd-guard": "^1.7.0",
+    "wcag-contrast": "^3.0.0",
     "zod": "^3.23.8"
   },
   "peerDependencies": {

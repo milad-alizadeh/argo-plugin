@@ -22,10 +22,7 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         semanticCollectionName: 'Semantic',
         additionalAllowedCollectionNames: [],
         recipe: null,
-        viewport: undefined,
-        geometryTolerancePx: 1,
-        geometryCategories: [],
-        targetCategories: {}
+        viewport: undefined
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
@@ -56,10 +53,7 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         semanticCollectionName: 'Semantic',
         additionalAllowedCollectionNames: [],
         recipe: null,
-        viewport: undefined,
-        geometryTolerancePx: 1,
-        geometryCategories: [],
-        targetCategories: {}
+        viewport: undefined
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
@@ -80,69 +74,6 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
       expect(options.semanticCollectionName).toBe('Argo Semantic')
       expect(options.recipe).toBe('shadcn-tailwind')
       expect(options.additionalAllowedCollectionNames).toContain('tw/gap')
-    } finally {
-      rmSync(cwd, { recursive: true, force: true })
-    }
-  })
-
-  it('defaults geometryTolerancePx to 1 and geometryCategories to [] when unconfigured', () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
-    try {
-      const options = deriveTier0AuditOptions({ cwd })
-      expect(options.geometryTolerancePx).toBe(1)
-      expect(options.geometryCategories).toEqual([])
-    } finally {
-      rmSync(cwd, { recursive: true, force: true })
-    }
-  })
-
-  it("reads geometryTolerancePx and geometryCategories from the app's design.<app> block when configured", () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
-    mkdirSync(join(cwd, '.claude'), { recursive: true })
-    writeFileSync(
-      join(cwd, '.claude', 'argo.json'),
-      JSON.stringify({ design: { '.': { root: '.', geometryTolerancePx: 2, geometryCategories: ['list', 'tree'] } } }),
-      'utf8'
-    )
-    try {
-      const options = deriveTier0AuditOptions({ cwd })
-      expect(options.geometryTolerancePx).toBe(2)
-      expect(options.geometryCategories).toEqual(['list', 'tree'])
-    } finally {
-      rmSync(cwd, { recursive: true, force: true })
-    }
-  })
-
-  it('threads a per-target category (bug fix, 2026-07-08): componentCategories input keyed by name resolves into targetCategories keyed by BOTH name and the resolved nodeId', () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
-    mkdirSync(join(cwd, 'design'), { recursive: true })
-    writeFileSync(
-      join(cwd, 'design', 'registry.json'),
-      JSON.stringify({ components: { TreeNode: { nodeId: '10:1' }, Button: { nodeId: '10:2' } } }),
-      'utf8'
-    )
-    try {
-      const options = deriveTier0AuditOptions({
-        cwd,
-        componentNames: ['TreeNode', 'Button'],
-        componentCategories: { TreeNode: 'tree', Button: 'primitive' }
-      })
-      expect(options.targetCategories).toEqual({
-        TreeNode: 'tree',
-        '10:1': 'tree',
-        Button: 'primitive',
-        '10:2': 'primitive'
-      })
-    } finally {
-      rmSync(cwd, { recursive: true, force: true })
-    }
-  })
-
-  it('defaults targetCategories to {} when componentCategories is omitted', () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
-    try {
-      const options = deriveTier0AuditOptions({ cwd, componentNames: ['Button'] })
-      expect(options.targetCategories).toEqual({})
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }
@@ -230,18 +161,11 @@ describe('deriveTier0AuditOptions audits kit components too (directive 3, no bla
 
 describe('parseCliArgs (CLI flag parsing — must not silently no-op on a typo)', () => {
   it('parses --componentNames as a JSON array', () => {
-    expect(parseCliArgs(['--componentNames', '["rail-session-card"]'])).toEqual({ componentNames: ['rail-session-card'], componentCategories: {} })
+    expect(parseCliArgs(['--componentNames', '["rail-session-card"]'])).toEqual({ componentNames: ['rail-session-card'] })
   })
 
   it('defaults to an empty array when no flag is given (the intentional file-wide-sweep case)', () => {
-    expect(parseCliArgs([])).toEqual({ componentNames: [], componentCategories: {} })
-  })
-
-  it('parses --componentCategories as a JSON object (bug fix, 2026-07-08: per-target category)', () => {
-    expect(parseCliArgs(['--componentNames', '["TreeNode"]', '--componentCategories', '{"TreeNode":"tree"}'])).toEqual({
-      componentNames: ['TreeNode'],
-      componentCategories: { TreeNode: 'tree' }
-    })
+    expect(parseCliArgs([])).toEqual({ componentNames: [] })
   })
 
   it('throws on an unrecognized flag instead of silently defaulting (e.g. the kebab-case typo --component-names)', () => {

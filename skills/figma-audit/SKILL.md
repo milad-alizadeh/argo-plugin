@@ -44,35 +44,20 @@ from built components. Always advisory, never the hard authoritative
 decomposition gate (Option C, deferred until its brief/story-map schema
 lands) — never wire it as a hard-fail.
 
-**Geometry checks (Layer A, fidelity-geometry-verifier.md, opt-in via
-`design.<app>.geometryCategories`, hard gate).** Subtree-scoped checks over
-role-tagged nodes (`#row`/`#content-start`/`#rail`/`#anchor`/`#hit-target`
-layer-name suffixes a component author adds): rows are DECLARED via `#row`,
-never inferred from DOM shape (an internal frame that merely has children is
-not a row); depth is derived by clustering rows on their own `#content-start`
-x (no DOM-nesting inference, no variant-property read) — rows sharing a
-content-start x are one depth. Then: rows within a depth cluster share one
-content-start x, distinct depths are evenly spaced by one derived indent unit,
-a `#rail` spans exactly from the parent `#anchor` to the last row's `#anchor`
-center, consecutive rows don't gap past `itemSpacing` + `geometryTolerancePx`,
-a role-tagged node isn't hidden/transparent/clipped (a coordinate-only cheat),
-same-depth `#anchor`s share one y-offset from their row top, a HUG-sized node's
-children don't overflow it, and a `#hit-target` node is at least 24x24px
-(configurable). Row HEIGHT is NOT required to be uniform (kind-varying height,
-e.g. a 28px phase row next to a 36px agent row, is legitimate).
-`missing-role-tags` fires once, at the audited root, when the target's
-category is in `geometryCategories` but it carries zero role-tagged
-descendants — the "arm the geometry pass" precondition. Runs once per
-named-audit target (never the file-wide sweep, never per-node) — a target
-whose category isn't in `geometryCategories` never pays the marshal cost
-AND never runs any geometry rule, `missing-role-tags` included: this is
-decided PER TARGET, from that target's OWN resolved category
-(`prepare-tier0-audit-options`'s `componentCategories` input, name -> category,
-threaded through as `targetCategories`), never by whether `geometryCategories`
-is merely configured non-empty somewhere in the call — a call auditing a
-`tree`-category component alongside a plain `Button` must geometry-check only
-the former. Omit `componentCategories` (or a target's entry in it) and that
-target gets zero geometry checks, same as an unconfigured project.
+**Universal a11y/overflow checks (every audited node — no tags, no config).**
+Three deterministic per-node rules run alongside the mechanism checks on every
+component uniformly: `hug-overflow-horizontal`/`-vertical` (a HUG-sized node
+whose child's bounds escape it), `touch-target-too-small` (a node with
+prototype `reactions` under 24x24px, WCAG 2.5.8 — interactivity comes from the
+node's own reactions, a real Plugin-API signal), and `wcag-contrast-fail`
+(text vs the nearest fully-opaque solid ancestor fill, ratio math from the
+`wcag-contrast` npm package; 4.5:1 normal / 3:1 for fontSize >= 24). The
+contrast check is deterministic-or-skip: an unresolvable background, a
+semi-transparent fill, or `figma.mixed` anything means SKIP, never a guessed
+violation. There is no separate "geometry pass", no role-tag contract, and no
+`geometryCategories` config — the earlier category-scoped row/rail geometry
+layer was retired (niche machinery; visual judgment beyond these three rules
+belongs to the blind fidelity-verifier).
 
 **Recipe checks (installed recipe only):** for `shadcn-tailwind`
 (`@argohq/kit/design-kit/shadcn-tailwind/tier0-walker`)
@@ -119,41 +104,23 @@ none at all.
 2. **Derive the full options object first — Node-side, before any
    `use_figma` call.** Run `argo design prepare-tier0-audit-options` (wraps
    `deriveTier0AuditOptions`) with `{ cwd: <host project root>,
-   componentNames: [...], componentCategories: { <name>: <category>, ... } }`
-   (`componentCategories` optional, `{}` for a file-wide sweep or when the
-   caller doesn't know a target's category — see below) (or `[]`/`{}` for a
-   file-wide sweep). It reads `.claude/argo.json`'s `design.<app>` block and
-   `design/registry.json` Node-side (the sandbox can't read a committed file
-   itself), resolves each requested name to its registry `nodeId`
-   (authoritative targeting — a name-based sweep used to match every
-   same-named node in the file, e.g. auditing "Card" also swept a container
-   frame literally named "Card"), and returns `{ componentNodeIds,
-   componentNames, compositeNames, semanticCollectionName,
-   additionalAllowedCollectionNames, recipe, viewport, geometryTolerancePx,
-   geometryCategories, targetCategories }` — `componentNodeIds` is the
-   resolved authoritative target list; `componentNames` on the way OUT holds
-   only names that had no registry entry (a fallback resolved sandbox-side by
-   an unambiguous single-match name lookup, never a blind multi-node sweep);
-   `viewport` is `{ width, height }` from `design.<app>.viewport` when
-   configured (undefined otherwise — opt-in, gates the
-   `screen-viewport-mismatch` check; not the unrelated
-   `design.<app>.vrtEnvironment.viewport` STRING, a different concept and
-   owner: the Storybook/Playwright VRT capture viewport). `geometryTolerancePx`
-   is a single px tolerance for every geometry (Layer A) check, from
-   `design.<app>.geometryTolerancePx`, defaulting to `1`. `geometryCategories`
-   is the project's FIXED enum of component categories (a subset of
-   `componentCategories` that structurally have rows — list/tree/table/nav),
-   from `design.<app>.geometryCategories`, defaulting to `[]`. `targetCategories`
-   is derived from the `componentCategories` INPUT you passed in step 2 (name
-   -> category, and mirrored under the resolved nodeId once known) — this is
-   the PER-TARGET signal the walker checks against `geometryCategories`: a
-   target whose own category isn't in `geometryCategories` (or that has no
-   entry in `componentCategories` at all) gets ZERO geometry checks —
-   `missing-role-tags` included — never a call-wide switch. **The caller
-   (`figma-create` step 4) already knows each component's category from
-   placing it under that category's shelf (design-memory-placement.md
-   Mechanism 1) — pass it here, don't omit it and expect the gate to infer
-   it.** Keep the whole returned object — every DATA field the bundled
+   componentNames: [...] }` (or `[]` for a file-wide sweep). It reads
+   `.claude/argo.json`'s `design.<app>` block and `design/registry.json`
+   Node-side (the sandbox can't read a committed file itself), resolves each
+   requested name to its registry `nodeId` (authoritative targeting — a
+   name-based sweep used to match every same-named node in the file, e.g.
+   auditing "Card" also swept a container frame literally named "Card"), and
+   returns `{ componentNodeIds, componentNames, compositeNames,
+   semanticCollectionName, additionalAllowedCollectionNames, recipe,
+   viewport }` — `componentNodeIds` is the resolved authoritative target
+   list; `componentNames` on the way OUT holds only names that had no
+   registry entry (a fallback resolved sandbox-side by an unambiguous
+   single-match name lookup, never a blind multi-node sweep); `viewport` is
+   `{ width, height }` from `design.<app>.viewport` when configured
+   (undefined otherwise — opt-in, gates the `screen-viewport-mismatch`
+   check; not the unrelated `design.<app>.vrtEnvironment.viewport` STRING, a
+   different concept and owner: the Storybook/Playwright VRT capture
+   viewport). Keep the whole returned object — every DATA field the bundled
    script's completion value needs; never hand-author a trimmed
    `{ componentNames: [...] }`.
 3. **Bundle the audit for the returned `recipe` — never hand-assemble or

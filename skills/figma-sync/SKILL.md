@@ -59,7 +59,12 @@ behavior split — see `figma-to-code`'s presentation-regen seam).
    `isKitPageName` (by-exclusion: every page that isn't one of this
    project's own canonical pages or a divider/sandbox page), and upserts
    lean `kind: 'kit'` draft entries for any component the registry has
-   never seen — no live MCP session required for this part.
+   never seen — no live MCP session required for this part. It also scans
+   every live component's description for the `@code-owned: <path>` marker
+   and derives `kind: 'code-owned'` + `codePath` for those (the marker
+   overrides positional kit/custom classification) — the machine-written way
+   a Three.js/canvas placeholder gets flagged; the registry is never
+   hand-edited for this.
 
    Division of labor: `pull-registry` owns **enumeration and kit-entry
    upsert**, deterministically, no live session. The live node-id walk

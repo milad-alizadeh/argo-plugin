@@ -275,6 +275,30 @@ describe('nonSemanticNameViolation', () => {
   it('passes a semantic name', () => {
     expect(nonSemanticNameViolation({ name: 'PrimaryButton' })).toBeNull()
   })
+
+  it('flags a generic, non-code-mappable structural layer name (frame/group only)', () => {
+    expect(nonSemanticNameViolation({ type: 'FRAME', name: 'container' })).toMatchObject({ rule: 'non-code-friendly-name' })
+    expect(nonSemanticNameViolation({ type: 'GROUP', name: 'wrapper' })).toMatchObject({ rule: 'non-code-friendly-name' })
+    expect(nonSemanticNameViolation({ type: 'FRAME', name: 'Box' })).toMatchObject({ rule: 'non-code-friendly-name' })
+  })
+
+  it('flags a structural layer name with spaces and suggests an identifier-safe form', () => {
+    const v = nonSemanticNameViolation({ type: 'FRAME', name: 'viewed cluster' })
+    expect(v).toMatchObject({ rule: 'non-code-friendly-name' })
+    expect(v?.detail).toContain('viewed-cluster')
+  })
+
+  it('passes code-friendly structural names (kebab, camel, PascalCase)', () => {
+    expect(nonSemanticNameViolation({ type: 'FRAME', name: 'file-diff-header' })).toBeNull()
+    expect(nonSemanticNameViolation({ type: 'FRAME', name: 'changeCounts' })).toBeNull()
+    expect(nonSemanticNameViolation({ type: 'FRAME', name: 'FileDiffHeader' })).toBeNull()
+  })
+
+  it('never flags TEXT nodes for spaces/generic words — a text layer name is usually its content, not a slot', () => {
+    expect(nonSemanticNameViolation({ type: 'TEXT', name: '@@ -35,6 +35,9 @@' })).toBeNull()
+    expect(nonSemanticNameViolation({ type: 'TEXT', name: 'src/auth/guard.ts' })).toBeNull()
+    expect(nonSemanticNameViolation({ type: 'TEXT', name: 'content' })).toBeNull()
+  })
 })
 
 describe('variantNamingViolations', () => {

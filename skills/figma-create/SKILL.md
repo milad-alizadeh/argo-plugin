@@ -51,8 +51,18 @@ file → skip; never invent one.
   Semantic spacing token where one exists (e.g. `spacing/page-inline`) (D24,
   revised 2026-07-05). Never leave spacing as a literal, on-scale or not —
   binding is the only legal authoring state.
-- **Semantic names** — never Figma's auto-generated `Frame 12`/`Rectangle 4`
-  defaults.
+- **Code-friendly names** — never Figma's auto-generated `Frame 12`/
+  `Rectangle 4` defaults, AND never a vague `box`/`container`/`wrapper`/`content`
+  that passes the auto-name check but says nothing. Every structural
+  frame/group carries a role name figma-to-code can map to a code identifier:
+  kebab-case or camelCase, no spaces (`file-diff-header`, `change-counts`,
+  `viewed-cluster`), so the generated component's slots/props inherit those
+  names instead of a code author having to invent them. A dynamic TEXT slot is
+  named for its ROLE, not the sample content it currently shows — a filename
+  slot is `filename`, not `src/auth/guard.ts`; a count slot is `change-counts`,
+  not `+12 / -3`. (The `non-semantic-name`/`non-code-friendly-name` tier-0
+  checks enforce the structural half; the text-slot-by-role half is on you —
+  name as you build.)
 - **D18 variant naming** — component property `Size` → prop `size`;
   Title-Case variant values → lowercase literal unions. Mechanical, not
   judgment: name it this way from the start.
@@ -269,6 +279,18 @@ that creates the component:** `component.description = "<one-line purpose>. Cate
 description (status is registry-side lifecycle state, never in-file — see
 `templates/design/memory-model.md`).
 
+**Code-owned placeholders.** When the component is a flat screenshot standing
+in for something whose real implementation is code (a Three.js/WebGL scene, a
+canvas viz — anything Figma can't faithfully hold), append a `@code-owned:`
+marker line to the description:
+`"<one-line purpose>. Category: <category>.\n@code-owned: <repo-relative path to the code component>"`.
+This marker is the SINGLE source of truth for the code↔design link — the
+Figma description, never a config file or a hand-edited registry. Downstream
+it makes the component tier-0 exempt (a screenshot can't satisfy binding
+rules) and tells figma-to-code to import the existing component instead of
+generating one. You write the marker; the registry classification is derived
+from it deterministically (see the upsert step).
+
 **Registry read-order (step 9, cold-start optimization).** Before creating
 anything, read `design/registry.json` once (~40 lines) — a cold-start agent
 should reach an EXISTING component in ≤3 calls, not 15-20 discovery calls:
@@ -292,7 +314,13 @@ Entry shape (`RegistryEntrySchema`, imported from `@argohq/kit/design-kit`):
 `{ nodeId, kind: 'kit' | 'custom', status: 'audit-clean', lastSyncedAt,
 variantMatrix }`. `status` is Figma-side lifecycle ONLY — this skill only ever
 writes `audit-clean` (the outcome of its own self-audit loop); `synced`/`coded`
-are owned by other skills' outputs and never written here. `category`,
+are owned by other skills' outputs and never written here. **For a code-owned
+placeholder** (description carries the `@code-owned:` marker), derive the kind
+deterministically with `parseCodeOwnedPath` from `@argohq/kit/design-kit` — if
+it returns a path, write `kind: 'code-owned'` + `codePath: <that path>` instead
+of `kit`/`custom`. Never hand-classify by judgment; the marker decides. A later
+`argo design pull-registry` applies the exact same rule, so the two never
+disagree. `category`,
 `description`, and audit `provenance` are gone (design-system-reset-overhaul.md
 Slice 4's slim 5-field schema) — `status: 'audit-clean'` is now the only
 committed audit-pass signal; there is no per-component `lastAudit` timestamp.

@@ -325,6 +325,29 @@ export function detachedInstanceViolation(node: AnyNode): Violation | null {
   return null
 }
 
+// Structural container names that carry no role — figma-to-code can't map
+// them to a slot/prop/sub-component, so they're not code-friendly. Kept tight
+// (clear non-signal words only) to avoid false positives on real role names.
+const GENERIC_LAYER_NAMES = new Set([
+  'box',
+  'wrapper',
+  'wrap',
+  'container',
+  'holder',
+  'thing',
+  'stuff',
+  'div',
+  'element',
+  'layer',
+  'object',
+  'content',
+  'item',
+  'block',
+  'area',
+  'group',
+  'frame'
+])
+
 export function nonSemanticNameViolation(node: AnyNode): Violation | null {
   // Nodes inside a library instance are exempt (2026-07-05): kit internals
   // carry the kit's own auto-names and are not ours to rename — flagging
@@ -332,6 +355,29 @@ export function nonSemanticNameViolation(node: AnyNode): Violation | null {
   if (node.insideInstance) return null
   if (/^(Frame|Group|Rectangle|Ellipse|Text|Vector)\s?\d*$/.test(node.name)) {
     return { rule: 'non-semantic-name', detail: `node name "${node.name}" looks auto-generated, not semantic` }
+  }
+  // Code-friendly naming (owner mandate 2026-07-08): structural containers must
+  // carry a role name figma-to-code can map to an identifier. Scoped to
+  // FRAME/GROUP — a TEXT layer's name is usually its content ("@@ -35 +35 @@",
+  // a file path), and icon INSTANCEs carry kit names, so neither is ours to
+  // gate here. Advisory in a file-wide sweep, hard on a named audit (the
+  // report() caller assigns severity), so authoring a component with a vague
+  // layer name fails loud while an untouched design only gets a nudge.
+  if (node.type === 'FRAME' || node.type === 'GROUP') {
+    const trimmed = node.name.trim()
+    if (GENERIC_LAYER_NAMES.has(trimmed.toLowerCase())) {
+      return {
+        rule: 'non-code-friendly-name',
+        detail: `layer name "${node.name}" is too generic to map to code — name it by role (e.g. file-diff-header, change-counts)`
+      }
+    }
+    if (/\s/.test(trimmed)) {
+      const suggestion = trimmed.replace(/\s+/g, '-').replace(/[^\w-]/g, '').toLowerCase()
+      return {
+        rule: 'non-code-friendly-name',
+        detail: `layer name "${node.name}" has spaces — use kebab-case or camelCase so figma-to-code can map it to an identifier (e.g. "${suggestion}")`
+      }
+    }
   }
   return null
 }

@@ -22,7 +22,7 @@ import { join } from 'node:path'
 import { resolveRepoRoot } from '../lib/repo-root.js'
 import { findDesignBlock } from './prepare-tier0-audit-options.js'
 import { registryComponentNames } from '../design-kit/component-names.js'
-import { kitPageIndices, buildKitRegistryEntries, detectChangedKitComponents } from '../design-kit/registry-reconcile.js'
+import { kitPageIndices, buildKitRegistryEntries, detectChangedKitComponents, buildCodeOwnedEntries } from '../design-kit/registry-reconcile.js'
 import { readDesignJsonOrRebuild, writeDesignJson } from './lib/write-design-json.js'
 
 const API = 'https://api.figma.com/v1'
@@ -134,15 +134,18 @@ export function buildPullRegistryResult({
   now: string
 }) {
   const existingNames = new Set(registryComponentNames(registry))
+  const registryComponents = (registry.components ?? {}) as Record<string, any>
   const kitPages = kitPageIndices(orderedPageNames, nonKitPages)
   const kitComponents = liveComponents.filter((c) => kitPages.has(c.pageIndex))
-  const customComponentCount = liveComponents.length - kitComponents.length
   const newEntries = buildKitRegistryEntries({ liveKitComponents: kitComponents, existingNames }, now)
-  const changed = detectChangedKitComponents({
-    liveKitComponents: kitComponents,
-    registryComponents: (registry.components ?? {}) as Record<string, any>
-  })
-  return { newEntries, changed, kitComponentCount: kitComponents.length, customComponentCount }
+  const changed = detectChangedKitComponents({ liveKitComponents: kitComponents, registryComponents })
+  // Code-owned entries are derived from the @code-owned marker across ALL live
+  // components (marker overrides positional kit/custom classification), and
+  // merged last so they win.
+  const { written: codeOwnedEntries, changed: codeOwnedChanged } = buildCodeOwnedEntries({ liveComponents, registryComponents }, now)
+  const codeOwnedComponentCount = liveComponents.filter((c) => c.description && /@code-owned:/.test(c.description)).length
+  const customComponentCount = liveComponents.length - kitComponents.length - codeOwnedComponentCount
+  return { newEntries, changed, codeOwnedEntries, codeOwnedChanged, kitComponentCount: kitComponents.length, customComponentCount, codeOwnedComponentCount }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -165,13 +168,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   })
 
   const now = new Date().toISOString()
-  const { newEntries, changed, kitComponentCount, customComponentCount } = buildPullRegistryResult({
-    liveComponents,
-    orderedPageNames,
-    nonKitPages,
-    registry,
-    now
-  })
+  const { newEntries, changed, codeOwnedEntries, codeOwnedChanged, kitComponentCount, customComponentCount, codeOwnedComponentCount } =
+    buildPullRegistryResult({
+      liveComponents,
+      orderedPageNames,
+      nonKitPages,
+      registry,
+      now
+    })
 
   // Re-stamp components that drifted in Figma (manual edit): refresh their
   // variantMatrix/description and flag out-of-sync so the change-scoped
@@ -188,7 +192,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     }
   }
 
-  const merged = { ...registry, components: { ...(registry.components ?? {}), ...newEntries, ...restamped } }
+  // code-owned entries merged last: the @code-owned marker overrides any
+  // positional kit/custom classification for the same name.
+  const merged = { ...registry, components: { ...(registry.components ?? {}), ...newEntries, ...restamped, ...codeOwnedEntries } }
   writeDesignJson(cwd, 'registry.json', merged)
 
   console.log(
@@ -196,9 +202,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       {
         kitComponentCount,
         customComponentCount,
+        codeOwnedComponentCount,
         newEntryCount: Object.keys(newEntries).length,
         changedCount: changed.length,
-        changed: changed.map((c) => ({ name: c.name, reasons: c.reasons }))
+        changed: changed.map((c) => ({ name: c.name, reasons: c.reasons })),
+        codeOwnedWritten: Object.keys(codeOwnedEntries),
+        codeOwnedChanged: codeOwnedChanged.map((c) => ({ name: c.name, reasons: c.reasons }))
       },
       null,
       2

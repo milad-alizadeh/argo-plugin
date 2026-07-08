@@ -46,7 +46,21 @@ describe('RegistryEntrySchema (design-memory-placement.md, thin pointer index, s
     expect(RegistryEntrySchema.safeParse({ ...valid, kind: 'custom' }).success).toBe(true)
   })
 
-  it('rejects a kind outside kit|custom', () => {
+  it('accepts kind code-owned with a codePath (the code implementation lives in the repo, Figma carries only a screenshot)', () => {
+    const result = RegistryEntrySchema.safeParse({
+      ...valid,
+      kind: 'code-owned',
+      codePath: 'src/renderer/src/components/scene-wallpaper/SceneWallpaper.tsx'
+    })
+    expect(result.success).toBe(true)
+    expect(result.data?.codePath).toBe('src/renderer/src/components/scene-wallpaper/SceneWallpaper.tsx')
+  })
+
+  it('accepts an entry with no codePath (kit/custom entries never carry one)', () => {
+    expect(RegistryEntrySchema.safeParse(valid).success).toBe(true)
+  })
+
+  it('rejects a kind outside kit|custom|code-owned', () => {
     expect(RegistryEntrySchema.safeParse({ ...valid, kind: 'controls' }).success).toBe(false)
   })
 

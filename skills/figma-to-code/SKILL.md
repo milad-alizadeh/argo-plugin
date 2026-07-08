@@ -23,6 +23,12 @@ interactively.
 
 ## Preconditions
 
+- **Code-owned components are never generated here.** If the target's
+  `design/registry.json` entry has `kind: 'code-owned'`, its real
+  implementation already lives at the entry's `codePath` (a Three.js scene or
+  similar that Figma holds only as a screenshot). Do not generate, spec-diff,
+  or VRT it — import the existing component from `codePath` and place it where
+  a screen needs it. Stop and skip the generation loop for that component.
 - `design/story-map.json` must have an entry for the target component. If
   not: either the component doesn't exist in Figma yet (build it first via
   `figma-create`, then sync via `figma-sync`) or it was never synced (run

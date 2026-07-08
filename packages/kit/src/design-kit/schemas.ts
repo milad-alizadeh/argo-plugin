@@ -27,14 +27,23 @@ export const StoryMapEntrySchema = z.object({
  * is reinstated, optional, by registry-covers-kit.md's owner addendum:
  * pull-registry extracts each component's native Figma description
  * deterministically, never hand-maintained in registry.json.
+ *
+ * `code-owned` (third kind): the component's real implementation is code
+ * (e.g. a Three.js scene), so Figma carries only a flat screenshot and the
+ * `@code-owned: <path>` marker in the component description. pull-registry
+ * derives this kind + `codePath` deterministically from that marker; such
+ * nodes are exempt from tier-0 (a screenshot can't satisfy binding rules) and
+ * figma-to-code imports the existing component instead of generating one.
  */
 export const RegistryEntrySchema = z.object({
   nodeId: z.string(),
-  kind: z.enum(['kit', 'custom']),
+  kind: z.enum(['kit', 'custom', 'code-owned']),
   status: z.enum(['draft', 'audit-clean', 'out-of-sync', 'orphaned']),
   lastSyncedAt: z.string().nullable(),
   variantMatrix: z.record(z.string(), z.array(z.string())),
-  description: z.string().optional()
+  description: z.string().optional(),
+  /** Repo-relative path to the code implementation; set only for `code-owned`. */
+  codePath: z.string().optional()
 })
 
 /** design-memory-placement.md Mechanism 2: registry.json's file header — freshness metadata a reader uses to distinguish a fresh registry from a wholesale-rotted one. */

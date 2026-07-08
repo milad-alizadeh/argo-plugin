@@ -192,6 +192,7 @@ export function buildKitRegistryEntries(
   for (const c of liveKitComponents) {
     if (existingNames.has(c.name)) continue
     if (PASCAL_EXEMPT_PREFIXES.some((p) => c.name.startsWith(p))) continue
+    if (parseCodeOwnedPath(c.description)) continue // code-owned wins over positional kit classification
     entries[c.name] = {
       nodeId: c.nodeId,
       kind: 'kit',
@@ -231,6 +232,7 @@ export function detectChangedKitComponents({
   const changed: ChangedKitComponent[] = []
   for (const c of liveKitComponents) {
     if (PASCAL_EXEMPT_PREFIXES.some((p) => c.name.startsWith(p))) continue
+    if (parseCodeOwnedPath(c.description)) continue // handled by buildCodeOwnedEntries
     const entry = registryComponents[c.name]
     if (!entry || entry.kind !== 'kit') continue // new or non-kit handled elsewhere
     const liveMatrix = extractVariantMatrix(c.componentPropertyDefinitions)
@@ -240,6 +242,84 @@ export function detectChangedKitComponents({
     if (reasons.length) changed.push({ name: c.name, reasons, variantMatrix: liveMatrix, ...(c.description ? { description: c.description } : {}) })
   }
   return changed
+}
+
+/**
+ * The `@code-owned: <path>` marker (single source of truth, authored in the
+ * Figma component description by the designer/figma-create when a placeholder
+ * screenshot stands in for a code-native implementation). Returns the repo-
+ * relative path, or null when the marker is absent/empty. The path is the
+ * first whitespace-delimited token after the colon; the rest of the
+ * description (purpose, category) is ignored. Pure and deterministic — the
+ * registry classification is a function of the Figma description alone, never
+ * hand-maintained.
+ */
+export function parseCodeOwnedPath(description?: string): string | null {
+  if (!description) return null
+  const m = description.match(/@code-owned:\s*(\S+)/)
+  return m ? m[1] : null
+}
+
+type CodeOwnedEntry = {
+  nodeId: string
+  kind: 'code-owned'
+  status: 'draft' | 'audit-clean' | 'out-of-sync' | 'orphaned'
+  lastSyncedAt: string
+  variantMatrix: Record<string, string[]>
+  codePath: string
+  description?: string
+}
+
+/**
+ * Deterministic derivation of `code-owned` registry entries from the live
+ * Figma components' descriptions — runs over ALL live components regardless of
+ * kit/custom page band (the marker overrides positional classification). For
+ * each component carrying the `@code-owned:` marker it emits the registry
+ * entry to write, but ONLY when new or drifted (nodeId/codePath/variantMatrix/
+ * description changed) so a repeat pull is a no-op that preserves
+ * `lastSyncedAt`. `status` is preserved from any existing entry, else
+ * `audit-clean` — code-owned nodes are tier-0 exempt (a screenshot can't
+ * satisfy binding rules), so "clean" is their resting state.
+ */
+export function buildCodeOwnedEntries(
+  {
+    liveComponents,
+    registryComponents
+  }: {
+    liveComponents: LiveKitComponent[]
+    registryComponents: Record<string, { kind?: string; nodeId?: string; codePath?: string; status?: string; variantMatrix?: Record<string, string[]>; description?: string }>
+  },
+  now: string
+): { written: Record<string, CodeOwnedEntry>; changed: ChangedKitComponent[] } {
+  const written: Record<string, CodeOwnedEntry> = {}
+  const changed: ChangedKitComponent[] = []
+  for (const c of liveComponents) {
+    const codePath = parseCodeOwnedPath(c.description)
+    if (!codePath) continue
+    const prev = registryComponents[c.name]
+    const variantMatrix = extractVariantMatrix(c.componentPropertyDefinitions)
+    const reasons: string[] = []
+    if (!prev || prev.kind !== 'code-owned') reasons.push('new code-owned')
+    else {
+      if (prev.nodeId !== c.nodeId) reasons.push('nodeId changed')
+      if (prev.codePath !== codePath) reasons.push('codePath changed')
+      if (JSON.stringify(prev.variantMatrix ?? {}) !== JSON.stringify(variantMatrix)) reasons.push('variantMatrix changed')
+      if ((prev.description ?? '') !== (c.description ?? '')) reasons.push('description changed')
+    }
+    if (reasons.length === 0) continue
+    written[c.name] = {
+      ...prev, // preserve any human/agent extras (e.g. notes) already on the entry
+      nodeId: c.nodeId,
+      kind: 'code-owned',
+      status: (prev?.status as CodeOwnedEntry['status']) ?? 'audit-clean',
+      lastSyncedAt: now,
+      variantMatrix,
+      codePath,
+      ...(c.description ? { description: c.description } : {})
+    }
+    changed.push({ name: c.name, reasons, variantMatrix, ...(c.description ? { description: c.description } : {}) })
+  }
+  return { written, changed }
 }
 
 function toPascalCase(name: string): string {

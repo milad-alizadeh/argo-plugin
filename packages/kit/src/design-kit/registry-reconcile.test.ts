@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, detectChangedKitComponents, isPascalCaseComponentName } from './registry-reconcile.js'
+import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, detectChangedKitComponents, isPascalCaseComponentName, parseCodeOwnedPath, buildCodeOwnedEntries } from './registry-reconcile.js'
 
 describe('reconcileRegistrySweep (design-memory-placement.md A3, figma-sync sweep)', () => {
   it('flags a live component with no registry entry (registry-unregistered)', () => {
@@ -271,5 +271,85 @@ describe('detectChangedKitComponents (manual Figma edit capture, directive 6)', 
 describe('isPascalCaseComponentName (kit-name regression lock)', () => {
   it('accepts a plausible kit top-level component/page name', () => {
     expect(isPascalCaseComponentName('Buttons')).toBe(true)
+  })
+})
+
+describe('parseCodeOwnedPath (@code-owned marker)', () => {
+  it('extracts the repo-relative path from the marker line', () => {
+    expect(parseCodeOwnedPath('Full-bleed backdrop. Category: scene.\n@code-owned: src/renderer/src/components/scene-wallpaper/SceneWallpaper.tsx')).toBe(
+      'src/renderer/src/components/scene-wallpaper/SceneWallpaper.tsx'
+    )
+  })
+
+  it('tolerates extra whitespace after the colon', () => {
+    expect(parseCodeOwnedPath('@code-owned:    a/b/C.tsx')).toBe('a/b/C.tsx')
+  })
+
+  it('returns null when the marker is absent or the description is empty', () => {
+    expect(parseCodeOwnedPath('Just a normal description.')).toBeNull()
+    expect(parseCodeOwnedPath(undefined)).toBeNull()
+    expect(parseCodeOwnedPath('')).toBeNull()
+  })
+})
+
+describe('buildCodeOwnedEntries (deterministic derivation from the Figma marker)', () => {
+  const marker = '@code-owned: src/components/scene-wallpaper/SceneWallpaper.tsx'
+
+  it('emits a code-owned entry for a marker-carrying live component regardless of page band', () => {
+    const { written, changed } = buildCodeOwnedEntries(
+      { liveComponents: [{ name: 'SceneWallpaper', nodeId: '5091:7366', description: `Backdrop. ${marker}` }], registryComponents: {} },
+      '2026-07-08T00:00:00Z'
+    )
+    expect(written.SceneWallpaper).toMatchObject({
+      nodeId: '5091:7366',
+      kind: 'code-owned',
+      status: 'audit-clean',
+      codePath: 'src/components/scene-wallpaper/SceneWallpaper.tsx',
+      lastSyncedAt: '2026-07-08T00:00:00Z'
+    })
+    expect(changed[0]).toMatchObject({ name: 'SceneWallpaper', reasons: ['new code-owned'] })
+  })
+
+  it('ignores components with no marker', () => {
+    const { written } = buildCodeOwnedEntries(
+      { liveComponents: [{ name: 'Card', nodeId: '1:1', description: 'A card.' }], registryComponents: {} },
+      '2026-07-08T00:00:00Z'
+    )
+    expect(written).toEqual({})
+  })
+
+  it('is a no-op (preserves lastSyncedAt) when the entry is unchanged', () => {
+    const { written, changed } = buildCodeOwnedEntries(
+      {
+        liveComponents: [{ name: 'SceneWallpaper', nodeId: '5091:7366', description: `Backdrop. ${marker}` }],
+        registryComponents: {
+          SceneWallpaper: {
+            kind: 'code-owned',
+            nodeId: '5091:7366',
+            codePath: 'src/components/scene-wallpaper/SceneWallpaper.tsx',
+            status: 'audit-clean',
+            variantMatrix: {},
+            description: `Backdrop. ${marker}`
+          }
+        }
+      },
+      '2026-07-08T00:00:00Z'
+    )
+    expect(written).toEqual({})
+    expect(changed).toEqual([])
+  })
+
+  it('re-stamps when the codePath drifts, preserving the prior status', () => {
+    const { written, changed } = buildCodeOwnedEntries(
+      {
+        liveComponents: [{ name: 'SceneWallpaper', nodeId: '5091:7366', description: '@code-owned: src/new/Path.tsx' }],
+        registryComponents: {
+          SceneWallpaper: { kind: 'code-owned', nodeId: '5091:7366', codePath: 'src/old/Path.tsx', status: 'out-of-sync', variantMatrix: {} }
+        }
+      },
+      '2026-07-08T00:00:00Z'
+    )
+    expect(written.SceneWallpaper).toMatchObject({ codePath: 'src/new/Path.tsx', status: 'out-of-sync' })
+    expect(changed[0].reasons).toContain('codePath changed')
   })
 })

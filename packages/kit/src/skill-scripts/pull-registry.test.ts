@@ -82,6 +82,21 @@ describe('buildPullRegistryResult', () => {
     expect(result.newEntries.Calendar.description).toBe('Date picker calendar grid.')
   })
 
+  it('derives a code-owned entry from the @code-owned marker regardless of page band', () => {
+    const liveComponents = [
+      { name: 'SceneWallpaper', nodeId: '5091:7366', pageName: 'Custom Components', pageIndex: 0, description: 'Backdrop. @code-owned: src/scene/SceneWallpaper.tsx' }
+    ]
+    const result = buildPullRegistryResult({
+      liveComponents,
+      orderedPageNames: ['Custom Components'],
+      registry: { components: {} },
+      now: '2026-07-08T00:00:00.000Z'
+    })
+    expect(result.codeOwnedComponentCount).toBe(1)
+    expect(result.customComponentCount).toBe(0) // not double-counted as custom
+    expect(result.codeOwnedEntries.SceneWallpaper).toMatchObject({ kind: 'code-owned', codePath: 'src/scene/SceneWallpaper.tsx' })
+  })
+
   it('leaves an already-registered kit component untouched', () => {
     const liveComponents = marshalRestDocument(fixture as any)
     const orderedPageNames = (fixture as any).document.children.map((p: any) => p.name)

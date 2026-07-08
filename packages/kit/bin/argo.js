@@ -73,6 +73,7 @@ const DESIGN_VERBS = {
   'generate-token-manifest': '../dist/skill-scripts/generate-token-manifest.js',
   'emit-shims': '../dist/skill-scripts/emit-shims.js',
   'pull-registry': '../dist/skill-scripts/pull-registry.js',
+  'assemble-fidelity-rubric': '../dist/skill-scripts/assemble-fidelity-rubric.js',
 }
 
 function runDesignVerb(verb, args) {

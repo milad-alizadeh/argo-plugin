@@ -168,3 +168,31 @@ export function crossAxisAnchorOffsetViolations(rows: any[], tolerancePx: number
   }
   return violations
 }
+
+/**
+ * A HUG-sized axis whose own children's combined box exceeds the node's
+ * OWN rendered width/height is the combineAsVariants-freeze symptom
+ * figma-create's step 4 flagged as untestable without live measurement —
+ * but the walker already reads POST-LAYOUT absoluteBoundingBox, i.e. real
+ * rendered geometry, not intent, so this is a plain comparison.
+ */
+export function hugOverflowViolations(node: any): GeometryViolation[] {
+  const violations: GeometryViolation[] = []
+  for (const child of node.children ?? []) {
+    if (node.layoutSizingHorizontal === 'HUG' && child.x + child.width > node.x + node.width) {
+      violations.push({ rule: 'hug-overflow-horizontal', nodeId: node.id, detail: `"${node.name}" is HUG-horizontal but child "${child.name}" extends past its right edge` })
+    }
+    if (node.layoutSizingVertical === 'HUG' && child.y + child.height > node.y + node.height) {
+      violations.push({ rule: 'hug-overflow-vertical', nodeId: node.id, detail: `"${node.name}" is HUG-vertical but child "${child.name}" extends past its bottom edge` })
+    }
+  }
+  return violations
+}
+
+const MIN_TOUCH_TARGET_PX = 24 // configurable — see prepare-tier0-audit-options wiring
+
+/** Scopes to nodes carrying the opt-in #hit-target role tag (resolved decision 3). */
+export function touchTargetViolation(node: any, minPx: number = MIN_TOUCH_TARGET_PX): GeometryViolation | null {
+  if (node.width >= minPx && node.height >= minPx) return null
+  return { rule: 'touch-target-too-small', nodeId: node.id, detail: `#hit-target "${node.name}" is ${node.width}x${node.height}, below the ${minPx}x${minPx}px minimum` }
+}

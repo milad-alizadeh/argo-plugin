@@ -5,7 +5,9 @@ import {
   interRowContinuityViolations,
   indentAndRowConsistencyViolations,
   loadBearingVisibilityViolations,
-  crossAxisAnchorOffsetViolations
+  crossAxisAnchorOffsetViolations,
+  hugOverflowViolations,
+  touchTargetViolation
 } from './geometry-rules.js'
 
 function row(name: string, contentStartX: number, id = name) {
@@ -207,5 +209,77 @@ describe('crossAxisAnchorOffsetViolations', () => {
   it('skips rows with no anchor tag, []', () => {
     const rows = [offsetRow('Row 1', 0, 8), { name: 'Row 2', y: 40, children: [] }]
     expect(crossAxisAnchorOffsetViolations(rows, 1)).toEqual([])
+  })
+})
+
+describe('hugOverflowViolations', () => {
+  it('flags a HUG-horizontal container with an overflowing child', () => {
+    const node = {
+      id: 'n1',
+      name: 'Row',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 40,
+      layoutSizingHorizontal: 'HUG',
+      children: [{ name: 'Label', x: 90, y: 0, width: 30, height: 20 }]
+    }
+    expect(hugOverflowViolations(node)).toEqual([
+      { rule: 'hug-overflow-horizontal', nodeId: 'n1', detail: '"Row" is HUG-horizontal but child "Label" extends past its right edge' }
+    ])
+  })
+
+  it('passes a HUG container whose children fit', () => {
+    const node = {
+      id: 'n1',
+      name: 'Row',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 40,
+      layoutSizingHorizontal: 'HUG',
+      children: [{ name: 'Label', x: 10, y: 0, width: 30, height: 20 }]
+    }
+    expect(hugOverflowViolations(node)).toEqual([])
+  })
+
+  it('passes a non-HUG container with an "overflowing" child (unclippedOverflowViolations already covers general overflow)', () => {
+    const node = {
+      id: 'n1',
+      name: 'Row',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 40,
+      layoutSizingHorizontal: 'FIXED',
+      children: [{ name: 'Label', x: 90, y: 0, width: 30, height: 20 }]
+    }
+    expect(hugOverflowViolations(node)).toEqual([])
+  })
+})
+
+describe('touchTargetViolation', () => {
+  it('passes at exactly 24x24', () => {
+    expect(touchTargetViolation({ id: 'n1', name: 'Checkbox #hit-target', width: 24, height: 24 })).toBeNull()
+  })
+
+  it('fails at 23x24', () => {
+    expect(touchTargetViolation({ id: 'n1', name: 'Checkbox #hit-target', width: 23, height: 24 })).toEqual({
+      rule: 'touch-target-too-small',
+      nodeId: 'n1',
+      detail: '#hit-target "Checkbox #hit-target" is 23x24, below the 24x24px minimum'
+    })
+  })
+
+  it('fails at 24x23', () => {
+    expect(touchTargetViolation({ id: 'n1', name: 'Checkbox #hit-target', width: 24, height: 23 })?.rule).toBe('touch-target-too-small')
+  })
+
+  it('respects a configured minPx', () => {
+    expect(touchTargetViolation({ id: 'n1', name: 'Checkbox #hit-target', width: 32, height: 32 }, 40)).toEqual({
+      rule: 'touch-target-too-small',
+      nodeId: 'n1',
+      detail: '#hit-target "Checkbox #hit-target" is 32x32, below the 40x40px minimum'
+    })
   })
 })

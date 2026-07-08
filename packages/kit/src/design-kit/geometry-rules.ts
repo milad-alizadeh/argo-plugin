@@ -39,3 +39,28 @@ export function contentStartAlignmentViolations(rows: any[], tolerancePx: number
   }
   return violations
 }
+
+/**
+ * A tree's connector rail (#rail) must span from the tree ROOT's own
+ * #anchor y-center to the LAST child row's #anchor y-center — two-sided:
+ * catches both overshoot (rail runs past the last item) and undershoot
+ * (rail stops short of it). y-center, not y, because a rail visually
+ * connects dot-centers, not box tops.
+ */
+export function railAnchorSpanViolation(tree: any, rows: any[], tolerancePx: number): GeometryViolation | null {
+  const rail = findAllByRole(tree, 'rail')[0]
+  const rootAnchor = findAllByRole(tree, 'anchor').find((a) => !rows.some((r) => findAllByRole(r, 'anchor').includes(a)))
+  const lastRow = rows[rows.length - 1]
+  const lastAnchor = lastRow ? findAllByRole(lastRow, 'anchor')[0] : null
+  if (!rail || !rootAnchor || !lastAnchor) return null
+  const expectedStart = rootAnchor.y + rootAnchor.height / 2
+  const expectedEnd = lastAnchor.y + lastAnchor.height / 2
+  const actualStart = rail.y
+  const actualEnd = rail.y + rail.height
+  if (Math.abs(actualStart - expectedStart) <= tolerancePx && Math.abs(actualEnd - expectedEnd) <= tolerancePx) return null
+  return {
+    rule: 'rail-anchor-span-mismatch',
+    nodeId: rail.id,
+    detail: `rail spans y=${actualStart}..${actualEnd}, expected y=${expectedStart}..${expectedEnd} (parent anchor to last-child anchor center) — overshoot or undershoot`
+  }
+}

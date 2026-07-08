@@ -88,15 +88,25 @@ none at all.
    but only when it resolves to EXACTLY one node; an ambiguous name reports
    `ambiguous-audit-target-name` instead of silently auditing every match.
    This is the mode other skills depend on — never soften it to advisory.
-2. **File-wide sweep (advisory)** — when run standalone with no component
-   names, walks every top-level frame on every page and reports violations
-   as **advisory** findings (un-synced frames, stray hygiene issues) — it
-   informs, it doesn't block anything on its own. Also reports
-   `unsectioned-component` (a component not a child of any category shelf
-   frame on `Custom Components`) and `missing-component-description`.
+2. **File-wide sweep (advisory), SCOPED to registry + screens (D26,
+   2026-07-08)** — when run standalone with no component names, walks every
+   registry-listed component (`design/registry.json`'s full entry set — kit
+   or custom, no exemption; directive 3 still applies) plus the project's
+   composed-screen pages (`design.<app>.sweepPageNames`, defaulting to
+   `['Screens']`) and reports violations as **advisory** findings (un-synced
+   frames, stray hygiene issues) — it informs, it doesn't block anything on
+   its own. This is NOT a literal every-page walk: a starter file's kit
+   primitive pages, demo/example pages, and icon libraries are almost
+   entirely stock content nobody in the project touched, and auditing them
+   was pure noise (hundreds of findings on unedited shadcn content). Also
+   reports `unsectioned-component` (a component not a child of any category
+   shelf frame on `Custom Components`) and `missing-component-description`.
    Registry-reconcile is NOT part of this sweep — it moved to `figma-sync`'s
    staleness step (design-system-reset-overhaul.md Slice 4), since both walk
-   the live component list against the registry in the same pass.
+   the live component list against the registry in the same pass. A project
+   that genuinely wants every page walked can still pass `pageId` (single
+   page) or omit both `sweepNodeIds`/`sweepPageNames` (whole file) directly
+   to `runTier0Audit` — an explicit opt-in, never this skill's default.
 
 ## Procedure
 
@@ -112,17 +122,20 @@ none at all.
    auditing "Card" also swept a container frame literally named "Card"), and
    returns `{ componentNodeIds, componentNames, compositeNames,
    semanticCollectionName, additionalAllowedCollectionNames, recipe,
-   viewport }` — `componentNodeIds` is the resolved authoritative target
-   list; `componentNames` on the way OUT holds only names that had no
-   registry entry (a fallback resolved sandbox-side by an unambiguous
-   single-match name lookup, never a blind multi-node sweep); `viewport` is
-   `{ width, height }` from `design.<app>.viewport` when configured
-   (undefined otherwise — opt-in, gates the `screen-viewport-mismatch`
-   check; not the unrelated `design.<app>.vrtEnvironment.viewport` STRING, a
-   different concept and owner: the Storybook/Playwright VRT capture
-   viewport). Keep the whole returned object — every DATA field the bundled
-   script's completion value needs; never hand-author a trimmed
-   `{ componentNames: [...] }`.
+   viewport, sweepNodeIds, sweepPageNames }` — `componentNodeIds` is the
+   resolved authoritative target list for a NAMED audit; `componentNames` on
+   the way OUT holds only names that had no registry entry (a fallback
+   resolved sandbox-side by an unambiguous single-match name lookup, never a
+   blind multi-node sweep); `viewport` is `{ width, height }` from
+   `design.<app>.viewport` when configured (undefined otherwise — opt-in,
+   gates the `screen-viewport-mismatch` check; not the unrelated
+   `design.<app>.vrtEnvironment.viewport` STRING, a different concept and
+   owner: the Storybook/Playwright VRT capture viewport). `sweepNodeIds`
+   (every registry component's nodeId) and `sweepPageNames` (defaulting to
+   `['Screens']`) are populated ONLY when `componentNames` was passed in
+   empty (sweep intent) — empty for a named audit. Keep the whole returned
+   object — every DATA field the bundled script's completion value needs;
+   never hand-author a trimmed `{ componentNames: [...] }`.
 3. **Bundle the audit for the returned `recipe` — never hand-assemble or
    paste raw source into `use_figma`.** Run `argo design bundle-tier0-audit
    --recipe <recipe>` (wraps `bundleTier0AuditForRecipe`), `cwd` set to the
@@ -144,29 +157,19 @@ none at all.
    - **Named audit (mode 1):** execute the bundle in ONE `use_figma` call,
      calling the completion value with the FULL options object from step 2
      unchanged.
-   - **File-wide sweep (mode 2): fan out one `use_figma` call per page —
-     never one call walking the whole file.** `runTier0Audit` accepts an
-     options field `pageId`; when set, it scopes the sweep to that single
-     page (and is the only page switch the script performs, honoring the
-     "`setCurrentPageAsync` at most once per call" rule). Walking every page
-     of a file with 100+ components in one script risks exceeding the
-     `use_figma` transport's size/time budget — it fails atomically with no
-     partial result, indistinguishable from a real error. Instead:
-     (a) one read-only `use_figma` call returning `figma.root.children.map(p
-     => ({id: p.id, name: p.name}))`; (b) exclude wireframe pages (`W<NN>
-     …`/`Cover`, already skipped inside the audit but cheaper to drop before
-     spending a call) and any project-configured icon-library pages
-     (`nonKitPages`, e.g. `*Icons`/`*Icon`) — these are raw vector glyph
-     libraries outside the design pack's governance, not something this
-     sweep should spend calls auditing; (c) emit the remaining pages as N
-     parallel `use_figma` tool-use blocks in ONE assistant message (per
-     figma-use's page-switching fan-out rule), each running the bundle with
-     `{ ...optionsFromStep2, pageId: '<page id>' }` and returning `{ page:
-     name, total, bySeverity, byRule, violations }`; (d) if the file is
-     large, batch pages across a few messages rather than one message with
-     dozens of blocks. Concatenate every page's `violations` array before
-     recording the receipt (step 5) and reporting (step 4) — the receipt
-     must reflect the WHOLE sweep, not one page.
+   - **File-wide sweep (mode 2): ONE `use_figma` call, options unchanged —
+     no page fan-out needed.** Step 2's options already carry `sweepNodeIds`
+     (every registry component) and `sweepPageNames` (defaulting to
+     `['Screens']`); `runTier0Audit` resolves every `sweepNodeIds` entry via
+     `loadAllPagesAsync` + `getNodeByIdAsync`, which finds a node on any
+     loaded page WITHOUT switching `figma.currentPage` — so, unlike a
+     whole-file walk, the scoped sweep's total audited surface (a project's
+     own ~100-200 components/screens, not every top-level frame on a
+     starter file's 50+ pages of kit primitives/demos/icon libraries) stays
+     small enough for one call regardless of file size. Call the bundle's
+     completion value with the FULL options object from step 2 unchanged —
+     do not hand-author a `pageId` fan-out; that was the PRE-D26 workaround
+     for a whole-file sweep and no longer applies to the default path.
    Execute it via `use_figma`. **Tag every call `figma-read-only` in
    `skillNames`** (fidelity-geometry-verifier.md Slice 13, same mechanism as
    figma-wireframe's `figma-wireframe` tag): the audit itself never mutates

@@ -411,6 +411,8 @@ export async function runTier0Audit(
     runRecipeTier0Checks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean }) => Promise<any[]>
     viewport?: { width: number; height: number }
     pageId?: string
+    sweepNodeIds?: string[]
+    sweepPageNames?: string[]
   } = {}
 ) {
   const {
@@ -423,7 +425,9 @@ export async function runTier0Audit(
     additionalAllowedCollectionNames = [],
     runRecipeTier0Checks,
     viewport,
-    pageId
+    pageId,
+    sweepNodeIds = [],
+    sweepPageNames = []
   } = options
   const violations: any[] = []
 
@@ -479,18 +483,55 @@ export async function runTier0Audit(
       if (isWireframePageName(owningPageName)) continue
       await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
     }
+  } else if (sweepNodeIds.length || sweepPageNames.length) {
+    // Scoped sweep (D26, 2026-07-08): the DEFAULT file-wide sweep now covers
+    // only every registry-listed component (`sweepNodeIds`, derived by
+    // `prepare-tier0-audit-options.js` from ALL of `design/registry.json` —
+    // kit or custom, no exemption) plus the project's own composed-screen
+    // pages (`sweepPageNames`, e.g. `['Screens']`) — not literally every
+    // top-level frame on every page of a starter file. Kit primitive pages,
+    // demo/example pages, and icon libraries were never something this
+    // sweep should spend calls on: almost entirely stock content nobody in
+    // the project touched, and on a 50+ page file, large enough to risk the
+    // `use_figma` transport's size/time budget in one whole-file walk (the
+    // exact failure this scoping also incidentally fixes, by shrinking the
+    // walked surface rather than chunking it). `loadAllPagesAsync` resolves
+    // every `sweepNodeIds` entry regardless of which page it lives on
+    // without ever switching `figma.currentPage` — so, unlike the legacy
+    // `pageId` branch below, this can audit the whole scoped surface in ONE
+    // `use_figma` call.
+    try {
+      await figma.loadAllPagesAsync()
+    } catch {
+      /* sandbox: figma.root.findAll / cross-page getNodeByIdAsync sees only loaded pages */
+    }
+    const sweepOpts = { hard: false, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks, viewport }
+    for (const nodeId of sweepNodeIds) {
+      const match = await figma.getNodeByIdAsync(nodeId)
+      if (!match) {
+        violations.push({ severity: 'advisory', rule: 'audit-target-not-found', nodeId, nodeName: null, detail: `no node resolves to nodeId "${nodeId}" — the registry entry may be stale` })
+        continue
+      }
+      const owningPageName = findOwningPage(match)?.name ?? ''
+      if (isWireframePageName(owningPageName)) continue
+      await walk(match, { ...sweepOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
+    }
+    for (const page of figma.root.children) {
+      if (!sweepPageNames.includes(page.name)) continue
+      if (isWireframePageName(page.name)) continue
+      for (const topLevel of page.children) {
+        await walk(topLevel, { ...sweepOpts, isScreenFrame: isDesignPageName(page.name) }, violations)
+      }
+    }
   } else {
-    // `pageId` (D25, 2026-07-08): scopes the advisory sweep to ONE page,
-    // set via `figma.setCurrentPageAsync` here — the only page switch this
-    // script performs, honoring the "at most once per use_figma call" rule.
-    // A whole-file sweep (`pageId` omitted) walks every page's node tree in
-    // one script; on a large file (100+ components across 50+ pages) that
-    // single call can exceed the transport's size/time budget and drop
-    // mid-execution with no partial result. figma-audit/SKILL.md's
-    // file-wide-sweep procedure now fans this out — one read-only call to
-    // list page ids, then N parallel `use_figma` calls (one per page) each
-    // passing `pageId` — instead of ever invoking the whole-file branch on a
-    // file of any real size.
+    // Legacy whole-file sweep — kept as an explicit opt-in escape hatch
+    // (neither `sweepNodeIds` nor `sweepPageNames` set), never the default
+    // path `prepare-tier0-audit-options.js` wires up anymore (see the scoped
+    // branch above). `pageId` (D25, 2026-07-08) scopes it to ONE page, set
+    // via `figma.setCurrentPageAsync` here — the only page switch this
+    // script performs, honoring the "at most once per use_figma call" rule —
+    // for a caller that still wants to walk a page's every frame regardless
+    // of registry membership.
     const pages = pageId ? [await figma.getNodeByIdAsync(pageId)].filter(Boolean) : figma.root.children
     for (const page of pages) {
       // Wireframe-page exemption (figma-wireframe/SKILL.md): wireframe

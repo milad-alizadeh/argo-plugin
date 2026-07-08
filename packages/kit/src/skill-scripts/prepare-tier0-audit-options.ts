@@ -41,11 +41,19 @@ const RECIPE_ADDITIONAL_ALLOWED_COLLECTION_NAMES: Record<string, string[]> = {
 export function resolveComponentNodeIds(
   componentNames: string[],
   registry: any
-): { componentNodeIds: string[]; unresolvedNames: string[] } {
+): { componentNodeIds: string[]; unresolvedNames: string[]; codeOwnedExemptNames: string[] } {
   const components = registry?.components && typeof registry.components === 'object' ? registry.components : {}
   const componentNodeIds: string[] = []
   const unresolvedNames: string[] = []
+  const codeOwnedExemptNames: string[] = []
   for (const name of componentNames) {
+    // A code-owned component is a flat screenshot standing in for a code
+    // implementation — it can't satisfy binding rules and is never audited.
+    // Exempt it BEFORE resolving a nodeId so it never enters the target set.
+    if (components[name]?.kind === 'code-owned') {
+      codeOwnedExemptNames.push(name)
+      continue
+    }
     const nodeId = components[name]?.nodeId
     if (typeof nodeId === 'string' && nodeId) {
       componentNodeIds.push(nodeId)
@@ -53,7 +61,7 @@ export function resolveComponentNodeIds(
       unresolvedNames.push(name)
     }
   }
-  return { componentNodeIds, unresolvedNames }
+  return { componentNodeIds, unresolvedNames, codeOwnedExemptNames }
 }
 
 function readOptionalJson(path: string): any {
@@ -95,6 +103,23 @@ export function findDesignBlock(cwd: string): Record<string, any> | null {
  * The insideInstance exemptions in tier0-rules.ts still spare kit internals a
  * designer only instances.
  */
+/**
+ * A file-wide sweep (`componentNames` input empty) is now SCOPED, not
+ * literal-whole-file (D26, 2026-07-08): every registry-listed component
+ * (`sweepNodeIds`, kit or custom — directive 3 above still applies, no
+ * blanket kit exemption) plus the project's composed-screen pages
+ * (`sweepPageNames`, from `design.<app>.sweepPageNames`, defaulting to
+ * `['Screens']` — the canonical page name for a project's D<NN> composed
+ * screens, already special-cased in registry-reconcile.ts's
+ * `isKitPageName`). Auditing every top-level frame on every one of a starter
+ * file's 50+ pages (kit primitives, demo/example pages, icon libraries) was
+ * both noisy (near-entirely stock shadcn content nobody in the project
+ * touched) and, on a file this size, a `use_figma` transport risk (one
+ * script walking the whole tree can exceed the size/time budget and drop
+ * mid-execution with no partial result). A NAMED audit's targets
+ * (`componentNodeIds`/`unresolvedNames` above) are unaffected — this only
+ * widens what a bare sweep (empty `componentNames` input) implies.
+ */
 export function deriveTier0AuditOptions({
   cwd,
   componentNames = []
@@ -105,16 +130,34 @@ export function deriveTier0AuditOptions({
   const registry = readOptionalJson(join(cwd, 'design', 'registry.json'))
   const designBlock = findDesignBlock(cwd)
   const recipe = designBlock?.recipe ?? null
-  const { componentNodeIds, unresolvedNames } = resolveComponentNodeIds(componentNames, registry)
+  const { componentNodeIds, unresolvedNames, codeOwnedExemptNames } = resolveComponentNodeIds(componentNames, registry)
+
+  const isSweep = componentNames.length === 0
+  const registryComponents = registry?.components && typeof registry.components === 'object' ? registry.components : {}
+  const sweepNodeIds = isSweep
+    ? Object.values(registryComponents)
+        // code-owned components (flat screenshots) are audit-exempt — keep them
+        // out of the scoped file-wide sweep too, not just named audits.
+        .filter((c: any) => c?.kind !== 'code-owned')
+        .map((c: any) => c?.nodeId)
+        .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
+    : []
+  const sweepPageNames = isSweep ? (designBlock?.sweepPageNames ?? ['Screens']) : []
 
   return {
     componentNodeIds,
     componentNames: unresolvedNames,
+    // Named but skipped: code-owned components the caller can record as
+    // intentionally-exempt so a fully-exempt target set isn't read as a
+    // vacuous clean pass.
+    codeOwnedExemptNames,
     compositeNames: registryComponentNames(registry),
     semanticCollectionName: designBlock?.semanticCollectionName ?? 'Semantic',
     additionalAllowedCollectionNames: (recipe && RECIPE_ADDITIONAL_ALLOWED_COLLECTION_NAMES[recipe]) ?? [],
     recipe,
-    viewport: designBlock?.viewport
+    viewport: designBlock?.viewport,
+    sweepNodeIds,
+    sweepPageNames
   }
 }
 

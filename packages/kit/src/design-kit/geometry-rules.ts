@@ -140,3 +140,31 @@ export function loadBearingVisibilityViolations(taggedNodes: { node: any; ancest
   }
   return violations
 }
+
+/**
+ * Every sibling row's #anchor must sit at the SAME y-offset RELATIVE to
+ * its own row's top (not absolute y — rows are at different absolute y
+ * by definition) — catches an anchor dot that's vertically off-center in
+ * one row but not its siblings.
+ */
+export function crossAxisAnchorOffsetViolations(rows: any[], tolerancePx: number): GeometryViolation[] {
+  const offsets = rows
+    .map((row) => {
+      const anchor = findAllByRole(row, 'anchor')[0]
+      return anchor ? { row, offset: anchor.y - row.y, anchor } : null
+    })
+    .filter(Boolean) as { row: any; offset: number; anchor: any }[]
+  if (offsets.length < 2) return []
+  const baseline = offsets[0].offset
+  const violations: GeometryViolation[] = []
+  for (const { row, offset, anchor } of offsets.slice(1)) {
+    if (Math.abs(offset - baseline) > tolerancePx) {
+      violations.push({
+        rule: 'anchor-cross-axis-offset',
+        nodeId: anchor.id,
+        detail: `row "${row.name}"'s #anchor sits ${offset}px from its row top, expected ${baseline}px (matching its siblings)`
+      })
+    }
+  }
+  return violations
+}

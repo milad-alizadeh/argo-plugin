@@ -4,7 +4,8 @@ import {
   railAnchorSpanViolation,
   interRowContinuityViolations,
   indentAndRowConsistencyViolations,
-  loadBearingVisibilityViolations
+  loadBearingVisibilityViolations,
+  crossAxisAnchorOffsetViolations
 } from './geometry-rules.js'
 
 function row(name: string, contentStartX: number, id = name) {
@@ -182,5 +183,29 @@ describe('loadBearingVisibilityViolations', () => {
   it('passes a node positioned outside a NON-clipping ancestor bounds', () => {
     const node = { id: 'n1', name: 'Icon #anchor', visible: true, opacity: 1, x: 150, y: 10, width: 10, height: 10 }
     expect(loadBearingVisibilityViolations([{ node, ancestors: [nonClipper] }])).toEqual([])
+  })
+})
+
+function offsetRow(name: string, rowY: number, anchorY: number, id = `${name}-anchor`) {
+  return { name, y: rowY, children: [{ id, name: 'Dot #anchor', y: anchorY }] }
+}
+
+describe('crossAxisAnchorOffsetViolations', () => {
+  it('passes matching relative offsets across 3 rows', () => {
+    const rows = [offsetRow('Row 1', 0, 8), offsetRow('Row 2', 40, 48), offsetRow('Row 3', 80, 88)]
+    expect(crossAxisAnchorOffsetViolations(rows, 1)).toEqual([])
+  })
+
+  it('flags one row whose anchor sits 3px lower relative to its own row top', () => {
+    const rows = [offsetRow('Row 1', 0, 8), offsetRow('Row 2', 40, 51), offsetRow('Row 3', 80, 88)]
+    const violations = crossAxisAnchorOffsetViolations(rows, 1)
+    expect(violations).toEqual([
+      { rule: 'anchor-cross-axis-offset', nodeId: 'Row 2-anchor', detail: 'row "Row 2"\'s #anchor sits 11px from its row top, expected 8px (matching its siblings)' }
+    ])
+  })
+
+  it('skips rows with no anchor tag, []', () => {
+    const rows = [offsetRow('Row 1', 0, 8), { name: 'Row 2', y: 40, children: [] }]
+    expect(crossAxisAnchorOffsetViolations(rows, 1)).toEqual([])
   })
 })

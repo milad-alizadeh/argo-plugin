@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { classifyStaleness, diffVariableDefs, classifyNodeDrift } from './staleness.js'
+import { classifyStaleness, diffVariableDefs, classifyNodeDrift, stalenessActionability } from './staleness.js'
 
 describe('classifyStaleness', () => {
   it('returns in-sync when nothing changed', () => {
@@ -90,5 +90,24 @@ describe('classifyNodeDrift', () => {
         liveNodeIds: ['1:1']
       })
     ).toEqual({ orphaned: ['1:2'] })
+  })
+})
+
+describe('stalenessActionability (directive 3 refined — raw kit drift is advisory, never sync-actionable)', () => {
+  it('returns in-sync when there is no drift, regardless of kind', () => {
+    expect(stalenessActionability({ kind: 'kit' }, 'in-sync')).toBe('in-sync')
+    expect(stalenessActionability({ kind: 'custom' }, 'in-sync')).toBe('in-sync')
+  })
+
+  it('downgrades any drift on a raw (un-adopted) kit master to advisory', () => {
+    expect(stalenessActionability({ kind: 'kit' }, 'presentation-drift')).toBe('advisory')
+    expect(stalenessActionability({ kind: 'kit', adopted: false }, 'api-drift')).toBe('advisory')
+    expect(stalenessActionability({ kind: 'kit' }, 'orphaned')).toBe('advisory')
+  })
+
+  it('keeps drift actionable for adopted kit, custom, and code-owned', () => {
+    expect(stalenessActionability({ kind: 'kit', adopted: true }, 'presentation-drift')).toBe('actionable')
+    expect(stalenessActionability({ kind: 'custom' }, 'api-drift')).toBe('actionable')
+    expect(stalenessActionability({ kind: 'code-owned' }, 'orphaned')).toBe('actionable')
   })
 })

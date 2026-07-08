@@ -4,7 +4,17 @@ export { StoryMapEntrySchema } from './schemas.js'
 export { DEFAULT_COMPONENT_CATEGORIES, resolveComponentCategories, validateComponentCategories } from './component-categories.js'
 export { resolveInstancePresence, summarizeInstancePresence } from './instance-presence.js'
 export { parseRequirements, parseMatrix, selectChecklistForScreen } from './completeness-checklist.js'
-export { diffVariableDefs, classifyNodeDrift, classifyStaleness } from './staleness.js'
+export { diffVariableDefs, classifyNodeDrift, classifyStaleness, stalenessActionability } from './staleness.js'
+export {
+  reconcileRegistrySweep,
+  isKitPageName,
+  kitPageIndices,
+  buildKitRegistryEntries,
+  detectChangedKitComponents,
+  buildCodeOwnedEntries,
+  parseCodeOwnedPath,
+  deriveAdoption
+} from './registry-reconcile.js'
 export { diffVariantShape } from './variant-shape-diff.js'
 export {
   unboundFillViolations,

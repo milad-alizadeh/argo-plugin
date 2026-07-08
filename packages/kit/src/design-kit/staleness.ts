@@ -37,6 +37,24 @@ export function classifyNodeDrift({
 
 export type StalenessClassification = 'in-sync' | 'presentation-drift' | 'api-drift' | 'orphaned'
 
+/**
+ * Whether a per-entry staleness result should DRIVE a sync/re-audit
+ * (`actionable`) or is mere noise to report and ignore (`advisory`). Raw
+ * (un-adopted) kit is the vendored mirror nothing in the project instances —
+ * drift on it (a starter refresh, a stock-kit tweak) must never stamp
+ * `out-of-sync` or pull the master into the hard gate (directive 3 refined,
+ * 2026-07-08: this is exactly what dragged 110+ unused stock masters into a
+ * sync/fix pass). Adopted kit, custom, and code-owned stay actionable. Pure.
+ */
+export function stalenessActionability(
+  entry: { kind?: string; adopted?: boolean },
+  classification: StalenessClassification
+): 'in-sync' | 'advisory' | 'actionable' {
+  if (classification === 'in-sync') return 'in-sync'
+  if (entry?.kind === 'kit' && entry?.adopted !== true) return 'advisory'
+  return 'actionable'
+}
+
 export function classifyStaleness({
   fileVersionChanged,
   variableDrift,

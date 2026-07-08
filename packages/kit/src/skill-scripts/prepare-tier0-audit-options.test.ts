@@ -19,6 +19,7 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         componentNodeIds: ['126:35'],
         componentNames: [],
         codeOwnedExemptNames: [],
+        rawKitExemptNames: [],
         compositeNames: ['rail-session-card', 'status-bar'],
         semanticCollectionName: 'Semantic',
         additionalAllowedCollectionNames: [],
@@ -53,6 +54,7 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         componentNodeIds: [],
         componentNames: [],
         codeOwnedExemptNames: [],
+        rawKitExemptNames: [],
         compositeNames: [],
         semanticCollectionName: 'Semantic',
         additionalAllowedCollectionNames: [],
@@ -128,7 +130,7 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
       join(cwd, 'design', 'registry.json'),
       JSON.stringify({
         components: {
-          Buttons: { nodeId: '73:1', kind: 'kit' },
+          Buttons: { nodeId: '73:1', kind: 'kit', adopted: true },
           SessionCard: { nodeId: '50:1', kind: 'custom' },
           Screenshot: { nodeId: '90:1', kind: 'code-owned' }
         }
@@ -137,6 +139,7 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
     )
     try {
       const options = deriveTier0AuditOptions({ cwd, componentNames: [] })
+      // adopted kit + custom included; code-owned excluded.
       expect(options.sweepNodeIds.sort()).toEqual(['50:1', '73:1'])
       expect(options.sweepPageNames).toEqual(['Screens'])
       expect(options.componentNodeIds).toEqual([])
@@ -178,7 +181,7 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
 describe('resolveComponentNodeIds (authoritative audit targeting, field bug fix)', () => {
   it('resolves a registered name to its nodeId', () => {
     const registry = { components: { Card: { nodeId: '99:1' } } }
-    expect(resolveComponentNodeIds(['Card'], registry)).toEqual({ componentNodeIds: ['99:1'], unresolvedNames: [], codeOwnedExemptNames: [] })
+    expect(resolveComponentNodeIds(['Card'], registry)).toEqual({ componentNodeIds: ['99:1'], unresolvedNames: [], codeOwnedExemptNames: [], rawKitExemptNames: [] })
   })
 
   it('leaves an unregistered name for the name-lookup fallback instead of guessing', () => {
@@ -186,12 +189,13 @@ describe('resolveComponentNodeIds (authoritative audit targeting, field bug fix)
     expect(resolveComponentNodeIds(['foundations/sticker-sheet'], registry)).toEqual({
       componentNodeIds: [],
       unresolvedNames: ['foundations/sticker-sheet'],
-      codeOwnedExemptNames: []
+      codeOwnedExemptNames: [],
+      rawKitExemptNames: []
     })
   })
 
   it('fails open (treats every name as unresolved) when the registry is absent', () => {
-    expect(resolveComponentNodeIds(['Card'], undefined)).toEqual({ componentNodeIds: [], unresolvedNames: ['Card'], codeOwnedExemptNames: [] })
+    expect(resolveComponentNodeIds(['Card'], undefined)).toEqual({ componentNodeIds: [], unresolvedNames: ['Card'], codeOwnedExemptNames: [], rawKitExemptNames: [] })
   })
 
   it('exempts a code-owned component from audit targeting (never resolves its nodeId)', () => {
@@ -199,49 +203,70 @@ describe('resolveComponentNodeIds (authoritative audit targeting, field bug fix)
     expect(resolveComponentNodeIds(['SceneWallpaper', 'Card'], registry)).toEqual({
       componentNodeIds: ['99:1'],
       unresolvedNames: [],
-      codeOwnedExemptNames: ['SceneWallpaper']
+      codeOwnedExemptNames: ['SceneWallpaper'],
+      rawKitExemptNames: []
+    })
+  })
+
+  it('exempts an un-adopted (raw) kit component but audits an adopted one', () => {
+    const registry = {
+      components: {
+        Sonner: { nodeId: '77:7', kind: 'kit' },
+        Card: { nodeId: '73:1', kind: 'kit', adopted: true },
+        SessionCard: { nodeId: '50:1', kind: 'custom' }
+      }
+    }
+    expect(resolveComponentNodeIds(['Sonner', 'Card', 'SessionCard'], registry)).toEqual({
+      componentNodeIds: ['73:1', '50:1'],
+      unresolvedNames: [],
+      codeOwnedExemptNames: [],
+      rawKitExemptNames: ['Sonner']
     })
   })
 })
 
-describe('deriveTier0AuditOptions audits kit components too (directive 3, no blanket exemption)', () => {
-  it('resolves both kit and custom named components to their nodeIds', () => {
+describe('deriveTier0AuditOptions gates kit by ADOPTION (directive 3 refined, 2026-07-08)', () => {
+  it('audits an ADOPTED kit component and a custom one, but exempts an un-adopted (raw) kit master', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'audit-opts-kit-'))
     mkdirSync(join(cwd, 'design'), { recursive: true })
     writeFileSync(
       join(cwd, 'design', 'registry.json'),
       JSON.stringify({
         components: {
-          Buttons: { nodeId: '73:1', kind: 'kit' },
+          Card: { nodeId: '73:1', kind: 'kit', adopted: true },
+          Sonner: { nodeId: '99:9', kind: 'kit' },
           SessionCard: { nodeId: '50:1', kind: 'custom' }
         }
       })
     )
     try {
-      const options = deriveTier0AuditOptions({ cwd, componentNames: ['Buttons', 'SessionCard'] })
-      // Both audited: kit is editable, gated by SCOPE (only changed components are ever passed), not exemption.
+      const options = deriveTier0AuditOptions({ cwd, componentNames: ['Card', 'Sonner', 'SessionCard'] })
+      // Adopted kit (Card) + custom (SessionCard) are hard targets; raw kit (Sonner) is exempt.
       expect(options.componentNodeIds.sort()).toEqual(['50:1', '73:1'])
+      expect(options.rawKitExemptNames).toEqual(['Sonner'])
       expect(options.componentNames).toEqual([])
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }
   })
 
-  it('keeps code-owned components out of the scoped file-wide sweep', () => {
+  it('keeps both code-owned and un-adopted kit out of the scoped file-wide sweep, but includes adopted kit', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'audit-opts-codeowned-sweep-'))
     mkdirSync(join(cwd, 'design'), { recursive: true })
     writeFileSync(
       join(cwd, 'design', 'registry.json'),
       JSON.stringify({
         components: {
-          Buttons: { nodeId: '73:1', kind: 'kit' },
+          Card: { nodeId: '73:1', kind: 'kit', adopted: true },
+          Sonner: { nodeId: '77:7', kind: 'kit' },
           SceneWallpaper: { nodeId: '5091:7366', kind: 'code-owned', codePath: 'src/scene/SceneWallpaper.tsx' }
         }
       })
     )
     try {
       const options = deriveTier0AuditOptions({ cwd, componentNames: [] })
-      expect(options.sweepNodeIds).toEqual(['73:1']) // SceneWallpaper's nodeId excluded
+      // adopted kit (73:1) in; raw kit (77:7) and code-owned (5091:7366) excluded.
+      expect(options.sweepNodeIds).toEqual(['73:1'])
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }

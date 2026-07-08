@@ -64,6 +64,18 @@ describe('RegistryEntrySchema (design-memory-placement.md, thin pointer index, s
     expect(RegistryEntrySchema.safeParse({ ...valid, kind: 'controls' }).success).toBe(false)
   })
 
+  it('accepts an optional adopted boolean on a kit entry (derived by figma-sync reconcile, gates the hard audit)', () => {
+    const result = RegistryEntrySchema.safeParse({ ...valid, kind: 'kit', adopted: true })
+    expect(result.success).toBe(true)
+    expect(result.data?.adopted).toBe(true)
+  })
+
+  it('accepts an entry with no adopted field (raw kit / custom / code-owned default)', () => {
+    const result = RegistryEntrySchema.safeParse(valid)
+    expect(result.success).toBe(true)
+    expect(result.data?.adopted).toBeUndefined()
+  })
+
   it('rejects a status outside draft|audit-clean|out-of-sync|orphaned (synced/coded are derived, never stored)', () => {
     expect(RegistryEntrySchema.safeParse({ ...valid, status: 'synced' }).success).toBe(false)
   })

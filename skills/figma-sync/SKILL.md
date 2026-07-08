@@ -17,6 +17,20 @@ base-ui/react wiring. Sync regenerates the presentation module only; it never
 touches the hand-owned behavior file (the generated-presentation/hand-owned-
 behavior split — see `figma-to-code`'s presentation-regen seam).
 
+**Scope: custom + code-owned + ADOPTED kit only (directive 3 refined,
+2026-07-08).** A `kind: 'kit'` master is stock library content. Only kit a
+project surface actually **instances** (a custom/code-owned component or a
+composed screen) is "adopted" — those are audited and synced like any authored
+surface. **Raw (un-adopted) kit is the vendored mirror nothing uses: never a
+hard-audit target, never a sync target, never auto-stamped `out-of-sync`** —
+drift on it is advisory noise you report and ignore, not work. Adoption is
+DERIVED from live instance usage (step 2c), never hand-flagged; it lands as the
+optional `adopted: true` field on the registry entry, and `prepare-tier0-audit-
+options` (via `resolveComponentNodeIds`'s `rawKitExemptNames`) drops un-adopted
+kit from every audit set. This is the guardrail against the failure it was
+written for: a staleness sweep flagging 110+ unused stock masters and an
+operator promoting them into a sync/fix pass that then damages them.
+
 ## Procedure
 
 1. **Audit first (hard gate, D8).** Call `figma-audit` on the components
@@ -44,10 +58,29 @@ behavior split — see `figma-to-code`'s presentation-regen seam).
    three into `in-sync`/`presentation-drift`/`api-drift`/`orphaned` per
    entry (kit's `design-kit/staleness` module — all pure functions, no
    `figma.*` calls; this skill gathers the live snapshots). Stamp each
-   affected entry's `lastSyncedAt`/`status` in `design/registry.json`. End
-   with a **review-prompt printout** — list every entry that moved to
-   `out-of-sync`/`orphaned` — this is advisory, never a gate: auto-regen on
-   sync is explicitly out of scope (design doc "Rejected alternatives").
+   affected entry's `lastSyncedAt`/`status` in `design/registry.json` —
+   **but gate every stamp through `stalenessActionability(entry,
+   classification)` (kit's `design-kit/staleness`): a raw (un-adopted) kit
+   master that drifts returns `advisory` and MUST NOT be stamped `out-of-sync`
+   or enter any sync/audit set — only `actionable` entries (adopted kit,
+   custom, code-owned) get the `out-of-sync` stamp.** End with a
+   **review-prompt printout** split in two: `actionable` drift (the real
+   review list) and `advisory` raw-kit drift (report count, then ignore) —
+   advisory, never a gate: auto-regen on sync is explicitly out of scope
+   (design doc "Rejected alternatives").
+
+2c. **Derive kit adoption (directive 3 refined, 2026-07-08).** In the SAME
+   combined `use_figma` walk as 2b (no extra round-trip), for every project
+   surface — each `custom`/`code-owned` registry component and each composed-
+   screen page (`isDesignPageName`) — collect every `INSTANCE.mainComponent`
+   id AND its parent `COMPONENT_SET` id (a registry kit `nodeId` is usually
+   the set; an instance resolves to a child variant, so gather both). Pass
+   that id set + the registry to `deriveAdoption` (import from
+   `@argohq/kit/design-kit`); stamp `adopted: true` on each returned kit
+   entry and **clear it** on any kit entry no longer instanced (adoption is a
+   live fact, re-derived every sync, never sticky). This is what moves a kit
+   master into audit/sync scope — a component you adopt by instancing it in
+   your work, not by hand-flagging.
 
    **Registry-reconcile ride-along (design-memory-placement.md A3,
    relocated here from `figma-audit` in Slice 4; enumeration moved to

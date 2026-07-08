@@ -41,27 +41,40 @@ const RECIPE_ADDITIONAL_ALLOWED_COLLECTION_NAMES: Record<string, string[]> = {
 export function resolveComponentNodeIds(
   componentNames: string[],
   registry: any
-): { componentNodeIds: string[]; unresolvedNames: string[]; codeOwnedExemptNames: string[] } {
+): { componentNodeIds: string[]; unresolvedNames: string[]; codeOwnedExemptNames: string[]; rawKitExemptNames: string[] } {
   const components = registry?.components && typeof registry.components === 'object' ? registry.components : {}
   const componentNodeIds: string[] = []
   const unresolvedNames: string[] = []
   const codeOwnedExemptNames: string[] = []
+  const rawKitExemptNames: string[] = []
   for (const name of componentNames) {
+    const entry = components[name]
     // A code-owned component is a flat screenshot standing in for a code
     // implementation — it can't satisfy binding rules and is never audited.
     // Exempt it BEFORE resolving a nodeId so it never enters the target set.
-    if (components[name]?.kind === 'code-owned') {
+    if (entry?.kind === 'code-owned') {
       codeOwnedExemptNames.push(name)
       continue
     }
-    const nodeId = components[name]?.nodeId
+    // A raw (un-adopted) kit master is stock library content nothing in the
+    // project instances — the vendored mirror, not an authored surface.
+    // Adoption (directive 3 refined, 2026-07-08) is the SCOPE filter: only
+    // kit that a project surface actually instances (`adopted: true`, derived
+    // by figma-sync's reconcile walk) is hard-gated; drift on the other ~110
+    // stock masters must never pull them into the gate. Adopted kit and custom
+    // still resolve as targets (directive 3's "audit what you use" preserved).
+    if (entry?.kind === 'kit' && entry?.adopted !== true) {
+      rawKitExemptNames.push(name)
+      continue
+    }
+    const nodeId = entry?.nodeId
     if (typeof nodeId === 'string' && nodeId) {
       componentNodeIds.push(nodeId)
     } else {
       unresolvedNames.push(name)
     }
   }
-  return { componentNodeIds, unresolvedNames, codeOwnedExemptNames }
+  return { componentNodeIds, unresolvedNames, codeOwnedExemptNames, rawKitExemptNames }
 }
 
 function readOptionalJson(path: string): any {
@@ -138,15 +151,20 @@ export function deriveTier0AuditOptions({
   const registry = readOptionalJson(join(cwd, 'design', 'registry.json'))
   const designBlock = findDesignBlock(cwd)
   const recipe = designBlock?.recipe ?? null
-  const { componentNodeIds, unresolvedNames, codeOwnedExemptNames } = resolveComponentNodeIds(componentNames, registry)
+  const { componentNodeIds, unresolvedNames, codeOwnedExemptNames, rawKitExemptNames } = resolveComponentNodeIds(
+    componentNames,
+    registry
+  )
 
   const isSweep = componentNames.length === 0
   const registryComponents = registry?.components && typeof registry.components === 'object' ? registry.components : {}
   const sweepNodeIds = isSweep
     ? Object.values(registryComponents)
-        // code-owned components (flat screenshots) are audit-exempt — keep them
-        // out of the scoped file-wide sweep too, not just named audits.
-        .filter((c: any) => c?.kind !== 'code-owned')
+        // code-owned components (flat screenshots) are audit-exempt, and
+        // un-adopted (raw) kit masters are the vendored mirror nothing
+        // instances (directive 3 refined) — keep both out of the scoped
+        // file-wide sweep, not just named audits. Adopted kit and custom stay.
+        .filter((c: any) => c?.kind !== 'code-owned' && !(c?.kind === 'kit' && c?.adopted !== true))
         .map((c: any) => c?.nodeId)
         .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
     : []
@@ -159,6 +177,10 @@ export function deriveTier0AuditOptions({
     // intentionally-exempt so a fully-exempt target set isn't read as a
     // vacuous clean pass.
     codeOwnedExemptNames,
+    // Named but skipped as raw (un-adopted) kit — reported so the caller can
+    // tell the operator "these stock masters were left out of the gate on
+    // purpose" rather than silently dropping them.
+    rawKitExemptNames,
     compositeNames: registryComponentNames(registry),
     semanticCollectionName: designBlock?.semanticCollectionName ?? 'Semantic',
     additionalAllowedCollectionNames: (recipe && RECIPE_ADDITIONAL_ALLOWED_COLLECTION_NAMES[recipe]) ?? [],

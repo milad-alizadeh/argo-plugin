@@ -1,5 +1,30 @@
 import { describe, it, expect } from 'vitest'
-import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, detectChangedKitComponents, isPascalCaseComponentName, parseCodeOwnedPath, buildCodeOwnedEntries } from './registry-reconcile.js'
+import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, detectChangedKitComponents, isPascalCaseComponentName, parseCodeOwnedPath, buildCodeOwnedEntries, deriveAdoption } from './registry-reconcile.js'
+
+describe('deriveAdoption (directive 3 refined — kit adoption from instance usage)', () => {
+  it('marks a kit master as adopted when a project surface instances it (by set nodeId or a child-variant id)', () => {
+    const registryComponents = {
+      Card: { kind: 'kit', nodeId: '5011:5273' },
+      Breadcrumb: { kind: 'kit', nodeId: '665:2036' },
+      Sonner: { kind: 'kit', nodeId: '1468:6037' },
+      SessionCard: { kind: 'custom', nodeId: '50:1' }
+    }
+    // Card matched by its set nodeId; Breadcrumb matched by a child-variant id the walk also collected.
+    const instancedNodeIds = ['5011:5273', '665:2100']
+    const registryWithChild = { ...registryComponents, Breadcrumb: { kind: 'kit', nodeId: '665:2100' } }
+    expect(deriveAdoption({ registryComponents, instancedNodeIds: ['5011:5273'] }).adoptedNames).toEqual(['Card'])
+    expect(deriveAdoption({ registryComponents: registryWithChild, instancedNodeIds }).adoptedNames.sort()).toEqual(['Breadcrumb', 'Card'])
+  })
+
+  it('never marks custom/code-owned or an un-instanced (raw) kit master as adopted', () => {
+    const registryComponents = {
+      Sonner: { kind: 'kit', nodeId: '1468:6037' },
+      SessionCard: { kind: 'custom', nodeId: '50:1' },
+      Scene: { kind: 'code-owned', nodeId: '90:1' }
+    }
+    expect(deriveAdoption({ registryComponents, instancedNodeIds: ['50:1', '90:1'] }).adoptedNames).toEqual([])
+  })
+})
 
 describe('reconcileRegistrySweep (design-memory-placement.md A3, figma-sync sweep)', () => {
   it('flags a live component with no registry entry (registry-unregistered)', () => {

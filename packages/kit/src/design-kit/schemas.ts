@@ -43,7 +43,16 @@ export const RegistryEntrySchema = z.object({
   variantMatrix: z.record(z.string(), z.array(z.string())),
   description: z.string().optional(),
   /** Repo-relative path to the code implementation; set only for `code-owned`. */
-  codePath: z.string().optional()
+  codePath: z.string().optional(),
+  /**
+   * Kit-only adoption flag (directive 3 refined, 2026-07-08). `true` when a
+   * project surface (a custom/code-owned component or a composed screen)
+   * instances this kit master — figma-sync's reconcile walk derives it. Only
+   * adopted kit is hard-audited/synced; raw (un-adopted) kit is the vendored
+   * mirror nothing uses and stays advisory-only. Absent on custom/code-owned
+   * (they're always in scope) and on raw kit.
+   */
+  adopted: z.boolean().optional()
 })
 
 /** design-memory-placement.md Mechanism 2: registry.json's file header — freshness metadata a reader uses to distinguish a fresh registry from a wholesale-rotted one. */

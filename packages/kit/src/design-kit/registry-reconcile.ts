@@ -322,6 +322,34 @@ export function buildCodeOwnedEntries(
   return { written, changed }
 }
 
+/**
+ * Derives kit ADOPTION (directive 3 refined, 2026-07-08) from live instance
+ * usage: a kit master is "adopted" when a project surface (a custom/code-owned
+ * component or a composed screen) instances it. figma-sync's reconcile walk
+ * collects, across those surfaces, every `INSTANCE.mainComponent` id AND its
+ * parent COMPONENT_SET id (a registry kit entry's `nodeId` is usually the set,
+ * while an instance resolves to a child variant), passes them here as
+ * `instancedNodeIds`, and stamps `adopted: true` on the returned names. Only
+ * adopted kit is hard-audited/synced; raw kit (nothing instances it) is the
+ * vendored mirror and stays advisory-only. Pure — the caller supplies the live
+ * id set; custom/code-owned are never "adopted" (they're always in scope).
+ */
+export function deriveAdoption({
+  registryComponents,
+  instancedNodeIds
+}: {
+  registryComponents: Record<string, { kind?: string; nodeId?: string }>
+  instancedNodeIds: Iterable<string>
+}): { adoptedNames: string[] } {
+  const instanced = new Set(instancedNodeIds)
+  const adoptedNames: string[] = []
+  for (const [name, entry] of Object.entries(registryComponents)) {
+    if (entry?.kind !== 'kit') continue
+    if (entry?.nodeId && instanced.has(entry.nodeId)) adoptedNames.push(name)
+  }
+  return { adoptedNames }
+}
+
 function toPascalCase(name: string): string {
   return name
     .split(/[\s_/-]+/)

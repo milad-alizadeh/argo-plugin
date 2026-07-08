@@ -20,6 +20,13 @@
  *   checks (e.g. non-semantic-binding). Omit for a recipe with no checks —
  *   the guarded call below no-ops.
  *
+ * `options.runGeometryChecks(root)` — the geometry pass extension point
+ *   (fidelity-geometry-verifier.md), symmetric with `runRecipeTier0Checks`
+ *   but subtree-shaped, not per-node: called once per named-audit root with
+ *   the WHOLE marshaled subtree (`marshalGeometryTree`), never in the
+ *   file-wide sweep. Omit for a target with no geometry-relevant category —
+ *   the guarded call below no-ops and the marshal cost is never paid.
+ *
  * Reports violations as { severity: 'hard' | 'advisory', rule, nodeId, nodeName, detail }.
  * `hard` fails the calling skill loud (D8); `advisory` is a file-wide sweep
  * finding surfaced but not blocking (e.g. un-synced frames).
@@ -311,6 +318,39 @@ function marshalIconStrokeScale(node: any, main: any) {
 }
 
 /**
+ * Builds ONE plain-object subtree per audited component root, carrying
+ * every field the geometry rules read directly off the real Plugin API
+ * node (x/y/width/height come from absoluteBoundingBox, already resolved
+ * post-layout — no live-measurement round trip needed, unlike the
+ * text-clipping gap figma-create's step-4 doc calls out as untestable).
+ * Runs once per named-audit root, not per node — the geometry rules
+ * consume the WHOLE tree at once (see geometry-rules.ts's doc comment for
+ * why a per-node walk can't express sibling/row comparisons).
+ */
+function marshalGeometryTree(node: any): any {
+  const box = node.absoluteBoundingBox ?? {}
+  return {
+    id: node.id,
+    name: node.name,
+    type: node.type,
+    x: box.x,
+    y: box.y,
+    width: box.width,
+    height: box.height,
+    visible: node.visible,
+    opacity: node.opacity,
+    clipsContent: node.clipsContent,
+    layoutSizingHorizontal: node.layoutSizingHorizontal,
+    layoutSizingVertical: node.layoutSizingVertical,
+    itemSpacing: node.itemSpacing,
+    layoutMode: node.layoutMode,
+    fills: node.fills,
+    characters: node.type === 'TEXT' ? node.characters : undefined,
+    children: (node.children ?? []).map(marshalGeometryTree)
+  }
+}
+
+/**
  * Marshals a single Auto Layout gap/padding field (D24). boundVariables for a
  * number property is a single { id } object, not an array (unlike fills/
  * strokes) — resolved and marshaled explicitly, field by field, same
@@ -384,6 +424,7 @@ export async function runTier0Audit(
     additionalAllowedCollectionNames?: string[]
     runRecipeTier0Checks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean }) => Promise<any[]>
     viewport?: { width: number; height: number }
+    runGeometryChecks?: (root: any) => any[]
   } = {}
 ) {
   const {
@@ -395,7 +436,8 @@ export async function runTier0Audit(
     primitivesCollectionName = 'Primitives',
     additionalAllowedCollectionNames = [],
     runRecipeTier0Checks,
-    viewport
+    viewport,
+    runGeometryChecks
   } = options
   const violations: any[] = []
 
@@ -427,6 +469,9 @@ export async function runTier0Audit(
       const owningPageName = findOwningPage(match)?.name ?? ''
       if (isWireframePageName(owningPageName)) continue
       await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
+      if (typeof runGeometryChecks === 'function') {
+        violations.push(...runGeometryChecks(marshalGeometryTree(match)))
+      }
     }
 
     // Name-resolution fallback (ONLY for a target with no registry nodeId —
@@ -450,6 +495,9 @@ export async function runTier0Audit(
       const owningPageName = findOwningPage(match)?.name ?? ''
       if (isWireframePageName(owningPageName)) continue
       await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
+      if (typeof runGeometryChecks === 'function') {
+        violations.push(...runGeometryChecks(marshalGeometryTree(match)))
+      }
     }
   } else {
     for (const page of figma.root.children) {

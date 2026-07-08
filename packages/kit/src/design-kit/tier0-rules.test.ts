@@ -732,6 +732,15 @@ describe('hugOverflowViolations (universal per-node, no tags/config)', () => {
     expect(hugOverflowViolations(fixed)).toEqual([])
   })
 
+  it('skips absolute-positioned children — out of flow, HUG never includes them', () => {
+    const node = {
+      name: 'row/head', x: 0, y: 0, width: 260, height: 14,
+      layoutSizingVertical: 'HUG',
+      children: [{ name: 'slot/close-button', layoutPositioning: 'ABSOLUTE', x: 280, y: -6, width: 26, height: 26 }]
+    }
+    expect(hugOverflowViolations(node)).toEqual([])
+  })
+
   it('skips hidden children — they do not render, so they cannot overflow', () => {
     const node = {
       name: 'Breadcrumb', x: 24, y: 8, width: 125, height: 20,

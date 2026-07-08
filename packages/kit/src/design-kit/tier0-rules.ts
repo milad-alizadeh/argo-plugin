@@ -511,10 +511,13 @@ const HUG_OVERFLOW_EPSILON_PX = 0.1
 export function hugOverflowViolations(node: AnyNode): Violation[] {
   const violations: Violation[] = []
   for (const child of node.children ?? []) {
-    // hidden children don't render, so they can't overflow; child.x/child.y
-    // are already in the parent's coordinate space — the node's own width/
-    // height are the bounds, never node.x/node.y (a different coordinate space)
+    // hidden children don't render, so they can't overflow; absolute-
+    // positioned children are out of flow, so HUG never includes them (same
+    // exclusion unclippedOverflowViolations makes); child.x/child.y are
+    // already in the parent's coordinate space — the node's own width/height
+    // are the bounds, never node.x/node.y (a different coordinate space)
     if (child.visible === false) continue
+    if (child.layoutPositioning === 'ABSOLUTE') continue
     if (node.layoutSizingHorizontal === 'HUG' && child.x + child.width > node.width + HUG_OVERFLOW_EPSILON_PX) {
       violations.push({ rule: 'hug-overflow-horizontal', detail: `"${node.name}" is HUG-horizontal but child "${child.name}" extends past its right edge` })
     }

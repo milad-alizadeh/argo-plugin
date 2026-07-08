@@ -316,7 +316,12 @@ function marshalIconStrokeScale(node: any, main: any) {
   if ((main.children ?? []).length !== 1 || vectorChildren.length !== 1) return null
   const vector = vectorChildren[0]
   const baseStrokeWeight = vector.strokeWeight
-  const resolvedStrokeWeight = typeof node.strokeWeight === 'number' ? node.strokeWeight : vector.strokeWeight
+  // the rendered stroke lives on the INSTANCE's own vector child (a per-
+  // instance strokeWeight override is exactly the proportional-stroke fix),
+  // never on node.strokeWeight — that is the instance frame's own stroke
+  // property — and never on the main's vector, which stays at native weight
+  const instanceVector = (node.children ?? []).find((c: any) => c.type === 'VECTOR')
+  const resolvedStrokeWeight = typeof instanceVector?.strokeWeight === 'number' ? instanceVector.strokeWeight : null
   if (typeof baseStrokeWeight !== 'number' || typeof resolvedStrokeWeight !== 'number') return null
   if (typeof main.width !== 'number' || typeof node.width !== 'number') return null
   return { instanceSize: node.width, nativeSize: main.width, resolvedStrokeWeight, baseStrokeWeight }

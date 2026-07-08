@@ -304,20 +304,14 @@ cheap without any extra caching on this skill's part.
    catches intent-level defects no deterministic rule can encode, e.g. a
    glow color that clashes with its own element's fill even though both are
    individually bound correctly):
-   - **Numeric predicates FIRST (R3)** — run via `get_design_context` before
-     any prose question; a prose-only checklist caught 0/3 real defects
-     because it self-grades against restated intent:
-     - **(a) icon stroke-thickness match:** the authored icon instance
-       beside a bare unmodified instance of the same glyph at the same
-       px/script must read the same stroke thickness (the tier-0
-       `stroke-scale-mismatch` rule already hard-fails this; this is the
-       visual confirmation, not a substitute).
-     - **(b) bound-spacing match:** the icon-to-title (or equivalent
-       adjacent-element) gap equals the bound spacing token's actual value
-       — read both back, don't eyeball it.
-     - **(c) no clipping/misalignment:** no variant's rendered width is less
-       than its text content's natural width; column leading-edges align
-       across variants.
+   - **Numeric predicates are Layer A's job now (fidelity-geometry-verifier.md
+     Slice 12)** — run `figma-audit`'s named audit with `geometryCategories`
+     covering this component's category (icon stroke-thickness, bound-
+     spacing gaps, sibling alignment, clipping, and the rest of the
+     role-tagged geometry checks — see `figma-audit/SKILL.md`'s "Geometry
+     checks (Layer A)" section). A `hard` geometry violation blocks exactly
+     like every other tier-0 hard-fail — fix and re-audit before proceeding,
+     never eyeball what the gate already checks.
    - **Cadence (the montage is the mandatory deliverable, not the prose):**
      one screenshot per component SET (all variants visible side by side),
      `scale: 2`, rendered against the project's real app background (e.g.
@@ -329,26 +323,37 @@ cheap without any extra caching on this skill's part.
      (e.g. "the label glows like a small colored light"). If the project has
      an aesthetic profile (see "Design intent" above), re-read its condensed
      re-injection block first and critique against it.
-   - **Prose critique** (secondary, non-gating — the montage + numeric
-     predicates are the gate), answered in writing per screenshot: (a) does
-     every glow/effect match the color of the element it's attached to? (b)
-     does anything blow out, clip, or band? (c) does the material read as
-     intended (e.g. glass vs. flat slab)? (d) is text contrast legible? (e)
-     is spacing optically even?
+   - **Spawn `argo:fidelity-verifier` in fidelity mode** (fidelity-geometry-
+     verifier.md Layer B) — Slice 10's assembled rubric for this component's
+     category (`assembleFidelityRubric`) plus the montage screenshot(s) —
+     ONLY if geometry is clean AND the rubric's `criteria` is non-empty
+     (`shouldSpawnFidelityVerifier`); a plain button with no visual criteria
+     never spawns it. Its per-criterion `deviates` rulings are the residual
+     visual defects a deterministic check can't cover; fix and re-run the
+     numeric predicates (never re-run the VLM on an unchanged rubric) until
+     clean.
    - **Escalate, don't default to it:** a zoomed close-up (`scale: 3`,
-     single variant) only when the set-level critique flags a suspicion.
-   - **Fix → re-audit → re-screenshot** until the numeric predicates, the
-     montage, and the prose critique all pass. A shared-style edit late in
-     the task (an effect or text style) invalidates earlier captures of
-     every component using that style — re-shoot those at the end of the
-     task; untouched components are not re-rendered.
+     single variant) only when the fidelity-verifier's rulings flag a
+     suspicion.
+   - **Fix → re-audit → re-screenshot** until the numeric predicates and the
+     fidelity-verifier's rulings all pass (or never spawned, for a
+     zero-criteria category). A shared-style edit late in the task (an
+     effect or text style) invalidates earlier captures of every component
+     using that style — re-shoot those at the end of the task; untouched
+     components are not re-rendered.
    - **Mechanics:** prefer an inline `await node.screenshot({ scale: 2 })`
      inside the same `use_figma` call as the last fix over a separate
      `get_screenshot` round trip — a single script may return 2-3 set
-     captures.
+     captures. The montage must cover every variant×state×depth combination
+     the rubric's `requiresZoomedCrop` criteria need (a per-row/per-item
+     zoomed crop for each), or the step fails closed (agents/fidelity-
+     verifier.md's INPUTS (fidelity-mode) section) rather than spawning the
+     verifier against partial evidence.
 5. Report what was created (node names/ids), confirm the audit passed
-   clean, write out the numeric predicate results and the prose critique
-   answers, and attach the final montage screenshot.
+   clean, the geometry pass (Layer A) is clean, write out the
+   fidelity-verifier's per-criterion rulings (or note it was never spawned
+   because the category's rubric has zero criteria), and attach the final
+   montage screenshot.
 
 ## Verification
 

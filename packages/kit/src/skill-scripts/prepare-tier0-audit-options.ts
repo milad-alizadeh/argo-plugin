@@ -108,7 +108,9 @@ export function deriveTier0AuditOptions({ cwd, componentNames = [] }: { cwd: str
     semanticCollectionName: designBlock?.semanticCollectionName ?? 'Semantic',
     additionalAllowedCollectionNames: (recipe && RECIPE_ADDITIONAL_ALLOWED_COLLECTION_NAMES[recipe]) ?? [],
     recipe,
-    viewport: designBlock?.viewport
+    viewport: designBlock?.viewport,
+    geometryTolerancePx: designBlock?.geometryTolerancePx ?? 1,
+    geometryCategories: Array.isArray(designBlock?.geometryCategories) ? designBlock.geometryCategories : []
   }
 }
 

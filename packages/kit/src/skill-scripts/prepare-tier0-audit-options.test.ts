@@ -21,7 +21,10 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         compositeNames: ['rail-session-card', 'status-bar'],
         semanticCollectionName: 'Semantic',
         additionalAllowedCollectionNames: [],
-        recipe: null
+        recipe: null,
+        viewport: undefined,
+        geometryTolerancePx: 1,
+        geometryCategories: []
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
@@ -51,7 +54,10 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         compositeNames: [],
         semanticCollectionName: 'Semantic',
         additionalAllowedCollectionNames: [],
-        recipe: null
+        recipe: null,
+        viewport: undefined,
+        geometryTolerancePx: 1,
+        geometryCategories: []
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
@@ -72,6 +78,34 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
       expect(options.semanticCollectionName).toBe('Argo Semantic')
       expect(options.recipe).toBe('shadcn-tailwind')
       expect(options.additionalAllowedCollectionNames).toContain('tw/gap')
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('defaults geometryTolerancePx to 1 and geometryCategories to [] when unconfigured', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
+    try {
+      const options = deriveTier0AuditOptions({ cwd })
+      expect(options.geometryTolerancePx).toBe(1)
+      expect(options.geometryCategories).toEqual([])
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it("reads geometryTolerancePx and geometryCategories from the app's design.<app> block when configured", () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-options-'))
+    mkdirSync(join(cwd, '.claude'), { recursive: true })
+    writeFileSync(
+      join(cwd, '.claude', 'argo.json'),
+      JSON.stringify({ design: { '.': { root: '.', geometryTolerancePx: 2, geometryCategories: ['list', 'tree'] } } }),
+      'utf8'
+    )
+    try {
+      const options = deriveTier0AuditOptions({ cwd })
+      expect(options.geometryTolerancePx).toBe(2)
+      expect(options.geometryCategories).toEqual(['list', 'tree'])
     } finally {
       rmSync(cwd, { recursive: true, force: true })
     }

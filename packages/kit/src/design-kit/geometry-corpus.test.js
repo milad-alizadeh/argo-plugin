@@ -29,7 +29,8 @@ describe('geometry corpus: inverse fixtures (must each flag their target rule)',
         'load-bearing-node-hidden',
         'anchor-cross-axis-offset',
         'hug-overflow-horizontal',
-        'touch-target-too-small'
+        'touch-target-too-small',
+        'wcag-contrast-fail'
       ].sort()
     )
   })
@@ -44,7 +45,8 @@ describe('geometry corpus: inverse fixtures (must each flag their target rule)',
     'load-bearing-node-hidden',
     'anchor-cross-axis-offset',
     'hug-overflow-horizontal',
-    'touch-target-too-small'
+    'touch-target-too-small',
+    'wcag-contrast-fail'
   ]) {
     it(`flags "${rule}"`, () => {
       const violations = runPureGeometryAudit(corpus.inverse[rule])

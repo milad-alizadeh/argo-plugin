@@ -10,7 +10,7 @@
  * packages/kit/src/design-kit/geometry-rules.js and tier0-rules.js).
  */
 import { missingRoleTagsViolation } from '../../packages/kit/src/design-kit/tier0-rules.js'
-import { findAllByRole, roleTagOf } from '../../packages/kit/src/design-kit/role-tags.js'
+import { roleTagOf } from '../../packages/kit/src/design-kit/role-tags.js'
 import {
   contentStartAlignmentViolations,
   railAnchorSpanViolation,
@@ -19,7 +19,8 @@ import {
   loadBearingVisibilityViolations,
   crossAxisAnchorOffsetViolations,
   hugOverflowViolations,
-  touchTargetViolation
+  touchTargetViolation,
+  wcagContrastCheckViolation
 } from '../../packages/kit/src/design-kit/geometry-rules.js'
 
 /** Mirrors tier0-audit.ts's marshalRowGroups. */
@@ -66,14 +67,15 @@ export function runPureGeometryAudit(root, tolerancePx = 1) {
   const itemSpacing = typeof root.itemSpacing === 'number' ? root.itemSpacing : 0
   for (const v of interRowContinuityViolations(rows, itemSpacing, tolerancePx)) report(v)
   for (const v of indentAndRowConsistencyViolations(groupRowsByDepth(root), tolerancePx)) report(v)
-  for (const v of loadBearingVisibilityViolations(collectRoleTaggedWithAncestors(root))) report(v)
+  const roleTagged = collectRoleTaggedWithAncestors(root)
+  for (const v of loadBearingVisibilityViolations(roleTagged)) report(v)
   for (const v of crossAxisAnchorOffsetViolations(rows, tolerancePx)) report(v)
   for (const containerLikeNode of [root, ...rows]) {
     for (const v of hugOverflowViolations(containerLikeNode)) report(v)
   }
-  for (const hitTarget of findAllByRole(root, 'hit-target')) {
-    report(touchTargetViolation(hitTarget))
-  }
+  const hitTargets = roleTagged.filter((rt) => roleTagOf(rt.node) === 'hit-target')
+  for (const { node: hitTarget } of hitTargets) report(touchTargetViolation(hitTarget))
+  for (const { node: hitTarget, ancestors } of hitTargets) report(wcagContrastCheckViolation(hitTarget, ancestors))
 
   return violations
 }

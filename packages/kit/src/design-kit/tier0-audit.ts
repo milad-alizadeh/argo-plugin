@@ -71,7 +71,7 @@ import {
   unclippedOverflowViolations,
   missingRoleTagsViolation
 } from './tier0-rules.js'
-import { roleTagOf, findAllByRole } from './role-tags.js'
+import { roleTagOf } from './role-tags.js'
 import {
   contentStartAlignmentViolations,
   railAnchorSpanViolation,
@@ -80,7 +80,8 @@ import {
   loadBearingVisibilityViolations,
   crossAxisAnchorOffsetViolations,
   hugOverflowViolations,
-  touchTargetViolation
+  touchTargetViolation,
+  wcagContrastCheckViolation
 } from './geometry-rules.js'
 
 async function auditNode(
@@ -358,6 +359,7 @@ function marshalGeometryTree(node: any): any {
     layoutMode: node.layoutMode,
     fills: node.fills,
     characters: node.type === 'TEXT' ? node.characters : undefined,
+    fontSize: node.type === 'TEXT' ? node.fontSize : undefined,
     children: (node.children ?? []).map(marshalGeometryTree)
   }
 }
@@ -390,14 +392,18 @@ export function composeGeometryChecks({ geometryTolerancePx = 1 }: { geometryTol
     const itemSpacing = typeof root.itemSpacing === 'number' ? root.itemSpacing : 0
     for (const v of interRowContinuityViolations(rows, itemSpacing, geometryTolerancePx)) report(v)
     for (const v of indentAndRowConsistencyViolations(groupRowsByDepth(root), geometryTolerancePx)) report(v)
-    for (const v of loadBearingVisibilityViolations(collectRoleTaggedWithAncestors(root))) report(v)
+    const roleTagged = collectRoleTaggedWithAncestors(root)
+    for (const v of loadBearingVisibilityViolations(roleTagged)) report(v)
     for (const v of crossAxisAnchorOffsetViolations(rows, geometryTolerancePx)) report(v)
     for (const containerLikeNode of [root, ...rows]) {
       for (const v of hugOverflowViolations(containerLikeNode)) report(v)
     }
-    for (const hitTarget of findAllByRole(root, 'hit-target')) {
-      report(touchTargetViolation(hitTarget))
-    }
+    // #hit-target opt-in (resolved decision 3): touch-target sizing AND
+    // WCAG contrast both scope to the same tag, reusing the same
+    // ancestor-tracked walk loadBearingVisibilityViolations already needed.
+    const hitTargets = roleTagged.filter((rt) => roleTagOf(rt.node) === 'hit-target')
+    for (const { node: hitTarget } of hitTargets) report(touchTargetViolation(hitTarget))
+    for (const { node: hitTarget, ancestors } of hitTargets) report(wcagContrastCheckViolation(hitTarget, ancestors))
 
     return violations
   }

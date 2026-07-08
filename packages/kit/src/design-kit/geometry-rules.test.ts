@@ -7,7 +7,8 @@ import {
   loadBearingVisibilityViolations,
   crossAxisAnchorOffsetViolations,
   hugOverflowViolations,
-  touchTargetViolation
+  touchTargetViolation,
+  wcagContrastCheckViolation
 } from './geometry-rules.js'
 
 function row(name: string, contentStartX: number, id = name) {
@@ -281,5 +282,49 @@ describe('touchTargetViolation', () => {
       nodeId: 'n1',
       detail: '#hit-target "Checkbox #hit-target" is 32x32, below the 40x40px minimum'
     })
+  })
+})
+
+const WHITE_FILL = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }]
+const LIGHT_GRAY_FILL = [{ type: 'SOLID', color: { r: 150 / 255, g: 150 / 255, b: 150 / 255 } }]
+const BLACK_FILL = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 } }]
+
+describe('wcagContrastCheckViolation', () => {
+  it('passes a TEXT node with sufficient contrast against its nearest ancestor fill', () => {
+    const node = { id: 'n1', type: 'TEXT', fontSize: 16, fills: BLACK_FILL }
+    const ancestors = [{ fills: WHITE_FILL }]
+    expect(wcagContrastCheckViolation(node, ancestors)).toBeNull()
+  })
+
+  it('flags a TEXT node with insufficient contrast against its nearest ancestor fill', () => {
+    const node = { id: 'n1', type: 'TEXT', fontSize: 16, fills: LIGHT_GRAY_FILL }
+    const ancestors = [{ fills: WHITE_FILL }]
+    const violation = wcagContrastCheckViolation(node, ancestors)
+    expect(violation?.rule).toBe('wcag-contrast-fail')
+    expect(violation?.nodeId).toBe('n1')
+  })
+
+  it('respects the large-text threshold (fontSize >= 18)', () => {
+    // ~3.0:1 against white — fails normal-text (4.5) but passes large-text (3.0)
+    const node = { id: 'n1', type: 'TEXT', fontSize: 18, fills: [{ type: 'SOLID', color: { r: 148 / 255, g: 148 / 255, b: 148 / 255 } }] }
+    const ancestors = [{ fills: WHITE_FILL }]
+    expect(wcagContrastCheckViolation(node, ancestors)).toBeNull()
+  })
+
+  it('skips a non-TEXT node (contrast only applies to text)', () => {
+    const node = { id: 'n1', type: 'FRAME', fills: LIGHT_GRAY_FILL }
+    const ancestors = [{ fills: WHITE_FILL }]
+    expect(wcagContrastCheckViolation(node, ancestors)).toBeNull()
+  })
+
+  it('skips (fails open) when the node has no resolvable SOLID fill', () => {
+    const node = { id: 'n1', type: 'TEXT', fontSize: 16, fills: [] }
+    const ancestors = [{ fills: WHITE_FILL }]
+    expect(wcagContrastCheckViolation(node, ancestors)).toBeNull()
+  })
+
+  it('skips (fails open) when no ancestor has a resolvable SOLID fill', () => {
+    const node = { id: 'n1', type: 'TEXT', fontSize: 16, fills: BLACK_FILL }
+    expect(wcagContrastCheckViolation(node, [])).toBeNull()
   })
 })

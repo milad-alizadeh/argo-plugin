@@ -9,6 +9,7 @@
  * caller), not a stream of individual node calls.
  */
 import { findAllByRole } from './role-tags.js'
+import { wcagContrastViolation } from './contrast.js'
 
 export type GeometryViolation = { rule: string; detail: string; nodeId?: string }
 
@@ -195,4 +196,44 @@ const MIN_TOUCH_TARGET_PX = 24 // configurable — see prepare-tier0-audit-optio
 export function touchTargetViolation(node: any, minPx: number = MIN_TOUCH_TARGET_PX): GeometryViolation | null {
   if (node.width >= minPx && node.height >= minPx) return null
   return { rule: 'touch-target-too-small', nodeId: node.id, detail: `#hit-target "${node.name}" is ${node.width}x${node.height}, below the ${minPx}x${minPx}px minimum` }
+}
+
+/** First visible SOLID fill's color, converted from Figma's 0-1 range to 0-255 — null when unresolvable (no fills, no SOLID fill, or hidden). */
+function solidFillColor(fills: any): { r: number; g: number; b: number } | null {
+  if (!Array.isArray(fills)) return null
+  const solid = fills.find((f: any) => f?.type === 'SOLID' && f?.visible !== false)
+  if (!solid?.color) return null
+  return { r: Math.round(solid.color.r * 255), g: Math.round(solid.color.g * 255), b: Math.round(solid.color.b * 255) }
+}
+
+/**
+ * WCAG contrast check, scoped to #hit-target-tagged TEXT nodes (resolved
+ * decision 3: contrast/touch-target opt in via #hit-target, unlike
+ * HUG-overflow which auto-applies structurally). Foreground = the tagged
+ * node's own resolved SOLID fill; background = the nearest ancestor
+ * carrying a resolvable SOLID fill — the walker already marshals `fills`
+ * on every node (marshalGeometryTree), no live-measurement round trip
+ * needed. Fails open (never a crash, never a false violation) on a
+ * non-TEXT node, a node with no resolvable SOLID fill, or no ancestor with
+ * one — same R10 asymmetric-cost economics as every other tier-0 hard
+ * gate: a layered/gradient background this walker can't resolve is a
+ * silent skip, not a guess. Large-text carve-out uses `fontSize >= 18`
+ * only — the bold-at-14pt WCAG exception is deliberately not applied here:
+ * a plain marshaled TEXT node has no grounded numeric font-weight field in
+ * this walker's shape (`fontName.style` is a free-text string, not a
+ * reliable weight signal), and erring toward the stricter 4.5:1 threshold
+ * for a bold 14pt label is the safe direction for a hard gate (a spurious
+ * extra scrutiny, never a missed real defect).
+ */
+export function wcagContrastCheckViolation(node: any, ancestors: any[]): GeometryViolation | null {
+  if (node.type !== 'TEXT') return null
+  const fg = solidFillColor(node.fills)
+  if (!fg) return null
+  const bgNode = [...ancestors].reverse().find((a) => solidFillColor(a.fills))
+  if (!bgNode) return null
+  const bg = solidFillColor(bgNode.fills)!
+  const isLargeText = typeof node.fontSize === 'number' && node.fontSize >= 18
+  const violation = wcagContrastViolation(fg, bg, isLargeText)
+  if (!violation) return null
+  return { rule: violation.rule, nodeId: node.id, detail: violation.detail }
 }

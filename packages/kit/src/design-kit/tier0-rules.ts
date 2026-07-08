@@ -116,9 +116,9 @@ export function textStyleRequiredViolation(node: AnyNode): Violation | null {
  * `textTruncation: 'ENDING'` means Figma silently clips this label to an
  * ellipsis whenever the rendered content doesn't fit its box, a
  * landmine for any future content change (a longer label, a
- * localization, a font substitution), which is exactly how a StatusPill
- * shipped rendering "Runnin" instead of "Running" (2026-07, live D02.1
- * build). The fix is never truncation: auto-resize the text or size the
+ * localization, a font substitution): a label can silently ship clipped
+ * (e.g. "Runnin" instead of "Running") with no other signal. The fix is
+ * never truncation: auto-resize the text or size the
  * box to the content.
  */
 export function textTruncationViolation(node: AnyNode): Violation | null {
@@ -174,9 +174,9 @@ export function isDesignPageName(name: string): boolean {
  * hasn't set it). `isScreenFrame` is marshaled by the walker: true only
  * for the top-level node of a walk whose owning page matches
  * isDesignPageName, never for a descendant, and never for a
- * component-definition frame on Custom Components. Fix (2026-07, live
- * D02.1 build): a screen shipped at 1440x1120 instead of the project's
- * 1440x900 because the designer grew the canvas to fit content instead of
+ * component-definition frame on Custom Components. Catches a screen that
+ * ships at the wrong height (e.g. 1440x1120 instead of a project's
+ * 1440x900) because the canvas was grown to fit content instead of
  * fitting content into the canvas.
  */
 export function screenViewportMismatchViolation(
@@ -222,9 +222,9 @@ export function missingAutoLayoutViolation(node: AnyNode): Violation | null {
 /**
  * Advisory (task ask: "advisory first, promote later"). Flags a child
  * whose absoluteBoundingBox extends past its parent's while the parent
- * has clipsContent disabled, a progress-segment row overflowing its
- * card's right edge shipped past every existing gate this way (2026-07,
- * live D02.1 build). Uses absoluteBoundingBox (the layout box), never
+ * has clipsContent disabled, e.g. a progress-segment row overflowing its
+ * card's right edge can ship past every other gate this way. Uses
+ * absoluteBoundingBox (the layout box), never
  * absoluteRenderBounds (which pads for shadows/blurs/effects), a drop
  * shadow bleeding past a card's edge is expected and must not false-
  * positive here. A child with layoutPositioning ABSOLUTE is exempt, same
@@ -280,7 +280,7 @@ export function handDrawnIconViolation(node: AnyNode): Violation | null {
  * per-side/join/cap siblings) is deliberately NOT in this denylist. Figma
  * records a proportional icon rescale — the sanctioned fix for the R6/NEW-3
  * stroke-distortion gotcha — as a `strokeWeight` override on the instance;
- * argo-v2's live library carries that override on every correctly-rescaled
+ * a live library carries that override on every correctly-rescaled
  * icon. Denying it unconditionally would hard-fail every correctly-rescaled
  * icon, recreating the exact false-positive disaster R10 exists to prevent.
  * strokeWeight legality is owned solely by `strokeScaleViolation` (NEW-3)'s
@@ -356,6 +356,13 @@ export function nonSemanticNameViolation(node: AnyNode): Violation | null {
   if (/^(Frame|Group|Rectangle|Ellipse|Text|Vector)\s?\d*$/.test(node.name)) {
     return { rule: 'non-semantic-name', detail: `node name "${node.name}" looks auto-generated, not semantic` }
   }
+  // A top-level screen frame carries a human-facing, page-style name
+  // (file-structure.md's screen convention) and is addressed by a CLI slug,
+  // never consumed as a code identifier — so the code-friendly-name predicate
+  // below must not fire on the screen frame's own name. isScreenFrame is set
+  // only for the frame itself (see the walker); descendant containers are
+  // still gated as normal.
+  if (node.isScreenFrame) return null
   // Code-friendly naming (owner mandate 2026-07-08): structural containers must
   // carry a role name figma-to-code can map to an identifier. Scoped to
   // FRAME/GROUP — a TEXT layer's name is usually its content ("@@ -35 +35 @@",

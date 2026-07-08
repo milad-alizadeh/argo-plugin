@@ -91,6 +91,6 @@ interactively.
 
 ## Verification
 
-Manual dry-run only during authoring — this skill's true test is argo-v2
-Phase B/C actually generating a real component from a real synced design;
+Manual dry-run only during authoring — this skill's true test is a host
+project actually generating a real component from a real synced design;
 no such fixture exists in this repo.

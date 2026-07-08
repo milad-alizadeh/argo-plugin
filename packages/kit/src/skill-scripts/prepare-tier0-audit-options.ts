@@ -198,19 +198,42 @@ export function deriveTier0AuditOptions({
  * run against an empty target, passing vacuously. Reject anything starting
  * with `--` that isn't a known flag before falling back to the sweep default.
  */
-export function parseCliArgs(args: string[]): { componentNames: string[] } {
-  const KNOWN_FLAGS = ['--componentNames']
+export function parseCliArgs(args: string[]): { componentNames: string[]; cwd?: string; help?: boolean } {
+  if (args.includes('--help') || args.includes('-h')) return { componentNames: [], help: true }
+
+  // `--componentNames` (camel) is canonical; `--component-names` (kebab) is an
+  // accepted alias — callers reach for the kebab form by habit, and rejecting
+  // it just costs a wasted round-trip. Unknown `--` flags still throw so a
+  // genuine typo can't masquerade as an empty file-wide sweep.
+  const KNOWN_FLAGS = ['--componentNames', '--component-names', '--cwd']
   const unknown = args.filter((a) => a.startsWith('--') && !KNOWN_FLAGS.includes(a))
   if (unknown.length > 0)
     throw new Error(`prepare-tier0-audit-options: unrecognized flag(s) ${unknown.join(', ')} — did you mean --componentNames?`)
 
-  const namesIndex = args.indexOf('--componentNames')
+  const namesIndex = args.findIndex((a) => a === '--componentNames' || a === '--component-names')
   const componentNames = namesIndex === -1 ? [] : JSON.parse(args[namesIndex + 1])
-  return { componentNames }
+  const cwdIndex = args.indexOf('--cwd')
+  const cwd = cwdIndex === -1 ? undefined : args[cwdIndex + 1]
+  return { componentNames, ...(cwd ? { cwd } : {}) }
 }
 
+const USAGE = `prepare-tier0-audit-options — derive the tier-0 audit target set.
+
+Usage:
+  prepare-tier0-audit-options [--cwd <path>] [--componentNames '<json-array>']
+
+Flags:
+  --componentNames  JSON array of component names for a named (hard) audit.
+                    Omit for a file-wide advisory sweep. --component-names alias.
+  --cwd             Repo/workspace dir to resolve config from (default: cwd).
+  --help, -h        Show this help.`
+
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { componentNames } = parseCliArgs(process.argv.slice(2))
-  const options = deriveTier0AuditOptions({ cwd: process.cwd(), componentNames })
-  console.log(JSON.stringify(options))
+  const { componentNames, cwd, help } = parseCliArgs(process.argv.slice(2))
+  if (help) {
+    console.log(USAGE)
+  } else {
+    const options = deriveTier0AuditOptions({ cwd: cwd ?? process.cwd(), componentNames })
+    console.log(JSON.stringify(options))
+  }
 }

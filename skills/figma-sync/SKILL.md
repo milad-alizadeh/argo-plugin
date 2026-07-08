@@ -172,5 +172,5 @@ violation detail.
 ## Verification
 
 Manual dry-run only during authoring — no Figma file or host project lives
-in this repo to exercise this against. Real verification happens at argo-v2
-Phase B's first live sync.
+in this repo to exercise this against. Real verification happens on a host
+project's first live sync.

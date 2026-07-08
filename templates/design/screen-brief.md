@@ -1,7 +1,7 @@
 # Screen brief template
 
 The **product spec** for one screen. Authored (in the host repo, e.g.
-`apps/desktop/design/briefs/<screen>.md`) BEFORE its wireframe, and read by
+`<app>/design/briefs/<screen>.md`) BEFORE its wireframe, and read by
 BOTH the wireframe stage (`figma-wireframe`) and the hi-fi stage
 (`figma-create`). It carries the two things a wireframe deliberately strips
 out — **what each region is/does** and **which regions are reusable

@@ -150,7 +150,13 @@ async function auditNode(
   // functions only ever READ nodeCtx.
   const nodeCtx = new Proxy(node, {
     get: (target: any, prop: string) =>
-      prop === 'insideInstance' ? insideInstance : prop === 'ancestorSolidFill' ? ancestorSolidFill : target[prop]
+      prop === 'insideInstance'
+        ? insideInstance
+        : prop === 'ancestorSolidFill'
+          ? ancestorSolidFill
+          : prop === 'isScreenFrame'
+            ? isScreenFrame
+            : target[prop]
   })
 
   for (const v of unboundFillViolations(nodeCtx)) report(v.rule, v.detail)
@@ -458,7 +464,10 @@ export async function runTier0Audit(
       }
       const owningPageName = findOwningPage(match)?.name ?? ''
       if (isWireframePageName(owningPageName)) continue
-      await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
+      // isScreenFrame only when `match` is genuinely the page's top-level
+      // frame (parent IS the page) — a registry nodeId can resolve to a node
+      // NESTED under a design page, which must still be name/viewport-gated.
+      await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) && match.parent?.type === 'PAGE' }, violations)
     }
 
     // Name-resolution fallback (ONLY for a target with no registry nodeId —
@@ -481,7 +490,10 @@ export async function runTier0Audit(
       const match = matches[0]
       const owningPageName = findOwningPage(match)?.name ?? ''
       if (isWireframePageName(owningPageName)) continue
-      await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
+      // isScreenFrame only when `match` is genuinely the page's top-level
+      // frame (parent IS the page) — a registry nodeId can resolve to a node
+      // NESTED under a design page, which must still be name/viewport-gated.
+      await walk(match, { ...walkOpts, isScreenFrame: isDesignPageName(owningPageName) && match.parent?.type === 'PAGE' }, violations)
     }
   } else if (pageId) {
     // Legacy single-page whole-page walk — explicit opt-in only, reachable
@@ -552,7 +564,7 @@ export async function runTier0Audit(
       }
       const owningPageName = findOwningPage(match)?.name ?? ''
       if (isWireframePageName(owningPageName)) continue
-      await walk(match, { ...sweepOpts, isScreenFrame: isDesignPageName(owningPageName) }, violations)
+      await walk(match, { ...sweepOpts, isScreenFrame: isDesignPageName(owningPageName) && match.parent?.type === 'PAGE' }, violations)
     }
     for (const page of figma.root.children) {
       if (!isDesignPageName(page.name) && !sweepPageNames.includes(page.name)) continue

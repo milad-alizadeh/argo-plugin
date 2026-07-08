@@ -275,14 +275,29 @@ describe('deriveTier0AuditOptions gates kit by ADOPTION (directive 3 refined, 20
 
 describe('parseCliArgs (CLI flag parsing — must not silently no-op on a typo)', () => {
   it('parses --componentNames as a JSON array', () => {
-    expect(parseCliArgs(['--componentNames', '["rail-session-card"]'])).toEqual({ componentNames: ['rail-session-card'] })
+    expect(parseCliArgs(['--componentNames', '["rail-session-card"]'])).toMatchObject({ componentNames: ['rail-session-card'] })
   })
 
   it('defaults to an empty array when no flag is given (the intentional file-wide-sweep case)', () => {
-    expect(parseCliArgs([])).toEqual({ componentNames: [] })
+    expect(parseCliArgs([])).toMatchObject({ componentNames: [] })
   })
 
-  it('throws on an unrecognized flag instead of silently defaulting (e.g. the kebab-case typo --component-names)', () => {
-    expect(() => parseCliArgs(['--component-names', '["rail-session-card"]'])).toThrow(/unrecognized flag.*--component-names/)
+  it('accepts --component-names (kebab) as an alias for --componentNames instead of throwing', () => {
+    expect(parseCliArgs(['--component-names', '["rail-session-card"]'])).toMatchObject({ componentNames: ['rail-session-card'] })
+  })
+
+  it('accepts --cwd so a caller need not chdir into apps/web first', () => {
+    expect(parseCliArgs(['--cwd', '/repo/apps/web', '--componentNames', '["Card"]'])).toMatchObject({
+      cwd: '/repo/apps/web',
+      componentNames: ['Card']
+    })
+  })
+
+  it('surfaces --help without throwing or requiring other flags', () => {
+    expect(parseCliArgs(['--help'])).toMatchObject({ help: true })
+  })
+
+  it('still throws on a genuinely unrecognized flag (not a known alias)', () => {
+    expect(() => parseCliArgs(['--bogus', 'x'])).toThrow(/unrecognized flag.*--bogus/)
   })
 })

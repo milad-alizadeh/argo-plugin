@@ -211,7 +211,7 @@ block's `componentsPath`/`walkers` fields) rather than hand-filling the
 (`vrt-walker/vitest.vrt.config.js`) is still copied/filled manually.
 The block seeds `componentCategories` with the thin default
 `["primitive", "composite"]` (design-memory-placement.md A1) — a project with
-real domain groupings (e.g. argo-v2's `rail`/`controls`/`status`/
+real domain groupings (e.g. `rail`/`controls`/`status`/
 `foundation-atoms`) sets its own list here instead. Validate it with
 `validateComponentCategories` from `@argohq/kit/design-kit`
 before writing: a non-empty array of unique, non-empty strings, or refuse to

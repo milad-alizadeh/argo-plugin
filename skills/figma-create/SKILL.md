@@ -102,9 +102,15 @@ file → skip; never invent one.
   using it as-is, not wrapping it for styling.
   **Check before you build is how this is actually done — mandatory, not a
   suggestion:**
-  1. At task start, read `design/registry.json` once (~40 lines) and consult
-     the host's reuse authority (its COMPONENT-INVENTORY /
-     RECONCILIATION docs) for what already exists — the base roster itself
+  1. At task start, consult the registry for what already exists — but
+     `design/registry.json` grows with the project (the per-component
+     `notes`/`variantMatrix` prose dominates its size), so NEVER `Read` it whole
+     into context. Use the deterministic verb: `argo design registry-lookup`
+     prints the compact `{name, nodeId, kind, status, adopted}` index (heavy
+     prose stripped); `--names '["Button","Card"]'` filters to exact names
+     (misses reported explicitly), `--search <substr>` fuzzy-filters. One small
+     call, not a raw Read or ad hoc grep. Also consult the host's reuse
+     authority (its COMPONENT-INVENTORY / RECONCILIATION docs) — the base roster
      lives in the design file, browsable on its component pages (icons are a
      family — search the icon page live for a specific glyph, never
      enumerate).
@@ -206,7 +212,7 @@ file → skip; never invent one.
 
 A screen is **built from its brief, not traced from its wireframe**. The
 wireframe is a lo-fi layout reference; the brief (host repo, e.g.
-`apps/desktop/design/briefs/<screen>.md`, format in
+`<app>/design/briefs/<screen>.md`, format in
 `templates/design/screen-brief.md`) is the spec that names which regions are
 reusable components. Read it before touching the screen — **no brief, stop and
 say so**, never infer the decomposition from the wireframe's grey boxes (that
@@ -292,8 +298,10 @@ generating one. You write the marker; the registry classification is derived
 from it deterministically (see the upsert step).
 
 **Registry read-order (step 9, cold-start optimization).** Before creating
-anything, read `design/registry.json` once (~40 lines) — a cold-start agent
-should reach an EXISTING component in ≤3 calls, not 15-20 discovery calls:
+anything, run `argo design registry-lookup` (compact index; `--names`/`--search`
+to filter) — NEVER a whole-file `Read` of `design/registry.json` (it grows with
+the project and a raw Read burns thousands of tokens). A cold-start agent should
+reach an EXISTING component in ≤3 calls, not 15-20 discovery calls:
 1. If the component's name is already in the registry, verify its `nodeId`
    via `getNodeByIdAsync` before touching it — never trust a cached id
    blind.
@@ -408,5 +416,5 @@ cheap without any extra caching on this skill's part.
 ## Verification
 
 Manual dry-run only — no Figma file lives in this repo to create anything
-in. Real verification is argo-v2 Phase B/D actually invoking this against a
+in. Real verification is a host project actually invoking this against a
 live Figma file.

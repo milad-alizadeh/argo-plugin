@@ -212,7 +212,7 @@ describe('kitInstanceOverrideViolation', () => {
   // CARVE-OUT (live-file correction, 2026-07-05): strokeWeight is
   // deliberately NOT in this denylist. Figma records a proportional icon
   // rescale (the sanctioned fix for the R6/NEW-3 stroke-distortion gotcha)
-  // as a strokeWeight override on the instance — argo-v2's live library
+  // as a strokeWeight override on the instance — a live library
   // carries strokeWeight overrides on every correctly-rescaled icon.
   // strokeWeight legality is owned solely by the NEW-3
   // `strokeScaleViolation` proportionality rule, not this override check.
@@ -298,6 +298,28 @@ describe('nonSemanticNameViolation', () => {
     expect(nonSemanticNameViolation({ type: 'TEXT', name: '@@ -35,6 +35,9 @@' })).toBeNull()
     expect(nonSemanticNameViolation({ type: 'TEXT', name: 'src/auth/guard.ts' })).toBeNull()
     expect(nonSemanticNameViolation({ type: 'TEXT', name: 'content' })).toBeNull()
+  })
+
+  it('exempts the screen frame\'s OWN name from code-friendly-name — the D<NN> · Group · Title convention is mandated and never consumed as a code identifier', () => {
+    // A top-level screen frame (isScreenFrame) carries the project's mandated
+    // "D02 · Session · builder" naming; it is addressed by a CLI slug, never a
+    // code identifier, so the spaces/generic predicate must not fire on it.
+    expect(nonSemanticNameViolation({ type: 'FRAME', name: 'D02 · Session · builder', isScreenFrame: true })).toBeNull()
+    expect(nonSemanticNameViolation({ type: 'FRAME', name: 'D05 · Cold open', isScreenFrame: true })).toBeNull()
+  })
+
+  it('still flags genuinely auto-generated screen-frame names even when isScreenFrame', () => {
+    // Exemption is only for the human-authored convention, not for an unnamed
+    // "Frame 12" left on the canvas.
+    expect(nonSemanticNameViolation({ type: 'FRAME', name: 'Frame 12', isScreenFrame: true })).toMatchObject({
+      rule: 'non-semantic-name'
+    })
+  })
+
+  it('still flags spaces on non-screen structural containers (isScreenFrame only exempts the top-level frame itself)', () => {
+    expect(nonSemanticNameViolation({ type: 'FRAME', name: 'viewed cluster', isScreenFrame: false })).toMatchObject({
+      rule: 'non-code-friendly-name'
+    })
   })
 })
 

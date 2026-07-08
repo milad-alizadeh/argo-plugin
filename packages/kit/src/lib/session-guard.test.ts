@@ -40,22 +40,22 @@ describe('session-guard — per-session gate state, race-free by namespacing', (
   it('appKey normalizes "" and "." together; cwd-relative matches root', () => {
     expect(appKeyForRoot('')).toBe('.')
     expect(appKeyForRoot('.')).toBe('.')
-    expect(appKeyForRoot('apps/desktop/')).toBe('apps/desktop')
+    expect(appKeyForRoot('apps/web/')).toBe('apps/web')
     expect(appKeyForCwd(repo, repo)).toBe('.')
-    mkdirSync(join(repo, 'apps', 'desktop'), { recursive: true }) // cwd always exists in real use (realpath needs it)
-    expect(appKeyForCwd(repo, join(repo, 'apps', 'desktop'))).toBe('apps/desktop')
+    mkdirSync(join(repo, 'apps', 'web'), { recursive: true }) // cwd always exists in real use (realpath needs it)
+    expect(appKeyForCwd(repo, join(repo, 'apps', 'web'))).toBe('apps/web')
   })
 
   it('receipt entry records per-app, keeps prior apps, refreshes writeCountAtAudit', () => {
-    writeSessionReceiptEntry(repo, 'A', 'apps/desktop', { componentNames: ['Button'], violationCount: 0 }, 5, 2000)
+    writeSessionReceiptEntry(repo, 'A', 'apps/web', { componentNames: ['Button'], violationCount: 0 }, 5, 2000)
     let r = readSessionReceipt(repo, 'A')!
     expect(r.writeCountAtAudit).toBe(5)
-    expect(r.apps['apps/desktop']).toEqual({ componentNames: ['Button'], violationCount: 0 })
+    expect(r.apps['apps/web']).toEqual({ componentNames: ['Button'], violationCount: 0 })
 
     writeSessionReceiptEntry(repo, 'A', 'apps/other', { componentNames: ['Card'], violationCount: 2 }, 6, 2001)
     r = readSessionReceipt(repo, 'A')!
     expect(r.writeCountAtAudit).toBe(6) // refreshed
-    expect(r.apps['apps/desktop']).toEqual({ componentNames: ['Button'], violationCount: 0 }) // kept
+    expect(r.apps['apps/web']).toEqual({ componentNames: ['Button'], violationCount: 0 }) // kept
     expect(r.apps['apps/other'].violationCount).toBe(2)
   })
 

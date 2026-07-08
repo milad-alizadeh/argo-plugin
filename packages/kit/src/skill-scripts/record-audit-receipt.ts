@@ -24,7 +24,7 @@ import { appKeyForCwd, readSessionWriteCount, writeSessionReceiptEntry } from '.
  * design-guard-stop.js can detect a write that happened after this audit
  * ran, and demand a re-audit. `.argo/design-guard.json` is repo-global and
  * lives at the git toplevel — NOT necessarily `cwd`, which in a monorepo is
- * the app root (e.g. `apps/desktop`, per figma-audit/SKILL.md's documented
+ * the app root (e.g. `apps/web`, per figma-audit/SKILL.md's documented
  * cwd, matching where `design/audit-receipt.json` itself must land for
  * design-guard-stop.js to find it). Reading both off the same `cwd` silently
  * missed the guard state in that layout, defaulting `writeCounterAtAudit`
@@ -39,9 +39,9 @@ export function recordAuditReceipt(
 
   const repoRoot = resolveRepoRoot(cwd)
 
-  // HARD-only (council ruling Q7, 2026-07-05): advisory findings belong to
-  // the sweep report, never the receipt — counting them blocked a clean run
-  // on advisory-only stroke-scale hits (the D05 red-gate incident).
+  // HARD-only: advisory findings belong to the sweep report, never the
+  // receipt — counting them would block an otherwise-clean run on
+  // advisory-only stroke-scale hits.
   const violationCount = violations.filter((v) => v?.severity !== 'advisory').length
 
   // Per-session-design-gate.md: when this run is attributed to a session,

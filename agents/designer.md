@@ -65,9 +65,13 @@ causes the usual hard-to-debug `use_figma` failures.
 `Custom Components`, screens on their `D<NN> <group>` page, wireframes on the
 matching `W<NN> <group>` page): don't invent a different page shape.
 
-**COLD-START.** Before creating anything, read `design/registry.json` (thin
-pointer index — reach an existing component in ≤3 calls, not 15-20 discovery
-calls) and, when building, browse the design file's base component pages (the
+**COLD-START.** Before creating anything, run `argo design registry-lookup` (the
+compact `{name, nodeId, kind, status, adopted}` index; `--names`/`--search` to
+filter) — NEVER `Read` `design/registry.json` whole. It grows with the project
+(the per-component notes/variantMatrix prose dominate its size), so a raw Read
+burns thousands of tokens for a roster you can get compactly in one call. The
+verb reaches an existing component in ≤3 calls, not 15-20 discovery calls. When
+building, browse the design file's base component pages (the
 starter's shadcn-mirror roster) before assuming nothing fits — see
 `skills/figma-create/SKILL.md`'s read-order for the full verify-before-use /
 heal-and-persist procedure.

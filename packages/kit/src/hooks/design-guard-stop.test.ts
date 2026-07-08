@@ -163,14 +163,14 @@ describe('design-guard-stop — blocks Stop/SubagentStop on stale/missing audit 
   })
 
   it('PASS (monorepo): a clean receipt at <app.root>/design/audit-receipt.json satisfies the guard', async () => {
-    armDesignPackMonorepo(cwd, 'apps/desktop')
+    armDesignPackMonorepo(cwd, 'apps/web')
     writeGuardState(cwd)
-    writeAppAuditReceipt(cwd, 'apps/desktop')
+    writeAppAuditReceipt(cwd, 'apps/web')
     expect((await runHook(stopInput(cwd))).code).toBe(0)
   })
 
   it('BLOCK (monorepo): a receipt at the OLD repo-root path is not consulted, app-root receipt still missing', async () => {
-    armDesignPackMonorepo(cwd, 'apps/desktop')
+    armDesignPackMonorepo(cwd, 'apps/web')
     writeGuardState(cwd)
     writeAuditReceipt(cwd) // old, wrong location: <repoRoot>/design/audit-receipt.json
     const r = await runHook(stopInput(cwd))
@@ -249,9 +249,9 @@ describe('design-guard-stop — blocks Stop/SubagentStop on stale/missing audit 
   })
 
   it('BLOCK (monorepo): session wrote but its receipt has no entry for a configured app', async () => {
-    armDesignPackMonorepo(cwd, 'apps/desktop')
+    armDesignPackMonorepo(cwd, 'apps/web')
     writeSessionState(cwd, 'mine', 1)
-    writeSessionReceipt(cwd, 'mine', { writeCountAtAudit: 1, apps: {} }) // no apps/desktop entry
+    writeSessionReceipt(cwd, 'mine', { writeCountAtAudit: 1, apps: {} }) // no apps/web entry
     const r = await runHook(stopInput(cwd, { session_id: 'mine' }))
     expect(r.code).toBe(2)
     expect(r.stderr).toMatch(/no audit/)

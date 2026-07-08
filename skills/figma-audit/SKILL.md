@@ -162,6 +162,14 @@ none at all.
    host project's `design/` dir — the bundle lands at a cached tmp path this
    command prints; read that file and paste ITS content into `use_figma`,
    never a hand-assembled source module.
+   - **Efficiency — this is a large per-run token sink if mishandled:** the
+     bundle is tens of KB of opaque machine code. Do NOT read it to inspect or
+     reason about — it is inert; the only reason to materialize it is to hand
+     it to `use_figma`. Read it once, paste it once. On a **re-audit after a
+     fix**, the recipe is unchanged so the cached bundle at the same tmp path
+     is byte-identical — reuse that same pasted content, do NOT re-run
+     `bundle-tier0-audit`, re-read the file, or re-derive it. Re-embedding the
+     bundle on every audit call is pure token waste for zero information gain.
    - **Named audit (mode 1):** execute the bundle in ONE `use_figma` call,
      calling the completion value with the FULL options object from step 2
      unchanged.
@@ -209,4 +217,4 @@ none at all.
 This skill's core logic is a stated, accepted gap in this repo's own test
 suite (design-pack plan §6, risk 1) — `tier0-audit.js` only executes inside
 Figma's Plugin API sandbox. First real proof is a live run against an actual
-Figma file (argo-v2 Phase B). Do not invent a synthetic harness for it here.
+Figma file in a host project. Do not invent a synthetic harness for it here.

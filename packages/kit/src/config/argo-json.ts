@@ -6,7 +6,7 @@
  *   { "design": { "<appKey>": { "root": "<app dir, repo-root-relative>",
  *                               "componentsPath": "<relative to root>" } } }
  * Single-repo: one entry keyed "." with root ".". Monorepo: one entry per
- * app, keyed by the app dir (e.g. "apps/desktop"). A gate arms for an app iff
+ * app, keyed by the app dir (e.g. "apps/web"). A gate arms for an app iff
  * its design block exists AND a staged file falls under that app's resolved
  * componentsPath — matched repo-root-relative, which is the fix for the old
  * `design/config.json`-presence arming that silently no-oped per-app in

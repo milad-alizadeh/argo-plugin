@@ -48,7 +48,7 @@ all point here instead of restating it.
 
    **Category rubric.** Ambiguous cases default to the MORE GENERAL category
    — the registry pins the final choice once assigned, it doesn't need to be
-   perfect at creation time. Worked examples from argo-v2's real domain set
+   perfect at creation time. Worked examples over a sample domain set
    (`rail`, `controls`, `status`, `foundation-atoms`):
    - `status-pill` → `status` (communicates a state, not an input).
    - `rail-session-card` → `rail` (serves the cockpit's session rail surface).

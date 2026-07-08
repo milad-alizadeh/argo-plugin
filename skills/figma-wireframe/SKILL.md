@@ -89,7 +89,7 @@ wall-clock on call COUNT, not call size. Build accordingly:
 
 A wireframe is a lo-fi **layout expression of a screen's brief**, never the
 spec itself. Before wireframing any screen, read its brief (host repo, e.g.
-`apps/desktop/design/briefs/<screen>.md`, format in
+`<app>/design/briefs/<screen>.md`, format in
 `templates/design/screen-brief.md`):
 
 - Lay out exactly the regions the brief's **Regions → component map** lists,

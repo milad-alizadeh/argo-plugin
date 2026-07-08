@@ -130,6 +130,19 @@ Front-loading is the dominant token lever (composition-dominant screens cost
 ~75k, not ~300k); parallelism is a wall-time bonus, not the strategy.
 
 ## Cost discipline (hard rules)
+- **Clone the shared shell, never reconstruct it.** When a sibling screen
+  already carries the layout chrome the new screen shares (its outer
+  frame/backdrop and the surrounding panels/bars around the content region),
+  build the new screen by
+  `(await figma.getNodeByIdAsync('<sibling-screen-id>')).clone()`, then swap ONLY
+  the content region + the copy slots that differ. Do NOT re-derive the shared
+  chrome node-by-node from an inspected reference — that re-pays the whole
+  scaffold cost and re-discovers the same Plugin API constraints (e.g. an
+  absolute-positioned backdrop is rejected under a `layoutMode:NONE` parent;
+  a SLOT node ignores `.resize()` — size the containing instance) on every
+  build. Cloning is materially cheaper in round-trips and tokens, and a clone
+  inherits the shell's already-filled, opaque surfaces, so backdrop-bleed and
+  stale-placeholder-copy defects can't reappear.
 - **The full-tree read is reserved for the P4a instance-presence check ONLY** —
   a single `use_figma` walk of the composed frame's flat instance inventory.
   P1/P2 read the committed registry + the component-resolution

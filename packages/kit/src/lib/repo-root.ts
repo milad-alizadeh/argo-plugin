@@ -3,7 +3,7 @@
  * design-guard-stop.js) each carried an identical copy of this — `.argo/
  * design-guard.json` is repo-global, so anything reading/writing it needs
  * the real repo root, not whatever `cwd` a session or skill script happens
- * to run from (a monorepo app root like `apps/desktop`, not the repo root,
+ * to run from (a monorepo app root, not the repo root,
  * per figma-audit/SKILL.md's documented `cwd`).
  *
  * record-audit-receipt.js hit this same problem from the write side

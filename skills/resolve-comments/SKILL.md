@@ -87,9 +87,9 @@ next sweep will re-triage the thread and redo the work. Always prefix.
 
 ## Three-way routing — classify by the pin's page, not the file
 
-Wireframes, hi-fi screens, and component masters can all live in one file (in
-argo-v2 they're different PAGES of `figma.projectFileKey`: `W##`, `D##`, and
-`Custom Components`). So classification is **per comment, by the page its pin
+Wireframes, hi-fi screens, and component masters can all live in one file — as
+different PAGES of `figma.projectFileKey`: `W##`, `D##`, and
+`Custom Components`. So classification is **per comment, by the page its pin
 sits on** — not one decision for the whole file. Resolve the pin's `nodeId` to
 its page via the Plugin API (`figma.getNodeByIdAsync(nodeId)`, then walk
 `.parent` up to the `PAGE`), read the page name, and route:
@@ -318,5 +318,6 @@ inherently sequential; the only concurrency worth having is inside the read
 ## Verification
 
 Manual dry-run only — no Figma file lives in this repo. Real verification is a
-live run against the argo-v2 project file (`CLEHEoqvJlRti3dCCfOytS`) with a
-`file_comments`-scoped token present, processing actual pinned comments.
+live run against the host project's Figma file (`design.<app>.figma.projectFileKey`
+in `.argo/argo.json`) with a `file_comments`-scoped token present, processing
+actual pinned comments.

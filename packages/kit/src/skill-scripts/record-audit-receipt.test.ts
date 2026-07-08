@@ -19,10 +19,10 @@ describe('recordAuditReceipt', () => {
     }
   })
 
-  // Council ruling Q7 (overnight review, 2026-07-05): the receipt is
-  // HARD-only — advisory findings live in the sweep report, never in
-  // violationCount, or an advisory-only run blocks the stop gate (the D05
-  // red-gate incident: 3 advisory stroke-scale hits ended the night red).
+  // The receipt is HARD-only — advisory findings live in the sweep report,
+  // never in violationCount. Otherwise an advisory-only run would block the
+  // stop gate (e.g. a handful of advisory stroke-scale hits leaving the
+  // gate red with no hard violation to fix).
   it('excludes advisory-severity findings from violationCount (hard-only receipt)', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'tier0-audit-receipt-'))
     try {
@@ -60,9 +60,9 @@ describe('recordAuditReceipt', () => {
     }
   })
 
-  // figma-audit dogfooding, 2026-07-06 (argo-v2 tier-0 sweep): a monorepo
-  // runs this from the app root (e.g. `apps/desktop`, per figma-audit/
-  // SKILL.md's documented cwd), but `.argo/design-guard.json` is repo-global
+  // A monorepo runs this from the app root (a nested app dir, per
+  // figma-audit/SKILL.md's documented cwd), but `.argo/design-guard.json`
+  // is repo-global
   // and lives at the git toplevel, one or more levels above `cwd`. Reading
   // the guard state relative to the SAME `cwd` used for `design/` silently
   // missed the file, defaulting `writeCounterAtAudit` to 0 — which then
@@ -72,7 +72,7 @@ describe('recordAuditReceipt', () => {
     const repoRoot = mkdtempSync(join(tmpdir(), 'tier0-audit-receipt-monorepo-'))
     try {
       execFileSync('git', ['-C', repoRoot, 'init', '-q'])
-      const appRoot = join(repoRoot, 'apps', 'desktop')
+      const appRoot = join(repoRoot, 'apps', 'web')
       mkdirSync(appRoot, { recursive: true })
       mkdirSync(join(repoRoot, '.argo'), { recursive: true })
       writeFileSync(join(repoRoot, '.argo', 'design-guard.json'), JSON.stringify({ writeCount: 175 }))
@@ -96,7 +96,7 @@ describe('recordAuditReceipt', () => {
     const repoRoot = mkdtempSync(join(tmpdir(), 'tier0-audit-receipt-persession-'))
     try {
       execFileSync('git', ['-C', repoRoot, 'init', '-q'])
-      const appRoot = join(repoRoot, 'apps', 'desktop')
+      const appRoot = join(repoRoot, 'apps', 'web')
       mkdirSync(appRoot, { recursive: true })
       // this session's own write-count file says it made 7 writes
       mkdirSync(join(repoRoot, '.argo', 'design-guard'), { recursive: true })
@@ -108,7 +108,7 @@ describe('recordAuditReceipt', () => {
       )
 
       expect(receipt.writeCountAtAudit).toBe(7)
-      expect(receipt.apps['apps/desktop']).toEqual({ componentNames: ['Button'], violationCount: 0 })
+      expect(receipt.apps['apps/web']).toEqual({ componentNames: ['Button'], violationCount: 0 })
       const onDisk = JSON.parse(readFileSync(join(repoRoot, '.argo', 'audit-receipts', 'mine.json'), 'utf8'))
       expect(onDisk).toEqual(receipt)
       // the committed per-app receipt is NOT written on the per-session path

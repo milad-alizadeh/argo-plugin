@@ -24,7 +24,8 @@ import {
   compositeRegionNamingViolation,
   screenViewportMismatchViolation,
   textTruncationViolation,
-  unclippedOverflowViolations
+  unclippedOverflowViolations,
+  missingRoleTagsViolation
 } from './tier0-rules.js'
 
 describe('unboundFillViolations', () => {
@@ -679,5 +680,25 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
       gapAndPadding: [{ field: 'paddingLeft', value: 24, bound: true, collectionName: 'tw/padding' }]
     }
     expect(gapPaddingSpacingViolations(node, { additionalAllowedCollectionNames: ['tw/gap', 'tw/padding', 'tw/margin', 'tw/space'] })).toEqual([])
+  })
+})
+
+describe('missingRoleTagsViolation (geometry pass precondition)', () => {
+  it('flags a requiresRoleTags root with zero role-tagged descendants', () => {
+    const root = { name: 'List', children: [{ name: 'Row' }] }
+    expect(missingRoleTagsViolation(root, { requiresRoleTags: true })).toEqual({
+      rule: 'missing-role-tags',
+      detail: 'component is in a geometry-checked category but has no #content-start/#rail/#anchor tagged nodes'
+    })
+  })
+
+  it('passes a requiresRoleTags root with at least one role-tagged descendant', () => {
+    const root = { name: 'List', children: [{ name: 'Row', children: [{ name: 'Icon #anchor' }] }] }
+    expect(missingRoleTagsViolation(root, { requiresRoleTags: true })).toBeNull()
+  })
+
+  it('passes when requiresRoleTags is false (opt-in, non-breaking)', () => {
+    const root = { name: 'List', children: [{ name: 'Row' }] }
+    expect(missingRoleTagsViolation(root, { requiresRoleTags: false })).toBeNull()
   })
 })

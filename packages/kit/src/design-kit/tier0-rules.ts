@@ -17,6 +17,8 @@
  * typing to the module's own logic, not a full Figma domain model).
  */
 
+import { hasAnyRoleTag } from './role-tags.js'
+
 export type Violation = { rule: string; detail: string }
 type AnyNode = Record<string, any>
 
@@ -488,6 +490,26 @@ export function compositeRegionNamingViolation(node: AnyNode, compositeNames: st
   return {
     rule: 'composite-region-traced-not-instance',
     detail: `frame "${node.name}" is named after a composite component but is a plain FRAME, not an INSTANCE — looks traced, not composed`
+  }
+}
+
+/**
+ * Geometry-pass precondition (fidelity-geometry-verifier.md Slice 1): a
+ * component in a category opted into geometry checks (`geometryCategories`)
+ * but carrying zero role-tagged descendants at all can't run any geometry
+ * rule (they all key off `#content-start`/`#rail`/`#anchor`) — flag it once,
+ * at the named-audit ROOT only, same wiring shape as
+ * `screenViewportMismatchViolation`'s `isScreenFrame` gate, not a per-node
+ * check. `requiresRoleTags` is resolved by the caller from the target's
+ * category membership in `geometryCategories` — opt-in, so a category that
+ * never geometry-checks (e.g. a plain Button) is unaffected.
+ */
+export function missingRoleTagsViolation(root: AnyNode, { requiresRoleTags }: { requiresRoleTags: boolean }): Violation | null {
+  if (!requiresRoleTags) return null
+  if (hasAnyRoleTag(root)) return null
+  return {
+    rule: 'missing-role-tags',
+    detail: 'component is in a geometry-checked category but has no #content-start/#rail/#anchor tagged nodes'
   }
 }
 

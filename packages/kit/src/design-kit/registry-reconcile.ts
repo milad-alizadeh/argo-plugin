@@ -165,6 +165,8 @@ type LiveKitComponent = {
   componentPropertyDefinitions?: Record<string, VariantPropertyDefinition>
   /** Native Figma component description, owner addendum (registry-covers-kit.md). */
   description?: string
+  /** Dev Mode annotations — the new canonical home of the `@code-owned:` marker. */
+  annotations?: Array<{ label?: string; labelMarkdown?: string }>
 }
 type LeanKitEntry = {
   nodeId: string
@@ -192,7 +194,7 @@ export function buildKitRegistryEntries(
   for (const c of liveKitComponents) {
     if (existingNames.has(c.name)) continue
     if (PASCAL_EXEMPT_PREFIXES.some((p) => c.name.startsWith(p))) continue
-    if (parseCodeOwnedPath(c.description)) continue // code-owned wins over positional kit classification
+    if (resolveCodeOwnedPath(c)) continue // code-owned wins over positional kit classification
     entries[c.name] = {
       nodeId: c.nodeId,
       kind: 'kit',
@@ -232,7 +234,7 @@ export function detectChangedKitComponents({
   const changed: ChangedKitComponent[] = []
   for (const c of liveKitComponents) {
     if (PASCAL_EXEMPT_PREFIXES.some((p) => c.name.startsWith(p))) continue
-    if (parseCodeOwnedPath(c.description)) continue // handled by buildCodeOwnedEntries
+    if (resolveCodeOwnedPath(c)) continue // handled by buildCodeOwnedEntries
     const entry = registryComponents[c.name]
     if (!entry || entry.kind !== 'kit') continue // new or non-kit handled elsewhere
     const liveMatrix = extractVariantMatrix(c.componentPropertyDefinitions)
@@ -245,19 +247,56 @@ export function detectChangedKitComponents({
 }
 
 /**
- * The `@code-owned: <path>` marker (single source of truth, authored in the
- * Figma component description by the designer/figma-create when a placeholder
- * screenshot stands in for a code-native implementation). Returns the repo-
- * relative path, or null when the marker is absent/empty. The path is the
- * first whitespace-delimited token after the colon; the rest of the
- * description (purpose, category) is ignored. Pure and deterministic — the
- * registry classification is a function of the Figma description alone, never
- * hand-maintained.
+ * The `@code-owned: <path>` marker read from a component `description`. The
+ * marker is authored by the designer/figma-create when a placeholder screenshot
+ * stands in for a code-native implementation. Returns the repo-relative path, or
+ * null when the marker is absent/empty. The path is the first whitespace-
+ * delimited token after the colon; the rest of the text (purpose, category) is
+ * ignored. Pure and deterministic. NOTE: the marker's canonical home is moving
+ * to a Dev annotation (see `resolveCodeOwnedPath`); this description read stays
+ * for the transition release, then drops.
  */
 export function parseCodeOwnedPath(description?: string): string | null {
   if (!description) return null
   const m = description.match(/@code-owned:\s*(\S+)/)
   return m ? m[1] : null
+}
+
+/**
+ * The annotation-source read of the same `@code-owned: <path>` marker. The
+ * marker is migrating from the component `description` (PublishableMixin) onto a
+ * Dev Mode annotation `label`/`labelMarkdown` — the same layer screens already
+ * use for `@screen` (see `hasScreenAnnotation`), so a code-owned component and a
+ * screen now carry their identity marker uniformly. Returns the first
+ * annotation-borne codePath, or null. Pure and deterministic.
+ */
+export function parseCodeOwnedFromAnnotations(annotations?: Array<{ label?: string; labelMarkdown?: string }>): string | null {
+  if (!Array.isArray(annotations)) return null
+  for (const a of annotations) {
+    const fromLabel = parseCodeOwnedPath(a?.label)
+    if (fromLabel) return fromLabel
+    const fromMd = parseCodeOwnedPath(a?.labelMarkdown)
+    if (fromMd) return fromMd
+  }
+  return null
+}
+
+/**
+ * Dual-source resolver for the transition release: the annotation is the new
+ * canonical home and WINS; the legacy `description` marker is still read as a
+ * fallback so a not-yet-migrated file keeps classifying correctly. The
+ * description read is dropped a release later (see designer-gap-closure plan) —
+ * once every project has run the one-shot migration, only the annotation source
+ * remains. Pure.
+ */
+export function resolveCodeOwnedPath({
+  description,
+  annotations
+}: {
+  description?: string
+  annotations?: Array<{ label?: string; labelMarkdown?: string }>
+}): string | null {
+  return parseCodeOwnedFromAnnotations(annotations) ?? parseCodeOwnedPath(description)
 }
 
 type CodeOwnedEntry = {
@@ -272,7 +311,8 @@ type CodeOwnedEntry = {
 
 /**
  * Deterministic derivation of `code-owned` registry entries from the live
- * Figma components' descriptions — runs over ALL live components regardless of
+ * Figma components' `@code-owned:` marker (resolved dual-source: Dev annotation
+ * first, description fallback — see `resolveCodeOwnedPath`) — runs over ALL live components regardless of
  * kit/custom page band (the marker overrides positional classification). For
  * each component carrying the `@code-owned:` marker it emits the registry
  * entry to write, but ONLY when new or drifted (nodeId/codePath/variantMatrix/
@@ -294,7 +334,7 @@ export function buildCodeOwnedEntries(
   const written: Record<string, CodeOwnedEntry> = {}
   const changed: ChangedKitComponent[] = []
   for (const c of liveComponents) {
-    const codePath = parseCodeOwnedPath(c.description)
+    const codePath = resolveCodeOwnedPath(c)
     if (!codePath) continue
     const prev = registryComponents[c.name]
     const variantMatrix = extractVariantMatrix(c.componentPropertyDefinitions)

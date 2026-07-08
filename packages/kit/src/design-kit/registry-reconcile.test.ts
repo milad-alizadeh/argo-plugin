@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, detectChangedKitComponents, isPascalCaseComponentName, parseCodeOwnedPath, buildCodeOwnedEntries, deriveAdoption, hasScreenAnnotation, buildScreenEntries } from './registry-reconcile.js'
+import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, detectChangedKitComponents, isPascalCaseComponentName, parseCodeOwnedPath, parseCodeOwnedFromAnnotations, resolveCodeOwnedPath, buildCodeOwnedEntries, deriveAdoption, hasScreenAnnotation, buildScreenEntries } from './registry-reconcile.js'
 
 describe('hasScreenAnnotation', () => {
   it('matches @screen in label or labelMarkdown on a word boundary', () => {
@@ -294,6 +294,14 @@ describe('buildKitRegistryEntries', () => {
     expect('description' in entries.Buttons).toBe(false)
   })
 
+  it('skips a component whose code-owned marker lives on an annotation (kit classification loses to the marker)', () => {
+    const entries = buildKitRegistryEntries(
+      { liveKitComponents: [{ name: 'SceneWallpaper', nodeId: '1:1', annotations: [{ label: '@code-owned: src/scene/SceneWallpaper.tsx' }] }], existingNames: new Set() },
+      '2026-07-07T00:00:00.000Z'
+    )
+    expect(entries).toEqual({})
+  })
+
   it('excludes lucide/* and demo/* live components entirely', () => {
     const entries = buildKitRegistryEntries(
       {
@@ -328,6 +336,14 @@ describe('detectChangedKitComponents (manual Figma edit capture, directive 6)', 
       registryComponents: { Card: { kind: 'kit', variantMatrix: {}, description: 'Old copy' } }
     })
     expect(changed[0]).toMatchObject({ name: 'Card', reasons: ['description changed'], description: 'New copy' })
+  })
+
+  it('does not flag a component whose code-owned marker lives on an annotation (handled by buildCodeOwnedEntries)', () => {
+    const changed = detectChangedKitComponents({
+      liveKitComponents: [{ name: 'SceneWallpaper', nodeId: '1:1', annotations: [{ label: '@code-owned: src/scene/SceneWallpaper.tsx' }] }],
+      registryComponents: { SceneWallpaper: { kind: 'kit', variantMatrix: {} } }
+    })
+    expect(changed).toEqual([])
   })
 
   it('does not flag an unchanged component, a new one, or a custom entry', () => {
@@ -370,8 +386,56 @@ describe('parseCodeOwnedPath (@code-owned marker)', () => {
   })
 })
 
+describe('parseCodeOwnedFromAnnotations (Dev annotation label source)', () => {
+  it('extracts the path from an annotation label', () => {
+    expect(parseCodeOwnedFromAnnotations([{ label: '@code-owned: src/scene/SceneWallpaper.tsx' }])).toBe('src/scene/SceneWallpaper.tsx')
+  })
+
+  it('extracts the path from labelMarkdown too', () => {
+    expect(parseCodeOwnedFromAnnotations([{ labelMarkdown: 'note\n@code-owned:   a/b/C.tsx' }])).toBe('a/b/C.tsx')
+  })
+
+  it('returns null for unmarked, empty, or missing annotations', () => {
+    expect(parseCodeOwnedFromAnnotations([{ label: 'just a note' }])).toBeNull()
+    expect(parseCodeOwnedFromAnnotations([])).toBeNull()
+    expect(parseCodeOwnedFromAnnotations(undefined)).toBeNull()
+  })
+})
+
+describe('resolveCodeOwnedPath (dual-source: annotation wins, description fallback — transition release)', () => {
+  it('prefers the annotation label over the description', () => {
+    expect(
+      resolveCodeOwnedPath({ description: '@code-owned: src/old/FromDescription.tsx', annotations: [{ label: '@code-owned: src/new/FromAnnotation.tsx' }] })
+    ).toBe('src/new/FromAnnotation.tsx')
+  })
+
+  it('falls back to the description when no annotation carries the marker', () => {
+    expect(resolveCodeOwnedPath({ description: 'Backdrop. @code-owned: src/scene/SceneWallpaper.tsx', annotations: [{ label: 'note' }] })).toBe(
+      'src/scene/SceneWallpaper.tsx'
+    )
+  })
+
+  it('reads the annotation even when the description has no marker', () => {
+    expect(resolveCodeOwnedPath({ annotations: [{ label: '@code-owned: src/scene/SceneWallpaper.tsx' }] })).toBe('src/scene/SceneWallpaper.tsx')
+  })
+
+  it('returns null when neither source carries the marker', () => {
+    expect(resolveCodeOwnedPath({ description: 'plain', annotations: [{ label: 'note' }] })).toBeNull()
+    expect(resolveCodeOwnedPath({})).toBeNull()
+  })
+})
+
 describe('buildCodeOwnedEntries (deterministic derivation from the Figma marker)', () => {
   const marker = '@code-owned: src/components/scene-wallpaper/SceneWallpaper.tsx'
+
+  it('derives a code-owned entry from an annotation-source marker (no description marker)', () => {
+    const { written, changed } = buildCodeOwnedEntries(
+      { liveComponents: [{ name: 'SceneWallpaper', nodeId: '5091:7366', annotations: [{ label: marker }] }], registryComponents: {} },
+      '2026-07-08T00:00:00Z'
+    )
+    expect(written.SceneWallpaper).toMatchObject({ kind: 'code-owned', codePath: 'src/components/scene-wallpaper/SceneWallpaper.tsx' })
+    expect(changed[0]).toMatchObject({ name: 'SceneWallpaper', reasons: ['new code-owned'] })
+  })
 
   it('emits a code-owned entry for a marker-carrying live component regardless of page band', () => {
     const { written, changed } = buildCodeOwnedEntries(

@@ -22,7 +22,7 @@ import { join } from 'node:path'
 import { resolveRepoRoot } from '../lib/repo-root.js'
 import { findDesignBlock } from './prepare-tier0-audit-options.js'
 import { registryComponentNames } from '../design-kit/component-names.js'
-import { kitPageIndices, buildKitRegistryEntries, detectChangedKitComponents, buildCodeOwnedEntries, buildScreenEntries, hasScreenAnnotation } from '../design-kit/registry-reconcile.js'
+import { kitPageIndices, buildKitRegistryEntries, detectChangedKitComponents, buildCodeOwnedEntries, buildScreenEntries, hasScreenAnnotation, resolveCodeOwnedPath, parseCodeOwnedPath, parseCodeOwnedFromAnnotations } from '../design-kit/registry-reconcile.js'
 import { readDesignJsonOrRebuild, writeDesignJson } from './lib/write-design-json.js'
 
 const API = 'https://api.figma.com/v1'
@@ -77,6 +77,7 @@ export type MarshaledComponent = {
   pageIndex: number
   componentPropertyDefinitions?: Record<string, { type: string; variantOptions?: string[] }>
   description?: string
+  annotations?: Array<{ label?: string; labelMarkdown?: string }>
 }
 
 const COMPONENT_NODE_TYPES = new Set(['COMPONENT', 'COMPONENT_SET'])
@@ -111,7 +112,8 @@ function collect(nodes: RestNode[], pageName: string, pageIndex: number, doc: Re
         pageName,
         pageIndex,
         componentPropertyDefinitions: node.componentPropertyDefinitions,
-        ...(meta?.description ? { description: meta.description } : {})
+        ...(meta?.description ? { description: meta.description } : {}),
+        ...(node.annotations ? { annotations: node.annotations } : {})
       })
       continue // never descend into a component's own subtree
     }
@@ -173,7 +175,13 @@ export function buildPullRegistryResult({
   // components (marker overrides positional kit/custom classification), and
   // merged last so they win.
   const { written: codeOwnedEntries, changed: codeOwnedChanged } = buildCodeOwnedEntries({ liveComponents, registryComponents }, now)
-  const codeOwnedComponentCount = liveComponents.filter((c) => c.description && /@code-owned:/.test(c.description)).length
+  const codeOwnedComponentCount = liveComponents.filter((c) => resolveCodeOwnedPath(c)).length
+  // Migration-pending: still carries the marker ONLY on the legacy description,
+  // not yet mirrored to a Dev annotation. The one-shot migrate copies these
+  // description markers → annotations; the description read drops a release later.
+  const codeOwnedMigrationPending = liveComponents
+    .filter((c) => parseCodeOwnedPath(c.description) && !parseCodeOwnedFromAnnotations(c.annotations))
+    .map((c) => c.name)
   const customComponentCount = liveComponents.length - kitComponents.length - codeOwnedComponentCount
   // Screens: mirror live `@screen` Dev annotations on top-level frames into
   // kind:"screen" entries (same new-or-drifted upsert as code-owned).
@@ -189,6 +197,7 @@ export function buildPullRegistryResult({
     kitComponentCount: kitComponents.length,
     customComponentCount,
     codeOwnedComponentCount,
+    codeOwnedMigrationPending,
     screenFrameCount
   }
 }
@@ -224,6 +233,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     kitComponentCount,
     customComponentCount,
     codeOwnedComponentCount,
+    codeOwnedMigrationPending,
     screenFrameCount
   } = buildPullRegistryResult({
     liveComponents,
@@ -260,6 +270,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         kitComponentCount,
         customComponentCount,
         codeOwnedComponentCount,
+        codeOwnedMigrationPending,
         screenFrameCount,
         newEntryCount: Object.keys(newEntries).length,
         changedCount: changed.length,

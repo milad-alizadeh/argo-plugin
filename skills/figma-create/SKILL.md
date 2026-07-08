@@ -362,6 +362,15 @@ the recipe, not a project file — there's no project file to hash anymore)
 and skips re-bundling when unchanged, so repeat audits in the same task are
 cheap without any extra caching on this skill's part.
 
+**Read protocol (`get_design_context` FIRST).** To inspect any node, read
+`get_design_context` on the exact node id first — it is token-optimized
+(tokens/components/styles pre-resolved). `get_metadata` is the FALLBACK only,
+for when that result is too large: use it to get a lightweight id/structure map,
+then re-fetch ONLY the specific node(s) you need. Never metadata-first. And
+never `get_metadata` or select a whole page or heavy frame (the documented #1
+MCP failure — a whole-page `get_metadata` has overflowed a live session at
+~102k chars); target a node id and narrow a large subtree before reading.
+
 ## Procedure
 
 1. Create the component/screen per the rules above. **For a screen, follow the

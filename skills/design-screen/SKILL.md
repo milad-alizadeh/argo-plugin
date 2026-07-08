@@ -165,6 +165,14 @@ Front-loading is the dominant token lever (composition-dominant screens cost
   local to the design file, so a stale id is a `getNodeByIdAsync` null / failed
   `findAll`, which stop-the-line (R8) acts on. Re-resolve once, then stop; never
   retry the same id.
+- **Read protocol — `get_design_context` FIRST, `get_metadata` is fallback
+  only.** To inspect a node, read `get_design_context` on the exact node id
+  first (token-optimized: tokens/components/styles pre-resolved). Only when that
+  result is too large, fall back to `get_metadata` for a lightweight id/structure
+  map, then re-fetch ONLY the required node(s). Never metadata-first, and NEVER
+  `get_metadata`/select a whole page or heavy frame (documented #1 MCP failure —
+  a whole-page dump has overflowed a live session at ~102k chars); target a node
+  id and narrow a large subtree before reading.
 - **Author tier-0-compliant up front** (naming / Semantic binding / auto-layout)
   rather than create→audit→fix→re-audit round-trips.
 - **Capture screenshots inline** (`await node.screenshot()` in the finishing write

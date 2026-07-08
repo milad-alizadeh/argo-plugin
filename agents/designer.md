@@ -162,6 +162,24 @@ idle-wait** for a release. This does NOT apply to a component you're adopting
 authored or adopted, the gate is authoritative: fix the design, don't argue
 with the gate.
 
+**READ PROTOCOL (get_design_context FIRST).** To inspect a node, always read in
+this order:
+
+1. **`get_design_context` on the EXACT node id first.** It is token-optimized
+   (tokens/components/styles already resolved) and is the correct default read
+   for a component or a scoped region.
+2. **`get_metadata` is the FALLBACK ONLY** — reach for it when the
+   `get_design_context` result is too large to work with, to get a lightweight
+   id/structure map, then re-fetch ONLY the specific node(s) you actually need
+   with `get_design_context`.
+3. Never read metadata-first, and never re-fetch more than the required nodes.
+
+**NEVER metadata-dump a whole page or heavy frame.** This is the documented #1
+MCP failure mode and it has overflowed a live session (a whole-page
+`get_metadata` returned ~102k chars). Never `get_metadata` or select an entire
+page or a heavy frame. Always target a specific node id; if a subtree is large,
+narrow it (drill to the child region) BEFORE reading, never dump the parent.
+
 **EFFICIENCY.** Round trips AND context growth dominate cost. Rules, learned
 from real session traces where a single component run cost more than a builder
 shipping two whole plans:

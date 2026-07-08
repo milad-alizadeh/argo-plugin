@@ -42,6 +42,22 @@ describe('marshalRestDocument', () => {
     )
   })
 
+  it('captures a component-borne Dev annotation (the new code-owned marker home)', () => {
+    const doc = {
+      document: {
+        children: [
+          {
+            name: 'Custom Components',
+            type: 'CANVAS',
+            children: [{ name: 'SceneWallpaper', nodeId: '9:9', id: '9:9', type: 'COMPONENT', annotations: [{ label: '@code-owned: src/scene/SceneWallpaper.tsx' }] }]
+          }
+        ]
+      }
+    }
+    const components = marshalRestDocument(doc as any)
+    expect(components[0]).toMatchObject({ name: 'SceneWallpaper', annotations: [{ label: '@code-owned: src/scene/SceneWallpaper.tsx' }] })
+  })
+
   it('excludes non-component nodes (a plain FRAME on Custom Components)', () => {
     const components = marshalRestDocument(fixture as any)
     expect(components.some((c) => c.name === 'Not A Component Frame')).toBe(false)
@@ -95,6 +111,35 @@ describe('buildPullRegistryResult', () => {
     expect(result.codeOwnedComponentCount).toBe(1)
     expect(result.customComponentCount).toBe(0) // not double-counted as custom
     expect(result.codeOwnedEntries.SceneWallpaper).toMatchObject({ kind: 'code-owned', codePath: 'src/scene/SceneWallpaper.tsx' })
+  })
+
+  it('derives a code-owned entry from an annotation-source marker and reports no migration pending', () => {
+    const liveComponents = [
+      { name: 'SceneWallpaper', nodeId: '5091:7366', pageName: 'Custom Components', pageIndex: 0, annotations: [{ label: '@code-owned: src/scene/SceneWallpaper.tsx' }] }
+    ]
+    const result = buildPullRegistryResult({
+      liveComponents,
+      orderedPageNames: ['Custom Components'],
+      registry: { components: {} },
+      now: '2026-07-08T00:00:00.000Z'
+    })
+    expect(result.codeOwnedComponentCount).toBe(1)
+    expect(result.codeOwnedEntries.SceneWallpaper).toMatchObject({ kind: 'code-owned', codePath: 'src/scene/SceneWallpaper.tsx' })
+    expect(result.codeOwnedMigrationPending).toEqual([])
+  })
+
+  it('flags a description-only code-owned component as migration-pending (needs an annotation)', () => {
+    const liveComponents = [
+      { name: 'SceneWallpaper', nodeId: '5091:7366', pageName: 'Custom Components', pageIndex: 0, description: '@code-owned: src/scene/SceneWallpaper.tsx' }
+    ]
+    const result = buildPullRegistryResult({
+      liveComponents,
+      orderedPageNames: ['Custom Components'],
+      registry: { components: {} },
+      now: '2026-07-08T00:00:00.000Z'
+    })
+    expect(result.codeOwnedComponentCount).toBe(1)
+    expect(result.codeOwnedMigrationPending).toEqual(['SceneWallpaper'])
   })
 
   it('leaves an already-registered kit component untouched', () => {

@@ -93,11 +93,26 @@ operator promoting them into a sync/fix pass that then damages them.
    project's own canonical pages or a divider/sandbox page), and upserts
    lean `kind: 'kit'` draft entries for any component the registry has
    never seen — no live MCP session required for this part. It also scans
-   every live component's description for the `@code-owned: <path>` marker
-   and derives `kind: 'code-owned'` + `codePath` for those (the marker
+   every live component for the `@code-owned: <path>` marker — read
+   **dual-source** during this transition release: a Dev Mode `@code-owned`
+   annotation is the new canonical home and WINS, the legacy component
+   `description` marker is still read as a fallback (`resolveCodeOwnedPath`).
+   It derives `kind: 'code-owned'` + `codePath` for those (the marker
    overrides positional kit/custom classification) — the machine-written way
    a Three.js/canvas placeholder gets flagged; the registry is never
    hand-edited for this.
+
+   **Code-owned annotation migration (one-shot).** `pull-registry` reports
+   `codeOwnedMigrationPending` — the code-owned components still carrying the
+   marker ONLY on their `description`, not yet mirrored to a Dev annotation.
+   For each name in that list, add a `@code-owned: <path>` Dev Mode annotation
+   to the component (same annotation layer screens use for `@screen`) with the
+   codePath copied verbatim from its description, via `use_figma` in a live
+   session (`node.addDevAnnotation` / annotation write). This is a one-time
+   pass per project; once `codeOwnedMigrationPending` is empty the description
+   marker is redundant and the description read drops one release later. Until
+   then both sources classify identically, so an un-migrated file is never
+   mis-classified.
 
    Division of labor: `pull-registry` owns **enumeration and kit-entry
    upsert**, deterministically, no live session. The live node-id walk

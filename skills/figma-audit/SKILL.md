@@ -116,6 +116,14 @@ none at all.
    whenever both scoped inputs resolved empty; the scoped-sweep branch is now
    reached whenever `pageId` is absent, full stop).
 
+**Never metadata-dump a whole page or heavy frame.** The audit resolves and
+reads specific node ids (from the registry / scoped sweep list), never a
+whole-page `get_metadata`. This is the documented #1 MCP failure mode — a
+whole-page `get_metadata` has overflowed a live session at ~102k chars. If you
+need to inspect a node while triaging a finding, `get_design_context` the exact
+node id (token-optimized); fall back to `get_metadata` only when that is too
+large, and always narrow a large subtree before reading — never dump the parent.
+
 ## Procedure
 
 1. Load `figma:figma-use`.

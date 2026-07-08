@@ -1,0 +1,1211 @@
+{
+  "capturedFrom": "hand-authored, deterministic geometry corpus (fidelity-geometry-verifier.md Slice 9)",
+  "pristine": {
+    "id": "root",
+    "name": "List",
+    "itemSpacing": 16,
+    "children": [
+      {
+        "id": "root-anchor",
+        "name": "Root Anchor #anchor",
+        "x": 0,
+        "y": 0,
+        "width": 16,
+        "height": 16,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "id": "rail",
+        "name": "Connector #rail",
+        "x": 4,
+        "y": 8,
+        "width": 2,
+        "height": 104,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "id": "row-0",
+        "name": "Row 0",
+        "x": 0,
+        "y": 0,
+        "width": 300,
+        "height": 32,
+        "children": [
+          {
+            "id": "row-0-anchor",
+            "name": "Dot #anchor",
+            "x": 4,
+            "y": 8,
+            "width": 16,
+            "height": 16,
+            "visible": true,
+            "opacity": 1
+          },
+          {
+            "id": "row-0-content",
+            "name": "Content #content-start",
+            "x": 24,
+            "y": 0,
+            "width": 200,
+            "height": 32,
+            "visible": true,
+            "opacity": 1
+          }
+        ]
+      },
+      {
+        "id": "row-1",
+        "name": "Row 1",
+        "x": 0,
+        "y": 48,
+        "width": 300,
+        "height": 32,
+        "children": [
+          {
+            "id": "row-1-anchor",
+            "name": "Dot #anchor",
+            "x": 4,
+            "y": 56,
+            "width": 16,
+            "height": 16,
+            "visible": true,
+            "opacity": 1
+          },
+          {
+            "id": "row-1-content",
+            "name": "Content #content-start",
+            "x": 24,
+            "y": 48,
+            "width": 200,
+            "height": 32,
+            "visible": true,
+            "opacity": 1
+          }
+        ]
+      },
+      {
+        "id": "row-2",
+        "name": "Row 2",
+        "x": 0,
+        "y": 96,
+        "width": 300,
+        "height": 32,
+        "children": [
+          {
+            "id": "row-2-anchor",
+            "name": "Dot #anchor",
+            "x": 4,
+            "y": 104,
+            "width": 16,
+            "height": 16,
+            "visible": true,
+            "opacity": 1
+          },
+          {
+            "id": "row-2-content",
+            "name": "Content #content-start",
+            "x": 24,
+            "y": 96,
+            "width": 200,
+            "height": 32,
+            "visible": true,
+            "opacity": 1
+          }
+        ]
+      }
+    ]
+  },
+  "inverse": {
+    "missing-role-tags": {
+      "id": "root",
+      "name": "List",
+      "itemSpacing": 16,
+      "children": [
+        {
+          "id": "row-0",
+          "name": "Row 0",
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-0-content",
+              "name": "Content",
+              "x": 24,
+              "y": 0,
+              "width": 200,
+              "height": 32
+            }
+          ]
+        }
+      ]
+    },
+    "content-start-misaligned": {
+      "id": "root",
+      "name": "List",
+      "itemSpacing": 16,
+      "children": [
+        {
+          "id": "root-anchor",
+          "name": "Root Anchor #anchor",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "rail",
+          "name": "Connector #rail",
+          "x": 4,
+          "y": 8,
+          "width": 2,
+          "height": 104,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "row-0",
+          "name": "Row 0",
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-0-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 8,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-0-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 0,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-1",
+          "name": "Row 1",
+          "x": 0,
+          "y": 48,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-1-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 56,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-1-content",
+              "name": "Content #content-start",
+              "x": 40,
+              "y": 48,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-2",
+          "name": "Row 2",
+          "x": 0,
+          "y": 96,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-2-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 104,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-2-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 96,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        }
+      ]
+    },
+    "rail-anchor-span-mismatch": {
+      "id": "root",
+      "name": "List",
+      "itemSpacing": 16,
+      "children": [
+        {
+          "id": "root-anchor",
+          "name": "Root Anchor #anchor",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "rail",
+          "name": "Connector #rail",
+          "x": 4,
+          "y": 8,
+          "width": 2,
+          "height": 90,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "row-0",
+          "name": "Row 0",
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-0-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 8,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-0-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 0,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-1",
+          "name": "Row 1",
+          "x": 0,
+          "y": 48,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-1-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 56,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-1-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 48,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-2",
+          "name": "Row 2",
+          "x": 0,
+          "y": 96,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-2-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 104,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-2-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 96,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        }
+      ]
+    },
+    "rail-continuity-gap": {
+      "id": "root",
+      "name": "List",
+      "itemSpacing": 16,
+      "children": [
+        {
+          "id": "root-anchor",
+          "name": "Root Anchor #anchor",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "rail",
+          "name": "Connector #rail",
+          "x": 4,
+          "y": 8,
+          "width": 2,
+          "height": 104,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "row-0",
+          "name": "Row 0",
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-0-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 8,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-0-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 0,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-1",
+          "name": "Row 1",
+          "x": 0,
+          "y": 100,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-1-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 108,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-1-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 100,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-2",
+          "name": "Row 2",
+          "x": 0,
+          "y": 96,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-2-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 104,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-2-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 96,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        }
+      ]
+    },
+    "indent-inconsistent": {
+      "id": "root",
+      "name": "List",
+      "itemSpacing": 16,
+      "children": [
+        {
+          "id": "root-anchor",
+          "name": "Root Anchor #anchor",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "rail",
+          "name": "Connector #rail",
+          "x": 4,
+          "y": 8,
+          "width": 2,
+          "height": 104,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "row-0",
+          "name": "Row 0",
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-0-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 8,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-0-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 0,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-1",
+          "name": "Row 1",
+          "x": 8,
+          "y": 48,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-1-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 56,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-1-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 48,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-2",
+          "name": "Row 2",
+          "x": 0,
+          "y": 96,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-2-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 104,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-2-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 96,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        }
+      ]
+    },
+    "row-height-inconsistent": {
+      "id": "root",
+      "name": "List",
+      "itemSpacing": 16,
+      "children": [
+        {
+          "id": "root-anchor",
+          "name": "Root Anchor #anchor",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "rail",
+          "name": "Connector #rail",
+          "x": 4,
+          "y": 8,
+          "width": 2,
+          "height": 104,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "row-0",
+          "name": "Row 0",
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-0-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 8,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-0-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 0,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-1",
+          "name": "Row 1",
+          "x": 0,
+          "y": 48,
+          "width": 300,
+          "height": 40,
+          "children": [
+            {
+              "id": "row-1-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 56,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-1-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 48,
+              "width": 200,
+              "height": 40,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-2",
+          "name": "Row 2",
+          "x": 0,
+          "y": 96,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-2-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 104,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-2-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 96,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        }
+      ]
+    },
+    "load-bearing-node-hidden": {
+      "id": "root",
+      "name": "List",
+      "itemSpacing": 16,
+      "children": [
+        {
+          "id": "root-anchor",
+          "name": "Root Anchor #anchor",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "rail",
+          "name": "Connector #rail",
+          "x": 4,
+          "y": 8,
+          "width": 2,
+          "height": 104,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "row-0",
+          "name": "Row 0",
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-0-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 8,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-0-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 0,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-1",
+          "name": "Row 1",
+          "x": 0,
+          "y": 48,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-1-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 56,
+              "width": 16,
+              "height": 16,
+              "visible": false,
+              "opacity": 1
+            },
+            {
+              "id": "row-1-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 48,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-2",
+          "name": "Row 2",
+          "x": 0,
+          "y": 96,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-2-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 104,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-2-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 96,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        }
+      ]
+    },
+    "anchor-cross-axis-offset": {
+      "id": "root",
+      "name": "List",
+      "itemSpacing": 16,
+      "children": [
+        {
+          "id": "root-anchor",
+          "name": "Root Anchor #anchor",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "rail",
+          "name": "Connector #rail",
+          "x": 4,
+          "y": 8,
+          "width": 2,
+          "height": 104,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "row-0",
+          "name": "Row 0",
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-0-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 8,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-0-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 0,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-1",
+          "name": "Row 1",
+          "x": 0,
+          "y": 48,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-1-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 59,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-1-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 48,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-2",
+          "name": "Row 2",
+          "x": 0,
+          "y": 96,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-2-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 104,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-2-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 96,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        }
+      ]
+    },
+    "hug-overflow-horizontal": {
+      "id": "root",
+      "name": "List",
+      "itemSpacing": 16,
+      "children": [
+        {
+          "id": "root-anchor",
+          "name": "Root Anchor #anchor",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "rail",
+          "name": "Connector #rail",
+          "x": 4,
+          "y": 8,
+          "width": 2,
+          "height": 104,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "row-0",
+          "name": "Row 0",
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-0-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 8,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-0-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 0,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-1",
+          "name": "Row 1",
+          "x": 0,
+          "y": 48,
+          "width": 100,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-1-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 56,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-1-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 48,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ],
+          "layoutSizingHorizontal": "HUG"
+        },
+        {
+          "id": "row-2",
+          "name": "Row 2",
+          "x": 0,
+          "y": 96,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-2-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 104,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-2-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 96,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        }
+      ]
+    },
+    "touch-target-too-small": {
+      "id": "root",
+      "name": "List",
+      "itemSpacing": 16,
+      "children": [
+        {
+          "id": "root-anchor",
+          "name": "Root Anchor #anchor",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "rail",
+          "name": "Connector #rail",
+          "x": 4,
+          "y": 8,
+          "width": 2,
+          "height": 104,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "id": "row-0",
+          "name": "Row 0",
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-0-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 8,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-0-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 0,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-1",
+          "name": "Row 1",
+          "x": 0,
+          "y": 48,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-1-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 56,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-1-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 48,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "row-2",
+          "name": "Row 2",
+          "x": 0,
+          "y": 96,
+          "width": 300,
+          "height": 32,
+          "children": [
+            {
+              "id": "row-2-anchor",
+              "name": "Dot #anchor",
+              "x": 4,
+              "y": 104,
+              "width": 16,
+              "height": 16,
+              "visible": true,
+              "opacity": 1
+            },
+            {
+              "id": "row-2-content",
+              "name": "Content #content-start",
+              "x": 24,
+              "y": 96,
+              "width": 200,
+              "height": 32,
+              "visible": true,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "id": "hit-target-1",
+          "name": "Checkbox #hit-target",
+          "x": 0,
+          "y": 200,
+          "width": 16,
+          "height": 16,
+          "visible": true,
+          "opacity": 1
+        }
+      ]
+    }
+  }
+}

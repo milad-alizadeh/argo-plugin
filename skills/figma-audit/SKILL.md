@@ -44,6 +44,22 @@ from built components. Always advisory, never the hard authoritative
 decomposition gate (Option C, deferred until its brief/story-map schema
 lands) — never wire it as a hard-fail.
 
+**Geometry checks (Layer A, fidelity-geometry-verifier.md, opt-in via
+`design.<app>.geometryCategories`, hard gate).** Subtree-scoped checks over
+role-tagged nodes (`#content-start`/`#rail`/`#anchor`/`#hit-target` layer-name
+suffixes a component author adds): every row's `#content-start` sits at the
+same x, a `#rail` spans exactly from the parent `#anchor` to the last row's
+`#anchor` center, consecutive rows don't gap past `itemSpacing` +
+`geometryTolerancePx`, same-depth rows share one indent/height, a role-tagged
+node isn't hidden/transparent/clipped (a coordinate-only cheat), same-depth
+`#anchor`s share one y-offset from their row top, a HUG-sized node's children
+don't overflow it, and a `#hit-target` node is at least 24x24px (configurable).
+`missing-role-tags` fires once, at the audited root, when the target's
+category is in `geometryCategories` but it carries zero role-tagged
+descendants — the "arm the geometry pass" precondition. Runs once per
+named-audit target (never the file-wide sweep, never per-node) — a target
+whose category isn't in `geometryCategories` never pays the marshal cost.
+
 **Recipe checks (installed recipe only):** for `shadcn-tailwind`
 (`@argohq/kit/design-kit/shadcn-tailwind/tier0-walker`)
 — the non-Semantic-binding check: every color binding must resolve to a
@@ -97,7 +113,8 @@ none at all.
    auditing "Card" also swept a container frame literally named "Card"), and
    returns `{ componentNodeIds, componentNames, compositeNames,
    semanticCollectionName, additionalAllowedCollectionNames, recipe,
-   viewport }` — `componentNodeIds` is the resolved authoritative target
+   viewport, geometryTolerancePx, geometryCategories }` —
+   `componentNodeIds` is the resolved authoritative target
    list; `componentNames` on the way OUT holds only names that had no
    registry entry (a fallback resolved sandbox-side by an unambiguous
    single-match name lookup, never a blind multi-node sweep); `viewport`
@@ -105,7 +122,14 @@ none at all.
    (undefined otherwise — opt-in, gates the `screen-viewport-mismatch`
    check; not the unrelated `design.<app>.vrtEnvironment.viewport`
    STRING, a different concept and owner: the Storybook/Playwright VRT
-   capture viewport). Keep the whole object — every DATA field the
+   capture viewport). `geometryTolerancePx` is a single px tolerance for
+   every geometry (Layer A) check, from `design.<app>.geometryTolerancePx`,
+   defaulting to `1`. `geometryCategories` is the list of component
+   categories (a subset of `componentCategories` that structurally have
+   rows — list/tree/table/nav) opted into the geometry pass, from
+   `design.<app>.geometryCategories`, defaulting to `[]` (opt-in — a
+   project that never configures it gets zero geometry checks, non-
+   breaking). Keep the whole object — every DATA field the
    bundled script's completion value needs; never hand-author a trimmed
    `{ componentNames: [...] }`.
 3. **Bundle the audit for the returned `recipe` — never hand-assemble or

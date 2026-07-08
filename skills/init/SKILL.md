@@ -25,7 +25,7 @@ Every decision in this skill goes through the **AskUserQuestion tool** — nativ
 multiple-choice prompts, never a paragraph ending in "shall I?". Rules:
 
 - Batch related decisions into one call (up to 4 questions per screen): e.g. one
-  screen for {landing mode, tdd-guard, rules-to-install (multiSelect)}.
+  screen for {landing mode, tdd-guard, rtk (§6e — global, default-off), rules-to-install (multiSelect)}.
 - Put the recommended option FIRST, labeled `(Recommended)`, with the detected
   evidence in its description ("vitest found in package.json").
 - Free-form input (custom commands, paths) rides the built-in "Other" option —
@@ -250,6 +250,45 @@ Then register the link source once per machine (`cd <plugin repo>/packages/kit &
 bun link`) if not already registered, and run `bun install` in the host project so
 the dep resolves. Verify the dep resolves: `npx --no -p @argohq/kit argo` prints
 its usage (the kit CLI is reachable).
+
+## 6e. rtk — shell-output token compression (opt-in, GLOBAL, offered not imposed)
+[rtk](https://github.com/rtk-ai/rtk) is a CLI proxy (single Rust binary) that
+rewrites Bash commands to compact equivalents via a PreToolUse hook — `git push`
+becomes `ok main`, a 200-line failing test run becomes ~20 lines of just the
+failures — for a claimed 60-90% cut in shell-output tokens. A transparent rewrite
+before execution: the agent gets compact output without calling `rtk` explicitly.
+
+- **Not per-project — it's a machine-level choice.** rtk's transparent hook for
+  Claude Code is **global only** (`rtk init -g`, one entry in
+  `~/.claude/settings.json`, affecting every project on the box). There is NO
+  project-scoped hook: `rtk init` (local) only injects a "prefix everything with
+  `rtk`" block into the project's `CLAUDE.md` — no rewrite, relies on compliance,
+  and it directly duels with context-mode's routing rules where a project runs
+  context-mode. So argo does NOT wire rtk through `argo init`'s per-project
+  settings; surface it as a one-time global opt-in the user makes deliberately,
+  then move on. Default-OFF.
+- **Detect first.** If `rtk` is already on PATH (`rtk --version`), skip install.
+  Otherwise offer the official installer — **never pipe-to-shell** (the plugin's
+  own hook blocks `curl … | sh`, correctly): download to a file, let the user
+  eyeball it, then run it. `brew` is fine where a tap exists. The binary lands in
+  `~/.local/bin` — confirm that's on PATH.
+- **Install hook-only.** `rtk init -g --hook-only --auto-patch`: registers the
+  transparent hook and writes NEITHER an `RTK.md` nor an `@RTK.md` line in
+  `~/.claude/CLAUDE.md`. Drop `--hook-only` and rtk adds that instruction block
+  globally — reintroducing the context-mode conflict in every project. The hook
+  alone delivers the savings; the prose is noise here. Takes effect on the next
+  Claude Code restart, not mid-session.
+- **Coexistence with context-mode (state it plainly).** Both fire on Bash. rtk is
+  the lighter touch for fire-and-forget commands you only want the gist of (`git
+  push`, dir listings); context-mode is for anything you may re-query in detail,
+  since rtk's compression is lossy and an rtk-rewritten command gets indexed in
+  its already-compressed form. Standing guidance for such a project: route
+  processing/analysis through `ctx_execute` (full-fidelity, queryable); let rtk
+  trim the shell noise context-mode's routing leaves in raw Bash (`git`, `ls`).
+  rtk tees the full unfiltered output on failure, so a failed command stays
+  readable without a re-run.
+- **Opt-out / uninstall:** `rtk init -g --uninstall` removes the hook (and any
+  RTK.md / CLAUDE.md reference); `--no-rtk`, or declining the offer, skips it.
 
 ## 7. graphify (conditional) — treat the graph as local build cache
 Only if the `graphify` CLI is present: run `graphify install --platform claude`

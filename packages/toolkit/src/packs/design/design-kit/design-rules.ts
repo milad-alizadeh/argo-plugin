@@ -518,7 +518,7 @@ export function unsectionedComponentViolation(node: AnyNode): Violation | null {
   }
 }
 
-/** Mechanism 3 (advisory): a component with no description misses the one place in-file facts (purpose + category) can't drift. Never blocks. */
+/** Mechanism 3: a component with no description misses the one place in-file facts (purpose + usage) can't drift. Advisory on the file-wide sweep, hard on a named audit. */
 export function missingComponentDescriptionViolation(node: AnyNode): Violation | null {
   if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return null
   if (node.description) return null

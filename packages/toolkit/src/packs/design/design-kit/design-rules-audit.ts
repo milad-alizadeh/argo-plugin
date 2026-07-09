@@ -72,7 +72,8 @@ import {
   hugOverflowViolations,
   touchTargetViolation,
   textContrastViolation,
-  untracedCopyViolation
+  untracedCopyViolation,
+  missingComponentDescriptionViolation
 } from './design-rules.js'
 
 async function auditNode(
@@ -270,6 +271,12 @@ async function auditNode(
   }
 
   for (const v of variantNamingViolations(node)) report(v.rule, v.detail)
+
+  // Advisory on the file-wide sweep, hard on a NAMED audit (same split as
+  // untraced-copy): a component audited by name — component-create's annotate
+  // stage, component-edit — must carry a description (purpose + usage).
+  const missingDescription = missingComponentDescriptionViolation(node)
+  if (missingDescription) report(missingDescription.rule, missingDescription.detail)
 
   const lineHeight = implicitLineHeightViolation(node)
   if (lineHeight) report(lineHeight.rule, lineHeight.detail)

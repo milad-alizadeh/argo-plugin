@@ -77,6 +77,28 @@ starter's shadcn-mirror roster) before assuming nothing fits — see
 `skills/figma-create/SKILL.md`'s read-order for the full verify-before-use /
 heal-and-persist procedure.
 
+**COMPONENT BINDINGS (input contract — before assembling any composite).**
+Before hand-assembling any composite/tree-like region (a list of rows, a card
+grid, a repeated pattern), resolve its component binding in this order:
+
+1. **PRD `Component Bindings` first (optional documented input).** If the PRD
+   has a `Component Bindings` section and it names this region, verify the
+   entry ONCE — `get_metadata` on the named component: it exists, is the right
+   node type, and fits the brief — then use it. Verification is once per
+   entry, not per instance.
+2. **Self-derive on absence or failed verification.** No section, no entry
+   for this region, or a stale/failed entry → run your own
+   `argo design registry-lookup --search`/browse pass for an existing
+   composite that fits.
+3. **Stop-and-ask on ambiguity.** If a plausible existing component (or
+   multiple candidates) surfaces, STOP AND ASK the human to confirm the
+   binding before assembling. Never silently assemble the region from
+   primitives when a candidate exists, and never silently trust a stale
+   bindings entry that failed verification.
+
+This contract is standalone: the PRD section is an optional hint layer, and
+the flow above works with or without it.
+
 **SCREEN IDENTITY.** On creating a screen, mark it: a screen frame is a plain
 FRAME with **no `description` field** (plain frames are not `PublishableMixin`),
 so the `@code-owned:` description model does not apply. Set a `@screen`-labelled
@@ -89,6 +111,10 @@ artboard from the 3 tier-0 rules it structurally always trips.
 **SELF-AUDIT (D8).** Every skill above ends with `figma-audit` in named-component
 hard-gate mode. Fix every violation it reports before reporting done, never
 hand back a component or screen that would fail its own hard gate.
+**One mechanical pass (P3 cap):** run the mechanical/tier-0-redundant audit
+ONCE per component/screen; re-audit ONLY after actual fixes were applied,
+never as a repeat sweep "to be sure" — the gate is deterministic, a second
+identical run returns the same answer for pure token cost.
 
 **VISUAL SELF-REVIEW (R3).** The deterministic audit cannot see intent-level
 defects — e.g. a glow that's individually bound correctly but clashes with
@@ -113,8 +139,12 @@ one sentence, then answer the prose critique (material/contrast/optical
 spacing) as a **secondary, non-gating** pass: does every glow/effect match
 its element's color; does anything blow out, clip, or band; does the
 material read as intended; is text contrast legible; is spacing optically
-even. Fix and re-screenshot until both the numeric predicates and the montage
-pass. **Never report done without the numeric predicate results, the prose
+even; **did I search for an existing composite/design-system component before
+hand-assembling any region from primitives** (if not, go back to the
+Component Bindings contract before reporting done). Fix and re-screenshot
+until both the numeric predicates and the montage pass — this
+screenshot-vs-brief content self-check stays; only the mechanical re-audit
+is capped at one pass. **Never report done without the numeric predicate results, the prose
 critique answers, and the final montage screenshot attached** — screenshots
 are input to critique, not proof of done.
 
@@ -212,6 +242,15 @@ critique your visual self-review against its condensed re-injection block.
 not commit to git on its own. If the task also requires syncing Figma output
 into repo artifacts, hand off to `argo:figma-sync` rather than improvising that
 step here.
+
+**COMPLETENESS (screens with a PRD).** When the built surface is a screen
+backed by a PRD feature→screen matrix, before reporting done run
+`argo design completeness-checklist --screen <matrix-name> --prd <path>`,
+fix any ABSENT mechanical/enumerable presence item in-session, then record
+honestly via `argo design record-completeness`. Scope is structural presence
+only; the independent blind verifier remains mandatory and unchanged — a
+passing checklist NEVER downgrades or skips it. No PRD available → the
+existing stop-and-ask applies.
 
 **VERIFICATION.** Re-run `figma-audit` in named-component mode after any fix and
 report its result. If no live Figma file is reachable, say so plainly and stop

@@ -102,6 +102,12 @@ converging:
    is a defect (distinguishes "intentionally N/A" from "author forgot"). This
    projects the per-feature PRD onto surfaces so each per-screen brief later
    covers exactly its column.
+   - **Component Bindings (optional).** If you already know which existing
+     design-system component realizes a region or repeated pattern, fill the
+     template's optional `Component Bindings` table (region/pattern →
+     component, plus an optional "do not hand-assemble" note). It's a hint
+     layer for the designer, never a requirement — omit it when unknown; the
+     designer self-derives via registry lookup.
 
 6. **Bound the scope — IN/OUT only.** Explicit IN (this version) and OUT
    (deferred + one-line reason). Nothing else lives here — states are

@@ -84,6 +84,14 @@ conditional on an observable predicate.
   the plugin's `skills/<name>/`. Match the house style of surrounding skills.
 - Keep the determinism boundary clear: process that must be guaranteed belongs in
   code (a script, a hook), not in skill prose.
+- **Standalone contract for skill inputs.** A skill must work outside any
+  orchestrator: every input is either required-and-checked or an *optional
+  documented input* with the fallback spelled out — on absence the skill
+  self-derives (its own lookup/derivation pass), and on ambiguity (multiple
+  plausible resolutions) it STOPS AND ASKS the human rather than muddling
+  through. Never design an orchestrator-only hidden dependency (an input
+  that only exists when a supervisor pre-fills it); document the contract in
+  the skill body so a standalone invocation behaves identically.
 
 ## Checklist
 

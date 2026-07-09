@@ -108,6 +108,29 @@ describe('session-guard — per-session gate state, race-free by namespacing', (
     it('pending is empty for a session that composed nothing', () => {
       expect(pendingCompletenessScreens(repo, 'never')).toEqual([])
     })
+
+    it('composed frame name and PRD matrix name alias to the same screen', () => {
+      // mark-screen-composed is called with the composed frame name while
+      // record-completeness is called with the PRD matrix name — both must
+      // resolve to one screen key or the stop gate deadlocks.
+      markScreenComposed(repo, 'A', 'D02.5 · Session · with children', 1000)
+      expect(pendingCompletenessScreens(repo, 'A')).toEqual(['D02.5 · Session · with children'])
+      recordScreenCompleteness(repo, 'A', 'D02-5-session-with-children', 1001)
+      expect(pendingCompletenessScreens(repo, 'A')).toEqual([])
+    })
+
+    it('aliasing is symmetric (matrix name composed, frame name recorded)', () => {
+      markScreenComposed(repo, 'A', 'D02-5-session-with-children', 1000)
+      recordScreenCompleteness(repo, 'A', 'D02.5 · Session · with children', 1001)
+      expect(pendingCompletenessScreens(repo, 'A')).toEqual([])
+    })
+
+    it('distinct screens do not collide under normalization', () => {
+      markScreenComposed(repo, 'A', 'D02.5 · Session · with children', 1000)
+      markScreenComposed(repo, 'A', 'D02.6 · Session · empty', 1000)
+      recordScreenCompleteness(repo, 'A', 'd02-5-session-with-children', 1001)
+      expect(pendingCompletenessScreens(repo, 'A')).toEqual(['D02.6 · Session · empty'])
+    })
   })
 
   describe('pending-ack affordance (Slice 14 — park with acknowledged pending work)', () => {

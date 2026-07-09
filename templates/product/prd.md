@@ -98,6 +98,22 @@ non-empty disposition; a dangling requirement is a defect):
 Single-surface shortcut: "Single surface: <screen> — R1, R2, R3 all realized
 here" (still name every REQ-ID).
 
+## Component Bindings (optional)
+
+When the author already knows which existing design-system component realizes a
+region or repeated pattern, bind it here so the designer doesn't hand-assemble a
+duplicate from primitives. Omit the section entirely when unknown — the designer
+runs its own registry lookup instead (this section is a hint layer, never a
+requirement).
+
+| Region / pattern           | Component                    | Note                     |
+| -------------------------- | ---------------------------- | ------------------------ |
+| session list row           | `SessionCard`                | do not hand-assemble     |
+| header actions             | `Toolbar`                    |                          |
+
+The designer verifies each entry ONCE before use (component exists, right type,
+fits the brief); a failed entry falls back to its own lookup + stop-and-ask.
+
 ## Scope
 
 - **In (this version):** the requirements above, bounded.

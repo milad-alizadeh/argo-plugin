@@ -102,6 +102,14 @@ file → skip; never invent one.
   using it as-is, not wrapping it for styling.
   **Check before you build is how this is actually done — mandatory, not a
   suggestion:**
+  0. **PRD Component Bindings first (optional documented input).** Before
+     assembling any composite/tree-like region, check whether the feature's
+     PRD has a `Component Bindings` section naming this region. If it does,
+     verify the entry ONCE (`get_metadata`: the named component exists, is
+     the right node type, and fits the brief) and use it. Absent section,
+     absent entry, or failed verification → fall through to steps 1-3 (your
+     own registry-lookup pass) — the flow is standalone; the PRD hint is
+     never required.
   1. At task start, consult the registry for what already exists — but
      `design/registry.json` grows with the project (the per-component
      `notes`/`variantMatrix` prose dominates its size), so NEVER `Read` it whole
@@ -127,6 +135,11 @@ file → skip; never invent one.
      never fall back to building a custom component to route around a
      missing lookup; that recreates the exact duplication this check exists
      to prevent.
+  4. **Stop-and-ask on ambiguity:** if the lookup surfaces a plausible
+     existing component (or multiple candidates) for a composite region,
+     STOP AND ASK the human to confirm the binding — never silently assemble
+     the region from primitives past a candidate, never silently trust a
+     stale bindings entry that failed verification.
   4. The run report MUST carry a **reuse-check line**: `reusing base/X` |
      `extending base/X by composition` | `closest base matches A, B —
      insufficient because <concrete reason>, building custom`. This is the
@@ -381,7 +394,11 @@ MCP failure — a whole-page `get_metadata` has overflowed a live session at
    gate.
 3. **Fix every violation it reports before reporting done.** This is the
    self-audit loop: create → audit → fix → re-audit until clean. Never
-   report success with a known-outstanding violation.
+   report success with a known-outstanding violation. **One mechanical pass
+   (P3 cap):** the audit is deterministic — re-audit ONLY after actual fixes
+   were applied, never as a repeat sweep on unchanged nodes; a second
+   identical run returns the same answer for pure token cost. (The
+   screenshot-vs-brief visual self-review in step 4 is separate and stays.)
 4. **Visual self-review** (after the audit is clean, before reporting done —
    catches intent-level defects no deterministic rule can encode, e.g. a
    glow color that clashes with its own element's fill even though both are
@@ -404,7 +421,10 @@ MCP failure — a whole-page `get_metadata` has overflowed a live session at
    - **Before looking:** restate the design intent in one visual sentence
      (e.g. "the label glows like a small colored light"). If the project has
      an aesthetic profile (see "Design intent" above), re-read its condensed
-     re-injection block first and critique against it.
+     re-injection block first and critique against it. Include the fixed
+     question: **did I search for an existing composite/design-system
+     component before hand-assembling any region from primitives?** If not,
+     go back to "Check before you build" before reporting done.
    - **Spawn `argo:fidelity-verifier` in fidelity mode** (fidelity-geometry-
      verifier.md Layer B) — Slice 10's assembled rubric for this component's
      category (`assembleFidelityRubric`) plus the montage screenshot(s) —

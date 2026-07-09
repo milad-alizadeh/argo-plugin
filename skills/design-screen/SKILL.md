@@ -49,6 +49,18 @@ inventory every time.
   `get_screenshot`, plus the create tools the designer uses.
 
 ## 2. Build component-first (P1), then compose (P2)
+
+**Component Bindings first (input contract).** Before assembling ANY
+composite/tree-like region, resolve its binding in this order: (a) if the PRD
+has an optional `Component Bindings` section naming this region, verify the
+entry ONCE (`get_metadata`: exists, right type, fits the brief) and use it;
+(b) absent or failed verification → run your own
+`argo design registry-lookup`/search pass; (c) if a plausible existing
+component (or multiple candidates) surfaces, STOP AND ASK the human to
+confirm the binding — never silently assemble from primitives past a
+candidate, never silently trust a stale entry. The PRD section is a hint
+layer; this flow is standalone and works without it.
+
 Walk BUILD-ORDER: `figma-create` each composite in dependency order — audit-gated,
 registered, with the registry as the reuse authority (check it before proposing
 anything NEW). An unmatched composite ESCALATES to a
@@ -84,6 +96,11 @@ Auto-layout is checked for *intent*, not rigidly: a deliberate absolute-canvas
 frame (backdrop / orb-scene / overlay whose children are all absolutely
 positioned) is exempt — auto-layout would be a no-op there.
 
+**One mechanical pass (P3 cap):** the tier-0 audit is deterministic — run it
+once per component/screen and re-run ONLY after actual fixes, never as a
+repeat sweep. The screenshot-vs-brief visual self-review is separate and
+stays (see designer.md).
+
 ## 4. Completeness — deterministic pre-check + advisory check, then you (P4)
 No frozen contract; completeness is a cheap layered check:
 - **(a) Deterministic instance-presence pre-check (cheap, advisory-loud):**
@@ -100,15 +117,26 @@ No frozen contract; completeness is a cheap layered check:
   contract. It is **advisory-loud**: the command exits non-zero when not clean
   so you notice and fix (or override at ship), but NO hook consumes that exit
   — tier-0 stays the one hard gate.
-- **(b) Advisory completeness check (must-exist, non-blocking on content):**
+- **(b) In-loop mechanical completeness (designer, before reporting done) +
+  advisory blind check (must-exist, non-blocking on content):**
   generate the checklist **mechanically** with
-  `argo design completeness-checklist --screen <name> --prd <path>` — it selects
-  the PRD requirements the feature→screen matrix disposes `covered-by` this
-  screen whose `Visible in build?` is `yes`/`partial` (deterministic; the
-  verifier never picks its own scope). Spawn the **design-verifier** agent with
+  `argo design completeness-checklist --screen <matrix-name> --prd <path>` — it
+  selects the PRD requirements the feature→screen matrix disposes `covered-by`
+  this screen whose `Visible in build?` is `yes`/`partial` (deterministic; the
+  verifier never picks its own scope). **The designer first runs this
+  checklist itself and fixes any ABSENT mechanical/enumerable presence item
+  in-session** — scope is structural presence only (is the enumerated thing
+  there at all), no fidelity judgement. Then spawn the **design-verifier** agent with
   that checklist + the built screenshots ONLY (never the arrangement note, never
-  this transcript) → it rules each requirement present/absent. Then run
-  `argo design record-completeness --screen <name> --result '<summary>'`. You MAY
+  this transcript) → it rules each requirement present/absent. **The blind
+  verifier remains mandatory and unchanged: a passing in-loop checklist NEVER
+  downgrades or skips it.** Then run
+  `argo design record-completeness --screen <name> --result '<summary>'` —
+  honestly (record what the check actually found). Screen names are aliased:
+  the PRD matrix name (`D02-5-session-with-children`) and the composed frame
+  name (`D02.5 · Session · with children`) normalize to one key, so either
+  form satisfies the stop gate against `mark-screen-composed`. Missing PRD →
+  the §1 stop-and-ask, not a silent skip. You MAY
   override an "absent" flag and ship, but the check MUST have RUN — the stop gate
   blocks a composed screen whose completeness was never recorded (existence only,
   never on what it found; closes the D01 "silent because skipped" gap without

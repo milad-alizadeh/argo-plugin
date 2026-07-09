@@ -128,7 +128,19 @@ export function completenessStatePath(repoRoot: string, sessionId: string): stri
   return join(repoRoot, COMPLETENESS_SUBDIR, `${sessionId}.json`)
 }
 
-type CompletenessState = { screens: Record<string, { composedAt: number; recordedAt: number | null }> }
+type CompletenessState = { screens: Record<string, { composedAt: number; recordedAt: number | null; label?: string }> }
+
+/** One screen, two names: composition marks the composed FRAME name
+ * ("D02.5 · Session · with children") while record-completeness gets the PRD
+ * matrix name ("D02-5-session-with-children"). Both normalize to one key —
+ * lowercase, every run of non-alphanumerics collapsed to a single dash — so
+ * the stop gate never deadlocks on a naming-convention mismatch. */
+export function normalizeScreenKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
 
 function readCompletenessState(repoRoot: string, sessionId: string): CompletenessState {
   const prior = readJsonSafe(completenessStatePath(repoRoot, sessionId))
@@ -145,7 +157,8 @@ function writeCompletenessState(repoRoot: string, sessionId: string, state: Comp
  * build), so the check must run again. */
 export function markScreenComposed(repoRoot: string, sessionId: string, screen: string, now: number): void {
   const state = readCompletenessState(repoRoot, sessionId)
-  state.screens[screen] = { composedAt: now, recordedAt: null }
+  const key = normalizeScreenKey(screen)
+  state.screens[key] = { composedAt: now, recordedAt: null, label: screen }
   writeCompletenessState(repoRoot, sessionId, state)
 }
 
@@ -154,8 +167,9 @@ export function markScreenComposed(repoRoot: string, sessionId: string, screen: 
  * screen never marked composed still lands (harmless), so ordering is forgiving. */
 export function recordScreenCompleteness(repoRoot: string, sessionId: string, screen: string, now: number): void {
   const state = readCompletenessState(repoRoot, sessionId)
-  const prior = state.screens[screen]
-  state.screens[screen] = { composedAt: prior?.composedAt ?? now, recordedAt: now }
+  const key = normalizeScreenKey(screen)
+  const prior = state.screens[key]
+  state.screens[key] = { composedAt: prior?.composedAt ?? now, recordedAt: now, label: prior?.label ?? screen }
   writeCompletenessState(repoRoot, sessionId, state)
 }
 
@@ -165,7 +179,7 @@ export function pendingCompletenessScreens(repoRoot: string, sessionId: string):
   const state = readCompletenessState(repoRoot, sessionId)
   return Object.entries(state.screens)
     .filter(([, s]) => s.recordedAt === null)
-    .map(([screen]) => screen)
+    .map(([key, s]) => s.label ?? key)
 }
 
 // --- Slice 14: "park with acknowledged pending work" affordance -------------

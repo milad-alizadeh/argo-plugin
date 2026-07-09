@@ -104,6 +104,14 @@ mechanisms close those gaps without new tooling.
   a screen spawned before it will hand-reconstruct the shell and re-pay the
   scaffold cost (and re-open the stale-copy/backdrop-bleed defect classes) per
   screen.
+- **Pre-fill Component Bindings into spawn prompts (hint layer).** When the
+  supervisor already knows which existing component realizes a region (from
+  the PRD's optional `Component Bindings` section, the registry, or a prior
+  run in the batch), it SHOULD pre-fill those bindings into the designer's
+  spawn prompt. This is a hint layer only: the designer still verifies each
+  entry once and falls back to its own lookup + stop-and-ask per its
+  standalone contract (`agents/designer.md`), so an unfilled or wrong hint
+  never breaks the run.
 - **Flat fan-out.** Spawn each `designer` directly from the main session, one
   per component, never route a designer's output through another designer
   (mirrors the builder no-wrapper rule in §1). The leaf rule itself lives in
@@ -156,7 +164,10 @@ mechanisms close those gaps without new tooling.
   covered / deferred / **UNACCOUNTED (must be 0 to land)** / MISSING, PRD
   requirements present / **absent (must be 0)**, dishonest deferrals, and
   anti-recreation collisions, a screen with UNACCOUNTED>0 or absent>0 is FAILED
-  regardless of tier-0.
+  regardless of tier-0. The supervisor MUST also track the **first-pass
+  blind-verify-clean rate** — the fraction of screens whose supervisor-spawned
+  blind verification passed with zero findings on the first attempt — as the
+  batch success metric.
 - **Dropped:** seed-injection of a node-id context pack at spawn time -
   deferred until a companion artifact for it is designed; the near-term
   cold-start cost is covered by the registry read-order in

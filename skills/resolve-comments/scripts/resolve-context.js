@@ -23,10 +23,10 @@
 // switch is ever needed here.
 
 // Surface classification — the routing table from SKILL.md, as a pure function
-// of the page name. Keep in lockstep with the "Three-way routing" table.
+// of the page name. Keep in lockstep with the "Two-way routing" table.
+// Legacy W##/Cover pages deliberately fall through to 'unmatched' (→ ❓).
 function classifySurface(page) {
   if (page == null) return 'file-note'
-  if (/^W\d{2}(\b|\s)/.test(page) || page === 'Cover') return 'wireframe'
   if (/^D\d{2}(\b|\s)/.test(page)) return 'screen'
   if (page === 'Custom Components' || page.startsWith('foundations/')) return 'master'
   return 'unmatched' // a page the table doesn't cover → the skill posts a ❓, never guesses

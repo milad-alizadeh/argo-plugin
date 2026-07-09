@@ -9,7 +9,7 @@
  */
 
 /**
- * Run/instance `status` values, exactly as `@argohq/core`'s playbook engine
+ * Run/instance `status` values, exactly as the core playbook engine
  * writes them (`playbook-start.ts` / `playbook-advance.ts` / `playbook-adopt.ts`).
  * The host app's Parked/Abandoned run states are host-side derivations
  * (no attached session / archived record), not engine statuses.
@@ -23,7 +23,7 @@ export type RunState = (typeof RUN_STATES)[keyof typeof RUN_STATES]
 
 /**
  * Playbook lifecycle event names for the host app's run feed — re-exported
- * from `@argohq/core`'s `events.ts`, which owns them because the engine
+ * from the core playbook engine's `events.ts`, which owns them because the engine
  * itself emits them: `playbookStart` and `playbookAdvance` return an
  * `events` array of these transitions (start → playbook_started +
  * stage_started; passing advance → stage_finished + stage_started /

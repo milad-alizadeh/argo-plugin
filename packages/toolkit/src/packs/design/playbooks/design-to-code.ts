@@ -13,7 +13,7 @@
  * `code-handoff` is the TERMINAL stage and carries `handsOffToPack:
  * 'pack-code'` (audit 2.4's soft seam): it hands off BY NAME to pack-code's
  * `screen-implement`, which does not exist yet in this repo. `playbookStart`
- * (from `@argohq/core`) reads `handsOffToPack` off `stages.at(-1)` and calls
+ * (from `@argohq/toolkit/core`) reads `handsOffToPack` off `stages.at(-1)` and calls
  * `assertPackAvailable` before writing the initial instance — so a project
  * with `pack-code` disabled (or absent) in `.argo/config.json`'s `packs`
  * block is refused with `PackUnavailableError` at `playbook start`, never

@@ -271,7 +271,7 @@ deterministically:
 - appends the deny-by-default `.argo/` block to `.gitignore` (idempotent — only
   missing lines are added, user content untouched).
 
-Then register the link source once per machine (`cd <plugin repo>/packages/kit &&
+Then register the link source once per machine (`cd <plugin repo>/packages/toolkit &&
 bun link`) if not already registered, and run `bun install` in the host project so
 the dep resolves. Verify the dep resolves: `npx --no -p @argohq/toolkit argo` prints
 its usage (the kit CLI is reachable).

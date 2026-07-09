@@ -7,9 +7,9 @@ import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 // Spawned as a real subprocess — dist, not the sibling .ts source. Requires
-// `bun run build` to have produced a current packages/kit/dist/, and
-// `@argohq/core`/`@argohq/claude-adapter-plugin` to be built + installed as
-// workspace deps (same convention as trust-gate.test.ts's dist requirement).
+// `bun run build` to have produced a current packages/toolkit/dist/, and
+// `@argohq/toolkit` to be built + installed as a workspace dep (same
+// convention as trust-gate.test.ts's dist requirement).
 const GATE = fileURLToPath(new URL('../../dist/adapter-claude/playbook-permission-gate.js', import.meta.url))
 
 /** Run the gate as the real hook does: hook-input JSON on stdin, observe exit

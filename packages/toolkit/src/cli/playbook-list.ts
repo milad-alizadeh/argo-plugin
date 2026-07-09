@@ -43,10 +43,9 @@ export interface PlaybookCatalogEntry {
   slug: string
   /**
    * Pretty display name for UI surfaces (host PRD RUNS-R12: "pretty names
-   * everywhere in UI; slugs only in CLI text"). Specs don't carry a display
-   * field yet, so this is derived deterministically — INTERIM RULE: slug in
-   * sentence case, hyphens to spaces ("screen-create" → "Screen create") —
-   * until specs grow an authored displayName.
+   * everywhere in UI; slugs only in CLI text"). An authored `displayName` on
+   * the spec wins when present; otherwise falls back to the slug in
+   * sentence case, hyphens to spaces ("screen-create" → "Screen create").
    */
   displayName: string
   pack: string
@@ -80,9 +79,9 @@ function toCatalogStage(stage: StageSpec): PlaybookCatalogStage {
 }
 
 /**
- * Pretty name derivation. A spec carrying its own display/pretty name field
- * (`displayName`, not yet in the stage-spec vocabulary) wins; otherwise the
- * interim deterministic rule: slug → sentence case, hyphens → spaces.
+ * Pretty name derivation. An authored `displayName` on the spec wins when
+ * present; otherwise falls back to a slug-derived sentence-case string:
+ * slug → sentence case, hyphens → spaces.
  */
 export function displayNameFor(spec: PlaybookSpec & { displayName?: string }): string {
   if (typeof spec.displayName === 'string' && spec.displayName.length > 0) return spec.displayName

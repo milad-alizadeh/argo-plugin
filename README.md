@@ -6,7 +6,7 @@ between stages are guarded by **mechanical gates** — so quality is enforced, n
 requested. It ships as two pieces:
 
 - **This plugin** — the thin Claude-facing layer: skills, agents, and hook wiring.
-- **[`@argohq/kit`](packages/kit)** — one npm package holding every line of
+- **[`@argohq/toolkit`](packages/toolkit)** — one npm package holding every line of
   executable logic (gate implementations, the design kit, test walkers, reporters,
   the `argo` CLI). Hooks dispatch into it fail-closed: if the kit is missing, the
   gate **blocks** and names the fix, it never silently passes.
@@ -36,7 +36,7 @@ flowchart LR
         brief["screen brief<br/>regions · flow · arrangement<br/>cites the PRD's ASCII wireframe"]:::stage
         manifest{"decision gate<br/>binding manifest vs registry<br/>deterministic"}:::det
         hifi["design-screen / figma-create<br/>component-first hi-fi"]:::stage
-        t0{"tier-0 audit +<br/>instance-presence receipts<br/>deterministic"}:::det
+        t0{"design-rules audit +<br/>instance-presence receipts<br/>deterministic"}:::det
         dv{"design-verifier<br/>adversarial LLM judge<br/>sees only PRD + screenshots"}:::judge
     end
     grill --> brief --> manifest --> hifi --> t0 --> dv
@@ -93,14 +93,14 @@ design→code **handoff**) — lives in **[PIPELINE.md](PIPELINE.md)**.
 | tdd-guard | every Write/Edit while enabled | deterministic evidence + LLM validator | implementation without a fresh failing test |
 | red-proof + trust gates | every commit during a `/argo:build-plan` run | deterministic (receipts) | commits without fail→pass test evidence / launch proof |
 | design-phase decision gate | before a hi-fi build starts | deterministic (binding manifest vs registry + confusable-pairs table) | building against components/tokens that don't exist; known-confusable name swaps |
-| tier-0 audit + design coverage | design-pack commits & Figma sessions | deterministic (receipts) | hi-fi drift from conventions; under-built regions; TEXT nodes with copy that traces to no deck/defaultStrings entry |
+| design-rules audit + design coverage | design-pack commits & Figma sessions | deterministic (receipts) | hi-fi drift from conventions; under-built regions; TEXT nodes with copy that traces to no deck/defaultStrings entry |
 | spec-diff / VRT / base-congruence walkers | test runs after figma-sync | deterministic | generated code diverging from synced design data |
 | design-verifier / fidelity-verifier | end of a hi-fi build | adversarial LLM judge | screens that miss PRD requirements; visual drift from the reference |
 | reviewer | before merge | LLM judge | correctness/security defects in the diff |
 
 Safety guardrails run verbatim from the plugin (dependency-free, alive before any
-`npm install`). Everything else dispatches into `@argohq/kit` via
-`npx --no @argohq/kit argo-hook <name>` and **fails closed** — a missing kit
+`npm install`). Everything else dispatches into `@argohq/toolkit` via
+`npx --no @argohq/toolkit argo-hook <name>` and **fails closed** — a missing kit
 blocks with the fix command (`bun install` / `/argo:init`). There is no
 plugin↔kit version handshake: the plugin and kit release together, so the hook
 just runs whatever kit is installed.
@@ -122,7 +122,7 @@ actually keeps:
   stays ignored)
 - `.claude/rules/*.md` — opinionated rules **adapted** to your stack (inert
   templates until then; see below)
-- the `@argohq/kit` dependency + `.claude/settings.json` enablement
+- the `@argohq/toolkit` dependency + `.claude/settings.json` enablement
 - optional: tdd-guard wiring, lefthook, graphify
 
 Everything executable stays in the kit — updating argo never re-copies code into
@@ -214,7 +214,7 @@ whether it's day 1 or a year later. Full rationale in
 Only agent/skill **descriptions** load into context until invoked — the pack is
 ~1.6k tokens always-on.
 
-## The kit — `@argohq/kit`
+## The kit — `@argohq/toolkit`
 
 One package, bin `argo`:
 
@@ -224,21 +224,21 @@ One package, bin `argo`:
 | `argo-hook <name>` | single-dispatch gate entry (lazy imports per gate) |
 | `argo design <cmd>` | design-pack tooling: audit bundling, receipts, manifest validation |
 | `argo graph refresh` | graphify refresh (replaces the old copied script) |
-| `@argohq/kit/design-kit` (+ zod-free `/tier0-rules` subpaths) | comparator, conversion table, schemas, waivers |
-| `@argohq/kit/walkers` | VRT / spec-diff / base-congruence factories — host repos keep only ~6-line shims |
-| `@argohq/kit/reporters/playwright` | tdd-guard Playwright reporter |
+| `@argohq/toolkit/design-kit` (+ zod-free `/design-rules-subset` subpaths) | comparator, conversion table, schemas, waivers |
+| `@argohq/toolkit/walkers` | VRT / spec-diff / base-congruence factories — host repos keep only ~6-line shims |
+| `@argohq/toolkit/reporters/playwright` | tdd-guard Playwright reporter |
 
-**Dev phase:** unpublished — consumed via `bun link` (`"@argohq/kit": "link:@argohq/kit"`).
+**Dev phase:** unpublished — consumed via `bun link` (`"@argohq/toolkit": "link:@argohq/toolkit"`).
 **Release:** published to npm with provenance (OIDC workflow, wired); consumers
 swap to `^version`. Monorepo and single-repo hosts are both first-class (dual-mode
 acid suites run every gate against a fixture of each).
 
-**Source is TypeScript, compiled to `packages/kit/dist/`** (`tsc`, strict,
+**Source is TypeScript, compiled to `packages/toolkit/dist/`** (`tsc`, strict,
 NodeNext — see `.argo/plans/kit-typescript-migration.md`). `dist/` is
 **gitignored**, not committed: the sole consumer (argo-v2) resolves the kit via
 `bun link` (a symlink to this checkout), so it runs whatever `dist/` the checkout
 holds — committing the generated output only churned git. When working on
-`packages/kit`, run `bun run dev` (from `packages/kit`) to keep `dist/` rebuilding
+`packages/toolkit`, run `bun run dev` (from `packages/toolkit`) to keep `dist/` rebuilding
 on save; `bun run build` is the one-shot equivalent. `dist/` is produced on a
 fresh install by the `prepare` script and shipped to npm via `files` +
 `prepublishOnly` (`publish.yml`). CI (`kit-ci.yml`) builds and runs the full suite

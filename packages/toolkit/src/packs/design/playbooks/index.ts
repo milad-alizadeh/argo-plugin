@@ -3,7 +3,7 @@
  * Importing this barrel triggers each spec module's `registerPlaybook(...)`
  * side effect — "the packs populate the registry at import time" (Slice 5's
  * model): anything that imports `@argohq/pack-design` gets all six specs
- * resolvable by name via `@argohq/core`'s `getPlaybook`, without importing
+ * resolvable by name via `@argohq/toolkit/core`'s `getPlaybook`, without importing
  * any one playbook module directly.
  */
 export * from './screen-create.js'

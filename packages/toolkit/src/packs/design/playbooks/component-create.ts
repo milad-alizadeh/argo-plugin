@@ -23,14 +23,14 @@ export const componentCreateSpec = definePlaybook({
     {
       name: 'exists-check',
       allows: ['registry-read', 'figma-read'],
-      skill: 'component-create',
+      skill: 'design-component',
       session: 'fresh'
     },
     {
       name: 'build',
       requires: ['exists-check'],
       allows: ['file-edit', 'figma-write', 'figma-read'],
-      skill: 'component-create',
+      skill: 'design-component',
       session: 'fresh'
     },
     {

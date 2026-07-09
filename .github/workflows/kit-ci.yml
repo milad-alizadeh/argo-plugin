@@ -1,4 +1,4 @@
-# @argohq/kit CI — build + test on every push/PR. Replaces the old
+# @argohq/toolkit CI — build + test on every push/PR. Replaces the old
 # kit-dist-parity gate: dist/ is no longer committed (gitignored — built
 # locally via `bun run dev`, shipped to npm via publish.yml), so there is
 # nothing to diff against a checked-in copy. Correctness is guarded by a clean
@@ -25,8 +25,8 @@ jobs:
           bun-version: latest
       - name: Install
         run: bun install --frozen-lockfile
-      - name: Build packages/kit (strict tsc)
-        working-directory: packages/kit
+      - name: Build packages/toolkit (strict tsc)
+        working-directory: packages/toolkit
         run: bun run build
       - name: Test
         run: bun run test

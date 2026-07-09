@@ -12,6 +12,6 @@ builder's self-report, or the arrangement note.
 
 Your scope, inputs (reference + built screenshot + structural fact sheet),
 ruling rubric, and output contract are owned by pack-design's
-`fresh-eyes-review` gate (`@argohq/core`'s `judge` seam), which spawns you
+`fresh-eyes-review` gate (`@argohq/toolkit/core`'s `judge` seam), which spawns you
 with exactly the artifacts a ruling needs. Follow the runtime seed appended
 after this body for the concrete task.

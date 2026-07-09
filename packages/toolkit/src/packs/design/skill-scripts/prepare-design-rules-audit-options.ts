@@ -19,6 +19,7 @@ import { registryComponentNames } from '../design-kit/component-names.js'
 import { copyDeckStrings } from '../design-kit/copy-deck.js'
 import { findArgoJson } from '../../../config/argo-json.js'
 import { TW_COLLECTION_FAMILY } from '../recipes/shadcn-tailwind/design-rules.js'
+import { isRawUnadoptedKit } from '../design-kit/staleness.js'
 
 /**
  * Recipe-declared spacing/binding collection allowlist, keyed by the app's
@@ -64,7 +65,7 @@ export function resolveComponentNodeIds(
     // by figma-sync's reconcile walk) is hard-gated; drift on the other ~110
     // stock masters must never pull them into the gate. Adopted kit and custom
     // still resolve as targets (directive 3's "audit what you use" preserved).
-    if (entry?.kind === 'kit' && entry?.adopted !== true) {
+    if (isRawUnadoptedKit(entry)) {
       rawKitExemptNames.push(name)
       continue
     }
@@ -165,7 +166,7 @@ export function deriveDesignRulesAuditOptions({
         // un-adopted (raw) kit masters are the vendored mirror nothing
         // instances (directive 3 refined) — keep both out of the scoped
         // file-wide sweep, not just named audits. Adopted kit and custom stay.
-        .filter((c: any) => c?.kind !== 'code-owned' && c?.kind !== 'screen' && !(c?.kind === 'kit' && c?.adopted !== true))
+        .filter((c: any) => c?.kind !== 'code-owned' && c?.kind !== 'screen' && !isRawUnadoptedKit(c))
         .map((c: any) => c?.nodeId)
         .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
     : []

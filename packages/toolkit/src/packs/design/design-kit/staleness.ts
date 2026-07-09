@@ -51,8 +51,20 @@ export function stalenessActionability(
   classification: StalenessClassification
 ): 'in-sync' | 'advisory' | 'actionable' {
   if (classification === 'in-sync') return 'in-sync'
-  if (entry?.kind === 'kit' && entry?.adopted !== true) return 'advisory'
+  if (isRawUnadoptedKit(entry)) return 'advisory'
   return 'actionable'
+}
+
+/**
+ * True for a raw (un-adopted) kit registry entry: stock library content
+ * nothing in the project instances, the vendored mirror, not an authored
+ * surface. Adoption (`adopted: true`, derived by figma-sync's reconcile
+ * walk) is the SCOPE filter, only kit that a project surface actually
+ * instances is hard-gated. Shared by every raw-kit-advisory scoping site so
+ * the predicate can't drift between them.
+ */
+export function isRawUnadoptedKit(entry: { kind?: string; adopted?: boolean } | null | undefined): boolean {
+  return entry?.kind === 'kit' && entry?.adopted !== true
 }
 
 export function classifyStaleness({

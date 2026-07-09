@@ -22,6 +22,7 @@
  * spec by design and are exempt from the missing-spec rule.
  */
 import { RegistryEntrySchema } from '../design-kit/schemas.js'
+import { isRawUnadoptedKit } from '../design-kit/staleness.js'
 
 export interface SyncCheckFinding {
   rule: 'invalid-registry-entry' | 'missing-spec' | 'orphan-spec' | 'spec-diff-receipt'
@@ -74,7 +75,7 @@ export function runSyncCheck({
       continue
     }
     const entry = parsed.data as { kind: string; adopted?: boolean }
-    if (entry.kind === 'kit' && entry.adopted !== true) {
+    if (isRawUnadoptedKit(entry)) {
       advisorySkipped.push(name)
       continue
     }

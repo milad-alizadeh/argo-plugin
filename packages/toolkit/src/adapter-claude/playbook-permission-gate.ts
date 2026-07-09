@@ -16,7 +16,7 @@
  * is specific to git commit commands and doesn't apply to a generic tool
  * call): the hook's own reported `cwd` is all there is to resolve from.
  *
- * "Active instance" mechanism: `@argohq/core`'s state store has no built-in
+ * "Active instance" mechanism: `@argohq/toolkit/core`'s state store has no built-in
  * concept of "the" active playbook for a project (an instance is addressed by
  * `deriveInstanceKey(playbook, target)`, and a generic tool call carries
  * neither). `playbook-start`/`playbook-adopt` now write a project-scoped
@@ -69,7 +69,7 @@ const input: HookInput = {
 // `ARGO_STATE_ROOT` overrides the state store's root directory (normally
 // `~/.argo/state`) — test-only seam so this hook's tests never touch a real
 // home directory, matching the pattern of injecting `stateRoot` everywhere
-// else `@argohq/core`'s state store is exercised in tests.
+// else `@argohq/toolkit/core`'s state store is exercised in tests.
 const stateRoot = process.env.ARGO_STATE_ROOT
 const config = readConfig(cwd)
 const decision = runPermissionHook(input, config, () => getActiveInstance({ cwd, stateRoot }))

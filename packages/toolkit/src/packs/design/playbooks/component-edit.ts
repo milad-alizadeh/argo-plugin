@@ -22,7 +22,7 @@ export const componentEditSpec = definePlaybook({
       name: 'edit',
       allows: ['file-edit', 'figma-write', 'figma-read'],
       gate: 'design-rules-check',
-      skill: 'component-edit',
+      skill: 'design-component',
       session: 'fresh',
       retries: 2
     },

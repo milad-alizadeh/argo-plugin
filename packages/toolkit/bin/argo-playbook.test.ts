@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 /**
  * End-to-end coverage for playbook-engine-phase1.md's Slice 8 (step 23):
- * `bin/argo.js`'s new `playbook` subcommand (dispatching to @argohq/core's
+ * `bin/argo.js`'s new `playbook` subcommand (dispatching to @argohq/toolkit/core's
  * CLI verbs) and the `playbook-permission` entry in `HOOK_CHAINS`
  * (dispatching to @argohq/claude-adapter-plugin's PreToolUse hook body via
  * `playbook-permission-gate.js`). Spawns the real `bin/argo.js` — a

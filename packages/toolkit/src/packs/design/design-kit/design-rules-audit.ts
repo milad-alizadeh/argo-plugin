@@ -73,7 +73,8 @@ import {
   touchTargetViolation,
   textContrastViolation,
   untracedCopyViolation,
-  missingComponentDescriptionViolation
+  missingComponentDescriptionViolation,
+  unsectionedComponentViolation
 } from './design-rules.js'
 
 async function auditNode(
@@ -271,6 +272,14 @@ async function auditNode(
   }
 
   for (const v of variantNamingViolations(node)) report(v.rule, v.detail)
+
+  // Always advisory regardless of `hard`: self-corrects on the next
+  // figma-create upsert, never a structural defect that should fail a
+  // named audit.
+  const unsectioned = unsectionedComponentViolation(node)
+  if (unsectioned) {
+    violations.push({ severity: 'advisory', rule: unsectioned.rule, nodeId: node.id, nodeName: node.name, detail: unsectioned.detail })
+  }
 
   // Advisory on the file-wide sweep, hard on a NAMED audit (same split as
   // untraced-copy): a component audited by name — component-create's annotate

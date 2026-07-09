@@ -38,6 +38,26 @@ describe('runPermissionHook', () => {
     }
   })
 
+  it('allows READING a protected path — the deny list is write-protection only', () => {
+    const decision = runPermissionHook(
+      { tool_name: 'Read', tool_input: { file_path: '.argo/config.json' } },
+      baseConfig(),
+      () => null
+    )
+
+    expect(decision.decision).toBe('allow')
+  })
+
+  it('still denies a direct registry.json edit (registry-write is write-shaped)', () => {
+    const decision = runPermissionHook(
+      { tool_name: 'Edit', tool_input: { file_path: 'apps/desktop/design/registry.json' } },
+      baseConfig(),
+      () => null
+    )
+
+    expect(decision.decision).toBe('deny')
+  })
+
   it('blocks a file-edit and coaches to start a playbook when noPlaybook is deny-edits and none is active', () => {
     const decision = runPermissionHook(
       { tool_name: 'Write', tool_input: { file_path: 'src/foo.ts' } },

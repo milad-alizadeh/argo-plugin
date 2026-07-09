@@ -5,7 +5,11 @@ import {
   type ArgoConfig,
   type PlaybookInstance
 } from '../core/index.js'
-import { classifyAction, FIGMA_WRITE, FILE_EDIT, UNCLASSIFIED } from './classifier.js'
+import { classifyAction, FIGMA_WRITE, FILE_EDIT, REGISTRY_WRITE, UNCLASSIFIED } from './classifier.js'
+
+// Protected paths are WRITE-protected: reads must pass so sessions can
+// consult config/registry/state; the CLI verbs stay the only writers.
+const WRITE_SHAPED_KINDS = new Set<string>([FILE_EDIT, REGISTRY_WRITE])
 
 /**
  * The generic PreToolUse permission hook BODY (Slice 7, step 21) — a pure
@@ -102,7 +106,11 @@ export function runPermissionHook(
   readActiveInstance: ActiveInstanceReader
 ): HookDecision {
   const path = extractPath(input.tool_input)
-  if (path !== undefined && isProtectedPath(path)) {
+  if (
+    path !== undefined &&
+    isProtectedPath(path) &&
+    WRITE_SHAPED_KINDS.has(classifyAction(input.tool_name, input.tool_input))
+  ) {
     return deny(
       `"${path}" is a protected path (state store / config / registry / manifests) — no stage or config setting may write it`
     )

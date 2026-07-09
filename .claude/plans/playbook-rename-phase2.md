@@ -130,3 +130,138 @@ PRD pointing at it; the file is pure grayscale lo-fi (spot-check: no
 color values, no font declarations beyond defaults); every screen and
 flow edge the PRD names appears in the wireframe; artifact publish
 succeeds and a file edit + republish updates the same URL.
+
+## Item 3: naming sweep — packages + tier0 residue
+
+### Decision (owner, 2026-07-09)
+
+The plugin repo's packages carry one consistent naming scheme, all under
+the existing turborepo/bun-workspaces monorepo:
+
+- `@argohq/core` — engine (already named right; `packages/core/`).
+- `@argohq/kit` → **`@argohq/toolkit`** (`packages/kit/` → `packages/toolkit/`,
+  bin/CLI references, workspace deps, the `link:` dep in argo-v2's root
+  package.json, docs).
+- `packages/adapter-claude/` → **`packages/claude-adapter-plugin`**
+  (`@argohq/claude-adapter-plugin`).
+
+If these later split into three separate git repos, that's a distinct
+decision; this item is the naming, not the split.
+
+### tier0 → design-rules (finish the stalled rename)
+
+The `meaningful-names-no-jargon` decision renamed only the gate surface
+(`pack-design/src/gates/design-rules-check.ts`); 47 files still say
+tier0/tier-0. Sweep it fully:
+
+- File renames: `design-kit/tier0-audit.ts` → `design-rules-audit.ts`,
+  `tier0-rules.ts` → `design-rules.ts`,
+  `skill-scripts/bundle-tier0-audit.ts`, `prepare-tier0-audit-options.ts`,
+  `recipes/shadcn-tailwind/tier0-walker.ts` + `tier0-rules.ts`, tests.
+- Exports, hook names, receipt fields, skill/agent prose, templates.
+- The bundle cache key (see `bundle-cache-stale-after-kit-rebuild`
+  memory): rm the tmp bundle after the rename or the audit runs stale.
+- "Tier-0" as a concept in docs → "design rules" (deterministic checks) —
+  no tiers, no jargon.
+
+### Verification
+
+`grep -ri "tier0\|tier-0\|@argohq/kit\b" packages/ skills/ agents/ hooks/
+templates/` returns nothing (except historical plan docs under
+`.claude/plans/done/`). `bun run typecheck && bun run test` green; a
+smoke run of the design-rules check against the fixture suite passes.
+
+## Item 4: folder hierarchy restructure
+
+Kill the flat-file sprawl; group by domain, not type (per
+`templates/rules/file-structure.md`: 5+ peer files → domain subfolder,
+kebab-case folders, index.ts orchestrator barrels, max 2 levels).
+
+- `packages/toolkit/src/design-kit/` (~30 flat files) → subfolders:
+  `audit/` (rules, walker, comparator, conversion-table), `registry/`
+  (reconcile, pull), `manifest/` (binding-manifest, schemas, validate),
+  plus `completeness/`, `copy-deck/`, `staleness/` as they group.
+- `packages/toolkit/src/skill-scripts/` (~30 flat scripts) → grouped by
+  the skill/domain they serve.
+- `packages/toolkit/bin/argo.js` (single 7.4K file) → `cli/` with one
+  module per subcommand (pack-design's `cli/` already models this).
+- `packages/core/src/` (8 flat modules) → group as the engine's domains
+  settle post-phase-1.
+
+Root causes fixed in the same item so it doesn't regress:
+
+- Install `.claude/rules/` into the argo-plugin repo itself (it ships
+  the templates but never ran /argo:init on itself — builders here never
+  see the file-structure rule).
+- Planner prompt/plan template gains a required "File layout" section
+  (target folder tree) so builders stop minting flat paths ad hoc.
+
+### Verification
+
+No source folder with 10+ flat peer files mixing domains; imports go
+through domain barrels; `bun run typecheck && bun run test` green;
+`.claude/rules/file-structure.md` present in the plugin repo; planner
+template contains the File layout section.
+
+## Item 5: consolidate into `.argo/` + plan lifecycle (owner, 2026-07-09)
+
+Runs AFTER items 1–4 land (touches the same skills/templates). No legacy:
+one-time migration, no dual-path reading, no compat shims.
+
+### `.argo/` is argo's only per-project directory
+
+- `.argo/config.json` ← `.claude/argo.json`
+- `.argo/plans/` ← `.claude/plans/` (including former `done/` contents;
+  the `done/` folder is deleted — see lifecycle below)
+- `.argo/design/` ← `.claude/design/`
+- `.argo/state/` — the ONLY gitignored part (build-mode.json, receipts,
+  run records, session-local gate state). The gitignore narrows from all
+  of `.argo/` to `.argo/state/`.
+- Repoint every skill/agent/template/hook reference in one pass.
+
+### Plan lifecycle — status in the file, ownership split by who can know
+
+Folder-as-status (`done/`) is deleted. Every plan carries frontmatter:
+
+```yaml
+---
+status: draft | queued | landed
+landed: <commit>        # stamped only with status: landed
+updated: <date>
+---
+```
+
+Ownership model (the worktree problem is the design driver):
+
+- **draft/queued** — authored on main by whoever writes the plan. Durable
+  intent, committed.
+- **building/blocked — NEVER in the file.** Live state belongs to the
+  run-state store (`.argo/state/runs/`, main checkout, gitignored),
+  written by the orchestrating session that spawned the build. A worktree
+  build never edits plan status: a worktree-side flip is invisible on
+  main and a lie if the branch is discarded. Abandoning a run = deleting
+  its run record; the plan truthfully reads `queued` again.
+- **landed** — stamped by the integrator INSIDE the landing commit, so
+  status and reality merge atomically. The integrator is the only role
+  that pushes; the flip cannot drift from the merge that makes it true.
+- `argo plans` (CLI) merges both sources: frontmatter for
+  draft/queued/landed, run store overlaid for "building on branch X /
+  blocked". This mirrors the playbook engine's definition/run split —
+  plan doc = definition, run record = execution.
+
+### Migration
+
+One migration pass in each consuming repo (argo-v2 first): move the
+three surfaces into `.argo/`, add frontmatter to every existing plan
+(`done/` contents get `status: landed` with their landing commit where
+recoverable, else just `landed` with no hash), delete `done/`, update
+`.gitignore`, repoint local references. Plans stay in git forever;
+history + frontmatter is the archive.
+
+### Verification
+
+No references to `.claude/plans`, `.claude/design`, or `.claude/argo.json`
+remain in the plugin (grep). `argo plans` lists by status and shows a live
+overlay for an in-flight run. Integrator's landing flow provably stamps
+`landed` in the landing commit (fixture run). `.argo/state/` gitignored,
+everything else in `.argo/` committed.

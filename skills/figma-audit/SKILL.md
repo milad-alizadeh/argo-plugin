@@ -222,10 +222,7 @@ large, and always narrow a large subtree before reading — never dump the paren
      do not hand-author a `pageId` fan-out; that was the PRE-D26 workaround
      for a whole-file sweep and no longer applies to the default path.
    Execute it via `use_figma`. **Tag every call `figma-read-only` in
-   `skillNames`** (fidelity-geometry-verifier.md Slice 13, same mechanism as
-   the legacy `figma-wireframe` write-exemption tag — kept in
-   `design-guard-record.ts` for backward compat on projects with existing
-   wireframe pages): the audit itself never mutates
+   `skillNames`** (fidelity-geometry-verifier.md Slice 13): the audit itself never mutates
    the file, so these calls must not arm the design-guard write counter —
    omit the tag and every plain audit run (no actual fix) forces a spurious
    audit-owed nudge.

@@ -60,7 +60,7 @@ import {
   storyUrlScopeViolation,
   gapPaddingSpacingViolations,
   isNamedAuditTarget,
-  isWireframePageName,
+  isCoverPageName,
   isDesignPageName,
   strokeScaleViolation,
   possibleGateFalsePositiveTag,
@@ -365,8 +365,8 @@ async function marshalGapPaddingField(node: any, field: string) {
 
 /**
  * Named-audit mode (figma.root.findAll) can match a node anywhere in the
- * file, including on a wireframe page — walk up its parent chain to find
- * the owning PAGE so the wireframe-page exemption applies there too.
+ * file, including on the Cover page — walk up its parent chain to find
+ * the owning PAGE so the Cover-page exemption applies there too.
  */
 function findOwningPage(node: any) {
   let current = node
@@ -495,7 +495,7 @@ export async function runTier0Audit(
         continue
       }
       const owningPageName = findOwningPage(match)?.name ?? ''
-      if (isWireframePageName(owningPageName)) continue
+      if (isCoverPageName(owningPageName)) continue
       // isScreenFrame only when `match` is genuinely the page's top-level
       // frame (parent IS the page) — a registry nodeId can resolve to a node
       // NESTED under a design page, which must still be name/viewport-gated.
@@ -521,7 +521,7 @@ export async function runTier0Audit(
       }
       const match = matches[0]
       const owningPageName = findOwningPage(match)?.name ?? ''
-      if (isWireframePageName(owningPageName)) continue
+      if (isCoverPageName(owningPageName)) continue
       // isScreenFrame only when `match` is genuinely the page's top-level
       // frame (parent IS the page) — a registry nodeId can resolve to a node
       // NESTED under a design page, which must still be name/viewport-gated.
@@ -538,7 +538,7 @@ export async function runTier0Audit(
     // sweepPageNames.length) ... else { legacy }` gate silently fell through
     // to this branch whenever both scoped inputs resolved empty).
     const page = await figma.getNodeByIdAsync(pageId)
-    if (page && !isWireframePageName(page.name)) {
+    if (page && !isCoverPageName(page.name)) {
       await figma.setCurrentPageAsync(page)
       for (const topLevel of page.children) {
         await walk(
@@ -596,12 +596,12 @@ export async function runTier0Audit(
         continue
       }
       const owningPageName = findOwningPage(match)?.name ?? ''
-      if (isWireframePageName(owningPageName)) continue
+      if (isCoverPageName(owningPageName)) continue
       await walk(match, { ...sweepOpts, isScreenFrame: isScreenTopLevel(match) }, violations)
     }
     for (const page of figma.root.children) {
       if (!isDesignPageName(page.name) && !sweepPageNames.includes(page.name)) continue
-      if (isWireframePageName(page.name)) continue
+      if (isCoverPageName(page.name)) continue
       for (const topLevel of page.children) {
         await walk(topLevel, { ...sweepOpts, isScreenFrame: isScreenTopLevel(topLevel) }, violations)
       }

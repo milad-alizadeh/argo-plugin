@@ -108,7 +108,9 @@ the flow above works with or without it. On a screen task, the tiers are
 enforced mechanically before composition: the binding manifest you emit must
 pass `argo design validate-manifest` (existence vs `design/registry.json`,
 the committed `design/confusable-pairs.json` disambiguation table, Ask-first
-blocking) before any `use_figma` composition.
+blocking; pass `--prd <path>` when the screen has a PRD so the
+requirements-coverage check also runs — a covered-by requirement no manifest
+row references blocks) before any `use_figma` composition.
 
 **MARKERS — Dev Mode annotations are argo's documentation layer in Figma.**
 Every argo marker lives on a Dev Mode annotation
@@ -186,7 +188,12 @@ deck doesn't carry → STOP AND ASK, never confident filler — the tier-0
 `untraced-copy` rule hard-fails untraced TEXT nodes on named audits (a
 component's documented `defaultStrings` in the registry are the only other
 legal source). Data slots (live counts, timestamps, filenames) are not deck
-entries.
+entries. **Provenance: the deck is authored from the BRIEF/PRD ONLY, BEFORE
+any canvas read — never from the canvas. Anti-pattern (measured failure):
+never add deck entries to make existing canvas text pass.** Text found on a
+cloned shell that is not in the deck is a DEFECT to fix (retitle it to the
+deck's copy), never an entry to add; a canvas-derived deck launders stale
+clone text straight through the untraced-copy gate.
 
 **TEXT COPY.** Never use em dashes in any text you author: canvas text,
 labels, placeholder copy, component descriptions, annotations. Use a period,
@@ -286,6 +293,20 @@ honestly via `argo design record-completeness`. Scope is structural presence
 only; the independent blind verifier remains mandatory and unchanged — a
 passing checklist NEVER downgrades or skips it. No PRD available → the
 existing stop-and-ask applies.
+
+**DRAFT → BLIND VERIFY → FIX (screens).** A screen is never done on your own
+say-so. After the build, the tier-0 pass, and the completeness checks, mark
+the screen **DRAFT** and **request verification** in your report — do not
+report done. Under a supervisor (orchestrate), the blind fidelity check is
+spawned for you and its findings return to THIS session as ONE numbered fix
+list: apply every fix, re-run the single tier-0 re-audit (one mechanical
+pass after actual fixes, never a repeat sweep), and only then report done.
+Exactly one verify→fix round is budgeted; if the second blind check still
+fails, the escalation to the human is the supervisor's call, not another
+loop. **Standalone (no supervisor): never self-verify and self-approve** —
+you have read your own build and cannot un-read it. Present the DRAFT
+screenshot to the human and ask them to review it (or to explicitly accept
+draft state); done is their call.
 
 **VERIFICATION.** Re-run `figma-audit` in named-component mode after any fix and
 report its result. If no live Figma file is reachable, say so plainly and stop

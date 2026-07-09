@@ -75,9 +75,7 @@ point here instead of restating it.
   characters) padding, not a plain label, so they read as visually distinct
   from content pages in the page list at a glance.
 - The `D` prefix is always two digits (`D01`, not `D1`) so the page list
-  sorts correctly past nine groups. (Legacy `W##` lo-fi pages from before the
-  wireframe stage was retired may still exist in older files; they are
-  tier-0-exempt and no longer authored.)
+  sorts correctly past nine groups.
 - Group names after the prefix are the surface's plain-English name
   (`D01 Shell`), not a ticket id or component name.
 

@@ -15,7 +15,7 @@
  * nothing left to compare and is deleted, not softened.
  */
 
-import { isWireframePageName } from './tier0-rules.js'
+import { isCoverPageName } from './tier0-rules.js'
 
 type LiveComponent = { name: string; nodeId: string; pageName?: string }
 type RegistryEntry = { name: string; nodeId: string; nodeIdResolves?: boolean }
@@ -26,7 +26,7 @@ export function isScratchPageName(pageName: string): boolean {
   return pageName.startsWith('Scratch')
 }
 
-/** A section-separator page: name begins with 2+ dash/box-dash chars ('---', '------', '──── Wireframes ────'). */
+/** A section-separator page: name begins with 2+ dash/box-dash chars ('---', '------', '──── Designs ────'). */
 export function isDividerPageName(pageName: string): boolean {
   return /^[─-]{2,}/.test(pageName.trim())
 }
@@ -58,7 +58,7 @@ function matchesPagePattern(pageName: string, patterns: string[]): boolean {
 
 export function isKitPageName(pageName: string, nonKitPages: string[] = DEFAULT_NON_KIT_PAGE_PATTERNS): boolean {
   if (pageName === 'Custom Components' || pageName === 'Foundations' || pageName === 'Screens') return false
-  if (isWireframePageName(pageName)) return false // Cover + W\d{2}
+  if (isCoverPageName(pageName)) return false // Cover
   if (/^D\d{2}(\b|\s)/.test(pageName)) return false // D\d{2} hi-fi groups
   if (isScratchPageName(pageName)) return false
   if (isDividerPageName(pageName)) return false

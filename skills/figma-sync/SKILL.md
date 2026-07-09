@@ -138,8 +138,8 @@ operator promoting them into a sync/fix pass that then damages them.
    this MCP-side sweep (same `PASCAL_EXEMPT_PREFIXES` check, enforced in
    both places). **Scratch-prefix page exclusion:** any top-level component
    whose owning page name starts with `Scratch` (case-sensitive prefix
-   match, same style as `isWireframePageName`'s `W\d{2}` convention in
-   `tier0-rules.ts`) is excluded from the `registry-unregistered` sweep
+   match, `isScratchPageName` in `registry-reconcile.ts`) is excluded from
+   the `registry-unregistered` sweep
    entirely — sandbox work never generates registry-hygiene noise (design
    doc decision 4). Both findings are advisory, never blocking. Because the
    walk already holds the full node list, also re-resolve + persist any

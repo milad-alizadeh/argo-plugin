@@ -145,21 +145,17 @@ export function isNamedAuditTarget(node: AnyNode, name: string): boolean {
 }
 
 /**
- * Wireframe-page exemption (figma-wireframe/SKILL.md "Wireframe pages are
- * exempt from the tier-0 hard gate"): wireframe surface pages are named
- * `W<NN> <group>` (e.g. `W00 Components`, `W01 Shell & Rail`) per that
- * skill's "Frame naming and layout" section, and the `Cover` page (the
- * design-language legend) is likewise never code-synced. Nodes on a matching
- * page produce zero tier-0 violations at every severity — grayscale
- * unbound fills/strokes there are expected, not a defect.
+ * Cover-page exemption: the `Cover` page (the design-language legend,
+ * file-structure.md page 1) is never code-synced. Nodes on it produce zero
+ * tier-0 violations at every severity — unbound fills/strokes there are
+ * expected, not a defect.
  */
-export function isWireframePageName(name: string): boolean {
-  return /^W\d{2}(\b|\s)/.test(name) || name === 'Cover'
+export function isCoverPageName(name: string): boolean {
+  return name === 'Cover'
 }
 
 /**
- * Hi-fi screen page naming (file-structure.md `D<NN> <group>`, mirroring
- * isWireframePageName's `W<NN>` convention). Used to gate the
+ * Hi-fi screen page naming (file-structure.md `D<NN> <group>`). Used to gate the
  * screen-viewport-mismatch check to top-level screen frames only, never
  * component-definition frames on Custom Components.
  */

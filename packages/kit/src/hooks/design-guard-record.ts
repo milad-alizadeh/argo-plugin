@@ -73,26 +73,16 @@ const projectFileKeys = projectFileKeysOf(designApps)
 const writeFileKey = typeof hook?.tool_input?.fileKey === 'string' ? hook.tool_input.fileKey : ''
 if (projectFileKeys.size > 0 && writeFileKey.length > 0 && !projectFileKeys.has(writeFileKey)) process.exit(0)
 
-// LEGACY wireframe-write exemption (the figma-wireframe skill is deleted; the
-// tag is kept for backward compat on projects with pre-existing W## pages):
-// wireframe pages are tier-0 exempt in the audit (isWireframePageName), so
-// counting a wireframe write would force a guaranteed-empty end-of-session
-// audit. A write tagged `figma-wireframe` in the use_figma `skillNames`
-// argument stays fully inert (no counter bump, no audit-owed nudge).
-// Missing/other skillNames → normal counting.
+// Read-only exemption: a pure-introspection use_figma call (getNodeById +
+// property reads, no mutation) tags itself 'figma-read-only' in skillNames so
+// it doesn't arm the audit-owed gate. Trust model: a mistagged write still
+// gets caught by the NEXT real write's count.
 function skillNamesFrom(toolInput: any): string[] {
   const raw = toolInput?.skillNames
   if (Array.isArray(raw)) return raw.map((s) => String(s))
   if (typeof raw === 'string') return raw.split(',')
   return []
 }
-if (skillNamesFrom(hook?.tool_input).some((s) => s.trim() === 'figma-wireframe')) process.exit(0)
-
-// Read-only exemption (mirrors the wireframe exemption immediately above): a
-// pure-introspection use_figma call (getNodeById + property reads, no
-// mutation) tags itself 'figma-read-only' in skillNames so it doesn't arm
-// the audit-owed gate. Same trust model as the wireframe tag — a mistagged
-// write still gets caught by the NEXT real write's count.
 if (skillNamesFrom(hook?.tool_input).some((s) => s.trim() === 'figma-read-only')) process.exit(0)
 
 // Per-session-design-gate.md: when the write is attributed to a session,

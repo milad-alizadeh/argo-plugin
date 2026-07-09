@@ -146,7 +146,6 @@ describe('isKitPageName', () => {
     expect(isKitPageName('Custom Components')).toBe(false)
     expect(isKitPageName('Foundations')).toBe(false)
     expect(isKitPageName('Cover')).toBe(false)
-    expect(isKitPageName('W03 Onboarding')).toBe(false)
     expect(isKitPageName('D03 Onboarding')).toBe(false)
     expect(isKitPageName('Scratch - wip')).toBe(false)
     expect(isKitPageName('──── Designs ────')).toBe(false)
@@ -166,7 +165,7 @@ describe('isDividerPageName', () => {
   it('matches pure and labeled dash separators, not real page names', () => {
     expect(isDividerPageName('---')).toBe(true)
     expect(isDividerPageName('------')).toBe(true)
-    expect(isDividerPageName('──── Wireframes ────')).toBe(true)
+    expect(isDividerPageName('──── Designs ────')).toBe(true)
     expect(isDividerPageName('Buttons')).toBe(false)
     expect(isDividerPageName('Calendar')).toBe(false)
   })

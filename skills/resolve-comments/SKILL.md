@@ -99,10 +99,8 @@ the page name, and route:
 | `D##` (screen) | hi-fi screen | `figma-create` component-first screen path — composition from instances, bound spacing | **hard** tier-0 on the touched screen node |
 | `Custom Components` / `foundations/*` | component master | `figma-create` authoring rules — variant naming (D18), Semantic bindings, icons-as-instances | **hard** tier-0 named-component gate on the master |
 
-A pin that resolves to a legacy `W##`/`Cover` page (a project wireframed
-before the lo-fi stage was retired) falls through to `unmatched`: post a `❓`
-noting wireframing is retired and asking whether the fix should move to the
-screen brief / PRD's ASCII wireframe instead.
+Any other page (including `Cover`) falls through to `unmatched`: post a `❓`,
+never guess a surface.
 
 Component masters are the highest-stakes surface for a reason the other two lack:
 **editing a master ripples to every instance across every `D##` screen.** So a
@@ -190,8 +188,7 @@ un-replied because the batch never got posted.
    line defining the input (`const NODE_IDS = [ …ids… ]`) and pass the script
    body **verbatim** — do not hand-author the resolution loop each run. **Tag
    the call `figma-read-only` in the `use_figma` `skillNames` parameter**
-   (fidelity-geometry-verifier.md Slice 13, same mechanism as the legacy
-   `figma-wireframe` write-exemption tag): this is a pure introspection call (no mutation), and
+   (fidelity-geometry-verifier.md Slice 13): this is a pure introspection call (no mutation), and
    the design-guard record hook reads the tag to skip the tier-0 write counter
    for it — omit it and this read alone arms a spurious audit-owed gate. It
    returns `{ [nodeId]: { page, surface, nodeName, nodeType } }`, or

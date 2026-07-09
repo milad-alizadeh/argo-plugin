@@ -5,7 +5,7 @@ import {
   type ArgoConfig,
   type PlaybookInstance
 } from '../core/index.js'
-import { classifyAction, FIGMA_WRITE, FILE_EDIT } from './classifier.js'
+import { classifyAction, FIGMA_WRITE, FILE_EDIT, UNCLASSIFIED } from './classifier.js'
 
 /**
  * The generic PreToolUse permission hook BODY (Slice 7, step 21) — a pure
@@ -146,6 +146,11 @@ export function runPermissionHook(
 
   const kind = classifyAction(input.tool_name, input.tool_input)
   if (isActionAllowed(kind, stage.allows)) return allow()
+  // UNCLASSIFIED is the classifier's documented pass-through sentinel: the
+  // enforcer only narrows what it understands (destructive kinds are
+  // enumerated and deny-tagged upstream) — denying it would freeze every tool
+  // the classifier doesn't know, not just the gated ones.
+  if (kind === UNCLASSIFIED) return allow()
 
   const pathSuffix = path !== undefined ? ` (path: "${path}")` : ''
   return deny(

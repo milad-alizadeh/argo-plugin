@@ -19,6 +19,9 @@ export const TEST_RUN = 'test-run'
 export const WEB_FETCH = 'web-fetch'
 export const FIGMA_READ = 'figma-read'
 export const FIGMA_WRITE = 'figma-write'
+export const REGISTRY_READ = 'registry-read'
+export const REGISTRY_WRITE = 'registry-write'
+export const PLAYBOOK_START = 'playbook-start'
 
 /**
  * Sentinel for "this tool call did not match any enumerated kind." The hook
@@ -45,6 +48,9 @@ export type ActionKind =
   | typeof WEB_FETCH
   | typeof FIGMA_READ
   | typeof FIGMA_WRITE
+  | typeof REGISTRY_READ
+  | typeof REGISTRY_WRITE
+  | typeof PLAYBOOK_START
   | typeof GIT_HISTORY_MUTATION
   | typeof UNCLASSIFIED
 
@@ -102,6 +108,15 @@ export function classifyBashCommand(command: string): ActionKind {
   }
   if (subcommands.some((sub) => TEST_RUN_PATTERNS.some((p) => p.test(sub)))) {
     return TEST_RUN
+  }
+  // Spec-vocabulary kinds the stage allows lists gate on (playbook specs use
+  // `playbook-start` / `registry-write` — without these mappings a stage
+  // would deny its own core action).
+  if (subcommands.some((sub) => /\bargo\s+playbook\s+start\b/.test(sub))) {
+    return PLAYBOOK_START
+  }
+  if (subcommands.some((sub) => /\bargo\s+design\s+pull-registry\b/.test(sub))) {
+    return REGISTRY_WRITE
   }
   return UNCLASSIFIED
 }
@@ -188,10 +203,19 @@ export function classifyAction(toolName: string, toolInput: unknown): ActionKind
     return WEB_FETCH
   }
   if (FILE_EDIT_TOOLS.has(toolName)) {
-    return FILE_EDIT
+    return isRegistryPath(toolInput) ? REGISTRY_WRITE : FILE_EDIT
   }
   if (FILE_READ_TOOLS.has(toolName)) {
-    return FILE_READ
+    return isRegistryPath(toolInput) ? REGISTRY_READ : FILE_READ
   }
   return UNCLASSIFIED
+}
+
+/** The machine-written registry is its own action kind: playbook stages grant
+ * `registry-write` narrowly (registry-card, registry-sync) without opening
+ * general `file-edit`. */
+function isRegistryPath(toolInput: unknown): boolean {
+  if (!toolInput || typeof toolInput !== 'object') return false
+  const p = (toolInput as Record<string, unknown>).file_path ?? (toolInput as Record<string, unknown>).path
+  return typeof p === 'string' && /(^|\/)design\/registry\.json$/.test(p)
 }

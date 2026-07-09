@@ -174,6 +174,30 @@ describe('runPermissionHook', () => {
     expect(decision.decision).toBe('allow')
   })
 
+  it('passes an UNCLASSIFIED tool call through under an active stage (classifier pass-through invariant)', () => {
+    const playbookName = uniqueName('unclassified-passthrough')
+    registerPlaybook({
+      name: playbookName,
+      stages: [{ name: 'build', allows: ['file-edit'] }]
+    })
+    const instance: PlaybookInstance = {
+      playbook: playbookName,
+      target: 't',
+      stage: 'build',
+      status: 'in-progress',
+      attempts: [],
+      history: []
+    }
+
+    const decision = runPermissionHook(
+      { tool_name: 'Bash', tool_input: { command: 'ls -la' } },
+      baseConfig(),
+      () => instance
+    )
+
+    expect(decision.decision).toBe('allow')
+  })
+
   it('fails closed when the active instance points at an unregistered playbook', () => {
     const instance: PlaybookInstance = {
       playbook: 'no-such-playbook-' + Math.random(),

@@ -127,6 +127,18 @@ describe('classifyAction', () => {
     expect(classifyAction('mcp__plugin_figma_figma__use_figma', { code: 'figma.getNodeById("1:1")' })).toBe(FIGMA_READ)
   })
 
+  it('classifies registry.json file access as registry-write / registry-read (spec vocabulary)', () => {
+    expect(classifyAction('Edit', { file_path: 'apps/desktop/design/registry.json' })).toBe('registry-write')
+    expect(classifyAction('Write', { file_path: 'design/registry.json' })).toBe('registry-write')
+    expect(classifyAction('Read', { file_path: 'apps/desktop/design/registry.json' })).toBe('registry-read')
+  })
+
+  it('classifies argo playbook start / pull-registry Bash calls into spec vocabulary', () => {
+    expect(classifyAction('Bash', { command: 'argo playbook start --name component-create --target Foo' })).toBe('playbook-start')
+    expect(classifyAction('Bash', { command: 'npx argo playbook start --name x --target y' })).toBe('playbook-start')
+    expect(classifyAction('Bash', { command: 'argo design pull-registry' })).toBe('registry-write')
+  })
+
   it('classifies an unrecognized tool name as unclassified', () => {
     expect(classifyAction('SomeFutureTool', { anything: true })).toBe(UNCLASSIFIED)
   })

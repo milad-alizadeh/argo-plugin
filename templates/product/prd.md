@@ -2,12 +2,12 @@
 
 The **product intent** for one feature — the durable WHAT and WHY, authored at
 the top of the loop (in the host repo, e.g. `.claude/prds/<feature>.md`) and
-cited by the wireframe, the hi-fi design, and the implementation plan. One PRD
+cited by the hi-fi design and the implementation plan. One PRD
 per *feature* (a coherent unit of user value that may span several screens), not
 per screen — each per-screen brief is a projection of this doc's feature→screen
 matrix.
 
-It carries what a wireframe and a plan both assume but neither states: *what this
+It carries what a design and a plan both assume but neither states: *what this
 feature must do and why*, written as **checkable requirements** so a downstream
 verifier can rule each one present or absent without seeing the author's
 reasoning. Keep it tight — a spec, not an essay. It grows by splitting into a new
@@ -98,6 +98,32 @@ non-empty disposition; a dangling requirement is a defect):
 Single-surface shortcut: "Single surface: <screen> — R1, R2, R3 all realized
 here" (still name every REQ-ID).
 
+## ASCII wireframe + flow
+
+One subsection per screen in the matrix that carries `Visible in build? =
+yes/partial` requirements. Each is **co-created with the user and confirmed
+before hi-fi starts** — this is the layout sign-off artifact that replaces a
+separate Figma lo-fi wireframing stage. It names regions and their spatial
+arrangement (rows / columns / panels); no components, no styling, no pixel
+values. The screen brief's `Reference image` section cites or embeds it.
+
+### <screen name>
+
+```text
+┌──────────────────────────────────────────────┐
+│ header:  title ·············· actions        │
+├───────────────┬──────────────────────────────┤
+│ session list  │ detail pane                  │
+│ (scroll)      │  summary · milestone strip   │
+│               │  body tabs [Live|Plan|Diff]  │
+├───────────────┴──────────────────────────────┤
+│ status bar                                   │
+└──────────────────────────────────────────────┘
+```
+
+**Flow:** one paragraph — what navigates to this screen, what each region's
+primary action leads to, and where the user exits.
+
 ## Component Bindings (optional)
 
 When the author already knows which existing design-system component realizes a
@@ -163,7 +189,8 @@ silently assume.
 
 ## Handoff
 
-- **Design branch:** wireframe (optional) → `figma-create`; the screen briefs
+- **Design branch:** hi-fi design (`design-screen` / `figma-create`) —
+  consuming this doc's ASCII wireframe + flow directly; the screen briefs
   project this doc's matrix columns. The design-verifier is intended to check
   these requirements as the semantic completeness contract — this depends on
   design-screen P5 ingesting the REQ-ID column (tracked in

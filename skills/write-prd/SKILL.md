@@ -1,14 +1,15 @@
 ---
 name: write-prd
-description: Author a lightweight, grounded PRD (product requirements doc) for one feature — the durable WHAT and WHY at the top of the loop. Use when starting a new feature or capability, when the user asks to "write a PRD / product brief / product spec", or before wireframing/planning/designing so downstream stages share one source of intent. Produces checkable requirements + a feature→screen matrix that design and code completeness gates consume.
+description: Author a lightweight, grounded PRD (product requirements doc) for one feature — the durable WHAT and WHY at the top of the loop. Use when starting a new feature or capability, when the user asks to "write a PRD / product brief / product spec", or before planning/designing so downstream stages share one source of intent. Produces checkable requirements, a feature→screen matrix that design and code completeness gates consume, and a user-agreed ASCII wireframe + flow per screen — the layout-intent artifact the designer builds from.
 ---
 
 # Write a PRD (product requirements doc)
 
 A PRD is the **durable statement of what a feature is and why it exists** —
 authored once, at the top of the loop, and cited by every stage after it
-(wireframe → hi-fi design → implementation plan). It is not a design (no
-layouts, no components) and not a plan (no code steps, no data models). It is
+(hi-fi design → implementation plan). It is not a design (no
+component choices, no visual styling — the ASCII wireframe it carries is
+layout *intent*, not design) and not a plan (no code steps, no data models). It is
 the product intent, grounded in what the product already does, written so a
 verifier who never saw the reasoning can check whether the built thing delivers
 it.
@@ -120,6 +121,21 @@ converging:
    node against it on named audits. Data slots (live counts/timestamps) are not
    deck entries.
 
+5c. **Sketch the ASCII wireframe + flow — the layout sign-off artifact.** For
+   each screen the matrix marks with `Visible in build? = yes/partial`
+   requirements, co-create with the user (one screen at a time, one question at
+   a time where a layout choice is genuinely open) a plain-text ASCII block
+   naming that screen's regions and their spatial arrangement (rows / columns /
+   panels — box-drawing characters or indentation, no fixed notation mandated;
+   legibility is the only bar), plus a one-paragraph flow sketch (what
+   navigates to and from this screen). Embed both in the template's
+   `ASCII wireframe + flow` section, each sketch in a fenced ` ```text ` block.
+   The user confirms each sketch before hi-fi starts — this replaces the
+   retired Figma lo-fi wireframing stage as the layout-intent input
+   `design-screen`/`figma-create` consume (a screen brief satisfies its
+   `Reference image` section by citing or embedding the PRD's sketch; no Figma
+   wireframe is needed).
+
 6. **Bound the scope — IN/OUT only.** Explicit IN (this version) and OUT
    (deferred + one-line reason). Nothing else lives here — states are
    requirements (step 4), not scope bullets.
@@ -145,8 +161,9 @@ converging:
 
 ## Handoff
 
-When the PRD is settled it feeds both branches: the design branch (wireframe →
-`figma-create`, whose completeness gate is intended to check the PRD's
-requirements once P5 ingests them) and the code branch (`argo:planner` →
+When the PRD is settled it feeds both branches: the design branch
+(`design-screen` / `figma-create`, consuming the PRD's ASCII wireframe + flow
+directly, with a completeness gate intended to check the PRD's requirements
+once P5 ingests them) and the code branch (`argo:planner` →
 `build-plan`). Summarise the feature's core bet, its scope line, and the two or
 three requirements most likely to be contested.

@@ -16,8 +16,7 @@
   },
   "figma": {
     "projectFileKey": "{{PROJECT_FILE_KEY}}",
-    "starterFileKey": "{{STARTER_FILE_KEY}}",
-    "wireframeKitFileKey": "{{WIREFRAME_KIT_FILE_KEY}}"
+    "starterFileKey": "{{STARTER_FILE_KEY}}"
   },
   "componentCategories": ["primitive", "composite"],
   "walkers": {

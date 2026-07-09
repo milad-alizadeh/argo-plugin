@@ -258,16 +258,27 @@ Build in this order, every time:
    `design/<wave>/binding-manifest.json` (`requirement → registry component →
    variant/states → purpose`, schema `BindingManifestSchema` from
    `@argohq/kit/design-kit`) and, when the PRD carries a copy deck,
-   `design/<wave>/copy-deck.json`. Then run
-   `argo design validate-manifest --manifest <path> --cwd <app-dir>`: it
+   `design/<wave>/copy-deck.json` — **authored from the BRIEF/PRD ONLY,
+   BEFORE any canvas read, never from the canvas**. Then run
+   `argo design validate-manifest --manifest <path> --cwd <app-dir>
+   --prd <prd-path>`: it
    checks every row against `design/registry.json`, applies the committed
    `design/confusable-pairs.json` disambiguation table (a row on a known
-   confused pair needs an explicit `justification`), and enforces the
-   three-tier guardrail (Always / Ask-first / Never). **Exit 1 = STOP AND ASK
+   confused pair needs an explicit `justification`), enforces the
+   three-tier guardrail (Always / Ask-first / Never), and — with `--prd` —
+   checks requirements coverage: every PRD requirement the matrix disposes
+   covered-by this screen must be referenced by a manifest row; a required
+   composite simply absent from the manifest blocks with its row id.
+   **Exit 1 = STOP AND ASK
    — no composition until the manifest passes.** All authored canvas text
    comes from the copy deck (shared strings referenced by key); a string with
    no deck entry → stop-and-ask, never confident filler — the tier-0
    `untraced-copy` rule hard-fails untraced text on the named audit.
+   **Anti-pattern (measured failure): never add deck entries to make
+   existing canvas text pass.** Text found on a cloned shell that is not in
+   the deck is a DEFECT to fix (retitle it to the deck's copy), never an
+   entry to add — a canvas-derived deck launders stale clone text straight
+   through the untraced-copy gate.
 
 1. **Inventory.** From the brief's *Regions → component map*, list every
    `composite` region (and every `composite` sub-part under *Component
@@ -319,6 +330,16 @@ step 2.
    The annotation is the live marker (pull-registry re-syncs it); the registry
    entry is the fast path the audit reads. Registered screens are addressable
    via `argo design registry-lookup --kind screen`.
+
+5. **Report DRAFT, request verification — never done on your own pass.**
+   After the tier-0 gate passes, the screen is a **DRAFT** (design-screen
+   §4c): under a supervisor, report draft + request the blind verification;
+   the verifier's findings come back to this same session as one numbered
+   fix list — apply them, re-run the single tier-0 re-audit, then report
+   done (one verify→fix round; a second blind failure escalates to the
+   human). Standalone (no supervisor), never self-verify and self-approve:
+   present the draft screenshot to the human for review or explicit
+   draft-state acceptance.
 
 **What is enforced this round vs. advisory.** Brief-compliance (every
 `composite` region resolving to an instance) is **advisory** for now — the

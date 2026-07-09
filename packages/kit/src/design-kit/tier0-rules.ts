@@ -712,6 +712,13 @@ function normalizeCopy(text: string): string {
  * default is documenting it as a `defaultStrings` entry on the component's
  * registry entry. Letter-free content (counts, times, `+12 / -3`) is a data
  * slot, not authored copy, and is skipped deterministically.
+ *
+ * PROVENANCE CONTRACT (the seam this rule cannot see on its own): the copy
+ * deck is authored from the BRIEF/PRD ONLY, BEFORE any canvas read. Never
+ * add deck entries to make existing canvas text pass — a deck authored FROM
+ * the canvas launders stale clone text ("builder · routing" shipped twice
+ * this way) straight through this check. Canvas text with no deck entry is
+ * a defect to FIX (retitle to deck copy), never an entry to add.
  */
 export function untracedCopyViolation(
   node: AnyNode,

@@ -174,6 +174,10 @@ Rules the design stage enforces against this deck:
 - The tier-0 `untraced-copy` rule (hard on named audits) checks every TEXT
   node's content against this deck plus each component's documented
   `defaultStrings` in `design/registry.json`.
+- **Provenance:** this deck is authored from the PRD/brief ONLY, before any
+  canvas read. The designer **never adds deck entries to make existing canvas
+  text pass** — text found on a cloned shell that is not in the deck is a
+  defect to fix (retitle to deck copy), never an entry to add.
 
 ## Scope
 

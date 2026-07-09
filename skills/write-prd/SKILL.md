@@ -119,7 +119,12 @@ converging:
    figma-create source ALL canvas text from it (missing entry → the designer
    stops and asks), and the tier-0 `untraced-copy` rule hard-checks every TEXT
    node against it on named audits. Data slots (live counts/timestamps) are not
-   deck entries.
+   deck entries. **Provenance is one-directional: the deck is authored here,
+   from the PRD/brief, BEFORE any canvas exists or is read — designers never
+   author or extend it FROM the canvas.** Canvas text with no deck entry is a
+   defect the designer fixes (retitles to deck copy), never an entry to add —
+   a canvas-derived deck launders stale clone text through the gate (the
+   measured failure this rule exists for).
 
 5c. **Sketch the ASCII wireframe + flow — the layout sign-off artifact.** For
    each screen the matrix marks with `Visible in build? = yes/partial`

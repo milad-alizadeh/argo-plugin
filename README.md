@@ -22,6 +22,7 @@ flowchart LR
     classDef judge fill:#7c3aed,color:#fff,stroke:#5b21b6
     classDef det fill:#0f766e,color:#fff,stroke:#115e59
     classDef stage fill:#1e293b,color:#fff,stroke:#475569
+    classDef app fill:#b45309,color:#fff,stroke:#92400e
 
     idea([raw idea]) --> prd
 
@@ -68,12 +69,20 @@ flowchart LR
     debug["root-cause<br/>diagnosis before fixes"]:::judge
     review -. defects .-> debug
     debug -.-> build
+
+    cockpit["Argo cockpit · optional app<br/>voice · parallel-fleet UI · Haiku router<br/>hosts stock claude sessions, never owns the loop"]:::app
+    cockpit -. watches every stage .-> P & D & H & C & L
+    cockpit == voice steer / run-the-app trust ==> build
 ```
 
 **Purple = LLM judgment** (an adversarial or opinionated model call decides).
 **Teal = deterministic** (a script checks receipts/artifacts; a model cannot talk
 its way past it). The pipeline alternates them on purpose: judges decide *quality*,
 deterministic gates make *skipping impossible*.
+**Amber = the optional Argo cockpit app** — it hosts the stock `claude` sessions,
+adds voice + a parallel-fleet UI + a Haiku router, and enforces the run-the-app
+trust gate; it watches and steers the loop but never owns it. Every gate above
+runs identically from a bare `claude` terminal with just this plugin.
 
 The full stage-by-stage map — inputs, outputs, owners, and the two seams (the
 **freeze** and the **handoff**) — lives in **[PIPELINE.md](PIPELINE.md)**.

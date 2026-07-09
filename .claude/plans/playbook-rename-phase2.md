@@ -249,6 +249,18 @@ Ownership model (the worktree problem is the design driver):
   blocked". This mirrors the playbook engine's definition/run split —
   plan doc = definition, run record = execution.
 
+State-writing invariant: **nobody writes state across a worktree
+boundary.** Build-local state (gate marker, receipts, attempts) is
+written by the builder into ITS OWN worktree's `.argo/state/` and dies
+with the worktree — the gate hooks consuming it run in that same
+session. The run registry (`.argo/state/runs/`) is written only by the
+orchestrator at the main checkout, from what it already knows (it
+spawned the run, it receives the blocked/done report). Edge case — a
+build run manually with no orchestrator: no registry entry exists;
+`argo plans` derives an "in flight, unregistered" overlay by scanning
+`git worktree list` for worktrees whose gate marker names a plan, never
+by trusting worktree-written status.
+
 ### Migration
 
 One migration pass in each consuming repo (argo-v2 first): move the

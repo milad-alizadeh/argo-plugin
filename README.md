@@ -27,21 +27,19 @@ flowchart LR
     idea([raw idea]) --> prd
 
     subgraph P [PRODUCT]
-        prd["write-prd<br/>PRD: WHAT / WHY<br/>requirements + acceptance"]:::stage
+        prd["write-prd<br/>PRD: WHAT / WHY<br/>requirements + acceptance<br/>+ ASCII wireframe + flow, user-agreed"]:::stage
         grill["grill-me<br/>stress-test every decision"]:::judge
     end
     prd --> grill
 
     subgraph D [DESIGN LOOP · Figma]
-        brief["screen brief<br/>regions · flow · arrangement"]:::stage
-        wf["figma-wireframe<br/>lo-fi variants → converge"]:::stage
-        wfv{"wireframe-verifier<br/>adversarial LLM judge"}:::judge
-        freeze[["FREEZE<br/>region-contract = structural oracle"]]:::det
+        brief["screen brief<br/>regions · flow · arrangement<br/>cites the PRD's ASCII wireframe"]:::stage
+        manifest{"decision gate<br/>binding manifest vs registry<br/>deterministic"}:::det
         hifi["design-screen / figma-create<br/>component-first hi-fi"]:::stage
-        t0{"tier-0 audit +<br/>coverage receipts<br/>deterministic"}:::det
-        dv{"design-verifier<br/>adversarial LLM judge<br/>sees only wireframe + contract + PRD"}:::judge
+        t0{"tier-0 audit +<br/>instance-presence receipts<br/>deterministic"}:::det
+        dv{"design-verifier<br/>adversarial LLM judge<br/>sees only PRD + screenshots"}:::judge
     end
-    grill --> brief --> wf --> wfv --> freeze --> hifi --> t0 --> dv
+    grill --> brief --> manifest --> hifi --> t0 --> dv
 
     subgraph H [HANDOFF · design → repo]
         sync["figma-sync<br/>tokens · specs · story-map<br/>committed as data"]:::stage
@@ -84,8 +82,8 @@ adds voice + a parallel-fleet UI + a Haiku router, and enforces the run-the-app
 trust gate; it watches and steers the loop but never owns it. Every gate above
 runs identically from a bare `claude` terminal with just this plugin.
 
-The full stage-by-stage map — inputs, outputs, owners, and the two seams (the
-**freeze** and the **handoff**) — lives in **[PIPELINE.md](PIPELINE.md)**.
+The full stage-by-stage map — inputs, outputs, owners, and the one seam (the
+design→code **handoff**) — lives in **[PIPELINE.md](PIPELINE.md)**.
 
 ## Two enforcement layers
 
@@ -97,7 +95,7 @@ The full stage-by-stage map — inputs, outputs, owners, and the two seams (the
 | design-phase decision gate | before a hi-fi build starts | deterministic (binding manifest vs registry + confusable-pairs table) | building against components/tokens that don't exist; known-confusable name swaps |
 | tier-0 audit + design coverage | design-pack commits & Figma sessions | deterministic (receipts) | hi-fi drift from conventions; under-built regions; TEXT nodes with copy that traces to no deck/defaultStrings entry |
 | spec-diff / VRT / base-congruence walkers | test runs after figma-sync | deterministic | generated code diverging from synced design data |
-| wireframe-verifier / design-verifier | end of wireframe / hi-fi build | adversarial LLM judge | screens that miss PRD requirements or contract regions |
+| design-verifier / fidelity-verifier | end of a hi-fi build | adversarial LLM judge | screens that miss PRD requirements; visual drift from the reference |
 | reviewer | before merge | LLM judge | correctness/security defects in the diff |
 
 Safety guardrails run verbatim from the plugin (dependency-free, alive before any
@@ -138,9 +136,11 @@ breaking change, rip-and-re-init via a fresh `/argo:init`.
 
 ## The loop, day to day
 
-1. **`/argo:write-prd`** — a raw idea becomes a grounded PRD (`.claude/prds/`).
+1. **`/argo:write-prd`** — a raw idea becomes a grounded PRD (`.claude/prds/`),
+   including a user-agreed **ASCII wireframe + flow** per screen — the layout
+   sign-off, done in text, no Figma lo-fi stage.
 2. **`/argo:grill-me`** — stress-test the design/plan until no guess remains.
-3. **Design pack** (UI work): brief → `/argo:figma-wireframe` → freeze →
+3. **Design pack** (UI work): brief →
    `/argo:design-screen` (or `/argo:figma-create` for one component) →
    `/argo:figma-sync` → `/argo:figma-to-code`.
 4. **`argo:planner`** — read-only implementation plan grounded in real code
@@ -160,45 +160,47 @@ prototypes), `/argo:orchestrate` (babysit background builds),
 ## Editing what already exists — re-enter at the ALTITUDE of the change
 
 The pipeline is not one-way: changes re-enter it at the level they actually
-touch. The **freeze is the pivot** — structure lives above it, style below it.
+touch. The **PRD's ASCII wireframe is the pivot** — structure lives in it,
+style lives in hi-fi below it.
 
 ```mermaid
 flowchart LR
     classDef entry fill:#b45309,color:#fff,stroke:#92400e
-    PRD --> brief --> wf[wireframe] --> FR[[FREEZE]] --> hifi[hi-fi] --> sync --> code
+    PRD["PRD<br/>+ ASCII wireframe"] --> brief --> hifi[hi-fi] --> sync --> code
 
     scopeChange(["product / scope change"]):::entry -.-> PRD
-    structChange(["structure / new layout"]):::entry -.-> wf
+    structChange(["structure / new layout"]):::entry -.-> PRD
     styleChange(["style / tokens / polish"]):::entry -.-> hifi
     behaviorChange(["component behavior"]):::entry -.-> code
 ```
 
-| What changed | Enters at | Re-wireframe? | Path |
-|---|---|---|---|
-| **Product / scope** — new requirement, new screen | PRD | only if it adds structure | PRD → brief → wireframe → re-freeze → hi-fi → sync → code |
-| **Structure / new layout** — region added/removed, rearrangement | wireframe | **yes** | wireframe → re-freeze → hi-fi → sync → code |
-| **Style** — color, spacing, tokens, polish | hi-fi | **no** | hi-fi → `figma-sync` → `figma-to-code` regenerate |
-| **Component behavior** — a new state/prop | code | only if structural | `test-first` → verify |
+| What changed | Enters at | Path |
+|---|---|---|
+| **Product / scope** — new requirement, new screen | PRD | PRD (+ its ASCII wireframe) → brief → hi-fi → sync → code |
+| **Structure / new layout** — region added/removed, rearrangement | the PRD's ASCII wireframe | re-agree the sketch with the user → brief → hi-fi → sync → code |
+| **Style** — color, spacing, tokens, polish | hi-fi | hi-fi → `figma-sync` → `figma-to-code` regenerate |
+| **Component behavior** — a new state/prop | code | only if structural: `test-first` → verify |
 
-Two rules make this safe rather than just tidy: re-wireframing a style change is
-waste (wireframes are deliberately style-free), and editing *structure* directly
-in hi-fi is the expensive trap — it silently breaks the frozen contract. The
-**design-verifier** catches exactly that: a structural change smuggled into hi-fi
-shows up as contract drift and gets forced back through wireframe → re-freeze.
-You edit hi-fi freely for style; the gate only bites when the change was actually
-structural. Same principle in code: any edit to a generated component goes back
-through spec-diff, and any behavior change through tdd-guard's red-first loop —
+Two rules make this safe rather than just tidy: a style change never touches
+the PRD's sketch (it is deliberately style-free), and editing *structure*
+directly in hi-fi is the expensive trap — it silently diverges from the layout
+the user signed off. The **design-verifier** catches exactly that: a
+structural change smuggled into hi-fi shows up as a PRD mismatch and gets
+forced back through the sketch → user re-agreement. You edit hi-fi freely for
+style; the gate only bites when the change was actually structural. Same
+principle in code: any edit to a generated component goes back through
+spec-diff, and any behavior change through tdd-guard's red-first loop —
 whether it's day 1 or a year later. Full rationale in
 [PIPELINE.md](PIPELINE.md#change-management--re-enter-at-the-altitude-of-the-change).
 
 ## What ships active
 
-- **Agents** (`agents/`) — twelve lifecycle roles invoked on demand: `product`,
+- **Agents** (`agents/`) — eleven lifecycle roles invoked on demand: `product`,
   `scaffolder`, `planner`, `builder`, `reviewer`, `debugger`, `auditor`,
-  `integrator`, `designer`, and the three adversarial design judges
-  `wireframe-verifier`, `design-verifier`, `fidelity-verifier`. Each runs
+  `integrator`, `designer`, and the two adversarial design judges
+  `design-verifier`, `fidelity-verifier`. Each runs
   standalone in any terminal; the Argo cockpit only adds a runtime seed on top.
-- **Skills** (`skills/`) — the twenty-two disciplines listed above.
+- **Skills** (`skills/`) — the twenty-one disciplines listed above.
 - **Hooks** (`hooks/`) — the two-tier split from the table: plugin-side safety
   guardrails (always on, verbatim) and kit-dispatched gates (fail-closed,
   armed by project state: `.argo/build-mode.json` for build gates,
@@ -216,9 +218,9 @@ One package, bin `argo`:
 |---|---|
 | `argo init` | deterministic half of the /argo:init lifecycle skill |
 | `argo-hook <name>` | single-dispatch gate entry (lazy imports per gate) |
-| `argo design <cmd>` | design-pack tooling: audit bundling, receipts, region coverage, contract extraction |
+| `argo design <cmd>` | design-pack tooling: audit bundling, receipts, manifest validation |
 | `argo graph refresh` | graphify refresh (replaces the old copied script) |
-| `@argohq/kit/design-kit` (+ zod-free `/tier0-rules` subpaths) | comparator, conversion table, schemas, waivers, region-contract |
+| `@argohq/kit/design-kit` (+ zod-free `/tier0-rules` subpaths) | comparator, conversion table, schemas, waivers |
 | `@argohq/kit/walkers` | VRT / spec-diff / base-congruence factories — host repos keep only ~6-line shims |
 | `@argohq/kit/reporters/playwright` | tdd-guard Playwright reporter |
 

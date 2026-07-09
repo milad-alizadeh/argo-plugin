@@ -210,13 +210,33 @@ one-time migration, no dual-path reading, no compat shims.
 
 ### `.argo/` is argo's only per-project directory
 
-- `.argo/config.json` ← `.claude/argo.json`
+- `.argo/config.json` ← `.claude/argo.json`. Before renaming, centralize
+  the path into ONE resolver (today it is inlined at `emit-shims.ts:91`,
+  `argo-json.ts:31`, `init.ts:82`) so the rename is a single edit. If
+  schedule pressure forces a cut, this rename is the droppable half —
+  the plans/design move carries the real ownership benefit.
 - `.argo/plans/` ← `.claude/plans/` (including former `done/` contents;
   the `done/` folder is deleted — see lifecycle below)
 - `.argo/design/` ← `.claude/design/`
-- `.argo/state/` — the ONLY gitignored part (build-mode.json, receipts,
-  run records, session-local gate state). The gitignore narrows from all
-  of `.argo/` to `.argo/state/`.
+- `.argo/evidence/` — the worktree-local gate plumbing
+  (`build-mode.json`, `red-proof.json`, `launch-receipt.json`).
+  Deliberately NOT named "state": it is evidence about one worktree's
+  uncommitted files, read only by that worktree's own gates, dead when
+  the worktree is removed — the opposite lifetime of `~/.argo/state/`,
+  which is the only thing called state.
+- **Gitignore is deny-by-default with explicit re-includes — NEVER a
+  blanket narrow.** `.argo/` also holds secrets and session-local files
+  (argo-v2 has a live `figma-token` PAT, `design-guard.json`,
+  `audit-receipts/`); narrowing the ignore to one subdir would stage the
+  token on the next `git add -A`. Required form:
+
+  ```gitignore
+  /.argo/*
+  !/.argo/config.json
+  !/.argo/plans/
+  !/.argo/design/
+  ```
+
 - Repoint every skill/agent/template/hook reference in one pass.
 
 ### Plan lifecycle — status in the file, ownership split by who can know
@@ -225,16 +245,24 @@ Folder-as-status (`done/`) is deleted. Every plan carries frontmatter:
 
 ```yaml
 ---
-status: draft | queued | landed
-landed: <commit>        # stamped only with status: landed
+status: draft | queued   # NOTE: intentionally not live — a build in
+                         # progress does not touch this; see `argo plans`
 updated: <date>
 ---
 ```
 
+There is NO `landed` status or SHA in the file. A commit cannot embed
+its own SHA, so "stamped atomically with the merge" is physically
+impossible; and git already records the answer. "Landed" is DERIVED:
+a plan reachable from `origin/main` whose content is fully merged
+(`git merge-base --is-ancestor` on its last-touching commit) with no
+active run in the home store. `argo plans` computes and displays it.
+
 Ownership model (the worktree problem is the design driver):
 
-- **draft/queued** — authored on main by whoever writes the plan. Durable
-  intent, committed.
+- **draft** — being written; `queued` — cleared for build. This enum is
+  ENFORCED: build-plan refuses a plan whose `status` is `draft` (that is
+  what `queued` earns its keep for). Authored on main, committed.
 - **building/blocked — NEVER in the file.** Live state belongs to the
   engine's run-state store at `~/.argo/state/<project-id>/` (already
   built, `packages/core/src/state.ts`; project-id derives from the git
@@ -243,38 +271,79 @@ Ownership model (the worktree problem is the design driver):
   status: a worktree-side flip is invisible on main and a lie if the
   branch is discarded. Abandoning a run = deleting its run record; the
   plan truthfully reads `queued` again.
-- **landed** — stamped by the integrator INSIDE the landing commit, so
-  status and reality merge atomically. The integrator is the only role
-  that pushes; the flip cannot drift from the merge that makes it true.
-- `argo plans` (CLI) merges both sources: frontmatter for
-  draft/queued/landed, run store overlaid for "building on branch X /
+- `argo plans` (CLI) merges the sources: frontmatter for draft/queued,
+  git for landed, run store overlaid for "building on branch X /
   blocked". This mirrors the playbook engine's definition/run split —
   plan doc = definition, run record = execution.
+- **Plan↔run join key is a contract:** a run's `target` MUST equal the
+  plan's basename, validated at `workflow-start` — without it the
+  overlay cannot attribute a live run to its plan.
 
 State-writing invariant: run state lives in the HOME store
 (`~/.argo/state/<project-id>/`), shared by all worktrees via the git
 common dir — no state ever crosses a worktree boundary because live
-state is never in the repo at all. The only in-repo state is the
-worktree-local gate plumbing (`.argo/build-mode.json`, red-proof
-receipts), deliberately scoped to the worktree whose gates consume it,
-gitignored, dead when the worktree is removed. `argo plans` reads plan
-frontmatter (draft/queued/landed) and overlays live runs from the home
-store; a manual run in any worktree lands in the same store, so nothing
-is invisible.
+state is never in the repo at all. The only in-repo files are the
+worktree-local gate EVIDENCE (`.argo/evidence/`), deliberately scoped to
+the worktree whose gates consume it, gitignored, dead when the worktree
+is removed. `argo plans` reads plan frontmatter, derives landed from
+git, and overlays live runs from the home store; a manual run in any
+worktree lands in the same store, so nothing is invisible.
+
+Home-store hardening (required by this design leaning on the store):
+
+- **Writes become atomic**: temp file + `renameSync` (same fs), replacing
+  the bare `writeFileSync` in `writeInstance` (`state.ts:127-131`) and the
+  read-append-write in `recordAttempt`/`recordHistory`; a torn write
+  currently reads as "no instance" and silently erases a run. Advisory
+  lockfile for same-key concurrent writers.
+- **The active-workflow pointer gets worktree affinity.**
+  `active-workflow.json` is today a single per-project pointer
+  (`state.ts:163-165`); two concurrent gated builds overwrite it and
+  worktree A's permission gate reads worktree B's run. Scope it
+  per-worktree (keyed by the session cwd's worktree path) or make it a
+  keyed set. Concurrent gated builds are unsupported until this lands.
+- **Known limit, stated not fixed**: project-id is path-identity-bound
+  (realpath of the git common dir) — moving/renaming the repo orphans
+  in-flight run records; the plan reads `queued` again. Acceptable;
+  document it in state.ts and the design doc.
 
 ### Migration
 
-One migration pass in each consuming repo (argo-v2 first): move the
-three surfaces into `.argo/`, add frontmatter to every existing plan
-(`done/` contents get `status: landed` with their landing commit where
-recoverable, else just `landed` with no hash), delete `done/`, update
-`.gitignore`, repoint local references. Plans stay in git forever;
-history + frontmatter is the archive.
+One migration pass in each consuming repo (argo-v2 first), as ONE
+atomic, ORDERED commit — file moves before the gitignore rewrite
+silently no-op (`git add` on a still-ignored path does not error):
+
+1. Rewrite `.gitignore` to the deny-by-default form above.
+2. Verify with `git check-ignore`: `config.json`/`plans/`/`design/`
+   paths NOT ignored; `figma-token`, `evidence/`, receipts, and every
+   other `.argo/` entry STILL ignored.
+3. Move the three surfaces into `.argo/`; rename in-repo gate plumbing
+   dir to `.argo/evidence/`.
+4. Add frontmatter to every existing plan (former `done/` contents need
+   none of the old `landed` bookkeeping — landed is derived from git);
+   delete `done/`; repoint local references.
+5. Assert with `git status --porcelain` that every moved file is
+   actually tracked, then commit.
+
+Plans stay in git forever; history is the archive.
 
 ### Verification
 
-No references to `.claude/plans`, `.claude/design`, or `.claude/argo.json`
-remain in the plugin (grep). `argo plans` lists by status and shows a live
-overlay for an in-flight run. Integrator's landing flow provably stamps
-`landed` in the landing commit (fixture run). `.argo/state/` gitignored,
-everything else in `.argo/` committed.
+- No references to `.claude/plans`, `.claude/design`, or
+  `.claude/argo.json` remain in the PLUGIN (grep) — AND a second,
+  consumer-scoped sweep per consuming repo (argo-v2: 20+ plan docs,
+  6 design files, scaffolded files from old templates, and live eval
+  fixtures — `eval/card-routing.eval.ts:84` references
+  `.claude/plans/foo.md`). Stale doc-comments in already-scaffolded
+  consumer files: fix in argo-v2, acknowledged-cosmetic elsewhere.
+- Grep-assert no secret/receipt path (`figma-token`, `build-mode`,
+  `red-proof`, `launch-receipt`, `audit-receipts`) resolves outside the
+  ignored set (`git check-ignore` fixture).
+- `argo plans` lists by status, derives landed from git, and shows a
+  live overlay for an in-flight run; overlay join validated
+  (`target === plan basename`).
+- build-plan refuses a `status: draft` plan (fixture).
+- Two concurrent runs in separate worktrees keep distinct active
+  pointers (fixture).
+- `.argo/evidence/` gitignored, `figma-token` still ignored, everything
+  re-included in `.argo/` committed.

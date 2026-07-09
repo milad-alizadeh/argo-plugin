@@ -85,7 +85,8 @@ The full stage-by-stage map — inputs, outputs, owners, and the two seams (the
 | safety guardrails (dangerous-git, pipe-to-shell, lockfile-edit, bash-source-write, designer-spawn) | every matching tool call, always on | deterministic, plugin-side | destructive/unsafe actions, edits that dodge the guards |
 | tdd-guard | every Write/Edit while enabled | deterministic evidence + LLM validator | implementation without a fresh failing test |
 | red-proof + trust gates | every commit during a `/argo:build-plan` run | deterministic (receipts) | commits without fail→pass test evidence / launch proof |
-| tier-0 audit + design coverage | design-pack commits & Figma sessions | deterministic (receipts) | hi-fi drift from conventions; under-built regions |
+| design-phase decision gate | before a hi-fi build starts | deterministic (binding manifest vs registry + confusable-pairs table) | building against components/tokens that don't exist; known-confusable name swaps |
+| tier-0 audit + design coverage | design-pack commits & Figma sessions | deterministic (receipts) | hi-fi drift from conventions; under-built regions; TEXT nodes with copy that traces to no deck/defaultStrings entry |
 | spec-diff / VRT / base-congruence walkers | test runs after figma-sync | deterministic | generated code diverging from synced design data |
 | wireframe-verifier / design-verifier | end of wireframe / hi-fi build | adversarial LLM judge | screens that miss PRD requirements or contract regions |
 | reviewer | before merge | LLM judge | correctness/security defects in the diff |
@@ -183,10 +184,11 @@ whether it's day 1 or a year later. Full rationale in
 
 ## What ships active
 
-- **Agents** (`agents/`) — lifecycle roles invoked on demand: `product`,
+- **Agents** (`agents/`) — twelve lifecycle roles invoked on demand: `product`,
   `scaffolder`, `planner`, `builder`, `reviewer`, `debugger`, `auditor`,
-  `integrator`, `designer`, `design-verifier`. Each runs standalone in any
-  terminal; the Argo cockpit only adds a runtime seed on top.
+  `integrator`, `designer`, and the three adversarial design judges
+  `wireframe-verifier`, `design-verifier`, `fidelity-verifier`. Each runs
+  standalone in any terminal; the Argo cockpit only adds a runtime seed on top.
 - **Skills** (`skills/`) — the twenty-two disciplines listed above.
 - **Hooks** (`hooks/`) — the two-tier split from the table: plugin-side safety
   guardrails (always on, verbatim) and kit-dispatched gates (fail-closed,

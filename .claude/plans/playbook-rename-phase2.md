@@ -236,11 +236,13 @@ Ownership model (the worktree problem is the design driver):
 - **draft/queued** — authored on main by whoever writes the plan. Durable
   intent, committed.
 - **building/blocked — NEVER in the file.** Live state belongs to the
-  run-state store (`.argo/state/runs/`, main checkout, gitignored),
-  written by the orchestrating session that spawned the build. A worktree
-  build never edits plan status: a worktree-side flip is invisible on
-  main and a lie if the branch is discarded. Abandoning a run = deleting
-  its run record; the plan truthfully reads `queued` again.
+  engine's run-state store at `~/.argo/state/<project-id>/` (already
+  built, `packages/core/src/state.ts`; project-id derives from the git
+  common dir, so ALL worktrees of a repo share one store — the Claude
+  Code `~/.claude/projects/` pattern). A worktree build never edits plan
+  status: a worktree-side flip is invisible on main and a lie if the
+  branch is discarded. Abandoning a run = deleting its run record; the
+  plan truthfully reads `queued` again.
 - **landed** — stamped by the integrator INSIDE the landing commit, so
   status and reality merge atomically. The integrator is the only role
   that pushes; the flip cannot drift from the merge that makes it true.
@@ -249,17 +251,16 @@ Ownership model (the worktree problem is the design driver):
   blocked". This mirrors the playbook engine's definition/run split —
   plan doc = definition, run record = execution.
 
-State-writing invariant: **nobody writes state across a worktree
-boundary.** Build-local state (gate marker, receipts, attempts) is
-written by the builder into ITS OWN worktree's `.argo/state/` and dies
-with the worktree — the gate hooks consuming it run in that same
-session. The run registry (`.argo/state/runs/`) is written only by the
-orchestrator at the main checkout, from what it already knows (it
-spawned the run, it receives the blocked/done report). Edge case — a
-build run manually with no orchestrator: no registry entry exists;
-`argo plans` derives an "in flight, unregistered" overlay by scanning
-`git worktree list` for worktrees whose gate marker names a plan, never
-by trusting worktree-written status.
+State-writing invariant: run state lives in the HOME store
+(`~/.argo/state/<project-id>/`), shared by all worktrees via the git
+common dir — no state ever crosses a worktree boundary because live
+state is never in the repo at all. The only in-repo state is the
+worktree-local gate plumbing (`.argo/build-mode.json`, red-proof
+receipts), deliberately scoped to the worktree whose gates consume it,
+gitignored, dead when the worktree is removed. `argo plans` reads plan
+frontmatter (draft/queued/landed) and overlays live runs from the home
+store; a manual run in any worktree lands in the same store, so nothing
+is invisible.
 
 ### Migration
 

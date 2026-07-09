@@ -1,0 +1,38 @@
+{
+  "name": "@argohq/pack-design",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Argo design pack: workflow specs + gates (design-rules-check, fresh-eyes-review, design-matches-code) for the design-screen/component workflows. Depends on @argohq/core (engine seams) and @argohq/kit (reused tier0/comparator modules) only — never @argohq/adapter-claude.",
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "prepare": "bun run build",
+    "prepublishOnly": "bun run build"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@argohq/core": "workspace:*",
+    "@argohq/kit": "workspace:*",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -2,9 +2,11 @@
 /**
  * @argohq/kit single CLI entry. Subcommands:
  *   argo-hook <event>   — Claude Code hook dispatch (bash-pretooluse, post-edit-write,
- *                         design-guard-record, design-guard-stop)
+ *                         workflow-permission)
  *   design <verb>       — skill-script CLI verbs (Slice 2)
  *   init | graph refresh — lifecycle verbs (Slices 4+)
+ *   workflow <start|status|advance|adopt|diagram> — @argohq/core's workflow-engine
+ *                         CLI verbs (workflow-engine-phase1.md, Slice 8)
  *
  * Hook dispatch model: each hook module stays a standalone fail-closed script
  * (stdin JSON in, exit code out) — the dispatcher reads stdin ONCE and replays
@@ -30,8 +32,15 @@ const HOOK_CHAINS = {
     '../dist/hooks/design-commit-gate.js',
   ],
   'post-edit-write': ['../dist/hooks/format-on-write.js', '../dist/hooks/test-smell.js'],
-  'design-guard-record': ['../dist/hooks/design-guard-record.js'],
-  'design-guard-stop': ['../dist/hooks/design-guard-stop.js'],
+  // design-guard-record/design-guard-stop retired (workflow-engine-phase1.md
+  // Slice 13) — the generic workflow-permission hook below, backed by
+  // pack-design's design-rules-check gate + per-stage `allows`, supersedes
+  // their enforcement.
+  // Generic PreToolUse permission hook (workflow-engine phase 1, Slice 8) —
+  // runs on every tool call (matcher `*` in hooks/hooks.json), not just Bash,
+  // since @argohq/adapter-claude's runPermissionHook needs to see Bash,
+  // Edit/Write, and Figma calls alike.
+  'workflow-permission': ['../dist/hooks/workflow-permission-gate.js'],
 }
 
 function readStdin() {
@@ -78,6 +87,7 @@ const DESIGN_VERBS = {
   'assemble-fidelity-rubric': '../dist/skill-scripts/assemble-fidelity-rubric.js',
   'validate-manifest': '../dist/skill-scripts/validate-manifest.js',
   'ack-pending-work': '../dist/skill-scripts/ack-pending-work.js',
+  'assemble-skill': '../dist/cli/assemble-skill.js',
 }
 
 function runDesignVerb(verb, args) {
@@ -115,6 +125,52 @@ switch (cmd) {
     console.log(JSON.stringify(report))
     break
   }
+  case 'workflow': {
+    const verb = rest[0]
+    const args = rest.slice(1)
+    const hostRoot = flagValue(args, '--host-root') ?? process.cwd()
+    const { workflowStart, workflowStatus, workflowAdvance, workflowAdopt, workflowDiagram } = await import(
+      '@argohq/core'
+    )
+    switch (verb) {
+      case 'start': {
+        const result = workflowStart(
+          { name: flagValue(args, '--name'), target: flagValue(args, '--target'), key: flagValue(args, '--key') },
+          { cwd: hostRoot }
+        )
+        console.log(JSON.stringify(result))
+        break
+      }
+      case 'status': {
+        const result = workflowStatus(flagValue(args, '--key'), { cwd: hostRoot })
+        console.log(JSON.stringify(result))
+        break
+      }
+      case 'advance': {
+        const result = await workflowAdvance(flagValue(args, '--key'), { cwd: hostRoot })
+        console.log(JSON.stringify(result))
+        break
+      }
+      case 'adopt': {
+        const result = await workflowAdopt(
+          { name: flagValue(args, '--name'), target: flagValue(args, '--target'), key: flagValue(args, '--key') },
+          { cwd: hostRoot }
+        )
+        console.log(JSON.stringify(result))
+        break
+      }
+      case 'diagram': {
+        console.log(workflowDiagram(flagValue(args, '--name')))
+        break
+      }
+      default:
+        process.stderr.write(
+          `argo workflow: unknown verb "${verb ?? ''}" (known: start|status|advance|adopt|diagram)\n`
+        )
+        process.exit(1)
+    }
+    break
+  }
   case 'graph': {
     if (rest[0] !== 'refresh') {
       process.stderr.write(`argo graph: unknown verb "${rest[0] ?? ''}" (known: refresh)\n`)
@@ -125,6 +181,6 @@ switch (cmd) {
     break
   }
   default:
-    process.stderr.write('usage: argo <argo-hook|design|init|graph> ...\n')
+    process.stderr.write('usage: argo <argo-hook|design|init|graph|workflow> ...\n')
     process.exit(cmd ? 1 : 0)
 }

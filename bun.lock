@@ -10,13 +10,37 @@
         "vitest": "^3.2.4",
       },
     },
+    "packages/adapter-claude": {
+      "name": "@argohq/adapter-claude",
+      "version": "0.1.0",
+      "dependencies": {
+        "@argohq/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "^26.1.0",
+        "typescript": "^6.0.3",
+      },
+    },
+    "packages/core": {
+      "name": "@argohq/core",
+      "version": "0.1.0",
+      "dependencies": {
+        "zod": "^3.23.8",
+      },
+      "devDependencies": {
+        "@types/node": "^26.1.0",
+        "typescript": "^6.0.3",
+      },
+    },
     "packages/kit": {
       "name": "@argohq/kit",
-      "version": "0.18.0",
+      "version": "0.21.0",
       "bin": {
         "argo": "bin/argo.js",
       },
       "dependencies": {
+        "@argohq/adapter-claude": "workspace:*",
+        "@argohq/core": "workspace:*",
         "tdd-guard": "^1.7.0",
         "wcag-contrast": "^3.0.0",
         "zod": "^3.23.8",
@@ -33,6 +57,19 @@
         "@playwright/test",
       ],
     },
+    "packages/pack-design": {
+      "name": "@argohq/pack-design",
+      "version": "0.1.0",
+      "dependencies": {
+        "@argohq/core": "workspace:*",
+        "@argohq/kit": "workspace:*",
+        "zod": "^3.23.8",
+      },
+      "devDependencies": {
+        "@types/node": "^26.1.0",
+        "typescript": "^6.0.3",
+      },
+    },
   },
   "packages": {
     "@ai-sdk/provider": ["@ai-sdk/provider@2.0.3", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-h88OPkavHTiN9tMn2l5awAznGB0lXzjcLhgR1/rvjB2zlLprsNxbM2tt6OJsHUxduLC3klq0/eqaSf6fX5XVww=="],
@@ -41,7 +78,13 @@
 
     "@anthropic-ai/sdk": ["@anthropic-ai/sdk@0.92.0", "", { "dependencies": { "json-schema-to-ts": "^3.1.1" }, "peerDependencies": { "zod": "^3.25.0 || ^4.0.0" }, "optionalPeers": ["zod"], "bin": { "anthropic-ai-sdk": "bin/cli" } }, "sha512-l653JFC83wCglH8H83t1xpgDurCyPyslYW1maPRdCsfuNuGbLvQjQ81sWd3Go3LWRm0jNspzAhuqAYV8r9joSw=="],
 
+    "@argohq/adapter-claude": ["@argohq/adapter-claude@workspace:packages/adapter-claude"],
+
+    "@argohq/core": ["@argohq/core@workspace:packages/core"],
+
     "@argohq/kit": ["@argohq/kit@workspace:packages/kit"],
+
+    "@argohq/pack-design": ["@argohq/pack-design@workspace:packages/pack-design"],
 
     "@ast-grep/lang-go": ["@ast-grep/lang-go@0.0.6", "", { "dependencies": { "@ast-grep/setup-lang": "0.0.6" }, "peerDependencies": { "tree-sitter-cli": "0.25.8" }, "optionalPeers": ["tree-sitter-cli"] }, "sha512-PZap9Rp6t+YKbLjRnFRF5aGBX3/HV9s5Rp7ZPsCM+o3tlTZDo1IqDYnFu+Oeh5Razs2U8K8ccPSJ+GBxalVhWg=="],
 

@@ -1,5 +1,5 @@
 {
-  "description": "Argo guardrails — plugin-side SAFETY hooks (destructive-git, pipe-to-shell, shell-source-write, lockfile, designer-spawn, session context) run verbatim from this directory; every kit GATE (red-proof, trust, design-commit, design-coverage, format-on-write, test-smell, design-guard) is dispatched through hooks/kit-dispatch.mjs — fail-closed (exit 2) when the project declares @argohq/kit but it is missing, allow-with-warning when the project is not argo-initialized so bootstrap (bun install) can proceed.",
+  "description": "Argo guardrails — plugin-side SAFETY hooks (destructive-git, pipe-to-shell, shell-source-write, lockfile, designer-spawn, session context) run verbatim from this directory; every kit GATE (red-proof, trust, design-commit, design-coverage, format-on-write, test-smell, workflow-permission) is dispatched through hooks/kit-dispatch.mjs — fail-closed (exit 2) when the project declares @argohq/kit but it is missing, allow-with-warning when the project is not argo-initialized so bootstrap (bun install) can proceed. workflow-permission runs on EVERY PreToolUse call (matcher \"*\"), after the unconditional safety-hook floor above, since @argohq/adapter-claude's permission hook needs to see Bash/Edit/Write/Figma calls alike to enforce an active workflow's stage allow-list; it replaces the retired design-guard record/stop hooks (workflow-engine-phase1.md Slice 13).",
   "hooks": {
     "PreToolUse": [
       {
@@ -51,6 +51,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/kit-dispatch.mjs\" workflow-permission",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -73,38 +83,6 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/kit-dispatch.mjs\" post-edit-write",
             "timeout": 15
-          }
-        ]
-      },
-      {
-        "matcher": "mcp__plugin_figma_figma__use_figma",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/kit-dispatch.mjs\" design-guard-record",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/kit-dispatch.mjs\" design-guard-stop",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/kit-dispatch.mjs\" design-guard-stop",
-            "timeout": 5
           }
         ]
       }

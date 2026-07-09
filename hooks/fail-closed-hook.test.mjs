@@ -71,7 +71,7 @@ function runWrapper(command, cwd, toolCommand) {
 describe('fail-closed hook wrappers', () => {
   it('hooks.json routes every kit gate through the kit-dispatch dispatcher, never raw npx', () => {
     expect(bashWrapper, 'no kit-dispatch bash-pretooluse wrapper found in hooks.json').toBeTruthy()
-    expect(kitWrappers.length).toBeGreaterThanOrEqual(4) // bash-pretooluse, post-edit-write, design-guard-record, design-guard-stop ×2
+    expect(kitWrappers.length).toBeGreaterThanOrEqual(3) // bash-pretooluse, post-edit-write, workflow-permission (design-guard retired, Slice 13)
     for (const cmd of allCommands(hooksJson)) {
       expect(cmd, `raw npx kit wrapper survives in hooks.json: ${cmd}`).not.toContain('npx')
     }

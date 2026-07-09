@@ -19,7 +19,12 @@ const SAFETY_GUARDS = ['block-dangerous-git.sh', 'check-pipe-to-shell.mjs', 'blo
 function guardsForTool(toolName) {
   const out = []
   for (const entry of hooksJson.hooks.PreToolUse) {
-    if (new RegExp(`^(${entry.matcher})$`).test(toolName)) {
+    // "*" is the plugin format's documented "match every tool" wildcard, not
+    // a regex literal (as a bare regex, `*` throws — "nothing to repeat") —
+    // the workflow-permission entry uses it because @argohq/adapter-claude's
+    // generic permission hook must see every tool call, not just Bash/Monitor.
+    const matches = entry.matcher === '*' ? true : new RegExp(`^(${entry.matcher})$`).test(toolName)
+    if (matches) {
       for (const h of entry.hooks) out.push(h.command)
     }
   }

@@ -49,6 +49,10 @@
       "types": "./dist/design-kit/completeness-checklist.d.ts",
       "default": "./dist/design-kit/completeness-checklist.js"
     },
+    "./design-kit/schemas": {
+      "types": "./dist/design-kit/schemas.d.ts",
+      "default": "./dist/design-kit/schemas.js"
+    },
     "./design-kit/shadcn-tailwind": {
       "types": "./dist/recipes/shadcn-tailwind/index.d.ts",
       "default": "./dist/recipes/shadcn-tailwind/index.js"
@@ -60,6 +64,18 @@
     "./design-kit/shadcn-tailwind/tier0-walker": {
       "types": "./dist/recipes/shadcn-tailwind/tier0-walker.d.ts",
       "default": "./dist/recipes/shadcn-tailwind/tier0-walker.js"
+    },
+    "./skill-scripts/bundle-tier0-audit": {
+      "types": "./dist/skill-scripts/bundle-tier0-audit.d.ts",
+      "default": "./dist/skill-scripts/bundle-tier0-audit.js"
+    },
+    "./skill-scripts/register-screen": {
+      "types": "./dist/skill-scripts/register-screen.d.ts",
+      "default": "./dist/skill-scripts/register-screen.js"
+    },
+    "./skill-scripts/pull-registry": {
+      "types": "./dist/skill-scripts/pull-registry.d.ts",
+      "default": "./dist/skill-scripts/pull-registry.js"
     },
     "./walkers": {
       "types": "./dist/walkers/index.d.ts",
@@ -79,6 +95,8 @@
     "access": "public"
   },
   "dependencies": {
+    "@argohq/adapter-claude": "workspace:*",
+    "@argohq/core": "workspace:*",
     "tdd-guard": "^1.7.0",
     "wcag-contrast": "^3.0.0",
     "zod": "^3.23.8"

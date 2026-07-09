@@ -82,6 +82,19 @@ export interface ManifestValidationResult {
   blocked: boolean
   schemaErrors: string[]
   rows: ValidatedManifestRow[]
+  /**
+   * Requirements-coverage lint: PRD requirement ids (matrix `covered-by` this
+   * screen, Visible-in-build yes/partial) that NO manifest row references.
+   * Non-empty blocks — a brief-required composite simply absent from the
+   * manifest is the measured seam validate-manifest previously couldn't see
+   * (it only checked listed rows). Empty when the check is inert (no
+   * `requiredRequirements` passed).
+   */
+  uncoveredRequirements: string[]
+}
+
+function normalizeRequirementRef(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '')
 }
 
 /**
@@ -91,14 +104,30 @@ export interface ManifestValidationResult {
  */
 export function validateBindingManifest(
   manifest: unknown,
-  { registry, confusablePairs }: { registry: any; confusablePairs?: unknown }
+  {
+    registry,
+    confusablePairs,
+    requiredRequirements
+  }: {
+    registry: any
+    confusablePairs?: unknown
+    /**
+     * Requirements-coverage input (the manifest coverage lint): the PRD
+     * requirements this screen must realize (matrix `covered-by` this screen,
+     * Visible-in-build yes/partial — `selectChecklistForScreen`'s output).
+     * Every entry must be referenced by at least one manifest row; an
+     * uncovered requirement blocks. Omitted → the check is inert.
+     */
+    requiredRequirements?: { id: string }[]
+  }
 ): ManifestValidationResult {
   const parsed = BindingManifestSchema.safeParse(manifest)
   if (!parsed.success) {
     return {
       blocked: true,
       schemaErrors: parsed.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`),
-      rows: []
+      rows: [],
+      uncoveredRequirements: []
     }
   }
 
@@ -142,5 +171,18 @@ export function validateBindingManifest(
     return { requirement: row.requirement, component: row.component, tier, confusablePairsHit, blocks }
   })
 
-  return { blocked: rows.some((r) => r.blocks.length > 0), schemaErrors: [], rows }
+  const rowRefs = parsed.data.rows.map((r) => normalizeRequirementRef(r.requirement))
+  const uncoveredRequirements = (requiredRequirements ?? [])
+    .filter(({ id }) => {
+      const key = normalizeRequirementRef(id)
+      return key !== '' && !rowRefs.some((ref) => ref === key || ref.includes(key))
+    })
+    .map(({ id }) => id)
+
+  return {
+    blocked: rows.some((r) => r.blocks.length > 0) || uncoveredRequirements.length > 0,
+    schemaErrors: [],
+    rows,
+    uncoveredRequirements
+  }
 }

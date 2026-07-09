@@ -105,4 +105,87 @@ describe('parseCliArgs', () => {
     expect(() => parseCliArgs(['--bogus'])).toThrow(/unrecognized/)
     expect(parseCliArgs(['--help'])).toEqual({ help: true })
   })
+
+  it('parses --prd', () => {
+    expect(parseCliArgs(['--manifest', 'm.json', '--prd', 'prd.md'])).toEqual({
+      manifestPath: 'm.json',
+      cwd: undefined,
+      prdPath: 'prd.md'
+    })
+  })
+})
+
+describe('runValidateManifest --prd requirements coverage', () => {
+  const prd = `
+## Requirements
+
+| ID      | Requirement                | Acceptance | Visible in build? |
+| ------- | -------------------------- | ---------- | ----------------- |
+| FEAT-R1 | tree region visible        | a          | yes               |
+| FEAT-R2 | routing target indicator   | a          | yes               |
+| FEAT-R3 | background job             | a          | no                |
+
+## Feature→screen matrix
+
+| Requirement | Disposition       |
+| ----------- | ----------------- |
+| FEAT-R1     | covered-by: D03   |
+| FEAT-R2     | covered-by: D03   |
+| FEAT-R3     | deferred: later   |
+`
+
+  it('blocks when a PRD requirement covered-by the screen has no manifest row, citing the id', () => {
+    const cwd = setup()
+    const prdPath = join(cwd, 'prd.md')
+    writeFileSync(prdPath, prd, 'utf8')
+    const path = writeManifest(cwd, {
+      screen: 'D03',
+      rows: [{ requirement: 'FEAT-R1', component: 'WorkflowsSection', purpose: 'tree region' }]
+    })
+    try {
+      const result = runValidateManifest({ manifestPath: path, cwd, prdPath })
+      expect(result.blocked).toBe(true)
+      expect(result.uncoveredRequirements).toEqual(['FEAT-R2'])
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('passes when every covered-by requirement is referenced (Visible=no rows exempt)', () => {
+    const cwd = setup()
+    const prdPath = join(cwd, 'prd.md')
+    writeFileSync(prdPath, prd, 'utf8')
+    const path = writeManifest(cwd, {
+      screen: 'D03',
+      rows: [
+        { requirement: 'FEAT-R1', component: 'WorkflowsSection', purpose: 'tree region', justification: 'the pair rule names it' },
+        {
+          requirement: 'FEAT-R2',
+          component: 'TreeNode',
+          purpose: 'indicator row',
+          justification: 'indicator is a single row, not the assembled workflows region'
+        }
+      ]
+    })
+    try {
+      const result = runValidateManifest({ manifestPath: path, cwd, prdPath })
+      expect(result.blocked).toBe(false)
+      expect(result.uncoveredRequirements).toEqual([])
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('throws (fail closed) when --prd points at a missing file', () => {
+    const cwd = setup()
+    const path = writeManifest(cwd, {
+      screen: 'D03',
+      rows: [{ requirement: 'R1', component: 'WorkflowsSection', purpose: 'p' }]
+    })
+    try {
+      expect(() => runValidateManifest({ manifestPath: path, cwd, prdPath: join(cwd, 'nope.md') })).toThrow(/PRD/)
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
 })

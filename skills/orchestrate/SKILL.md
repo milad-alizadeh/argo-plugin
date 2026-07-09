@@ -120,9 +120,12 @@ mechanisms close those gaps without new tooling.
   (mirrors the builder no-wrapper rule in §1). The leaf rule itself lives in
   `agents/designer.md` (R1) and is backstopped by a hook there; this section
   only states the supervisor's obligation.
-- **Independent screen verification (blind, supervisor-spawned).** A screen
-  build is NOT done when the designer reports done, and the supervisor must
-  never perform the fidelity comparison itself: it has already read the
+- **Independent screen verification (blind, supervisor-spawned) — the
+  draft → verify → fix loop.** A screen build is NOT done when the designer
+  reports: the designer reports **DRAFT** and requests verification
+  (design-screen §4c), and the supervisor **holds that designer session
+  open** — designer-done is the end of the loop, not the trigger for it.
+  The supervisor must never perform the fidelity comparison itself: it has already read the
   builder's report and cannot un-read it (the same contamination
   `agents/design-verifier.md` bars for completeness). Instead the supervisor
   spawns `argo:fidelity-verifier`, a blind fidelity check given ONLY the
@@ -146,8 +149,14 @@ mechanisms close those gaps without new tooling.
   image at identical frame size, per its own contract. Both stay **blind**
   (never the transcript, never the self-report), **mandatory**, and at
   their **full model tier** — narrow the scope, never the capability;
-  open-ended blind detection is the only reliable catch. Route findings
-  through the R9 lanes as ONE numbered fix list; the building agent's
+  open-ended blind detection is the only reliable catch. **Route the
+  verifier's findings back to the SAME designer session** (hot context —
+  never a fresh session that re-pays the cold-start) via SendMessage, through
+  the R9 lanes as **ONE numbered fix list** with the act-and-continue rider;
+  the designer applies the fixes, re-runs its single tier-0 re-audit, and
+  only then reports done. **EXACTLY ONE verify→fix round is budgeted per
+  screen: if the second blind check still fails, escalate to the human with
+  both verifier reports — never loop unbounded.** The building agent's
   self-audit and montage are inputs, never the acceptance. A live screen
   shipped with four such defects past its own clean self-report.
 - **Two feedback lanes (R9).** Classify every ruling into exactly one lane
@@ -178,10 +187,11 @@ mechanisms close those gaps without new tooling.
   covered / deferred / **UNACCOUNTED (must be 0 to land)** / MISSING, PRD
   requirements present / **absent (must be 0)**, dishonest deferrals, and
   anti-recreation collisions, a screen with UNACCOUNTED>0 or absent>0 is FAILED
-  regardless of tier-0. The supervisor MUST also track the **first-pass
-  blind-verify-clean rate** — the fraction of screens whose supervisor-spawned
-  blind verification passed with zero findings on the first attempt — as the
-  batch success metric.
+  regardless of tier-0. The supervisor MUST also track the **clean after ≤1 fix
+  round rate** — the fraction of screens whose supervisor-spawned blind
+  verification was clean either first-pass or after the single budgeted
+  verify→fix round — as the batch success metric (first-pass perfection is
+  measured-unreachable; cheapest-loop-to-clean is what is optimized).
 - **Dropped:** seed-injection of a node-id context pack at spawn time -
   deferred until a companion artifact for it is designed; the near-term
   cold-start cost is covered by the registry read-order in

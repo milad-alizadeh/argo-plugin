@@ -79,15 +79,27 @@ authoring turn (design-phase-quality-plan.md W1). Per screen, BEFORE touching
    `alternatesConsidered` and pick by `whenToUse` overlap, recording the
    one-line comparison in `justification`.
 2. Emit `design/<wave>/copy-deck.json` (schema: `CopyDeckSchema`) from the
-   PRD's wave-scoped Copy deck section. ALL authored canvas text comes from
-   this deck; a string the deck doesn't carry → **STOP AND ASK** (never invent
-   filler); any string used in >1 region rides the `sharedTerms` block and is
-   referenced by key, never retyped.
-3. Run `argo design validate-manifest --manifest <path> --cwd <app-dir>` —
+   PRD's wave-scoped Copy deck section. **Provenance is the contract: the
+   deck is authored from the BRIEF/PRD ONLY, BEFORE any canvas read.** ALL
+   authored canvas text comes from this deck; a string the deck doesn't
+   carry → **STOP AND ASK** (never invent filler); any string used in >1
+   region rides the `sharedTerms` block and is referenced by key, never
+   retyped. **Anti-pattern (measured failure): never add deck entries to
+   make existing canvas text pass.** Text found on a cloned shell that is
+   not in the deck is a DEFECT to fix — retitle it to the deck's copy — not
+   an entry to add; a deck authored from the canvas launders stale clone
+   text straight through rule #13.
+3. Run `argo design validate-manifest --manifest <path> --cwd <app-dir>
+   --prd <prd-path>` —
    the independent check ON the decision (W2). It lints every row against
    `design/registry.json` (existence), applies the committed
    `design/confusable-pairs.json` table (a row on a known confused pair needs
-   an explicit `justification`), and applies the three-tier guardrail below.
+   an explicit `justification`), applies the three-tier guardrail below, and —
+   with `--prd` — the **requirements-coverage check**: every PRD requirement
+   the matrix disposes `covered-by` this screen (Visible-in-build yes/partial)
+   must be referenced by at least one manifest row; an uncovered requirement
+   blocks with its id (a required composite simply absent from the manifest
+   was the measured seam a rows-only lint could not see).
    **Exit 1 = blocked: STOP AND ASK the human — do not build.** Moving the
    decision earlier without checking it just relocates the error.
 
@@ -215,8 +227,34 @@ No frozen contract; completeness is a cheap layered check:
   never on what it found; closes the D01 "silent because skipped" gap without
   content-blocking). For a pure recompose of banked instances, (a) alone may
   suffice; for a NEW composite or high PRD-REQ density, always run (b).
-- **(c) You** make the ship call, informed by (a) + (b). Never cut the visual
-  self-review round.
+- **(c) Draft → blind verify → fix (the accepted loop — a screen is never
+  done on its first clean pass).** Seven measured rounds showed every
+  structural gate gets satisfied formally while defects move to the nearest
+  unchecked seam; first-pass blind-verify-clean stayed at 0. So the
+  architecture stops optimizing for first-pass perfection and optimizes the
+  cheapest loop to clean:
+  1. After the build + tier-0 pass + checks (a)/(b), the designer marks the
+     screen **DRAFT** — not done — and **requests verification** in its
+     report.
+  2. The supervisor spawns the blind `fidelity-verifier` exactly as today
+     (blind stays blind: screenshot + brief/reference only, never the
+     transcript, never the self-report — see orchestrate §5).
+  3. The verifier's findings come back to the **SAME designer session** (hot
+     context, via SendMessage with the act-and-continue rider) as **ONE
+     numbered fix list**. The designer applies the fixes, re-runs the single
+     tier-0 re-audit (the prime/replay re-run after actual fixes — still one
+     mechanical pass, not a repeat sweep), and only then reports **done**.
+  4. **EXACTLY ONE verify→fix round is budgeted.** If the second blind check
+     still fails, escalate to the human with both verifier reports — never
+     loop unbounded.
+- **Standalone contract (no supervisor).** When this skill runs without an
+  orchestrating supervisor, there is no blind verifier to spawn — and the
+  designer must NOT self-verify and self-approve (it has read its own build
+  and cannot un-read it). Instead: present the DRAFT screenshot to the human
+  and ask them to review it (or to explicitly accept draft state). Done is
+  the human's call in standalone mode.
+- **(d) You** make the ship call, informed by (a) + (b) + the verify→fix
+  round. Never cut the visual self-review round.
 
 ## 5. Land (P5)
 figma-sync → committed artifacts; the integrator commits the design worktree.

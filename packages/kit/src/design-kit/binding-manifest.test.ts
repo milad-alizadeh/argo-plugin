@@ -155,3 +155,48 @@ describe('validateBindingManifest', () => {
     expect(result.rows[1].blocks.length).toBe(1)
   })
 })
+
+describe('requirements coverage (manifest coverage lint)', () => {
+  const manifest = (rows: any[]) => ({ screen: 'D03', rows })
+  const checklist = [
+    { id: 'FEAT-R1', requirement: 'diff visible', acceptance: 'a', visible: 'yes' },
+    { id: 'FEAT-R2', requirement: 'routing target indicator', acceptance: 'a', visible: 'yes' }
+  ]
+
+  it('blocks when a checklist requirement is referenced by no manifest row, citing the row id', () => {
+    const result = validateBindingManifest(manifest([row()]), { registry, confusablePairs, requiredRequirements: checklist })
+    expect(result.blocked).toBe(true)
+    expect(result.uncoveredRequirements).toEqual(['FEAT-R2'])
+  })
+
+  it('passes when every checklist requirement is referenced by at least one row', () => {
+    const result = validateBindingManifest(
+      manifest([
+        row(),
+        {
+          requirement: 'FEAT-R2',
+          component: 'WorkflowsSection',
+          purpose: 'routing indicator region',
+          justification: 'assembled workflows region, not a single row'
+        }
+      ]),
+      { registry, confusablePairs, requiredRequirements: checklist }
+    )
+    expect(result.blocked).toBe(false)
+    expect(result.uncoveredRequirements).toEqual([])
+  })
+
+  it('matches requirement references tolerantly (normalized, id embedded in a longer reference)', () => {
+    const result = validateBindingManifest(
+      manifest([row({ requirement: 'feat r1 (header diff)' }), row({ requirement: 'FEAT-R2 · indicator' })]),
+      { registry, confusablePairs, requiredRequirements: checklist }
+    )
+    expect(result.uncoveredRequirements).toEqual([])
+  })
+
+  it('no requiredRequirements option → coverage check inert, result carries an empty list', () => {
+    const result = validateBindingManifest(manifest([row()]), { registry, confusablePairs })
+    expect(result.blocked).toBe(false)
+    expect(result.uncoveredRequirements).toEqual([])
+  })
+})

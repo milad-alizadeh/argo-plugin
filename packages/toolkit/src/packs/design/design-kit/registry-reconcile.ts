@@ -42,7 +42,7 @@ export function isDividerPageName(pageName: string): boolean {
  * a page whose name matches any of these is never a kit page, regardless of
  * where it sits. A pattern is either an exact name or a `*`-glob (only `*`
  * is special; e.g. `*Icons` matches `Lucide Icons`/`HugeIcons`). Config lives
- * in `.claude/argo.json`'s `design.<app>.nonKitPages`; when absent it
+ * in `.argo/config.json`'s `design.<app>.nonKitPages`; when absent it
  * defaults to `DEFAULT_NON_KIT_PAGE_PATTERNS` (the icon-library convention).
  * Files change per project, so this is config, not a hardcoded list.
  */

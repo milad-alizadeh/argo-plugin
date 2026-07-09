@@ -168,9 +168,11 @@ capability. Same shape as the adapter-owned classifier seam: one interface, not 
   Codex adapter inherits it for free. Without it, "written by the engine and gates only"
   is a convention an agent can defeat with one `file-edit`.
 - ONE generic PreToolUse hook (matcher `*`): read active instance from state (session-
-  cached) → no active playbook ⇒ config decides (`noPlaybook: "allow" | "deny-edits"`
-  in `.argo/config.json`; default allow — argo never blocks a human tinkering; deny for
-  autonomous projects: no coding outside a playbook, hook coaches "start one") →
+  cached) → no active playbook ⇒ config decides (`noPlaybook: "allow" | "coach" |
+  "deny-edits"` in `.argo/config.json`; default allow — argo never blocks a human
+  tinkering; coach allows the edit but injects advisory context suggesting a playbook
+  start — recommended for argo projects; deny for autonomous projects: no coding
+  outside a playbook, hook coaches "start one") →
   protected-path check → classify → membership check → deny with a coaching message
   naming the stage, the rule, and the correct path.
 - Replaces design-guard and session-guard outright. Composes with (only narrows, never

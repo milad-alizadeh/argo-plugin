@@ -1,19 +1,23 @@
 # Phase 2 (first items): playbook rename + naming sweep + structure + PRD wireframes
 
-Status: planned. Runs AFTER the phase-1 build (`playbook-engine-phase1.md`)
+Status: in progress. Runs AFTER the phase-1 build (`playbook-engine-phase1.md`)
 lands and merges — never concurrently with it. Items:
 
-1. Rename "workflow" → "playbook" across the engine (mechanical pass).
-2. HTML wireframes replace ASCII in write-prd step 5c.
-3. Naming sweep: package renames (`kit` → `toolkit`,
-   `adapter-claude` → `claude-adapter-plugin`) + finish the tier0 →
-   design-rules rename that stalled at the gate surface.
-4. Folder hierarchy restructure (kill the flat-file sprawl) + make the
-   file-structure rule reach builders working in THIS repo.
+1. Rename "workflow" → "playbook" across the engine (mechanical pass). — DONE
+2. HTML wireframes replace ASCII in write-prd step 5c. — DONE
+3. Naming sweep: single-package consolidation (`@argohq/toolkit`) + finish
+   the tier0 → design-rules rename that stalled at the gate surface. — DONE
+4. Folder hierarchy restructure — package-level part DONE (superseded by
+   item 3's one-package layout); remaining: design-kit/skill-scripts/bin
+   grouping. Rules-install + planner File-layout root-cause fixes DONE.
+5. Consolidate into `.argo/` + plan lifecycle — in progress.
 
-Items 1 and 3 touch the same files — run them as one commit train.
+Items 1 and 3 touched the same files — ran as one commit train.
 
-## Item 1: rename "workflow" → "playbook"
+## Item 1: rename "workflow" → "playbook" — DONE
+
+Verified: `grep -ri workflow packages/toolkit/src` returns nothing engine-named;
+types, CLI verbs, state keys, playbook files all say playbook/run.
 
 Phase 1 builds with the old name as written; this rename is a single
 mechanical pass on top.
@@ -85,7 +89,14 @@ references to Claude's dynamic workflows, each in a context that says so,
 and (b) nothing in exported type names, CLI verbs, file names, or state
 keys. Full `bun run typecheck && bun run test` green.
 
-## Item 2: HTML wireframes replace ASCII (write-prd step 5c)
+## Item 2: HTML wireframes replace ASCII (write-prd step 5c) — DONE
+
+Implemented 2026-07-09: write-prd SKILL.md step 5c rewritten (HTML wireframe
+file + Artifact publish + live iteration), `templates/product/prd.md`'s
+`ASCII wireframe + flow` section replaced by a `Wireframe + flow` pointer
+section, and every downstream "PRD's ASCII wireframe" reference repointed
+(design-screen, orchestrate, grill-me, product, fidelity-verifier,
+screen-brief template).
 
 One medium, not two: the layout sign-off contract becomes a lo-fi HTML
 wireframe file, and Claude Code's Artifact publishing is how the human
@@ -131,7 +142,11 @@ color values, no font declarations beyond defaults); every screen and
 flow edge the PRD names appears in the wireframe; artifact publish
 succeeds and a file edit + republish updates the same URL.
 
-## Item 3: naming sweep — packages + tier0 residue
+## Item 3: naming sweep — packages + tier0 residue — DONE
+
+Verified: `grep -ri "tier0\|tier-0\|@argohq/kit\b"` over `packages/ skills/
+agents/ hooks/ templates/` returns nothing; the single package is
+`@argohq/toolkit` with the subpath exports below.
 
 ### Decision (owner, 2026-07-09; revised same day: ONE package) — BUILT
 
@@ -179,37 +194,45 @@ templates/` returns nothing (except historical plan docs under
 `.claude/plans/done/`). `bun run typecheck && bun run test` green; a
 smoke run of the design-rules check against the fixture suite passes.
 
-## Item 4: folder hierarchy restructure
+## Item 4: folder hierarchy restructure — PARTIALLY DONE
 
-Kill the flat-file sprawl; group by domain, not type (per
-`templates/rules/file-structure.md`: 5+ peer files → domain subfolder,
-kebab-case folders, index.ts orchestrator barrels, max 2 levels).
+**Superseded/done: the package-level restructure.** Item 3's one-package
+decision executed it: `packages/toolkit` with `src/core/`,
+`src/packs/design/`, `src/packs/code/`, `src/adapter-claude/`, `src/cli/`,
+`src/config/`, `src/lib/` — a single `@argohq/toolkit` with subpath exports.
+The old `packages/core` / `packages/pack-design` sub-items below are void.
 
-- `packages/toolkit/src/design-kit/` (~30 flat files) → subfolders:
-  `audit/` (rules, walker, comparator, conversion-table), `registry/`
-  (reconcile, pull), `manifest/` (binding-manifest, schemas, validate),
-  plus `completeness/`, `copy-deck/`, `staleness/` as they group.
-- `packages/toolkit/src/skill-scripts/` (~30 flat scripts) → grouped by
-  the skill/domain they serve.
-- `packages/toolkit/bin/argo.js` (single 7.4K file) → `cli/` with one
-  module per subcommand (pack-design's `cli/` already models this).
-- `packages/core/src/` (8 flat modules) → group as the engine's domains
-  settle post-phase-1.
+**Root-cause fixes — DONE (2026-07-09):**
 
-Root causes fixed in the same item so it doesn't regress:
+- `.claude/rules/` installed into the argo-plugin repo itself, adapted from
+  `templates/rules/`: file-structure (with this repo's `src/` domain seams
+  spelled out), testing, typescript-style, dependencies. design-system and
+  ui-components skipped — no UI surface here.
+- `agents/planner.md` PLAN CONTENTS now requires a **File layout** section
+  (target folder tree; new flat peers in an existing module root are a plan
+  defect).
 
-- Install `.claude/rules/` into the argo-plugin repo itself (it ships
-  the templates but never ran /argo:init on itself — builders here never
-  see the file-structure rule).
-- Planner prompt/plan template gains a required "File layout" section
-  (target folder tree) so builders stop minting flat paths ad hoc.
+**Still live — intra-folder grouping (group by domain, not type, per
+`.claude/rules/file-structure.md`: 5+ peer files → domain subfolder,
+kebab-case folders, index.ts orchestrator barrels, max 2 levels):**
 
-### Verification
+- `packages/toolkit/src/packs/design/design-kit/` (~30 flat files) →
+  subfolders: `audit/` (rules, walker, comparator, conversion-table),
+  `registry/` (reconcile, pull), `manifest/` (binding-manifest, schemas,
+  validate), plus `completeness/`, `copy-deck/`, `staleness/` as they group.
+- `packages/toolkit/src/packs/design/skill-scripts/` (~30 flat scripts) →
+  grouped by the skill/domain they serve.
+- `packages/toolkit/bin/argo.js` (single ~8K file) → thin shim delegating to
+  `src/cli/` with one module per subcommand (`src/cli/` already models this).
+- `packages/toolkit/src/core/` (8 flat modules) → group as the engine's
+  domains settle.
+
+### Verification (for the still-live part)
 
 No source folder with 10+ flat peer files mixing domains; imports go
-through domain barrels; `bun run typecheck && bun run test` green;
-`.claude/rules/file-structure.md` present in the plugin repo; planner
-template contains the File layout section.
+through domain barrels; `bun run typecheck && bun run test` green.
+Done-part verification: `.claude/rules/file-structure.md` present in the
+plugin repo; planner agent contains the required File layout section.
 
 ## Item 5: consolidate into `.argo/` + plan lifecycle (owner, 2026-07-09)
 
@@ -355,3 +378,26 @@ Plans stay in git forever; history is the archive.
   pointers (fixture).
 - `.argo/evidence/` gitignored, `figma-token` still ignored, everything
   re-included in `.argo/` committed.
+
+## Item 6: `noWorkflow: "coach"` mode + init question (queued 2026-07-09)
+
+Add a middle mode to the playbook-permission hook's `noWorkflow` policy,
+between `allow` and `deny-edits`:
+
+- **`coach`** — on a bare mutating edit with no run attached, the hook does
+  NOT block; it lets the edit through and injects advisory context:
+  "this looks like <playbook> work — consider `argo playbook start <slug>
+  --target <t>`". Same detection logic as deny-edits, different verdict
+  (allow + message instead of deny + message).
+- Ladder: `allow` (plugin default — safe for existing repos, opinionated
+  but non-breaking) → `coach` (recommended for argo projects while the
+  playbook catalog matures) → `deny-edits` (delegated/hands-off projects:
+  no mutation without a gated run).
+- `/argo:init` asks for the mode when writing `.claude/argo.json`,
+  recommending `coach`; absent/unanswered → `allow`. Existing projects
+  change it by editing `.claude/argo.json` directly (no re-init needed).
+- Tests: fixture per mode through the permission hook (allow silent,
+  coach allows + injects, deny-edits denies + coaches); config default
+  fixture (missing key → allow).
+
+Depends on item 5 landing first (hook + config resolver are mid-change).

@@ -5,7 +5,7 @@
  * Bash, enforcing only `git commit` commands.
  *
  * SELF-SCOPING (same contract as red-proof-gate): entirely inert unless
- * `.argo/build-mode.json` exists in the session cwd AND marks the current slice
+ * `.argo/evidence/build-mode.json` exists in the session cwd AND marks the current slice
  * `requiresLaunch: true`. The build-plan skill maintains that marker; outside a
  * gated build — normal commits, non-Argo host projects — this hook always exits 0.
  * The gate is Argo-runtime-specific by design: the receipt is written by the Argo
@@ -16,8 +16,8 @@
  * The only path to exit 0 is a receipt proving the app launched AND did something
  * observable (an OSC-777 prompt_submit/stop or an MCP report_status).
  *
- * Receipt search: `<cwd>/.argo/launch-receipt.json`, then one workspace level down
- * (`<cwd>/apps/<ws>/.argo/...`) — the launched app writes the receipt relative to
+ * Receipt search: `<cwd>/.argo/evidence/launch-receipt.json`, then one workspace level
+ * down (`<cwd>/apps/<ws>/.argo/evidence/...`) — the launched app writes the receipt relative to
  * ITS OWN cwd, which in a monorepo is the workspace dir, not the repo root.
  *
  * Exit 0 → PASS (land allowed). Exit 2 → BLOCK (RED), reason on stderr.
@@ -37,6 +37,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { buildModePath, launchReceiptPath } from '../../config/argo-paths.js'
 
 const MAX_RECEIPT_AGE_MS = 10 * 60 * 1000 // a receipt older than this is stale → BLOCK
 
@@ -115,7 +116,7 @@ function effectiveRepoDir(command: string, cwd: string): string {
 }
 
 const repoDir = effectiveRepoDir(command, cwd)
-const markerPath = join(repoDir, '.argo', 'build-mode.json')
+const markerPath = buildModePath(repoDir)
 if (!existsSync(markerPath)) process.exit(0) // not a gated build — inert
 
 // From here on: gated build → fail closed (default-deny).
@@ -130,12 +131,12 @@ try {
 if (mode?.requiresLaunch !== true) process.exit(0)
 
 function findReceipt(root: string): string | null {
-  const direct = join(root, '.argo', 'launch-receipt.json')
+  const direct = launchReceiptPath(root)
   if (existsSync(direct)) return direct
   const appsDir = join(root, 'apps')
   try {
     for (const ws of readdirSync(appsDir)) {
-      const p = join(appsDir, ws, '.argo', 'launch-receipt.json')
+      const p = launchReceiptPath(join(appsDir, ws))
       if (existsSync(p)) return p
     }
   } catch {

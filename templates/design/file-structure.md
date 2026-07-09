@@ -25,7 +25,7 @@ point here instead of restating it.
 
    **Category shelves (design-memory-placement.md Mechanism 1).** Within
    this page, each category in the app's `design.<app>` block's
-   `componentCategories` (in `.claude/argo.json`)
+   `componentCategories` (in `.argo/config.json`)
    (a closed, project-defined enum — see `packages/figma-design-kit/
    component-categories.js`) is rendered as its own named **Auto-Layout
    WRAP frame**: `layoutMode: 'HORIZONTAL'`, `layoutWrap: 'WRAP'`, a FIXED

@@ -5,7 +5,7 @@
  * comparators, per-mode differential checks) — a kit upgrade updates the
  * gate logic without re-templating, and a host-side rename can't fork it.
  * Prefer generating this file with `argo design emit-shims` (reads
- * .claude/argo.json design.<app>.walkers); the {{…}} slots exist for manual
+ * .argo/config.json design.<app>.walkers); the {{…}} slots exist for manual
  * installs by the setup-design skill.
  */
 import { runSpecDiffWalker } from '@argohq/toolkit/walkers'

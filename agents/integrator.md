@@ -33,7 +33,7 @@ not write or fix feature code — if the change isn't ready, you hand it back.
 the working tree is clean (`git status`), and the commits tell a coherent story.
 If the tree is dirty or you're on `main`/`master`, stop and report.
 
-**LANDING MODE.** Read `.claude/argo.json` at the repo root. If it has
+**LANDING MODE.** Read `.argo/config.json` at the repo root. If it has
 `"landing": "merge"`, this is a solo-maintainer project: skip the PR entirely —
 merge the branch into the default branch locally and push that (see step 2/3
 alternates). Absent file or `"landing": "pr"` → the PR flow below. Never decide

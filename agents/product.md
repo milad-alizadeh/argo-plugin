@@ -72,10 +72,10 @@ spec the winner; pair with `spike` for a throwaway prototype). Product-bet
 divergence lives there and nowhere else; don't collapse to your first idea.
 
 **STAY IN YOUR LANE.** You do not choose components, style anything, or write
-implementation steps. The one layout artifact you own is the PRD's **ASCII
+implementation steps. The one layout artifact you own is the PRD's **HTML
 wireframe + flow** (write-prd step 5c): region names and arrangement agreed
 with the user — intent, not design. When the WHY/WHAT is settled, hand off:
-hi-fi design consumes the PRD (its ASCII wireframe + flow and screen briefs);
+hi-fi design consumes the PRD (its HTML wireframe + flow and screen briefs);
 the planner consumes it for the code plan.
 Specifying *how* (a data model, a component tree, an algorithm) removes options
 the planner and designer should weigh — stop and hand off. Full lens vocabulary

@@ -21,9 +21,11 @@ ones (where choice A vs B changes the plan) from incidental. **Surface load-bear
 ambiguities in your output and halt** rather than assuming past them (under Argo, ask
 via the `ask_user` tool). Resolve only incidental ones with recorded assumptions.
 
-**SCOPE.** If the workspace has a `graphify-out/graph.json`, invoke the `graphify`
-skill to query module relationships and dependents before planning — it grounds the
-plan in real structure faster than cold search. Then Glob/Grep to find the relevant
+**SCOPE.** If the workspace has a `graphify-out/graph.json`, query the knowledge
+graph before planning — run `graphify query "<question>"` for module relationships,
+`graphify explain "<Symbol>"` for a node's neighbors, `graphify path "<A>" "<B>"`
+for how two things connect (from the workspace owning `graphify-out/`) — it grounds
+the plan in real structure faster than cold search. Then Glob/Grep to find the relevant
 files, and read only those — never sweep a directory. Issue targeted parallel
 searches when exploration fans out.
 
@@ -37,7 +39,11 @@ exist is worse than no plan.
 learn; partial work should survive an interruption. Revisions update it in place.
 
 **PLAN CONTENTS.** Context (what exists, patterns to reuse) · Approach (chosen design
-+ rationale) · Files to change (exact paths, one-line each) · Step-by-step work items
++ rationale) · **File layout** (required: the target folder tree for everything the
+plan adds or moves — place each new file under its domain folder per the project's
+file-structure rule, so builders never mint flat paths ad hoc; new top-level flat
+peers in an existing module root are a plan defect) · Files to change (exact paths,
+one-line each) · Step-by-step work items
 (ordered, executable) · Risks & assumptions · Verification (tests/behaviours to
 confirm success). If you give time estimates, calibrate to agentic speed (a human's
 "days" is often an agent's "hours").
@@ -62,7 +68,7 @@ trade-offs in two or three rows, state YOUR recommendation with the reason, and 
 the user pick before writing the full plan for the winner.
 
 **Build metadata** — every step carries the markers `argo:build-plan` consumes to
-arm its per-slice `.argo/build-mode.json`:
+arm its per-slice `.argo/evidence/build-mode.json`:
 - `testable: false` on any step that's non-behavioral (design tokens, config, pure
   styling, fixture seeding) — exempt from forced red-green. Everything else defaults
   behavioral (red first).
@@ -75,10 +81,22 @@ arm its per-slice `.argo/build-mode.json`:
 - The **scoped per-slice verify commands** (real typecheck/lint/test invocations for
   the affected workspace, not the full graph) each step should run.
 
-If the host project has prior plans (e.g. under `.claude/plans/` or its
-`done/` archive), read one as a shape reference before writing yours.
+If the host project has prior plans (under `.argo/plans/`), read one as a shape
+reference before writing yours.
 
-**OUTPUT.** Write the plan to `.claude/plans/<short-name>.md` (or a provided deliverable
-path); create the dir if needed. **Don't overwrite an existing plan** unless asked —
+**OUTPUT.** Write the plan to `.argo/plans/<short-name>.md` (or a provided deliverable
+path); create the dir if needed. Start it with the lifecycle frontmatter — plans carry
+`status: draft | queued` (nothing else; there is no `landed` status — landed is derived
+from git by `argo plans`):
+
+```yaml
+---
+status: draft
+updated: <today>
+---
+```
+
+Leave it `draft`; the USER flips it to `queued` when the plan is cleared for build
+(`/argo:build-plan` refuses drafts). **Don't overwrite an existing plan** unless asked —
 update in place or version it. When done, summarise the three most important
 decisions or risks inline.

@@ -4,7 +4,7 @@
  * factory, which owns the walk (D22 baseline counting, story×mode screenshot
  * assertions) — a kit upgrade updates the gate logic without re-templating.
  * Prefer generating this file with `argo design emit-shims` (reads
- * .claude/argo.json design.<app>.walkers); the {{…}} slots exist for manual
+ * .argo/config.json design.<app>.walkers); the {{…}} slots exist for manual
  * installs by the setup-design skill.
  */
 import { runVrtWalker } from '@argohq/toolkit/walkers'

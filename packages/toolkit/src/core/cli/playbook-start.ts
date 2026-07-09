@@ -27,6 +27,17 @@ export function playbookStart(input: PlaybookStartInput, opts: StateOptions = {}
   const spec = getPlaybook(input.name)
   if (!spec) throw new PlaybookNotFoundError(input.name)
 
+  // Plan↔run join-key contract: `argo plans` attributes a live run to its
+  // plan doc by `run.target === plan basename`. A plan-doc target passed as
+  // a path (".argo/plans/foo.md") would silently break that overlay, so it
+  // is rejected here at start time.
+  if (input.target.endsWith('.md') && (input.target.includes('/') || input.target.includes('\\'))) {
+    throw new Error(
+      `playbook start: plan target "${input.target}" must be the plan's BASENAME ` +
+        `(e.g. "${input.target.split(/[/\\]/).pop()}") — \`argo plans\` joins a live run to its plan by basename`
+    )
+  }
+
   const config = readConfig(opts.cwd ?? process.cwd())
   const terminalStage = spec.stages[spec.stages.length - 1]
   if (terminalStage.handsOffToPack) {

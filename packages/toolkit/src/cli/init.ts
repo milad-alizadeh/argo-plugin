@@ -8,15 +8,19 @@
  *  - `.claude/settings.json`: `enabledPlugins` (+ `extraKnownMarketplaces`
  *    when the caller supplies a marketplace source — this file is the SOLE
  *    owner, never settings.local.json).
- *  - `.claude/argo.json` skeleton per mode: one design key per workspace app
+ *  - `.argo/config.json` skeleton per mode: one design key per workspace app
  *    (monorepo) or a single "." key (single-repo), each INERT ({} — no
  *    componentsPath, so the commit gates cannot arm until /argo:setup-design
  *    fills the block). User-edited fields survive via mergeConfigShape.
+ *  - `.gitignore`: the deny-by-default `.argo/` block (`/.argo/*` + explicit
+ *    re-includes) — `.argo/` also holds secrets and session-local files, so
+ *    the ignore is never narrowed to a subdir.
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { mergeConfigShape } from '../config/merge-config-shape.js'
+import { argoConfigPath, GITIGNORE_BLOCK } from '../config/argo-paths.js'
 
 const KIT_DEP_LINE = 'link:@argohq/toolkit'
 
@@ -78,8 +82,8 @@ export function runInit({ hostRoot, marketplaceSource }: { hostRoot: string; mar
   }
   writeJson(settingsPath, settings)
 
-  // 3. .claude/argo.json skeleton — inert design keys, user fields preserved.
-  const argoJsonPath = join(hostRoot, '.claude', 'argo.json')
+  // 3. .argo/config.json skeleton — inert design keys, user fields preserved.
+  const argoJsonPath = argoConfigPath(hostRoot)
   const shape = {
     landing: 'pr',
     design: Object.fromEntries(apps.map((app) => [app, {}])),
@@ -87,6 +91,19 @@ export function runInit({ hostRoot, marketplaceSource }: { hostRoot: string; mar
   const existing = existsSync(argoJsonPath) ? readJson(argoJsonPath) : undefined
   const { merged, addedKeys } = mergeConfigShape(shape, existing)
   writeJson(argoJsonPath, merged)
+
+  // 4. .gitignore — deny-by-default .argo/ block, idempotent append of the
+  // missing lines only (never rewrites user content). Order matters within
+  // the block (`/.argo/*` before the re-includes), so missing lines append
+  // in GITIGNORE_BLOCK order.
+  const gitignorePath = join(hostRoot, '.gitignore')
+  const gitignore = existsSync(gitignorePath) ? readFileSync(gitignorePath, 'utf8') : ''
+  const presentLines = new Set(gitignore.split('\n').map((l) => l.trim()))
+  const missing = GITIGNORE_BLOCK.filter((line) => !presentLines.has(line))
+  if (missing.length > 0) {
+    const prefix = gitignore.length === 0 || gitignore.endsWith('\n') ? gitignore : `${gitignore}\n`
+    writeFileSync(gitignorePath, `${prefix}${missing.join('\n')}\n`)
+  }
 
   return {
     mode: isMonorepo ? 'monorepo' : 'single-repo',

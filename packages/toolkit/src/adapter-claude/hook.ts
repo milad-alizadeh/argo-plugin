@@ -43,17 +43,19 @@ export interface HookInput {
  * shape. */
 export type ActiveInstanceReader = () => PlaybookInstance | null
 
-export type HookDecision = { decision: 'allow' } | { decision: 'deny'; reason: string }
+export type HookDecision =
+  | { decision: 'allow'; advisory?: string }
+  | { decision: 'deny'; reason: string }
 
-function allow(): HookDecision {
-  return { decision: 'allow' }
+function allow(advisory?: string): HookDecision {
+  return advisory === undefined ? { decision: 'allow' } : { decision: 'allow', advisory }
 }
 
 function deny(reason: string): HookDecision {
   return { decision: 'deny', reason }
 }
 
-/** Kinds treated as "edit-shaped" for `noPlaybook: "deny-edits"` purposes —
+/** Kinds treated as "edit-shaped" for `noPlaybook: "coach"`/`"deny-edits"` purposes —
  * anything that writes/mutates a working artifact. `git-commit` and
  * `git-history-mutation` are deliberately excluded here: with no active
  * playbook there is no stage to violate, and blocking commits/history ops
@@ -84,8 +86,9 @@ function extractPath(toolInput: unknown): string | undefined {
  *    says. This is audit 1.1: a stage whose `allows` includes `file-edit`
  *    must never be able to write a protected path.
  * 2. Read the active instance. No active instance ⇒ `config.noPlaybook`
- *    decides: `"allow"` passes everything through; `"deny-edits"` blocks
- *    edit-shaped action kinds with a coaching message to start a playbook.
+ *    decides: `"allow"` passes everything through; `"coach"` allows
+ *    edit-shaped action kinds but attaches an advisory suggesting a playbook
+ *    start; `"deny-edits"` blocks them with the same coaching.
  * 3. An active instance ⇒ resolve its stage's `allows` (fail closed if the
  *    playbook/stage can't be resolved — an instance pointing at an unknown
  *    playbook or stage name is treated as a denial, never a silent allow).
@@ -109,9 +112,19 @@ export function runPermissionHook(
 
   if (!instance) {
     if (config.noPlaybook === 'allow') return allow()
-    // config.noPlaybook === 'deny-edits'
+    // 'coach' and 'deny-edits' share the same detection (edit-shaped action
+    // kinds only) and the same start-a-playbook coaching — only the verdict
+    // differs: coach allows with advisory context, deny-edits denies.
     const kind = classifyAction(input.tool_name, input.tool_input)
     if (EDIT_SHAPED_KINDS.has(kind)) {
+      if (config.noPlaybook === 'coach') {
+        return allow(
+          `no playbook run is attached to this edit — this looks like playbook-shaped work; ` +
+            `consider \`argo playbook start <slug> --target <target>\` so the run is staged and gated ` +
+            `("noPlaybook": "coach" — the edit itself is allowed).`
+        )
+      }
+      // config.noPlaybook === 'deny-edits'
       return deny(
         `no active playbook — this project requires one before file edits are allowed ` +
           `("noPlaybook": "deny-edits"). Start a playbook first (\`argo playbook start <name> --target <target>\`).`

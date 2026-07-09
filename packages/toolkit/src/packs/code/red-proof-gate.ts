@@ -6,12 +6,12 @@
  * implementation existed and passes now. It reads exit codes a real test run wrote,
  * never prose (the one gate that worked in the retired build-slices playbook).
  *
- * SELF-SCOPING: entirely inert unless `.argo/build-mode.json` exists in the session
- * cwd — the build-plan skill writes that marker per slice and removes it when the
- * build ends. Normal interactive commits, other projects, other sessions: exit 0,
+ * SELF-SCOPING: entirely inert unless `.argo/evidence/build-mode.json` exists in the
+ * session cwd — the build-plan skill writes that marker per slice and removes it when
+ * the build ends. Normal interactive commits, other projects, other sessions: exit 0,
  * always. Inside a gated build it is fail-closed: malformed marker or receipt → BLOCK.
  *
- * Expects `.argo/red-proof.json` written by the builder after the green run:
+ * Expects `.argo/evidence/red-proof.json` written by the builder after the green run:
  *   { "slice": "<id>", "testFile": "<path>", "redExit": <non-zero>, "greenExit": 0,
  *     "recordedAt": <epoch ms> }
  * The receipt must name the CURRENT slice (from build-mode.json) and be newer than
@@ -34,6 +34,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { buildModePath, redProofPath } from '../../config/argo-paths.js'
 
 const MAX_CLOCK_SKEW_MS = 30 * 1000 // a receipt dated further ahead than this → BLOCK
 
@@ -113,7 +114,7 @@ const cwd = hook?.cwd
 if (typeof cwd !== 'string' || cwd.length === 0) process.exit(0)
 
 const repoDir = effectiveRepoDir(command, cwd)
-const markerPath = join(repoDir, '.argo', 'build-mode.json')
+const markerPath = buildModePath(repoDir)
 if (!existsSync(markerPath)) process.exit(0) // not a gated build — inert
 
 // From here on: gated build → fail closed.
@@ -132,9 +133,9 @@ if (mode.testable === false) process.exit(0)
 
 let proof: any
 try {
-  proof = JSON.parse(readFileSync(join(repoDir, '.argo', 'red-proof.json'), 'utf8'))
+  proof = JSON.parse(readFileSync(redProofPath(repoDir), 'utf8'))
 } catch {
-  block(`no red-proof receipt for slice "${mode.slice}" — run the test red, implement, run it green, write .argo/red-proof.json`)
+  block(`no red-proof receipt for slice "${mode.slice}" — run the test red, implement, run it green, write .argo/evidence/red-proof.json`)
 }
 
 if (proof?.slice !== mode.slice)

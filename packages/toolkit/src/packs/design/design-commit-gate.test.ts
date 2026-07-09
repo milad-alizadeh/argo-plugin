@@ -24,8 +24,8 @@ const commitInput = (cwd: string, command = 'git commit -m "feat: component"') =
   JSON.stringify({ hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command }, cwd })
 
 function writeArgoJson(repo: string, design: unknown) {
-  mkdirSync(join(repo, '.claude'), { recursive: true })
-  writeFileSync(join(repo, '.claude', 'argo.json'), JSON.stringify({ design }))
+  mkdirSync(join(repo, '.argo'), { recursive: true })
+  writeFileSync(join(repo, '.argo', 'config.json'), JSON.stringify({ design }))
 }
 
 function stageComponent(repo: string, appRoot: string) {
@@ -36,12 +36,12 @@ function stageComponent(repo: string, appRoot: string) {
   execFileSync('git', ['-C', repo, 'add', '.'])
 }
 
-describe('design-commit-gate — armed per-app by .claude/argo.json design blocks (decision 8), not build-mode.json', () => {
+describe('design-commit-gate — armed per-app by .argo/config.json design blocks (decision 8), not build-mode.json', () => {
   let cwd: string
   beforeEach(() => { cwd = mkdtempSync(join(tmpdir(), 'argo-designcommit-')) })
   afterEach(() => rmSync(cwd, { recursive: true, force: true }))
 
-  it('PASS: no .claude/argo.json anywhere up the tree → inert', async () => {
+  it('PASS: no .argo/config.json anywhere up the tree → inert', async () => {
     expect((await runGate(commitInput(cwd))).code).toBe(0)
   })
 

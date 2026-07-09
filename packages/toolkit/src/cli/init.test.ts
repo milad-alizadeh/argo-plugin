@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { spawnSync } from 'node:child_process'
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -8,8 +9,9 @@ import { runInit } from './init.js'
  * Deterministic half of /argo:init (plan step 14, amended): dep placement is
  * the dev-phase link protocol ("link:@argohq/toolkit"), settings.json gets
  * enabledPlugins (+ extraKnownMarketplaces when a source is supplied), and
- * .claude/argo.json is seeded per mode with INERT design keys (no
- * componentsPath — gates must not arm until setup-design fills them).
+ * .argo/config.json is seeded per mode with INERT design keys (no
+ * componentsPath — gates must not arm until setup-design fills them), and
+ * .gitignore gets the deny-by-default .argo/ block.
  */
 
 let host: string
@@ -40,12 +42,29 @@ describe('runInit — monorepo mode', () => {
     expect(readJson('apps/a/package.json').dependencies).toBeUndefined()
   })
 
-  it('seeds .claude/argo.json with one INERT design key per workspace app', () => {
+  it('seeds .argo/config.json with one INERT design key per workspace app', () => {
     runInit({ hostRoot: host })
-    const argoJson = readJson('.claude', 'argo.json')
+    const argoJson = readJson('.argo', 'config.json')
     expect(Object.keys(argoJson.design).sort()).toEqual(['apps/a', 'apps/b'])
     // inert: no componentsPath until setup-design fills it — gates must not arm
     expect(argoJson.design['apps/a'].componentsPath).toBeUndefined()
+  })
+
+  it('appends the deny-by-default .argo/ gitignore block, preserving existing entries, idempotently', () => {
+    writeFileSync(join(host, '.gitignore'), 'node_modules/\n')
+    runInit({ hostRoot: host })
+    const gitignore = readFileSync(join(host, '.gitignore'), 'utf8')
+    expect(gitignore).toContain('node_modules/')
+    expect(gitignore).toContain('/.argo/*')
+    expect(gitignore).toContain('!/.argo/config.json')
+    expect(gitignore).toContain('!/.argo/plans/')
+    expect(gitignore).toContain('!/.argo/design/')
+    // deny line precedes the re-includes (gitignore last-match-wins semantics)
+    expect(gitignore.indexOf('/.argo/*')).toBeLessThan(gitignore.indexOf('!/.argo/config.json'))
+
+    runInit({ hostRoot: host })
+    const again = readFileSync(join(host, '.gitignore'), 'utf8')
+    expect(again.match(/^\/\.argo\/\*$/gm)).toHaveLength(1)
   })
 
   it('writes enabledPlugins into .claude/settings.json, preserving existing settings', () => {
@@ -81,14 +100,40 @@ describe('runInit — single-repo mode', () => {
     expect(pkg.dependencies.react).toBe('^19.0.0')
   })
 
-  it('seeds .claude/argo.json with a single inert "." design key', () => {
+  it('seeds .argo/config.json with a single inert "." design key', () => {
     runInit({ hostRoot: host })
-    expect(Object.keys(readJson('.claude', 'argo.json').design)).toEqual(['.'])
+    expect(Object.keys(readJson('.argo', 'config.json').design)).toEqual(['.'])
   })
 
-  it('is idempotent and preserves user-set argo.json fields on re-run', () => {
+  it('git check-ignore: committed surfaces re-included, secrets/evidence/receipts stay ignored', () => {
     runInit({ hostRoot: host })
-    const argoPath = join(host, '.claude', 'argo.json')
+    const git = (...args: string[]) =>
+      spawnSync('git', ['-C', host, ...args], { encoding: 'utf8' })
+    git('init', '-q')
+
+    const ignored = (path: string) => git('check-ignore', '-q', path).status === 0
+    // committed surfaces NOT ignored
+    expect(ignored('.argo/config.json')).toBe(false)
+    expect(ignored('.argo/plans/my-plan.md')).toBe(false)
+    expect(ignored('.argo/design/brief.md')).toBe(false)
+    // secrets + evidence + receipts STILL ignored
+    expect(ignored('.argo/figma-token')).toBe(true)
+    expect(ignored('.argo/evidence/build-mode.json')).toBe(true)
+    expect(ignored('.argo/evidence/red-proof.json')).toBe(true)
+    expect(ignored('.argo/evidence/launch-receipt.json')).toBe(true)
+    expect(ignored('.argo/design-guard.json')).toBe(true)
+    expect(ignored('.argo/audit-receipts/receipt.json')).toBe(true)
+  })
+
+  it('creates .gitignore with the deny-by-default block when none exists', () => {
+    runInit({ hostRoot: host })
+    const gitignore = readFileSync(join(host, '.gitignore'), 'utf8')
+    expect(gitignore.trim().split('\n')).toEqual(['/.argo/*', '!/.argo/config.json', '!/.argo/plans/', '!/.argo/design/'])
+  })
+
+  it('is idempotent and preserves user-set config.json fields on re-run', () => {
+    runInit({ hostRoot: host })
+    const argoPath = join(host, '.argo', 'config.json')
     const edited = JSON.parse(readFileSync(argoPath, 'utf8'))
     edited.landing = 'merge'
     edited.design['.'] = { root: '.', componentsPath: 'src/components' }

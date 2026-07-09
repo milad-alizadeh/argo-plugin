@@ -129,7 +129,7 @@ mechanisms close those gaps without new tooling.
   builder's report and cannot un-read it (the same contamination
   `agents/design-verifier.md` bars for completeness). Instead the supervisor
   spawns `argo:fidelity-verifier`, a blind fidelity check given ONLY the
-  reference (brief/PRD ASCII wireframe/original screenshot), the built screenshot
+  reference (brief/PRD HTML wireframe/original screenshot), the built screenshot
   at IDENTICAL frame size, and a structural fact sheet (frame dimensions,
   per-region node metrics) — never the transcript, never the self-report.
   The measurable subset is a design-rules gate concern, not the verifier's job:

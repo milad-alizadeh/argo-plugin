@@ -1,5 +1,5 @@
 /**
- * Reconcile a host's on-disk `design.<app>` block (in `.claude/argo.json`)
+ * Reconcile a host's on-disk `design.<app>` block (in `.argo/config.json`)
  * against the current template shape (category b, §2b): add any key the current shape has that's missing on
  * disk (with the template's placeholder value), **preserve every existing
  * value verbatim** (even if it differs from the placeholder), and **never

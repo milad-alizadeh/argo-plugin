@@ -7,9 +7,9 @@
  * walker passed".
  *
  * SELF-SCOPING, DIFFERENT FROM red-proof/trust: arms per-app from
- * `.claude/argo.json`'s `design.<app>` blocks (decision 8's dual-mode
+ * `.argo/config.json`'s `design.<app>` blocks (decision 8's dual-mode
  * resolution — the old `design/config.json`-presence arming silently
- * no-oped per-app in monorepos), NOT scoped to `.argo/build-mode.json`.
+ * no-oped per-app in monorepos), NOT scoped to `.argo/evidence/build-mode.json`.
  * figma-to-code can legitimately run outside a gated build, and this
  * deterministic gate must still be mandatory there.
  */
@@ -44,7 +44,7 @@ const cwd = hook?.cwd
 if (typeof cwd !== 'string' || cwd.length === 0) process.exit(0)
 
 const found = findArgoJson(cwd)
-if (!found) process.exit(0) // no .claude/argo.json up the tree — inert
+if (!found) process.exit(0) // no .argo/config.json up the tree — inert
 
 let stagedFiles: string[]
 try {

@@ -116,7 +116,10 @@ just runs whatever kit is installed.
 `/argo:init` detects your stack and, with per-rule consent, writes what a project
 actually keeps:
 
-- `.claude/argo.json` — the ONE argo config (landing mode, paths, per-app design blocks)
+- `.argo/config.json` — the ONE argo config (landing mode, paths, per-app design blocks);
+  `.argo/` is argo's only per-project directory (config + `plans/` + `design/` committed
+  via a deny-by-default gitignore; everything else in it — evidence, receipts, secrets —
+  stays ignored)
 - `.claude/rules/*.md` — opinionated rules **adapted** to your stack (inert
   templates until then; see below)
 - the `@argohq/kit` dependency + `.claude/settings.json` enablement
@@ -144,7 +147,8 @@ breaking change, rip-and-re-init via a fresh `/argo:init`.
    `/argo:design-screen` (or `/argo:figma-create` for one component) →
    `/argo:figma-sync` → `/argo:figma-to-code`.
 4. **`argo:planner`** — read-only implementation plan grounded in real code
-   (`.claude/plans/`).
+   (`.argo/plans/`, frontmatter `status: draft | queued`; `argo plans` lists them
+   with landed derived from git and a live-run overlay).
 5. **`/argo:build-plan`** — build the plan hands-off in a worktree, every commit
    gated; or `/argo:test-first` for interactive slice-by-slice TDD.
 6. **`argo:reviewer`** → **`argo:integrator`** — merge-gate review, then land
@@ -203,8 +207,8 @@ whether it's day 1 or a year later. Full rationale in
 - **Skills** (`skills/`) — the twenty-one disciplines listed above.
 - **Hooks** (`hooks/`) — the two-tier split from the table: plugin-side safety
   guardrails (always on, verbatim) and kit-dispatched gates (fail-closed,
-  armed by project state: `.argo/build-mode.json` for build gates,
-  `.claude/argo.json` `design` blocks for design gates; `format-on-write` and
+  armed by project state: `.argo/evidence/build-mode.json` for build gates,
+  `.argo/config.json` `design` blocks for design gates; `format-on-write` and
   `test-smell` always on).
 
 Only agent/skill **descriptions** load into context until invoked — the pack is

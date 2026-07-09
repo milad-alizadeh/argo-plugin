@@ -81,7 +81,7 @@ const scenarios = [
     expected: /\/argo:root-cause|argo:debugger/
   },
   {
-    prompt: 'I have a plan doc ready at .claude/plans/foo.md — build it',
+    prompt: 'I have a plan doc ready at .argo/plans/foo.md — build it',
     expected: /\/argo:build-plan/
   },
   {

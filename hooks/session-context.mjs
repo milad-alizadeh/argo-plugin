@@ -31,8 +31,13 @@ Routing (canonical loop):
 - context running long → /argo:session-handoff
 
 Code questions ("where does X live", "what depends on Y"): if a
-graphify-out/ directory exists, query the graphify knowledge graph first —
-faster and more complete than cold grep.
+graphify-out/ directory exists, query the graphify knowledge graph FIRST —
+concrete commands, run from the workspace that owns graphify-out/:
+\`graphify query "<question>"\` (broad, natural-language),
+\`graphify explain "<Symbol>"\` (one node + neighbors),
+\`graphify path "<A>" "<B>"\` (how two things connect).
+Faster and more complete than cold grep; fall back to grep only when the
+graph doesn't answer.
 
 TDD here is enforced mechanically (edit-time guard where installed; commit
 gates during gated builds). Cosmetic/styling-only changes are refactor-class:
@@ -50,7 +55,7 @@ import { join } from 'node:path'
 
 /**
  * Lifecycle nudge: point an installed-but-not-set-up project at /argo:init.
- * State lives in .claude/argo.json (the consolidated config). There is no
+ * State lives in .argo/config.json (the consolidated config). There is no
  * version-comparison / migration nudge — the plugin's real logic lives in the
  * versioned @argohq/toolkit, so a project's installed rules/templates are static
  * suggestions written once at setup, never reconciled against a plugin version.
@@ -58,7 +63,7 @@ import { join } from 'node:path'
  */
 function setupNudge(cwd) {
   if (!cwd) return ''
-  const configPath = join(cwd, '.claude', 'argo.json')
+  const configPath = join(cwd, '.argo', 'config.json')
   if (!existsSync(configPath)) {
     return `\n\nSETUP: argo is installed but this project isn't set up — run /argo:init (stack detection + adapted rules, per-item consent).`
   }

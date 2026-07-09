@@ -136,6 +136,19 @@ describe('refresh + scoped commit', () => {
     expect(report.committed).toBe(false)
   })
 
+  it('reports committed: false + commitError when the commit itself fails', () => {
+    installFakeGraphify()
+    // a native pre-commit hook that rejects — stands in for index-lock
+    // contention when the refresh fires inside a post-merge hook
+    mkdirSync(join(host, '.git', 'hooks'), { recursive: true })
+    writeFileSync(join(host, '.git', 'hooks', 'pre-commit'), '#!/bin/sh\necho nope >&2\nexit 1\n')
+    chmodSync(join(host, '.git', 'hooks', 'pre-commit'), 0o755)
+    const report: any = refresh()
+    expect(report.committed).toBe(false)
+    expect(report.commitError).toContain('nope')
+    expect(git(['log', '-1', '--pretty=%s'])).toBe('seed')
+  })
+
   it('degrades (still refreshes and commits) when labeling fails', () => {
     installFakeGraphify({ labelExit: 1 })
     const report: any = refresh()
@@ -156,6 +169,15 @@ describe('workspace discovery', () => {
     expect(updates).toHaveLength(2)
     expect(updates.some((l) => l.includes('/apps/a'))).toBe(true)
     expect(updates.some((l) => l.includes('node_modules'))).toBe(false)
+  })
+
+  it('never descends into .claude (linked worktrees under .claude/worktrees are not workspaces)', () => {
+    installFakeGraphify()
+    mkdirSync(join(host, 'apps/a', 'graphify-out'), { recursive: true })
+    mkdirSync(join(host, '.claude/worktrees/wt-1/apps/a', 'graphify-out'), { recursive: true })
+    const report: any = refresh()
+    expect(report.workspaces).toEqual(['apps/a'])
+    expect(calls().filter((l) => l.startsWith('update'))).toHaveLength(1)
   })
 
   it('prunes dated backup dirs older than 14 days, keeps recent ones', () => {

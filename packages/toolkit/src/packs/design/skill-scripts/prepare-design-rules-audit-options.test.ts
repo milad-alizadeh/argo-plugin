@@ -72,11 +72,11 @@ describe('deriveDesignRulesAuditOptions (figma-audit Node wrapper — anti-recre
     }
   })
 
-  it("reads semanticCollectionName and recipe from the app's design.<app> block in .claude/argo.json, and threads the recipe's collection allowlist", () => {
+  it("reads semanticCollectionName and recipe from the app's design.<app> block in .argo/config.json, and threads the recipe's collection allowlist", () => {
     const cwd = mkdtempSync(join(tmpdir(), 'design-rules-audit-options-'))
-    mkdirSync(join(cwd, '.claude'), { recursive: true })
+    mkdirSync(join(cwd, '.argo'), { recursive: true })
     writeFileSync(
-      join(cwd, '.claude', 'argo.json'),
+      join(cwd, '.argo', 'config.json'),
       JSON.stringify({ design: { '.': { root: '.', recipe: 'shadcn-tailwind', semanticCollectionName: 'Argo Semantic' } } }),
       'utf8'
     )
@@ -93,9 +93,9 @@ describe('deriveDesignRulesAuditOptions (figma-audit Node wrapper — anti-recre
 
   it("reads viewport from the app's design.<app> block when configured", () => {
     const cwd = mkdtempSync(join(tmpdir(), 'design-rules-audit-options-'))
-    mkdirSync(join(cwd, '.claude'), { recursive: true })
+    mkdirSync(join(cwd, '.argo'), { recursive: true })
     writeFileSync(
-      join(cwd, '.claude', 'argo.json'),
+      join(cwd, '.argo', 'config.json'),
       JSON.stringify({ design: { '.': { root: '.', viewport: { width: 1440, height: 900 } } } }),
       'utf8'
     )
@@ -193,9 +193,9 @@ describe('deriveDesignRulesAuditOptions (figma-audit Node wrapper — anti-recre
 
   it("honors a configured design.<app>.sweepPageNames instead of the ['Screens'] default", () => {
     const cwd = mkdtempSync(join(tmpdir(), 'design-rules-audit-options-sweep-'))
-    mkdirSync(join(cwd, '.claude'), { recursive: true })
+    mkdirSync(join(cwd, '.argo'), { recursive: true })
     writeFileSync(
-      join(cwd, '.claude', 'argo.json'),
+      join(cwd, '.argo', 'config.json'),
       JSON.stringify({ design: { '.': { root: '.', sweepPageNames: ['Marketing Screens'] } } }),
       'utf8'
     )

@@ -52,6 +52,60 @@ describe('runPermissionHook', () => {
     }
   })
 
+  it('allows a file-edit but injects advisory coaching when noPlaybook is coach and none is active', () => {
+    const decision = runPermissionHook(
+      { tool_name: 'Write', tool_input: { file_path: 'src/foo.ts' } },
+      baseConfig({ noPlaybook: 'coach' }),
+      () => null
+    )
+
+    expect(decision.decision).toBe('allow')
+    if (decision.decision === 'allow') {
+      expect(decision.advisory).toMatch(/playbook/i)
+      expect(decision.advisory).toMatch(/argo playbook start/)
+    }
+  })
+
+  it('allows non-edit tool calls silently (no advisory) when noPlaybook is coach and none is active', () => {
+    const decision = runPermissionHook(
+      { tool_name: 'Read', tool_input: { file_path: 'src/foo.ts' } },
+      baseConfig({ noPlaybook: 'coach' }),
+      () => null
+    )
+
+    expect(decision.decision).toBe('allow')
+    if (decision.decision === 'allow') {
+      expect(decision.advisory).toBeUndefined()
+    }
+  })
+
+  it('coach never advises when a run IS active — the stage allows list decides instead', () => {
+    const playbookName = uniqueName('coach-active')
+    registerPlaybook({
+      name: playbookName,
+      stages: [{ name: 'build', allows: ['file-edit'] }]
+    })
+    const instance: PlaybookInstance = {
+      playbook: playbookName,
+      target: 't',
+      stage: 'build',
+      status: 'in-progress',
+      attempts: [],
+      history: []
+    }
+
+    const decision = runPermissionHook(
+      { tool_name: 'Edit', tool_input: { file_path: 'src/foo.ts' } },
+      baseConfig({ noPlaybook: 'coach' }),
+      () => instance
+    )
+
+    expect(decision.decision).toBe('allow')
+    if (decision.decision === 'allow') {
+      expect(decision.advisory).toBeUndefined()
+    }
+  })
+
   it('passes everything when noPlaybook is allow and none is active', () => {
     const editDecision = runPermissionHook(
       { tool_name: 'Write', tool_input: { file_path: 'src/foo.ts' } },

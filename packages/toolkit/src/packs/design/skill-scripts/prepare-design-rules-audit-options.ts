@@ -88,7 +88,7 @@ function readOptionalJson(path: string): any {
 }
 
 /**
- * The app's `design.<app>` block in `.claude/argo.json` for the app rooted
+ * The app's `design.<app>` block in `.argo/config.json` for the app rooted
  * at `cwd` — matched by resolved `root`, falling back to the sole entry when
  * there's exactly one (single-repo project, `design["."]`). Returns null
  * when no argo.json/design block is found (unconfigured project) — every

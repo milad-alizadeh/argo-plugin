@@ -48,7 +48,7 @@ the reference silently stops responding to theme changes.
 
 Adjust `{{PRIMITIVE_TOKEN_PREFIX}}` to this project's actual Primitive
 naming convention (e.g. `--primitive-`, `primitive-`) — filled by
-`/argo:setup-design` from the app's `design.<app>` block in `.claude/argo.json`.
+`/argo:setup-design` from the app's `design.<app>` block in `.argo/config.json`.
 
 ## No arbitrary `[…]` Tailwind values in components
 

@@ -56,7 +56,7 @@ describe('session-context — SessionStart way-of-working card', () => {
 })
 
 describe('session-context — setup lifecycle nudges', () => {
-  it('nudges to run /argo:init when the project has no .claude/argo.json', async () => {
+  it('nudges to run /argo:init when the project has no .argo/config.json', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
     try {
       const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
@@ -82,11 +82,11 @@ describe('session-context — setup lifecycle nudges', () => {
     }
   })
 
-  it('stays silent (no SETUP nudge) once .claude/argo.json exists — no version comparison', async () => {
+  it('stays silent (no SETUP nudge) once .argo/config.json exists — no version comparison', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'argo-nudge-'))
     try {
-      mkdirSync(join(dir, '.claude'), { recursive: true })
-      writeFileSync(join(dir, '.claude', 'argo.json'), JSON.stringify({ landing: 'merge' }))
+      mkdirSync(join(dir, '.argo'), { recursive: true })
+      writeFileSync(join(dir, '.argo', 'config.json'), JSON.stringify({ landing: 'merge' }))
       const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))
       const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
       expect(context).not.toContain('SETUP:')
@@ -100,9 +100,9 @@ describe('session-context — no version/migration nudges (setup-version machine
   it('never nudges /argo:setup-design for a set-up design.<app> block (design version nudges are gone)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'argo-dnudge-'))
     try {
-      mkdirSync(join(dir, '.claude'), { recursive: true })
+      mkdirSync(join(dir, '.argo'), { recursive: true })
       writeFileSync(
-        join(dir, '.claude', 'argo.json'),
+        join(dir, '.argo', 'config.json'),
         JSON.stringify({ landing: 'pr', design: { '.': { root: '.', recipe: 'shadcn-tailwind' } } })
       )
       const r = await runHook(JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: dir }))

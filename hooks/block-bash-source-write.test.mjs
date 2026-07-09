@@ -57,10 +57,10 @@ describe('block-bash-source-write — closes the shell-write subset of the guard
   it('PASS: shell writes to non-source targets (logs, JSON, markdown, /tmp) stay allowed', async () => {
     for (const cmd of [
       'echo done > build.log',
-      'cat > .argo/build-mode.json <<EOF\n{}\nEOF',
+      'cat > .argo/evidence/build-mode.json <<EOF\n{}\nEOF',
       'python3 - <<EOF\nopen("notes.md","w").write("x")\nEOF',
       'cat > /tmp/scratch.ts <<EOF\nconst x=1\nEOF',
-      'node -e "require(\'fs\').writeFileSync(\'.argo/red-proof.json\',\'{}\')"',
+      'node -e "require(\'fs\').writeFileSync(\'.argo/evidence/red-proof.json\',\'{}\')"',
     ]) {
       expect((await runHook(bashInput(cmd))).code).toBe(0)
     }
@@ -99,8 +99,8 @@ describe('block-bash-source-write — closes the shell-write subset of the guard
       'grep -n "roster-panel" e2e/dock-and-panel-headers.spec.ts',
       'grep -rn "instructions" dist/ 2>/dev/null | grep -iv ".map" | head -10',
       'ls -la out/renderer/assets/*.js 2>/dev/null | head -3',
-      'mkdir -p .argo && cat > .argo/build-mode.json <<EOF\n{"slice":"s1"}\nEOF',
-      "node -e \"const fs=require('fs'); fs.writeFileSync('../.argo/red-proof.json', JSON.stringify({slice:'s1'}))\"",
+      'mkdir -p .argo/evidence && cat > .argo/evidence/build-mode.json <<EOF\n{"slice":"s1"}\nEOF',
+      "node -e \"const fs=require('fs'); fs.writeFileSync('../.argo/evidence/red-proof.json', JSON.stringify({slice:'s1'}))\"",
       'cp worktree/.claude/tdd-guard/data/test.json main/.claude/tdd-guard/data/test.json',
       'python3 - <<EOF\nimport json\nprint(json.dumps({"a":1}))\nEOF',
       'which typescript-language-server',

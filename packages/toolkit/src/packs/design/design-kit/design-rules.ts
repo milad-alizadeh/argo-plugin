@@ -165,7 +165,7 @@ export function isDesignPageName(name: string): boolean {
 
 /**
  * A screen's top-level frame must exactly match the project's canonical
- * viewport (opt-in via `design.<app>.viewport` in .claude/argo.json;
+ * viewport (opt-in via `design.<app>.viewport` in .argo/config.json;
  * skipped entirely when unconfigured, non-breaking for a project that
  * hasn't set it). `isScreenFrame` is marshaled by the walker: true only
  * for the top-level node of a walk whose owning page matches

@@ -75,6 +75,22 @@ const config = readConfig(cwd)
 const decision = runPermissionHook(input, config, () => getActiveInstance({ cwd, stateRoot }))
 
 if (decision.decision === 'allow') {
+  if (decision.advisory !== undefined) {
+    // Coach mode: the edit goes through, but the advisory rides back to the
+    // model as PreToolUse additionalContext (plain stdout on exit 0 is only
+    // shown in transcript mode, never to the model — JSON output is the one
+    // channel that reaches it on an allow).
+    process.stdout.write(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          permissionDecision: 'allow',
+          permissionDecisionReason: decision.advisory,
+          additionalContext: decision.advisory
+        }
+      }) + '\n'
+    )
+  }
   process.exit(0)
 }
 

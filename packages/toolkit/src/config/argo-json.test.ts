@@ -14,7 +14,7 @@ import {
 
 /**
  * Decision 8's dual-mode hook resolution: gates arm per-app from
- * `.claude/argo.json`'s `design.<app>` blocks, matched repo-root-relative —
+ * `.argo/config.json`'s `design.<app>` blocks, matched repo-root-relative —
  * fixing the "design/config.json presence silently no-ops per-app in
  * monorepos" bug the design doc names.
  */
@@ -22,8 +22,8 @@ import {
 let repo: string
 
 function writeArgoJson(config: unknown) {
-  mkdirSync(join(repo, '.claude'), { recursive: true })
-  writeFileSync(join(repo, '.claude', 'argo.json'), JSON.stringify(config))
+  mkdirSync(join(repo, '.argo'), { recursive: true })
+  writeFileSync(join(repo, '.argo', 'config.json'), JSON.stringify(config))
 }
 
 beforeEach(() => {
@@ -32,7 +32,7 @@ beforeEach(() => {
 afterEach(() => rmSync(repo, { recursive: true, force: true }))
 
 describe('findArgoJson', () => {
-  it('walks up from a nested cwd to the first .claude/argo.json and reports its repo root', () => {
+  it('walks up from a nested cwd to the first .argo/config.json and reports its repo root', () => {
     writeArgoJson({ design: { '.': { root: '.', componentsPath: 'src/components' } } })
     const nested = join(repo, 'apps', 'a', 'src')
     mkdirSync(nested, { recursive: true })
@@ -42,13 +42,13 @@ describe('findArgoJson', () => {
     expect(found!.config.design!['.'].componentsPath).toBe('src/components')
   })
 
-  it('returns null when no .claude/argo.json exists anywhere up the tree (inert, no throw)', () => {
+  it('returns null when no .argo/config.json exists anywhere up the tree (inert, no throw)', () => {
     expect(findArgoJson(repo)).toBeNull()
   })
 
   it('returns null on malformed JSON rather than throwing', () => {
-    mkdirSync(join(repo, '.claude'), { recursive: true })
-    writeFileSync(join(repo, '.claude', 'argo.json'), '{not json')
+    mkdirSync(join(repo, '.argo'), { recursive: true })
+    writeFileSync(join(repo, '.argo', 'config.json'), '{not json')
     expect(findArgoJson(repo)).toBeNull()
   })
 })

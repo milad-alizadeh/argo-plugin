@@ -73,11 +73,17 @@ export function runGraphRefresh({ cwd = process.cwd(), env = process.env }: { cw
   const staged = (gitAtRoot(['diff', '--cached', '--name-only', '--', ...GRAPH_PATHSPECS]).stdout ?? '')
     .split('\n')
     .filter(Boolean)
+  let committed = false
+  let commitError: string | undefined
   if (staged.length) {
-    gitAtRoot(['commit', '-m', 'chore(graphify): refresh knowledge graph', '--', ...staged], { LEFTHOOK: '0' })
+    const commit = gitAtRoot(['commit', '-m', 'chore(graphify): refresh knowledge graph', '--', ...staged], {
+      LEFTHOOK: '0',
+    })
+    committed = commit.status === 0
+    if (!committed) commitError = (commit.stderr || commit.stdout || 'git commit failed').trim()
   }
 
-  return { workspaces, committed: staged.length > 0, labelDegraded }
+  return { workspaces, committed, ...(commitError ? { commitError } : {}), labelDegraded }
 }
 
 /** Dirs containing a graphify-out/ (repo-root-relative, sorted), else ['.']. */
@@ -86,7 +92,8 @@ function discoverWorkspaces(repoRoot: string): string[] {
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue
-      if (entry.name === 'node_modules' || entry.name === '.git') continue
+      // .claude holds linked worktrees (each a full repo copy) — never workspaces
+      if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === '.claude') continue
       const full = join(dir, entry.name)
       if (entry.name === 'graphify-out') {
         found.push(relative(repoRoot, dir) || '.')

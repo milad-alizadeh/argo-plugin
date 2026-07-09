@@ -24,6 +24,13 @@ export function registerJudge(fn: JudgeFn): void {
   activeJudge = fn
 }
 
+/** Test seam: clears the module-level singleton so the unregistered-call
+ * behaviour is testable regardless of which test file ran first (`bun test`
+ * shares one module registry across files and has no `vi.resetModules`). */
+export function resetJudgeForTests(): void {
+  activeJudge = undefined
+}
+
 export const core = {
   /** Throws "no judge registered" if called before an adapter has registered one. */
   async judge(request: JudgeRequest): Promise<GateVerdict> {

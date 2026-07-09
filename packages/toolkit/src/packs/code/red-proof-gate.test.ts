@@ -20,19 +20,19 @@ function runGate(stdin: string) {
 }
 
 function armBuildMode(cwd: string, over: Record<string, unknown> = {}) {
-  mkdirSync(join(cwd, '.argo'), { recursive: true })
+  mkdirSync(join(cwd, '.argo', 'evidence'), { recursive: true })
   writeFileSync(
-    join(cwd, '.argo', 'build-mode.json'),
+    join(cwd, '.argo', 'evidence', 'build-mode.json'),
     JSON.stringify({ plan: 'p.md', slice: 's2', testable: true, requiresLaunch: false, ...over }),
   )
 }
 
 function writeProof(cwd: string, over: Record<string, unknown> = {}) {
-  mkdirSync(join(cwd, '.argo'), { recursive: true })
+  mkdirSync(join(cwd, '.argo', 'evidence'), { recursive: true })
   const testFile = 'sample.spec.ts'
   writeFileSync(join(cwd, testFile), '// spec')
   writeFileSync(
-    join(cwd, '.argo', 'red-proof.json'),
+    join(cwd, '.argo', 'evidence', 'red-proof.json'),
     JSON.stringify({ slice: 's2', testFile, redExit: 1, greenExit: 0, recordedAt: Date.now(), ...over }),
   )
 }
@@ -158,8 +158,8 @@ describe('red-proof gate — commit-scoped, marker-armed, receipts not narration
   })
 
   it('BLOCK: malformed build-mode marker while armed (default-deny)', async () => {
-    mkdirSync(join(cwd, '.argo'), { recursive: true })
-    writeFileSync(join(cwd, '.argo', 'build-mode.json'), '{ nope')
+    mkdirSync(join(cwd, '.argo', 'evidence'), { recursive: true })
+    writeFileSync(join(cwd, '.argo', 'evidence', 'build-mode.json'), '{ nope')
     expect((await runGate(commitInput())).code).toBe(2)
   })
 

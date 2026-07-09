@@ -1,5 +1,5 @@
 import { setActiveInstance, writeInstance } from '../core/index.js'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { spawn } from 'node:child_process'
@@ -16,14 +16,16 @@ const GATE = fileURLToPath(new URL('../../dist/adapter-claude/playbook-permissio
  * code + stderr. `ARGO_STATE_ROOT` is this module's test-only seam (see the
  * gate's own doc comment) so the state store never touches a real home dir. */
 function runGate(stdin: string, stateRoot: string) {
-  return new Promise<{ code: number | null; stderr: string }>((resolvePromise) => {
+  return new Promise<{ code: number | null; stdout: string; stderr: string }>((resolvePromise) => {
     const child = spawn('node', [GATE], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env, ARGO_STATE_ROOT: stateRoot }
     })
+    let stdout = ''
     let stderr = ''
+    child.stdout.on('data', (d) => (stdout += d))
     child.stderr.on('data', (d) => (stderr += d))
-    child.on('exit', (code) => resolvePromise({ code, stderr }))
+    child.on('exit', (code) => resolvePromise({ code, stdout, stderr }))
     child.stdin.end(stdin)
   })
 }
@@ -41,6 +43,12 @@ describe('playbook permission gate — kit-side wiring over @argohq/claude-adapt
     rmSync(cwd, { recursive: true, force: true })
     rmSync(stateRoot, { recursive: true, force: true })
   })
+
+  /** Seed `<cwd>/.argo/config.json` with a `noPlaybook` mode fixture. */
+  function writeConfig(noPlaybook: string) {
+    mkdirSync(join(cwd, '.argo'), { recursive: true })
+    writeFileSync(join(cwd, '.argo', 'config.json'), JSON.stringify({ noPlaybook }))
+  }
 
   const editInput = (filePath: string) =>
     JSON.stringify({
@@ -84,6 +92,49 @@ describe('playbook permission gate — kit-side wiring over @argohq/claude-adapt
   it('PASS: a non-protected edit with no active instance and default config ("noPlaybook": "allow") passes', async () => {
     const result = await runGate(editInput(join(cwd, 'src', 'App.tsx')), stateRoot)
     expect(result.code).toBe(0)
+    expect(result.stdout).toBe('')
+  })
+
+  it('PASS silent: "noPlaybook": "allow" set explicitly — bare edit passes with no output', async () => {
+    writeConfig('allow')
+    const result = await runGate(editInput(join(cwd, 'src', 'App.tsx')), stateRoot)
+    expect(result.code).toBe(0)
+    // stderr is not asserted empty: resolveRepoRoot probes git in the tmpdir
+    // fixture (not a repo) and git writes its own noise there. Silence means
+    // no stdout — no JSON advisory reaches the model on a plain allow.
+    expect(result.stdout).toBe('')
+  })
+
+  it('PASS + advise: "noPlaybook": "coach" — bare edit is allowed and advisory context is injected', async () => {
+    writeConfig('coach')
+    const result = await runGate(editInput(join(cwd, 'src', 'App.tsx')), stateRoot)
+    expect(result.code).toBe(0)
+    const parsed = JSON.parse(result.stdout)
+    expect(parsed.hookSpecificOutput.hookEventName).toBe('PreToolUse')
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe('allow')
+    expect(parsed.hookSpecificOutput.additionalContext).toMatch(/argo playbook start/)
+  })
+
+  it('PASS silent: "coach" mode leaves non-edit tool calls untouched', async () => {
+    writeConfig('coach')
+    const result = await runGate(
+      JSON.stringify({
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Read',
+        tool_input: { file_path: join(cwd, 'src', 'App.tsx') },
+        cwd
+      }),
+      stateRoot
+    )
+    expect(result.code).toBe(0)
+    expect(result.stdout).toBe('')
+  })
+
+  it('BLOCK + coach: "noPlaybook": "deny-edits" — bare edit is denied with the start-a-playbook coaching', async () => {
+    writeConfig('deny-edits')
+    const result = await runGate(editInput(join(cwd, 'src', 'App.tsx')), stateRoot)
+    expect(result.code).toBe(2)
+    expect(result.stderr).toMatch(/argo playbook start/)
   })
 
   it('PASS: malformed hook stdin → inert (mirrors trust-gate/red-proof-gate\'s convention)', async () => {

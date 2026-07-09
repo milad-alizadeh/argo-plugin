@@ -2,14 +2,12 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 
 /**
- * `.argo/config.json` reader — the new home for `packs`/`noPlaybook`/
- * `testDiscipline`/`land`, per the plan's open question 1 (`.claude/argo.json`
- * stays untouched, read separately by design-commit-gate for its own
- * `design.<app>` block — this module never reads or writes that file).
- * Deliberately a NEW, separate module from `packages/toolkit/src/config/
- * argo-json.ts`'s `findArgoJson` — same walk-up-to-nearest-file idiom, but a
- * different file (`.argo/config.json`, not `.claude/argo.json`) and a
- * different shape, so it is not imported from here.
+ * `.argo/config.json` reader — the home for `packs`/`noPlaybook`/
+ * `testDiscipline`/`land`. Since the `.argo/` consolidation the SAME file also
+ * carries the `design.<app>` blocks, read separately by design-commit-gate via
+ * `packages/toolkit/src/config/argo-json.ts`'s `findArgoJson` — same
+ * walk-up-to-nearest-file idiom, but a different shape slice, so it is not
+ * imported from here (core stays free of the config package).
  *
  * Read LIVE per call — no session-start cache, per the settled decision (a
  * config edit mid-session must take effect on the next hook invocation).
@@ -28,11 +26,12 @@ export interface ArgoConfig {
   /** Which packs are installed/enabled. Default: `{}`. */
   packs: PackAvailability
   /** Behavior when no playbook instance is active for the current target.
-   * `"allow"` passes every tool call through unconditionally; `"deny-edits"`
-   * blocks file-edit-shaped action kinds and coaches the agent to start a
-   * playbook first (enforced by adapter-claude's hook, not here). Default:
+   * `"allow"` passes every tool call through unconditionally; `"coach"`
+   * allows edit-shaped action kinds but injects advisory context suggesting
+   * a playbook start; `"deny-edits"` blocks them outright with the same
+   * coaching (enforced by adapter-claude's hook, not here). Default:
    * `"allow"` — the one default explicitly named in the design doc. */
-  noPlaybook: 'allow' | 'deny-edits'
+  noPlaybook: 'allow' | 'coach' | 'deny-edits'
   /** Reserved for pack-code's TDD policies (`test-first`/`reproduce-first`/
    * `tests-stay-green`) — phase 2. Default: `undefined` (no discipline
    * configured; meaningless without pack-code to enforce it). */
@@ -76,7 +75,10 @@ export function readConfig(cwd: string = process.cwd()): ArgoConfig {
     if (!parsed || typeof parsed !== 'object') return { ...DEFAULT_CONFIG }
     return {
       packs: typeof parsed.packs === 'object' && parsed.packs !== null ? parsed.packs : DEFAULT_CONFIG.packs,
-      noPlaybook: parsed.noPlaybook === 'deny-edits' ? 'deny-edits' : DEFAULT_CONFIG.noPlaybook,
+      noPlaybook:
+        parsed.noPlaybook === 'deny-edits' || parsed.noPlaybook === 'coach'
+          ? parsed.noPlaybook
+          : DEFAULT_CONFIG.noPlaybook,
       testDiscipline: 'testDiscipline' in parsed ? parsed.testDiscipline : DEFAULT_CONFIG.testDiscipline,
       land: 'land' in parsed ? parsed.land : DEFAULT_CONFIG.land
     }

@@ -8,7 +8,7 @@ import { runEmitShims } from './emit-shims.js'
 
 /**
  * `argo design emit-shims` — generates the host-side walker shims
- * (test/spec-diff/, test/vrt/ — decision 14) from .claude/argo.json's
+ * (test/spec-diff/, test/vrt/ — decision 14) from .argo/config.json's
  * design.<app> blocks. Shims are THIN: glob maps + composeStories handed to
  * the @argohq/toolkit/walkers factories, never walker bodies, so a kit upgrade
  * updates every host's walk logic without re-templating.
@@ -26,8 +26,8 @@ beforeEach(() => {
 afterEach(() => rmSync(host, { recursive: true, force: true }))
 
 function writeArgoJson(design: unknown) {
-  mkdirSync(join(host, '.claude'), { recursive: true })
-  writeFileSync(join(host, '.claude', 'argo.json'), JSON.stringify({ landing: 'pr', design }))
+  mkdirSync(join(host, '.argo'), { recursive: true })
+  writeFileSync(join(host, '.argo', 'config.json'), JSON.stringify({ landing: 'pr', design }))
 }
 
 const SHIM_PATHS = ['test/spec-diff/spec-diff.walker.spec-diff.js', 'test/vrt/vrt.walker.vrt.js']
@@ -95,7 +95,7 @@ describe('runEmitShims', () => {
     }
   })
 
-  it('fails loud when the project was never initialized (no .claude/argo.json)', () => {
+  it('fails loud when the project was never initialized (no .argo/config.json)', () => {
     expect(() => runEmitShims({ hostRoot: host })).toThrow(/argo init/)
   })
 })

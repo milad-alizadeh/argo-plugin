@@ -1,6 +1,6 @@
 ---
 name: init
-description: Detect the host project's stack and initialize argo — install ADAPTED argo rules into the project's own .claude/, place the @argohq/toolkit dependency, and write .claude/argo.json, tailored to what's there and never imposed. Use once when adding the argo pack to a project, or when the user says "set up argo" / "init argo" / "configure argo for this project" / "adapt the rules to my stack".
+description: Detect the host project's stack and initialize argo — install ADAPTED argo rules into the project's own .claude/, place the @argohq/toolkit dependency, and write .argo/config.json, tailored to what's there and never imposed. Use once when adding the argo pack to a project, or when the user says "set up argo" / "init argo" / "configure argo for this project" / "adapt the rules to my stack".
 ---
 
 # Initialize Argo in This Project
@@ -16,7 +16,7 @@ reason, ask before writing, never overwrite what the user hand-wrote.
 
 **Division of labor:** this skill owns the wizard (detection, consent, adapted rule
 text). The deterministic half — kit dep placement, `.claude/settings.json`
-`enabledPlugins`/`extraKnownMarketplaces`, the `.claude/argo.json` skeleton — is
+`enabledPlugins`/`extraKnownMarketplaces`, the `.argo/config.json` skeleton — is
 `argo init` (`@argohq/toolkit`'s CLI), invoked in §6d below. Never hand-write what the
 CLI owns.
 
@@ -34,7 +34,7 @@ multiple-choice prompts, never a paragraph ending in "shall I?". Rules:
   questions") and the §9 report.
 
 ## 1. Entry mode — first run or re-run
-Read `.claude/argo.json` first; it decides the mode:
+Read `.argo/config.json` first; it decides the mode:
 
 - **Missing → first-run wizard**: the full flow below (§1b–§9).
 - **Present → re-run offer**: "argo is already set up here — re-run detection
@@ -88,12 +88,15 @@ literal in an installed file.
 The automated build stage (`/argo:build-plan`) is a **single long-lived builder
 session**, not a workflow script — there is nothing to copy into `.claude/workflows/`.
 Its commit gates (red-proof, trust — dispatched via `@argohq/toolkit`'s `argo-hook`) are
-**inert by default**: they arm only while a build maintains `.argo/build-mode.json`,
+**inert by default**: they arm only while a build maintains `.argo/evidence/build-mode.json`,
 so installing the pack never gates a host project's normal commits.
 
 Setup here is small:
-- Ensure **`.argo/` is in the project's `.gitignore`** (receipts are local evidence,
-  never committed).
+- **`.gitignore` gets the deny-by-default `.argo/` block** (`argo init` writes it in
+  §6d): `/.argo/*` with explicit re-includes for `config.json`, `plans/`, `design/`
+  only. NEVER narrow it to one subdir — `.argo/` also holds secrets and session-local
+  files (tokens, receipts, `evidence/`), and a narrowed ignore would stage them on
+  the next `git add -A`.
 - Record the **detected** typecheck/lint/test commands in CLAUDE.md stack-facts (§8) —
   build-plan reads them from there, so it never fails a slice on guessed commands.
 - If the project uses a caching task runner (turbo/nx/bazel), make sure its task
@@ -106,9 +109,9 @@ The trust gate is Argo-runtime-specific (its launch receipt is written by the Ar
 itself when launched and exercised); in other host projects it stays inert on
 `requiresLaunch: false` slices — document, don't wire.
 
-### 6a. Landing mode — ask solo vs team; recorded in `.claude/argo.json`
+### 6a. Landing mode — ask solo vs team; recorded in `.argo/config.json`
 Ask ONE question: "Solo maintainer, or does this project have reviewers?" The answer
-becomes the `landing` field of `.claude/argo.json` (written by `argo init` in §6d —
+becomes the `landing` field of `.argo/config.json` (written by `argo init` in §6d —
 set it after the CLI runs, don't hand-create the file first):
 
 - `"merge"` (solo): `argo:integrator` lands finished branches straight onto the
@@ -123,6 +126,26 @@ set it after the CLI runs, don't hand-create the file first):
 
 The file is committed (it's team policy, not local state). Never infer the mode —
 the skeleton default is `"pr"`.
+
+### 6a2. No-playbook policy — ask the mode; recorded as `noPlaybook`
+Ask ONE question: "When an edit happens with no playbook run attached, should argo
+allow it silently, allow it but coach toward starting a playbook, or block it?"
+The answer becomes the `noPlaybook` field of `.argo/config.json`:
+
+- `"allow"` — every bare edit passes silently. The plugin default: safe for
+  existing repos, opinionated but non-breaking. An unanswered question resolves
+  here (omit the key — a missing key reads as `allow`); never write
+  `coach`/`deny-edits` without an explicit answer.
+- `"coach"` (**recommend this**) — bare mutating edits are allowed, but the
+  permission hook injects advisory context suggesting
+  `argo playbook start <slug> --target <t>`. The right middle ground while the
+  playbook catalog matures.
+- `"deny-edits"` — bare mutating edits are blocked with the same coaching; for
+  delegated/hands-off projects where no mutation should happen outside a gated
+  run.
+
+Existing projects change the mode later by editing `.argo/config.json` directly —
+no re-init needed.
 
 ## 6b. Install enforcement hooks (format-on-write + fast pre-commit)
 Guarantee that AI-written code stays typed/lint-clean/formatted **no matter when or by
@@ -189,7 +212,7 @@ project's own test reporter as ground truth. It enforces **order**, not test **q
   every session — red/green must be re-established by running tests *within* the
   current session, and via a **direct runner invocation** (a turbo cache hit skips
   the runner and leaves `test.json` stale, looking un-run). tdd-guard's live file is
-  not durable proof across sessions; `.argo/red-proof.json` is.
+  not durable proof across sessions; `.argo/evidence/red-proof.json` is.
 - **Wire the reporter into EVERY workspace whose tests must feed the guard** — not
   just the app. A workspace without the reporter produces no evidence, and the guard
   will false-block edits there for want of red it cannot see (observed: hook
@@ -241,10 +264,12 @@ deterministically:
 - writes `.claude/settings.json`'s `enabledPlugins` (and `extraKnownMarketplaces`
   when `--marketplace-repo <owner/repo>` is passed) — settings.json is the sole
   owner, never `settings.local.json`;
-- seeds the `.claude/argo.json` skeleton per mode (one inert `design` key per
+- seeds the `.argo/config.json` skeleton per mode (one inert `design` key per
   workspace app, or a single `"."` entry) — inert means no `componentsPath`, so no
   commit gate arms until `/argo:setup-design` fills the block. Existing user-set
-  fields always survive (mergeConfigShape).
+  fields always survive (mergeConfigShape);
+- appends the deny-by-default `.argo/` block to `.gitignore` (idempotent — only
+  missing lines are added, user content untouched).
 
 Then register the link source once per machine (`cd <plugin repo>/packages/kit &&
 bun link`) if not already registered, and run `bun install` in the host project so
@@ -402,18 +427,21 @@ After the rules land, one short recommendation pass from the §2 stack evidence:
   default extension list may need `.claude/argo-source-extensions.json` for
   this stack) — so the adopter sees exactly what is active vs dormant here.
 
-## 9. Finalize `.claude/argo.json`, report + one-step revert
+## 9. Finalize `.argo/config.json`, report + one-step revert
 `argo init` (§6d) seeded the skeleton; before reporting, complete it (these fields
-ride the SAME `.claude/argo.json` — there is no separate argo-config.json):
+ride the SAME `.argo/config.json` — there is no separate config file):
 
 ```json
 {
   "landing": "merge",
+  "noPlaybook": "coach",
   "design": { "…": {} }
 }
 ```
 
 - `landing` — from §6a's answer.
+- `noPlaybook` — from §6a2's answer (`allow` | `coach` | `deny-edits`); omit
+  the key if the question went unanswered (missing key reads as `allow`).
 - `design` — leave the CLI-seeded inert keys alone; `/argo:setup-design` owns
   their contents.
 

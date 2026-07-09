@@ -2,7 +2,7 @@
 
 The **product spec** for one screen. Authored (in the host repo, e.g.
 `<app>/design/briefs/<screen>.md`) before hi-fi design, and read by
-`figma-create` / `design-screen`. It carries the two things the PRD's ASCII
+`figma-create` / `design-screen`. It carries the two things the PRD's HTML
 wireframe deliberately doesn't fully spell out — **what each region is/does**
 and **which regions are reusable components** — so hi-fi builds a real
 component architecture instead of reskinning sketch boxes.
@@ -17,7 +17,7 @@ Copy the sections below verbatim; fill them for the screen. Keep it tight
 ## Reference image
 
 **Optional but strongly recommended.** A path/link to the visual the built
-screen is compared against: the PRD's ASCII wireframe (cited or embedded), an
+screen is compared against: the PRD's HTML wireframe file (cited by path), an
 annotated sibling screenshot, or the original design. Prose misreads are the observed fidelity
 failure mode — the designer's content self-check compares the built screenshot
 against THIS image, not against its own reading of the prose. If this section
@@ -75,9 +75,9 @@ explicitly:
   dominates instead of sitting in the detail slot).
 
 If a project has a settled cross-screen spatial model, cite it here rather than
-re-deriving (e.g. Argo v2's `.claude/plans/stage-arrangement-decisions.md`). One
+re-deriving (e.g. Argo v2's `.argo/plans/stage-arrangement-decisions.md`). One
 paragraph or a small labelled ASCII sketch is enough — this is the spec the
-PRD's ASCII wireframe and the hi-fi both realize, not prose.
+PRD's HTML wireframe and the hi-fi both realize, not prose.
 
 ---
 

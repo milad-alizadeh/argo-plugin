@@ -1,13 +1,13 @@
 ---
 name: setup-design
-description: Install/adapt the Figma-to-code design pack into a host project — shadcn init, Storybook + Vitest addon, VRT/spec-diff walker shims, gate wiring, lint rule, the app's design.<app> block in .claude/argo.json (the kit design modules resolve via @argohq/toolkit). Use when the user says "set up design", "install the design pack", "wire up Figma-to-code", or when init's recommendations pass mentions it.
+description: Install/adapt the Figma-to-code design pack into a host project — shadcn init, Storybook + Vitest addon, VRT/spec-diff walker shims, gate wiring, lint rule, the app's design.<app> block in .argo/config.json (the kit design modules resolve via @argohq/toolkit). Use when the user says "set up design", "install the design pack", "wire up Figma-to-code", or when init's recommendations pass mentions it.
 ---
 
 # Set Up the Design Pack
 
 Installs/adapts the whole Figma-to-code design pack, mirroring `init`'s
 wizard shape: AskUserQuestion batches, propose-don't-impose, per-item consent.
-All design-pack config and lifecycle state lives in **`.claude/argo.json`'s
+All design-pack config and lifecycle state lives in **`.argo/config.json`'s
 `design.<app>` block** (the block `init` seeded inert; single-repo apps use
 the `"."` key, monorepo apps their app-dir key — this skill fills ONE app's
 block per run and asks which app first in a monorepo). See
@@ -54,7 +54,7 @@ recipe ID matches its kit subpath (`@argohq/toolkit/design-kit/shadcn-tailwind`)
 its template directory is explicitly mapped:
 `shadcn-tailwind` → `templates/design/recipes/shadcn-tailwind/`.
 Store the choice into the app's `design.<app>.recipe` field in
-`.claude/argo.json`. Each recipe supplies named extension points that skills
+`.argo/config.json`. Each recipe supplies named extension points that skills
 dispatch to, resolving to files installed from the mapped
 `templates/design/recipes/<dir>/`:
 
@@ -97,7 +97,7 @@ parse the `<KEY>` segment out — store the bare key, never the whole URL.
 ## 0d. Entry mode — first run or re-run
 
 Mirrors `init` §1. Read the target app's `design.<app>` block in
-`.claude/argo.json` first (`init` owns the file itself and seeds inert `{}`
+`.argo/config.json` first (`init` owns the file itself and seeds inert `{}`
 blocks):
 
 - **No `recipe` in the block (init-seeded inert `{}`, or block missing) —
@@ -189,7 +189,7 @@ there's nothing to gate yet; the same offer recurs harmlessly on a future
 
 ## 4. Copy and fill design-pack templates
 
-Fill the app's `design.<app>` block in `.claude/argo.json` from
+Fill the app's `design.<app>` block in `.argo/config.json` from
 `config.example.json` (the block-shape reference — merge its keys into the
 existing block, never replace the block wholesale; `root`/`componentsPath`
 may already be set by init). Then copy templates from

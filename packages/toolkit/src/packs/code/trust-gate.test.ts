@@ -21,14 +21,14 @@ function runGate(stdin: string) {
 }
 
 function writeReceipt(cwd: string, receipt: string) {
-  mkdirSync(join(cwd, '.argo'), { recursive: true })
-  writeFileSync(join(cwd, '.argo', 'launch-receipt.json'), receipt)
+  mkdirSync(join(cwd, '.argo', 'evidence'), { recursive: true })
+  writeFileSync(join(cwd, '.argo', 'evidence', 'launch-receipt.json'), receipt)
 }
 
 function armBuildMode(cwd: string, over: Record<string, unknown> = {}) {
-  mkdirSync(join(cwd, '.argo'), { recursive: true })
+  mkdirSync(join(cwd, '.argo', 'evidence'), { recursive: true })
   writeFileSync(
-    join(cwd, '.argo', 'build-mode.json'),
+    join(cwd, '.argo', 'evidence', 'build-mode.json'),
     JSON.stringify({ plan: 'p.md', slice: 's1', testable: true, requiresLaunch: true, ...over }),
   )
 }
@@ -167,8 +167,8 @@ describe('trust gate (§8.2) — commit-scoped, marker-armed, fails closed when 
   it('PASS: receipt found one workspace level down (apps/<ws>/.argo) — monorepo launch cwd', async () => {
     armBuildMode(cwd)
     const ws = join(cwd, 'apps', 'desktop')
-    mkdirSync(join(ws, '.argo'), { recursive: true })
-    writeFileSync(join(ws, '.argo', 'launch-receipt.json'), greenReceipt())
+    mkdirSync(join(ws, '.argo', 'evidence'), { recursive: true })
+    writeFileSync(join(ws, '.argo', 'evidence', 'launch-receipt.json'), greenReceipt())
     expect((await runGate(commitInput())).code).toBe(0)
   })
 
@@ -216,8 +216,8 @@ describe('trust gate (§8.2) — commit-scoped, marker-armed, fails closed when 
   })
 
   it('BLOCK: unparseable build-mode marker while armed (default-deny)', async () => {
-    mkdirSync(join(cwd, '.argo'), { recursive: true })
-    writeFileSync(join(cwd, '.argo', 'build-mode.json'), '{ nope')
+    mkdirSync(join(cwd, '.argo', 'evidence'), { recursive: true })
+    writeFileSync(join(cwd, '.argo', 'evidence', 'build-mode.json'), '{ nope')
     expect((await runGate(commitInput())).code).not.toBe(0)
   })
 

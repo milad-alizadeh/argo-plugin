@@ -54,12 +54,12 @@ describe('emitted shims are not vacuous — `argo design emit-shims` output coll
     linkKit(emitted, { withVitest: true })
     // Point the generated globs at the fixture's actual layout (stories/ sits
     // outside componentsPath) and use the storybook-free composeStories.
-    const argoJson = readJson(emitted, '.claude', 'argo.json')
+    const argoJson = readJson(emitted, '.argo', 'config.json')
     argoJson.design['.'].walkers = {
       storiesGlob: '../../stories/*.stories.js',
       storybookTestPackage: null,
     }
-    writeJson(emitted, ['.claude', 'argo.json'], argoJson)
+    writeJson(emitted, ['.argo', 'config.json'], argoJson)
     // Overwrite the committed fixture shims with freshly emitted ones.
     const res = runArgo(emitted, ['design', 'emit-shims'])
     expect(res.status, res.stderr).toBe(0)

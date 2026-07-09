@@ -23,6 +23,12 @@ single-slice TDD, use `/argo:test-first`.
   invent one. A minimal hand-written plan is fine; `argo:planner` is encouraged for
   non-trivial work but not required. The plan must be reachable from the branch the
   worktree derives from (commit it to the default branch first).
+- **The plan is cleared for build**: run `argo plans check --plan <path>` — it refuses
+  any plan whose frontmatter is not `status: queued` (a `draft` plan is still being
+  written; missing/invalid frontmatter also refuses). Never build a draft; ask the
+  user to flip the plan to `queued` on the default branch instead of editing it
+  yourself. Do NOT edit plan status from the worktree during the build — live state
+  belongs to the run store (`~/.argo/state/`), and `argo plans` overlays it.
 - **argo:reviewer** is available (checkpoint + final review). If absent, stop and say so.
 - **Verify commands** are known: the project's real typecheck/lint/test commands (from
   CLAUDE.md stack-facts or the manifests). Never guess.
@@ -68,8 +74,11 @@ separate worktrees never collide on the git index.
    e2e launcher needs is the common casualty; step 1's stack-facts usually name the
    fix).
 
-## 3. Arm the gates — `.argo/build-mode.json`
-Ensure `.argo/` is gitignored, then write the build-mode marker in the worktree root.
+## 3. Arm the gates — `.argo/evidence/build-mode.json`
+Ensure `.argo/` is gitignored (deny-by-default: `/.argo/*` with explicit re-includes
+for `config.json`, `plans/`, `design/` only — never a narrower ignore, `.argo/` also
+holds secrets), then `mkdir -p .argo/evidence` and write the build-mode marker in the
+worktree root.
 While this file exists, the plugin's commit gates (`red-proof-gate.mjs`,
 `trust-gate.mjs` — PreToolUse on `git commit`) are ARMED and fail-closed; without it
 they are inert. Update it **at the start of every slice**:
@@ -88,7 +97,7 @@ they are inert. Update it **at the start of every slice**:
   edge-case-matrix ceremony. Verify (typecheck/lint/test suite) still runs.
 - `requiresLaunch: true` — for slices that ship launchable app/UI behaviour in the Argo
   runtime: the trust gate then demands a fresh launch-evidence receipt
-  (`.argo/launch-receipt.json`, written by the app itself when launched and exercised —
+  (`.argo/evidence/launch-receipt.json`, written by the app itself when launched and exercised —
   e.g. by the slice's e2e run). Argo-runtime-specific; leave `false` elsewhere.
 
 **Delete the marker when the build ends** (done or blocked) — never leave gates armed.
@@ -98,7 +107,7 @@ Work the plan's steps strictly in order; keep a `…-progress.md` beside the pla
 (one row per slice: status, commit sha, notes) updated after every slice.
 
 For each slice:
-1. **Update** `.argo/build-mode.json` to this slice.
+1. **Update** `.argo/evidence/build-mode.json` to this slice.
 2. **Red** (skip if `testable: false`): write the test that specifies the slice's
    behaviour through the real interface (per the project's testing rules — DOM/API/CLI,
    not internals). Run it; record the non-zero exit code. **Run only THAT spec file**
@@ -110,7 +119,7 @@ For each slice:
    shared surface other specs depend on (a common fixture, selector, shared
    component, global setup), run the full e2e suite once now, on green — per-file
    scoping must never let a slice silently break its neighbours.
-4. **Receipt**: write `.argo/red-proof.json`:
+4. **Receipt**: write `.argo/evidence/red-proof.json`:
    ```json
    { "slice": "<id>", "testFile": "<path>", "redExit": 1, "greenExit": 0,
      "recordedAt": <epoch ms> }
@@ -160,7 +169,7 @@ action. Never re-do a committed step.
 `test.json` resets when a new session boots, so red/green evidence must be
 re-established by running tests *within the resumed session*, as a **direct runner
 invocation** (a turbo cache hit doesn't spawn the runner and leaves `test.json`
-stale). `.argo/red-proof.json` — not tdd-guard's live file — is the durable
+stale). `.argo/evidence/red-proof.json` — not tdd-guard's live file — is the durable
 cross-session proof the commit gate actually checks.
 
 **When the plan edits this plugin's own hooks:** the session runs the INSTALLED
@@ -195,20 +204,18 @@ structure or computed style at the fix's owner (one place), never boundingBox pi
 math re-asserted per consumer layer.
 
 ## 7. Land or surface — always close out the worktree
-- **All slices done + final review clean** → delete `.argo/build-mode.json`, hand the
+- **All slices done + final review clean** → delete `.argo/evidence/build-mode.json`, hand the
   branch to **`argo:integrator`**. How it lands depends on the project's landing mode
-  (`.claude/argo.json`'s `landing` field, set by `/argo:init`): in **pr** mode (the default) it
+  (`.argo/config.json`'s `landing` field, set by `/argo:init`): in **pr** mode (the default) it
   pushes the branch and opens/updates the PR — it never merges, and merging happens
   via the PR. In **merge** mode (solo maintainer) it lands the branch straight onto
   the default branch (`git push origin HEAD:<default>`, its own re-verification as
   the gate) with no PR to self-review. Either way it does not touch graphify — the post-merge
   lefthook refreshes it when the local default branch integrates the work. Then
-  **ExitWorktree** (`remove` once merged). **Archive the plan**: once landed, if the
-  project keeps a done-plans folder (e.g. `.claude/plans/done/`), move the plan doc +
-  its progress doc there (a normal committed change) so the plans root stays
-  queued-work-only; create the folder on first use if the project organizes plans
-  this way.
-- **BLOCKED** → do NOT merge. Delete `.argo/build-mode.json`, **ExitWorktree (`keep`)**
+  **ExitWorktree** (`remove` once merged). **No plan archiving**: plans stay in
+  `.argo/plans/` forever — there is no `done/` folder and no `landed` frontmatter.
+  "Landed" is DERIVED from git (`argo plans` computes it); git history is the archive.
+- **BLOCKED** → do NOT merge. Delete `.argo/evidence/build-mode.json`, **ExitWorktree (`keep`)**
   so the worktree + branch stay on disk for inspection. Surface the blocked slice, its
   reasons, and the progress-doc path, and stop.
 

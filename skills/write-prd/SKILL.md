@@ -1,6 +1,6 @@
 ---
 name: write-prd
-description: Author a lightweight, grounded PRD (product requirements doc) for one feature — the durable WHAT and WHY at the top of the loop. Use when starting a new feature or capability, when the user asks to "write a PRD / product brief / product spec", or before planning/designing so downstream stages share one source of intent. Produces checkable requirements, a feature→screen matrix that design and code completeness gates consume, and a user-agreed ASCII wireframe + flow per screen — the layout-intent artifact the designer builds from.
+description: Author a lightweight, grounded PRD (product requirements doc) for one feature — the durable WHAT and WHY at the top of the loop. Use when starting a new feature or capability, when the user asks to "write a PRD / product brief / product spec", or before planning/designing so downstream stages share one source of intent. Produces checkable requirements, a feature→screen matrix that design and code completeness gates consume, and a user-signed-off lo-fi HTML wireframe file per feature — the layout-intent artifact the designer builds from.
 ---
 
 # Write a PRD (product requirements doc)
@@ -8,7 +8,7 @@ description: Author a lightweight, grounded PRD (product requirements doc) for o
 A PRD is the **durable statement of what a feature is and why it exists** —
 authored once, at the top of the loop, and cited by every stage after it
 (hi-fi design → implementation plan). It is not a design (no
-component choices, no visual styling — the ASCII wireframe it carries is
+component choices, no visual styling — the HTML wireframe it points at is
 layout *intent*, not design) and not a plan (no code steps, no data models). It is
 the product intent, grounded in what the product already does, written so a
 verifier who never saw the reasoning can check whether the built thing delivers
@@ -126,20 +126,33 @@ converging:
    a canvas-derived deck launders stale clone text through the gate (the
    measured failure this rule exists for).
 
-5c. **Sketch the ASCII wireframe + flow — the layout sign-off artifact.** For
-   each screen the matrix marks with `Visible in build? = yes/partial`
-   requirements, co-create with the user (one screen at a time, one question at
-   a time where a layout choice is genuinely open) a plain-text ASCII block
-   naming that screen's regions and their spatial arrangement (rows / columns /
-   panels — box-drawing characters or indentation, no fixed notation mandated;
-   legibility is the only bar), plus a one-paragraph flow sketch (what
-   navigates to and from this screen). Embed both in the template's
-   `ASCII wireframe + flow` section, each sketch in a fenced ` ```text ` block.
-   The user confirms each sketch before hi-fi starts — this replaces the
-   retired Figma lo-fi wireframing stage as the layout-intent input
-   `design-screen`/`figma-create` consume (a screen brief satisfies its
-   `Reference image` section by citing or embedding the PRD's sketch; no Figma
-   wireframe is needed).
+5c. **Write the HTML wireframe + flow — the layout sign-off artifact.** For
+   the screens the matrix marks with `Visible in build? = yes/partial`
+   requirements, write ONE lo-fi HTML wireframe file at
+   `design/wireframes/<feature>.html` (committed next to the PRD; one section
+   per screen) naming each screen's regions and their spatial arrangement
+   (rows / columns / panels as labeled divs), plus a one-paragraph flow sketch
+   per screen (what navigates to and from it) embedded in the file or in the
+   PRD's `Wireframe + flow` section.
+   - **Lo-fi by constraint:** grayscale boxes and labels only — no color, no
+     typography choices, no component styling, no CSS frameworks. Judging
+     layout and flow on a real spatial canvas is the point; fidelity belongs
+     to the Figma stage.
+   - **Iterate live with the user.** Publish the file as an Artifact and
+     iterate until layout and flow are signed off — edit the file, redeploy to
+     the same URL. Artifact publish sends content to claude.ai; mention that
+     once at first publish per project. Where the Artifact tool is unavailable
+     (headless/non-Claude harness), still write the file and have it reviewed
+     by opening it locally — the contract doesn't depend on the viewer.
+   - **The file is the contract.** Committed, diffable, text — labeled divs
+     are as readable to downstream agents (design-screen, verifiers) as boxes.
+     The artifact URL is a view, never a source of truth. The PRD carries a
+     one-line pointer to the wireframe file (template's `Wireframe + flow`
+     section); the PRD stays the completeness oracle, the wireframe file is
+     the layout sign-off. This is the layout-intent input
+     `design-screen`/`figma-create` consume (a screen brief satisfies its
+     `Reference image` section by citing the wireframe file; no Figma
+     wireframe is needed).
 
 6. **Bound the scope — IN/OUT only.** Explicit IN (this version) and OUT
    (deferred + one-line reason). Nothing else lives here — states are
@@ -167,7 +180,7 @@ converging:
 ## Handoff
 
 When the PRD is settled it feeds both branches: the design branch
-(`design-screen` / `figma-create`, consuming the PRD's ASCII wireframe + flow
+(`design-screen` / `figma-create`, consuming the PRD's HTML wireframe + flow
 directly, with a completeness gate intended to check the PRD's requirements
 once P5 ingests them) and the code branch (`argo:planner` →
 `build-plan`). Summarise the feature's core bet, its scope line, and the two or

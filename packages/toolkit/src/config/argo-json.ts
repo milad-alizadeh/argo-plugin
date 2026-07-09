@@ -1,6 +1,7 @@
 /**
- * `.claude/argo.json` — the kit's consolidated per-project config (decision 8)
+ * `.argo/config.json` — the kit's consolidated per-project config (decision 8)
  * — and the dual-mode hook-resolution logic the design commit gates arm from.
+ * The path itself is owned by `argo-paths.ts` (the single `.argo/` resolver).
  *
  * Shape (design section):
  *   { "design": { "<appKey>": { "root": "<app dir, repo-root-relative>",
@@ -14,21 +15,22 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs'
-import { join, resolve, relative, dirname, sep } from 'node:path'
+import { resolve, relative, dirname, sep } from 'node:path'
+import { argoConfigPath } from './argo-paths.js'
 
 export type DesignBlock = { root?: string; componentsPath?: string; recipe?: string; [key: string]: unknown }
 export type ArgoConfig = { design?: Record<string, DesignBlock> }
 export type FoundArgoJson = { repoRoot: string; config: ArgoConfig }
 
 /**
- * Walk up from `cwd` to the first directory containing `.claude/argo.json`.
+ * Walk up from `cwd` to the first directory containing `.argo/config.json`.
  * Returns null when absent or malformed — callers treat both as "not an
  * argo project", inert, no throw.
  */
 export function findArgoJson(cwd: string): FoundArgoJson | null {
   let dir = resolve(cwd)
   while (true) {
-    const candidate = join(dir, '.claude', 'argo.json')
+    const candidate = argoConfigPath(dir)
     if (existsSync(candidate)) {
       try {
         return { repoRoot: dir, config: JSON.parse(readFileSync(candidate, 'utf8')) }

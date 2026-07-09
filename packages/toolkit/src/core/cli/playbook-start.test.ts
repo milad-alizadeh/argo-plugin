@@ -67,6 +67,16 @@ describe('playbookStart', () => {
     expect(getActiveInstance({ cwd, stateRoot })?.playbook).toBe(name)
   })
 
+  it('rejects a plan-doc target given as a PATH — the plan↔run join key is the basename', () => {
+    const name = `join-key-fixture-${Math.random()}`
+    registerPlaybook(
+      definePlaybook({ name, stages: [{ name: 'build', allows: ['file-edit'], gate: 'x' }] })
+    )
+
+    expect(() => playbookStart({ name, target: '.argo/plans/my-plan.md' }, { cwd, stateRoot })).toThrow(/BASENAME/)
+    expect(() => playbookStart({ name, target: 'my-plan.md' }, { cwd, stateRoot })).not.toThrow()
+  })
+
   it('refuses to start when the terminal stage hands off to a disabled pack', () => {
     const name = `handoff-fixture-${Math.random()}`
     registerPlaybook(

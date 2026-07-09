@@ -36,7 +36,7 @@ describe('acid: argo init — monorepo fixture', () => {
     expect(readJson(host, 'package.json').dependencies['@argohq/toolkit']).toBe('link:@argohq/toolkit')
     expect(readJson(host, 'apps/a/package.json').dependencies).toBeUndefined()
 
-    const argoJson = readJson(host, '.claude', 'argo.json')
+    const argoJson = readJson(host, '.argo', 'config.json')
     // fixture ships apps/a CONFIGURED (setup-design already ran there) — preserved verbatim
     expect(argoJson.design['apps/a']).toEqual({ root: 'apps/a', componentsPath: 'src/components' })
     // apps/b discovered and seeded INERT
@@ -60,7 +60,7 @@ describe('acid: argo init — single-repo fixture', () => {
     const res = runArgo(host, ['init'])
     expect(res.status).toBe(0)
     expect(readJson(host, 'package.json').dependencies['@argohq/toolkit']).toBe('link:@argohq/toolkit')
-    const argoJson = readJson(host, '.claude', 'argo.json')
+    const argoJson = readJson(host, '.argo', 'config.json')
     expect(Object.keys(argoJson.design)).toEqual(['.'])
     expect(argoJson.design['.']).toEqual({ root: '.', componentsPath: 'src/components' })
   })
@@ -68,10 +68,10 @@ describe('acid: argo init — single-repo fixture', () => {
   it('is idempotent: a second init changes nothing', () => {
     const host = scratch(FIXTURES.singleRepo)
     runArgo(host, ['init'])
-    const before = { pkg: readJson(host, 'package.json'), argo: readJson(host, '.claude', 'argo.json') }
+    const before = { pkg: readJson(host, 'package.json'), argo: readJson(host, '.argo', 'config.json') }
     const res = runArgo(host, ['init'])
     expect(res.status).toBe(0)
     expect(readJson(host, 'package.json')).toEqual(before.pkg)
-    expect(readJson(host, '.claude', 'argo.json')).toEqual(before.argo)
+    expect(readJson(host, '.argo', 'config.json')).toEqual(before.argo)
   })
 })

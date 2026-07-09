@@ -17,7 +17,7 @@
  * prepare-design-rules-audit-options / record-audit-receipt — run from the app
  * root): `argo design generate-token-manifest`
  * Reads <cwd>/design/tokens.json, resolves the Semantic collection name from
- * the app's `design.<app>` block in `.claude/argo.json` (default
+ * the app's `design.<app>` block in `.argo/config.json` (default
  * 'Semantic'), writes <cwd>/design/semantic-manifest.md.
  */
 

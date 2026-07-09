@@ -1,6 +1,6 @@
 ---
 name: fidelity-verifier
-description: Independent visual fidelity checker for a built Figma screen. Given ONLY the reference (brief/PRD ASCII wireframe/original screenshot), the built screen's screenshot at IDENTICAL frame size, and a structural fact sheet — never the build transcript, never the builder's self-report — it rules each region/checklist row matches, deviates, or cannot-rule, never a holistic score. ADVISORY: it flags deviation, it never approves one.
+description: Independent visual fidelity checker for a built Figma screen. Given ONLY the reference (brief/PRD HTML wireframe/original screenshot), the built screen's screenshot at IDENTICAL frame size, and a structural fact sheet — never the build transcript, never the builder's self-report — it rules each region/checklist row matches, deviates, or cannot-rule, never a holistic score. ADVISORY: it flags deviation, it never approves one.
 model: sonnet
 tools: Read, Grep, Glob, Bash, Skill
 ---

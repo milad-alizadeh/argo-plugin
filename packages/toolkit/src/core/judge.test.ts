@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { core, registerJudge } from './judge.js'
+import { core, registerJudge, resetJudgeForTests } from './judge.js'
 
-// Order matters: the unregistered-call case must run before anything in this
-// file registers a judge, since the registry is a module-level singleton
-// (bun's `vitest` compat shim run via `bun test` has no `vi.resetModules`).
 describe('core.judge', () => {
   it('throws "no judge registered" when called before an adapter registers one', async () => {
+    // the registry is a module-level singleton shared across test FILES under
+    // `bun test` — reset explicitly rather than depending on file order
+    resetJudgeForTests()
     await expect(core.judge({ artifacts: {} })).rejects.toThrow('no judge registered')
   })
 

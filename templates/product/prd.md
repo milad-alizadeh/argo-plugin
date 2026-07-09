@@ -98,28 +98,19 @@ non-empty disposition; a dangling requirement is a defect):
 Single-surface shortcut: "Single surface: <screen> — R1, R2, R3 all realized
 here" (still name every REQ-ID).
 
-## ASCII wireframe + flow
+## Wireframe + flow
 
-One subsection per screen in the matrix that carries `Visible in build? =
-yes/partial` requirements. Each is **co-created with the user and confirmed
-before hi-fi starts** — this is the layout sign-off artifact that replaces a
-separate Figma lo-fi wireframing stage. It names regions and their spatial
-arrangement (rows / columns / panels); no components, no styling, no pixel
-values. The screen brief's `Reference image` section cites or embeds it.
+**Wireframe:** `design/wireframes/<feature>.html` — the lo-fi HTML wireframe
+file committed next to this PRD, **co-created with the user (via Artifact
+publish + live iteration) and signed off before hi-fi starts**. It is the
+layout sign-off artifact: one section per screen in the matrix that carries
+`Visible in build? = yes/partial` requirements, naming regions and their
+spatial arrangement (rows / columns / panels) as grayscale labeled divs — no
+color, no components, no styling, no pixel-perfect values. The screen brief's
+`Reference image` section cites it. The file is the contract; any artifact URL
+is a view.
 
 ### <screen name>
-
-```text
-┌──────────────────────────────────────────────┐
-│ header:  title ·············· actions        │
-├───────────────┬──────────────────────────────┤
-│ session list  │ detail pane                  │
-│ (scroll)      │  summary · milestone strip   │
-│               │  body tabs [Live|Plan|Diff]  │
-├───────────────┴──────────────────────────────┤
-│ status bar                                   │
-└──────────────────────────────────────────────┘
-```
 
 **Flow:** one paragraph — what navigates to this screen, what each region's
 primary action leads to, and where the user exits.
@@ -194,7 +185,7 @@ silently assume.
 ## Handoff
 
 - **Design branch:** hi-fi design (`design-screen` / `figma-create`) —
-  consuming this doc's ASCII wireframe + flow directly; the screen briefs
+  consuming this doc's HTML wireframe + flow directly; the screen briefs
   project this doc's matrix columns. The design-verifier is intended to check
   these requirements as the semantic completeness contract — this depends on
   design-screen P5 ingesting the REQ-ID column (tracked in

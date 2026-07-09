@@ -75,6 +75,17 @@ describe('readConfig', () => {
     })
   })
 
+  it('reads "coach" verbatim and falls back to "allow" for an unknown noPlaybook value', () => {
+    const argoDir = join(cwd, '.argo')
+    mkdirSync(argoDir, { recursive: true })
+    const path = join(argoDir, 'config.json')
+    writeFileSync(path, JSON.stringify({ noPlaybook: 'coach' }))
+    expect(readConfig(cwd).noPlaybook).toBe('coach')
+
+    writeFileSync(path, JSON.stringify({ noPlaybook: 'bogus-mode' }))
+    expect(readConfig(cwd).noPlaybook).toBe('allow')
+  })
+
   it('reads live per call — a later edit is picked up without caching', () => {
     const argoDir = join(cwd, '.argo')
     mkdirSync(argoDir, { recursive: true })

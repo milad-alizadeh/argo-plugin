@@ -7,6 +7,10 @@
  *   init | graph refresh — lifecycle verbs (Slices 4+)
  *   playbook <start|status|advance|adopt|diagram> — @argohq/core's playbook-engine
  *                         CLI verbs (playbook-engine-phase1.md, Slice 8)
+ *   plans [check]       — plan lifecycle: list by status (frontmatter draft|queued,
+ *                         landed derived from git, live-run overlay from the home
+ *                         store); `plans check --plan <path>` is build-plan's
+ *                         refuse-a-draft gate
  *
  * Hook dispatch model: each hook module stays a standalone fail-closed script
  * (stdin JSON in, exit code out) — the dispatcher reads stdin ONCE and replays
@@ -171,6 +175,30 @@ switch (cmd) {
     }
     break
   }
+  case 'plans': {
+    const { listPlans, assertPlanQueued } = await import('../dist/cli/plans.js')
+    if (rest[0] === 'check') {
+      const plan = flagValue(rest, '--plan')
+      if (!plan) {
+        process.stderr.write('usage: argo plans check --plan <path>\n')
+        process.exit(1)
+      }
+      try {
+        assertPlanQueued(plan)
+        console.log(JSON.stringify({ ok: true, plan }))
+      } catch (err) {
+        process.stderr.write(`${err.message}\n`)
+        process.exit(1)
+      }
+      break
+    }
+    const plans = listPlans({
+      hostRoot: flagValue(rest, '--host-root') ?? process.cwd(),
+      stateRoot: process.env.ARGO_STATE_ROOT,
+    })
+    console.log(JSON.stringify(plans, null, 2))
+    break
+  }
   case 'graph': {
     if (rest[0] !== 'refresh') {
       process.stderr.write(`argo graph: unknown verb "${rest[0] ?? ''}" (known: refresh)\n`)
@@ -181,6 +209,6 @@ switch (cmd) {
     break
   }
   default:
-    process.stderr.write('usage: argo <argo-hook|design|init|graph|playbook> ...\n')
+    process.stderr.write('usage: argo <argo-hook|design|init|graph|playbook|plans> ...\n')
     process.exit(cmd ? 1 : 0)
 }

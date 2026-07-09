@@ -18,7 +18,7 @@ flowchart LR
 
     thought([THOUGHT]) --> prd
     prd["PRD<br/>product / write-prd<br/><i>WHAT & WHY + ASCII wireframe + flow</i>"]:::stage
-    brief["brief<br/>.claude/design/briefs/<br/><i>per-screen spec, cites the PRD's sketch</i>"]:::stage
+    brief["brief<br/>.argo/design/briefs/<br/><i>per-screen spec, cites the PRD's sketch</i>"]:::stage
     manifest{"decision gate<br/>binding manifest<br/>vs registry"}:::gate
     hifi["hi-fi<br/>design-screen<br/><i>pixel design, component-first</i>"]:::stage
     dv{"design-verifier<br/>gate"}:::gate

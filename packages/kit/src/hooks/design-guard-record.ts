@@ -73,12 +73,13 @@ const projectFileKeys = projectFileKeysOf(designApps)
 const writeFileKey = typeof hook?.tool_input?.fileKey === 'string' ? hook.tool_input.fileKey : ''
 if (projectFileKeys.size > 0 && writeFileKey.length > 0 && !projectFileKeys.has(writeFileKey)) process.exit(0)
 
-// Wireframe-write exemption (figma-wireframe/SKILL.md): wireframe pages are
-// tier-0 exempt in the audit (isWireframePageName), so counting a wireframe
-// write would force a guaranteed-empty end-of-session audit. The wireframe
-// skill tags every write with `figma-wireframe` in the use_figma `skillNames`
-// argument; honor it and stay fully inert (no counter bump, no audit-owed
-// nudge). Missing/other skillNames → normal counting.
+// LEGACY wireframe-write exemption (the figma-wireframe skill is deleted; the
+// tag is kept for backward compat on projects with pre-existing W## pages):
+// wireframe pages are tier-0 exempt in the audit (isWireframePageName), so
+// counting a wireframe write would force a guaranteed-empty end-of-session
+// audit. A write tagged `figma-wireframe` in the use_figma `skillNames`
+// argument stays fully inert (no counter bump, no audit-owed nudge).
+// Missing/other skillNames → normal counting.
 function skillNamesFrom(toolInput: any): string[] {
   const raw = toolInput?.skillNames
   if (Array.isArray(raw)) return raw.map((s) => String(s))

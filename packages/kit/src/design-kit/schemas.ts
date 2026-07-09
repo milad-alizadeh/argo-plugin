@@ -60,7 +60,16 @@ export const RegistryEntrySchema = z.object({
    * mirror nothing uses and stays advisory-only. Absent on custom/code-owned
    * (they're always in scope) and on raw kit.
    */
-  adopted: z.boolean().optional()
+  adopted: z.boolean().optional(),
+  /**
+   * Canonical default strings this component legitimately renders when its
+   * text is not overridden (design-phase-quality-plan.md W4) — e.g. a
+   * documented placeholder label. The tier-0 `untraced-copy` rule accepts a
+   * TEXT node whose content matches a copy-deck entry OR one of these
+   * documented defaults; an undocumented master placeholder leaking into a
+   * composed screen is exactly the stale-copy defect the rule catches.
+   */
+  defaultStrings: z.array(z.string()).optional()
 })
 
 /** design-memory-placement.md Mechanism 2: registry.json's file header — freshness metadata a reader uses to distinguish a fresh registry from a wholesale-rotted one. */

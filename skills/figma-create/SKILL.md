@@ -139,11 +139,18 @@ file → skip; never invent one.
      never fall back to building a custom component to route around a
      missing lookup; that recreates the exact duplication this check exists
      to prevent.
-  4. **Stop-and-ask on ambiguity:** if the lookup surfaces a plausible
-     existing component (or multiple candidates) for a composite region,
-     STOP AND ASK the human to confirm the binding — never silently assemble
-     the region from primitives past a candidate, never silently trust a
-     stale bindings entry that failed verification.
+  4. **Three-tier guardrail (the decidable form of "missing → ASK"):**
+     - **Always** — an existing registry component whose `whenToUse` matches
+       the region/pattern: use it, no ask needed.
+     - **Ask-first** — no candidate's `whenToUse` clearly matches (or
+       plausible candidates carry none): STOP AND ASK the human to confirm
+       the binding before assembling — never silently assemble the region
+       from primitives past a candidate, never silently trust a stale
+       bindings entry that failed verification.
+     - **Never** — invent a component name silently, or auto-`NEW` past the
+       registry. `argo design validate-manifest` hard-blocks these rows on
+       the screen path; for a bare component task the same tiers apply by
+       hand.
   4. The run report MUST carry a **reuse-check line**: `reusing base/X` |
      `extending base/X by composition` | `closest base matches A, B —
      insufficient because <concrete reason>, building custom`. This is the
@@ -245,6 +252,22 @@ misses were prose-misread failures, and a reference image is what the content
 self-check compares the built screenshot against (see design-screen P3/P4).
 
 Build in this order, every time:
+
+0. **Binding manifest + copy deck (the DECISION pass — required before any
+   `use_figma` composition on the screen path).** Emit
+   `design/<wave>/binding-manifest.json` (`requirement → registry component →
+   variant/states → purpose`, schema `BindingManifestSchema` from
+   `@argohq/kit/design-kit`) and, when the PRD carries a copy deck,
+   `design/<wave>/copy-deck.json`. Then run
+   `argo design validate-manifest --manifest <path> --cwd <app-dir>`: it
+   checks every row against `design/registry.json`, applies the committed
+   `design/confusable-pairs.json` disambiguation table (a row on a known
+   confused pair needs an explicit `justification`), and enforces the
+   three-tier guardrail (Always / Ask-first / Never). **Exit 1 = STOP AND ASK
+   — no composition until the manifest passes.** All authored canvas text
+   comes from the copy deck (shared strings referenced by key); a string with
+   no deck entry → stop-and-ask, never confident filler — the tier-0
+   `untraced-copy` rule hard-fails untraced text on the named audit.
 
 1. **Inventory.** From the brief's *Regions → component map*, list every
    `composite` region (and every `composite` sub-part under *Component

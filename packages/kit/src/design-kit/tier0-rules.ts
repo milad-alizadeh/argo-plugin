@@ -695,3 +695,41 @@ export function gapPaddingSpacingViolations(node: AnyNode, config: GapPaddingCol
   }
   return violations
 }
+
+/** Whitespace-normalized form used for copy-deck tracing: canvas line-wraps and stray padding never fail a trace. */
+function normalizeCopy(text: string): string {
+  return text.replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Rule #13 — untraced copy (design-phase-quality-plan.md W4). Every TEXT
+ * node's content must trace to a copy-deck entry or a registry component's
+ * documented default string. Mechanism, not judgment: `copyAllowedStrings`
+ * is derived Node-side by `prepare-tier0-audit-options` (wave copy-deck
+ * artifacts flattened via `copyDeckStrings`, plus every registry entry's
+ * `defaultStrings`) — when it is absent (no copy deck in the project), the
+ * rule is INERT, so a project that never adopted decks sees zero change.
+ *
+ * Deliberately NOT `insideInstance`-exempt: a kit master's un-overridden
+ * placeholder label ("Button") leaking into a composed screen IS the
+ * stale-copy defect class this rule exists to catch — the legal path for a
+ * default is documenting it as a `defaultStrings` entry on the component's
+ * registry entry. Letter-free content (counts, times, `+12 / -3`) is a data
+ * slot, not authored copy, and is skipped deterministically.
+ */
+export function untracedCopyViolation(
+  node: AnyNode,
+  { copyAllowedStrings }: { copyAllowedStrings?: string[] | null }
+): Violation | null {
+  if (!copyAllowedStrings || copyAllowedStrings.length === 0) return null
+  if (node.type !== 'TEXT') return null
+  const content = typeof node.characters === 'string' ? normalizeCopy(node.characters) : ''
+  if (content === '') return null
+  if (!/[a-zA-Z]/.test(content)) return null
+  const allowed = new Set(copyAllowedStrings.map(normalizeCopy))
+  if (allowed.has(content)) return null
+  return {
+    rule: 'untraced-copy',
+    detail: `text "${content.length > 60 ? `${content.slice(0, 57)}...` : content}" traces to no copy deck entry and no registry defaultStrings entry; author it in the wave's copy deck (shared strings by key), or document it as the component's canonical default`
+  }
+}

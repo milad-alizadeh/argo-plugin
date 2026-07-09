@@ -93,14 +93,23 @@ grid, a repeated pattern), resolve its component binding in this order:
    candidate's `whenToUse` matches the region/pattern being built (e.g. its
    guidance says it IS the children-tree solution), that candidate is
    presumptively THE component — use it without asking.
-3. **Stop-and-ask on ambiguity.** If MULTIPLE candidates' `whenToUse` match,
-   or plausible candidates surface with no `whenToUse` to disambiguate, STOP
-   AND ASK the human to confirm the binding before assembling. Never silently
-   assemble the region from primitives when a candidate exists, and never
-   silently trust a stale bindings entry that failed verification.
+3. **Three-tier guardrail (decidable, not a judgment call).**
+   - **Always**: an existing registry component whose `whenToUse` matches the
+     region/pattern — use it, no ask needed.
+   - **Ask-first**: no candidate's `whenToUse` clearly matches, MULTIPLE
+     candidates match, or plausible candidates carry no guidance — STOP AND
+     ASK the human to confirm the binding before assembling. Never silently
+     assemble the region from primitives when a candidate exists, and never
+     silently trust a stale bindings entry that failed verification.
+   - **Never**: invent a component name silently or auto-create past the
+     registry — only a human adds to the roster.
 
 This contract is standalone: the PRD section is an optional hint layer, and
-the flow above works with or without it.
+the flow above works with or without it. On a screen task, the tiers are
+enforced mechanically before composition: the binding manifest you emit must
+pass `argo design validate-manifest` (existence vs `design/registry.json`,
+the committed `design/confusable-pairs.json` disambiguation table, Ask-first
+blocking) before any `use_figma` composition.
 
 **MARKERS — Dev Mode annotations are argo's documentation layer in Figma.**
 Every argo marker lives on a Dev Mode annotation
@@ -169,6 +178,16 @@ are input to critique, not proof of done.
 **GROUNDING.** Ground every claim in tool output, confirm node names/ids by
 reading them back, never state a binding or layout property as fact without
 having queried it.
+
+**TEXT COPY SOURCE (copy deck).** When the wave carries a copy deck
+(`design/<wave>/copy-deck.json`, emitted from the PRD's Copy deck section),
+ALL authored canvas text comes from it: shared strings referenced by their
+`sharedTerms` key (never retyped), per-field strings verbatim. A string the
+deck doesn't carry → STOP AND ASK, never confident filler — the tier-0
+`untraced-copy` rule hard-fails untraced TEXT nodes on named audits (a
+component's documented `defaultStrings` in the registry are the only other
+legal source). Data slots (live counts, timestamps, filenames) are not deck
+entries.
 
 **TEXT COPY.** Never use em dashes in any text you author: canvas text,
 labels, placeholder copy, component descriptions, annotations. Use a period,

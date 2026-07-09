@@ -897,3 +897,46 @@ describe('textContrastViolation (wcag-contrast package math, deterministic-or-sk
     ).toBeNull()
   })
 })
+
+describe('untracedCopyViolation (rule #13, design-phase-quality-plan.md W4)', async () => {
+  const { untracedCopyViolation } = await import('./tier0-rules.js')
+  const allowed = ['Workflow detail', 'Start a workflow', 'Session']
+  const text = (characters: string, over: Record<string, unknown> = {}) => ({
+    type: 'TEXT', name: 'label', characters, ...over
+  })
+
+  it('is inert when no copy deck is in play (copyAllowedStrings absent)', () => {
+    expect(untracedCopyViolation(text('anything at all'), {})).toBeNull()
+    expect(untracedCopyViolation(text('anything'), { copyAllowedStrings: null })).toBeNull()
+  })
+
+  it('passes a TEXT node whose content traces to a deck entry', () => {
+    expect(untracedCopyViolation(text('Workflow detail'), { copyAllowedStrings: allowed })).toBeNull()
+  })
+
+  it('matches after whitespace normalization (canvas line-wraps do not fail the trace)', () => {
+    expect(untracedCopyViolation(text('  Workflow\n detail '), { copyAllowedStrings: allowed })).toBeNull()
+  })
+
+  it('flags a TEXT node whose content traces to nothing', () => {
+    const v = untracedCopyViolation(text('Wrokflow detial'), { copyAllowedStrings: allowed })
+    expect(v?.rule).toBe('untraced-copy')
+    expect(v?.detail).toContain('copy deck')
+  })
+
+  it('skips non-TEXT nodes, empty text, and letter-free data slots (counts, times)', () => {
+    expect(untracedCopyViolation({ type: 'FRAME', name: 'f' }, { copyAllowedStrings: allowed })).toBeNull()
+    expect(untracedCopyViolation(text('   '), { copyAllowedStrings: allowed })).toBeNull()
+    expect(untracedCopyViolation(text('+12 / -3'), { copyAllowedStrings: allowed })).toBeNull()
+    expect(untracedCopyViolation(text('12:04'), { copyAllowedStrings: allowed })).toBeNull()
+  })
+
+  it('does NOT exempt kit-instance internals: an un-overridden master default must trace via registry defaultStrings instead', () => {
+    const v = untracedCopyViolation(text('Button', { insideInstance: true }), { copyAllowedStrings: allowed })
+    expect(v?.rule).toBe('untraced-copy')
+  })
+
+  it('passes a documented component default carried in the allowed list', () => {
+    expect(untracedCopyViolation(text('Button', { insideInstance: true }), { copyAllowedStrings: [...allowed, 'Button'] })).toBeNull()
+  })
+})

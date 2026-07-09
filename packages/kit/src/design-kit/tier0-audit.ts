@@ -71,7 +71,8 @@ import {
   unclippedOverflowViolations,
   hugOverflowViolations,
   touchTargetViolation,
-  textContrastViolation
+  textContrastViolation,
+  untracedCopyViolation
 } from './tier0-rules.js'
 
 async function auditNode(
@@ -87,7 +88,8 @@ async function auditNode(
     runRecipeTier0Checks,
     viewport,
     isScreenFrame = false,
-    ancestorSolidFill = null
+    ancestorSolidFill = null,
+    copyAllowedStrings = null
   }: {
     hard: boolean
     semanticCollectionName?: string
@@ -100,6 +102,7 @@ async function auditNode(
     viewport?: { width: number; height: number }
     isScreenFrame?: boolean
     ancestorSolidFill?: any
+    copyAllowedStrings?: string[] | null
   }
 ) {
   const violations: any[] = []
@@ -173,6 +176,13 @@ async function auditNode(
   if (touchTarget) report(touchTarget.rule, touchTarget.detail)
   const contrast = textContrastViolation(nodeCtx)
   if (contrast) report(contrast.rule, contrast.detail)
+  // Rule #13 (untraced-copy, W4): hard on named audits via report(); inert
+  // when no copy deck is in play (copyAllowedStrings null — see
+  // prepare-tier0-audit-options). Called with nodeCtx so the rule can read
+  // insideInstance if its exemption policy ever changes; today it deliberately
+  // audits instance internals too (documented on the rule).
+  const untracedCopy = untracedCopyViolation(nodeCtx, { copyAllowedStrings })
+  if (untracedCopy) report(untracedCopy.rule, untracedCopy.detail)
   // Advisory, never hard (live calibration 2026-07-07): `textTruncation:
   // ENDING` is Figma's INTENTIONAL ellipsis setting — tree labels, long
   // session names, and similar deliberately truncate; a live audit found ~65
@@ -420,6 +430,7 @@ export async function runTier0Audit(
     sweepNodeIds?: string[]
     sweepPageNames?: string[]
     screenNodeIds?: string[]
+    copyAllowedStrings?: string[] | null
   } = {}
 ) {
   const {
@@ -435,7 +446,8 @@ export async function runTier0Audit(
     pageId,
     sweepNodeIds = [],
     sweepPageNames = [],
-    screenNodeIds = []
+    screenNodeIds = [],
+    copyAllowedStrings = null
   } = options
   const violations: any[] = []
   // Screen identity is registry-driven (design/registry.json entries with
@@ -467,7 +479,7 @@ export async function runTier0Audit(
     } catch {
       /* sandbox: figma.root.findAll sees only loaded pages */
     }
-    const walkOpts = { hard: true, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks, viewport }
+    const walkOpts = { hard: true, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks, viewport, copyAllowedStrings }
 
     // Authoritative path (field bug fix, 2026-07-07 live D01 build): target
     // by the registry's real nodeId, resolved by the caller Node-side before
@@ -540,6 +552,7 @@ export async function runTier0Audit(
             compositeNamingHard,
             runRecipeTier0Checks,
             viewport,
+            copyAllowedStrings,
             isScreenFrame: isScreenTopLevel(topLevel)
           },
           violations
@@ -575,7 +588,7 @@ export async function runTier0Audit(
     } catch {
       /* sandbox: figma.root.findAll / cross-page getNodeByIdAsync sees only loaded pages */
     }
-    const sweepOpts = { hard: false, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks, viewport }
+    const sweepOpts = { hard: false, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeTier0Checks, viewport, copyAllowedStrings }
     for (const nodeId of sweepNodeIds) {
       const match = await figma.getNodeByIdAsync(nodeId)
       if (!match) {

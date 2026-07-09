@@ -109,6 +109,17 @@ converging:
      layer for the designer, never a requirement — omit it when unknown; the
      designer self-derives via registry lookup.
 
+5b. **Author the wave-scoped copy deck.** Fill the template's `Copy deck`
+   section: a **shared terms** block (any string used in >1 region/screen is
+   authored once here and referenced by key, never retyped) plus one
+   `region → field-key → canonical string` row per rendered field. Wave-scoped,
+   not per-screen, so the same entity is named identically across screens. This
+   is the single upstream source of authored copy: downstream, design-screen /
+   figma-create source ALL canvas text from it (missing entry → the designer
+   stops and asks), and the tier-0 `untraced-copy` rule hard-checks every TEXT
+   node against it on named audits. Data slots (live counts/timestamps) are not
+   deck entries.
+
 6. **Bound the scope — IN/OUT only.** Explicit IN (this version) and OUT
    (deferred + one-line reason). Nothing else lives here — states are
    requirements (step 4), not scope bullets.

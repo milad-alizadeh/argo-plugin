@@ -24,15 +24,17 @@ inventory every time.
   and `Visible in build?` requirement rows define what each screen must DO. The
   PRD stays PURE semantic — product-owned, durable, independent of layout. It does
   NOT carry component names or arrangement.
-- **Arrangement lives in the design layer, on the frame — no manifest to
-  author.** There is no Dev Mode annotation contract here anymore (design doc
-  decision 9): P4a's deterministic check resolves every INSTANCE in the
-  composed frame's tree directly against `design/registry.json` by `nodeId` —
-  there is nothing to declare up front, so nothing to keep in sync with what
-  gets built. Reading the built tree to grade the builder is NOT the
-  circularity the LLM check guards against — a structural "does every instance
-  resolve" check is legitimate; the ban on grading a plan against itself is on
-  the P4b advisory pass, which never sees this tree data.
+- **The component/copy DECISIONS live in the binding manifest (P0 below); the
+  arrangement still lives on the frame.** The retired Dev Mode annotation
+  contract (design doc decision 9) is NOT back — the binding manifest
+  (design-phase-quality-plan.md W1) is a different artifact at a different
+  altitude: it declares which registry component realizes each requirement
+  (the decision), never coordinates or arrangement. P4a's deterministic check
+  still resolves every INSTANCE in the composed frame's tree directly against
+  `design/registry.json` by `nodeId`. Reading the built tree to grade the
+  builder is NOT the circularity the LLM check guards against — a structural
+  "does every instance resolve" check is legitimate; the ban on grading a plan
+  against itself is on the P4b advisory pass, which never sees this tree data.
 
 ## 1. Preconditions — check all, fail loudly
 - **A PRD** for the feature (`.claude/prds/<feature>.md`) with a feature→screen
@@ -56,23 +58,57 @@ inventory every time.
 - **Figma MCP reachable** (load tools via ToolSearch if deferred): `get_metadata`,
   `get_screenshot`, plus the create tools the designer uses.
 
-## 2. Build component-first (P1), then compose (P2)
+## 2. Decide first (P0: binding manifest), then build component-first (P1), then compose (P2)
 
-**Component Bindings first (input contract).** Before assembling ANY
-composite/tree-like region, resolve its binding in this order: (a) if the PRD
-has an optional `Component Bindings` section naming this region, verify the
-entry ONCE (`get_metadata`: exists, right type, fits the brief) and use it;
-(b) absent or failed verification → run your own
-`argo design registry-lookup`/search pass, and READ each candidate's
-`whenToUse` field — when one candidate's usage guidance matches the
-region/pattern being built, it is presumptively THE component, use it;
-(c) if MULTIPLE candidates' `whenToUse` match, or plausible candidates
-surface with no guidance to disambiguate, STOP AND ASK the human to
-confirm the binding — never silently assemble from primitives past a
-candidate, never silently trust a stale entry. The PRD section is a hint
-layer; this flow is standalone and works without it. When AUTHORING a new
-component, write its `@when-to-use:` Dev annotation (figma-create's usage
-marker step) so the registry stays self-describing.
+**P0 — the DECISION pass (binding manifest, required before any `use_figma`
+composition).** The two highest-risk decisions — which existing component, and
+what copy — are made HERE, as a written, checkable artifact, never inside the
+authoring turn (design-phase-quality-plan.md W1). Per screen, BEFORE touching
+`use_figma`:
+
+1. Emit `design/<wave>/binding-manifest.json` (schema:
+   `BindingManifestSchema`, `@argohq/kit/design-kit`): one row per PRD
+   requirement / region this screen realizes —
+   `requirement → registry component → variant/states → purpose in ONE
+   clause`. Resolve each component by `argo design registry-lookup` reading
+   `whenToUse` (re-read the entry again right before authoring that component
+   — the manifest-consume re-orient). For the single **highest-risk** row
+   (the composite most likely to be confused), list the top-2 candidates in
+   `alternatesConsidered` and pick by `whenToUse` overlap, recording the
+   one-line comparison in `justification`.
+2. Emit `design/<wave>/copy-deck.json` (schema: `CopyDeckSchema`) from the
+   PRD's wave-scoped Copy deck section. ALL authored canvas text comes from
+   this deck; a string the deck doesn't carry → **STOP AND ASK** (never invent
+   filler); any string used in >1 region rides the `sharedTerms` block and is
+   referenced by key, never retyped.
+3. Run `argo design validate-manifest --manifest <path> --cwd <app-dir>` —
+   the independent check ON the decision (W2). It lints every row against
+   `design/registry.json` (existence), applies the committed
+   `design/confusable-pairs.json` table (a row on a known confused pair needs
+   an explicit `justification`), and applies the three-tier guardrail below.
+   **Exit 1 = blocked: STOP AND ASK the human — do not build.** Moving the
+   decision earlier without checking it just relocates the error.
+
+**Three-tier component-choice guardrail (the contract, decidable at
+generation time):**
+
+- **Always** — the row names an existing registry component whose `whenToUse`
+  matches the region/pattern: use it, no ask needed.
+- **Ask-first** — no registry candidate's `whenToUse` clearly matches (or the
+  candidate carries none): STOP AND ASK before composing; record the answer
+  as `humanApproved: true` on the row.
+- **Never** — invent a component name silently, or hand-assemble a region
+  from primitives past an existing candidate. No exceptions; validate-manifest
+  hard-blocks these rows.
+
+**Component Bindings (PRD hint layer, feeds P0).** The PRD's optional
+`Component Bindings` section pre-seeds manifest rows: verify each entry ONCE
+(`get_metadata`: exists, right type, fits the brief) before writing it into
+the manifest. Absent or failed → your own `registry-lookup` pass per the tiers
+above. The PRD section is a hint layer; the manifest flow is standalone and
+works without it. When AUTHORING a new component, write its `@when-to-use:`
+Dev annotation (figma-create's usage marker step) so the registry stays
+self-describing.
 
 Walk BUILD-ORDER: `figma-create` each composite in dependency order — audit-gated,
 registered, with the registry as the reuse authority (check it before proposing
@@ -154,9 +190,18 @@ No frozen contract; completeness is a cheap layered check:
   in-session** — scope is structural presence only (is the enumerated thing
   there at all), no fidelity judgement. Then spawn the **design-verifier** agent with
   that checklist + the built screenshots ONLY (never the arrangement note, never
-  this transcript) → it rules each requirement present/absent. **The blind
-  verifier remains mandatory and unchanged: a passing in-loop checklist NEVER
-  downgrades or skips it.** Then run
+  this transcript) → it rules each requirement present/absent. **Narrow its
+  job to the manifest (W5, the token offset that keeps the P0 pass
+  net-neutral): the spawn prompt gives it the screen's binding-manifest rows
+  + checklist and asks "does the canvas match the manifest" — per row, is the
+  named component present as a real instance in the named variant/states —
+  never an open-ended re-derivation of intent from the screenshot. The blind
+  verifier remains mandatory and BLIND (never the build transcript, never the
+  self-report) and keeps its model tier — narrow the scope, never the
+  capability: a passing in-loop checklist NEVER downgrades or skips it.** The
+  supervisor-spawned fidelity verifier is likewise narrowed: it rules
+  region-by-region against the brief's REQUIRED reference image at identical
+  frame size (see orchestrate §5), same blind + full-tier contract. Then run
   `argo design record-completeness --screen <name> --result '<summary>'` —
   honestly (record what the check actually found). Screen names are aliased:
   the PRD matrix name (`D02-5-session-with-children`) and the composed frame
@@ -228,10 +273,11 @@ Front-loading is the dominant token lever (composition-dominant screens cost
   P1/P2 read the committed registry + the component-resolution
   manifest — NEVER re-pull the tree "to check structure" mid-build (the single
   largest redundant spend).
-- **Pre-seed the component-resolution manifest** (region/composite → node id +
-  variant + REUSE/EXTEND/NEW verdict, generated from INVENTORY + registry) into
-  every designer session. Resolve by lookup; fire a live component-page search
-  only on a genuine miss.
+- **Pre-seed the validated binding manifest** (the P0 artifact — requirement →
+  component → variant → purpose, already validate-manifest-clean) into every
+  designer session. Resolve by lookup against it; fire a live component-page
+  search only on a genuine miss (and then update + re-validate the manifest,
+  never compose past it).
 - **Never instance a component from a guessed/remembered/committed node id —
   resolve it LIVE** (figma-create §"check before you build"): everything is
   local to the design file, so a stale id is a `getNodeByIdAsync` null / failed

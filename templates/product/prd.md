@@ -114,6 +114,41 @@ requirement).
 The designer verifies each entry ONCE before use (component exists, right type,
 fits the brief); a failed entry falls back to its own lookup + stop-and-ask.
 
+## Copy deck (wave-scoped)
+
+The single upstream source for every authored string the feature's screens will
+render — copy is a named dominant defect class, and confident filler looks
+legitimate by render time, so the fix is upstream, not detection. **Wave-scoped,
+not screen-scoped**: the same entity is named identically across every screen in
+the wave.
+
+**Shared terms** — authored ONCE, referenced by key. Any string used in more
+than one region/screen lives here and is cited by key, never retyped:
+
+| Key        | Canonical string |
+| ---------- | ---------------- |
+| `workflow` | Workflow         |
+
+**Strings** — one row per rendered field:
+
+| Region      | Field key | String (or `→ shared: <key>`) |
+| ----------- | --------- | ----------------------------- |
+| header      | title     | Workflow detail               |
+| header      | entity    | → shared: workflow            |
+| empty-state | cta       | Start a workflow              |
+
+Rules the design stage enforces against this deck:
+
+- The designer sources ALL authored canvas text from this deck (it emits the
+  machine artifact `design/<wave>/copy-deck.json` from this section alongside
+  the binding manifest); a string with **no deck entry → the designer STOPS AND
+  ASKS** (extends the existing missing → ASK convention), never invents filler.
+- Data slots (live values: counts, timestamps, filenames) are not deck entries —
+  only authored copy is.
+- The tier-0 `untraced-copy` rule (hard on named audits) checks every TEXT
+  node's content against this deck plus each component's documented
+  `defaultStrings` in `design/registry.json`.
+
 ## Scope
 
 - **In (this version):** the requirements above, bounded.

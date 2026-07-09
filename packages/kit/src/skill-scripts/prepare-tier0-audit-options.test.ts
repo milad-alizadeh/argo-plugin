@@ -27,7 +27,8 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         viewport: undefined,
         sweepNodeIds: [],
         sweepPageNames: [],
-        screenNodeIds: []
+        screenNodeIds: [],
+        copyAllowedStrings: null
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
@@ -63,7 +64,8 @@ describe('deriveTier0AuditOptions (figma-audit Node wrapper — anti-recreation 
         viewport: undefined,
         sweepNodeIds: [],
         sweepPageNames: ['Screens'],
-        screenNodeIds: []
+        screenNodeIds: [],
+        copyAllowedStrings: null
       })
     } finally {
       rmSync(cwd, { recursive: true, force: true })
@@ -327,5 +329,69 @@ describe('parseCliArgs (CLI flag parsing — must not silently no-op on a typo)'
 
   it('still throws on a genuinely unrecognized flag (not a known alias)', () => {
     expect(() => parseCliArgs(['--bogus', 'x'])).toThrow(/unrecognized flag.*--bogus/)
+  })
+})
+
+describe('copyAllowedStrings derivation (W4 wiring)', () => {
+  const deck = {
+    wave: 'D03-wave',
+    sharedTerms: { workflow: 'Workflow' },
+    entries: [
+      { region: 'header', key: 'title', text: 'Workflow detail' },
+      { region: 'header', key: 'entity', sharedTerm: 'workflow' }
+    ]
+  }
+
+  const setup = () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'tier0-copy-options-'))
+    mkdirSync(join(cwd, 'design', 'D03-wave'), { recursive: true })
+    writeFileSync(
+      join(cwd, 'design', 'registry.json'),
+      JSON.stringify({ components: { Button: { nodeId: '1:1', defaultStrings: ['Button'] }, Card: { nodeId: '1:2' } } }),
+      'utf8'
+    )
+    return cwd
+  }
+
+  it('is null when no copy-deck.json exists anywhere under design/ (rule stays inert)', () => {
+    const cwd = setup()
+    try {
+      expect(deriveTier0AuditOptions({ cwd }).copyAllowedStrings).toBeNull()
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('flattens design/<wave>/copy-deck.json entries + shared terms + registry defaultStrings', () => {
+    const cwd = setup()
+    writeFileSync(join(cwd, 'design', 'D03-wave', 'copy-deck.json'), JSON.stringify(deck), 'utf8')
+    try {
+      const strings = deriveTier0AuditOptions({ cwd }).copyAllowedStrings
+      expect(strings).toContain('Workflow detail')
+      expect(strings).toContain('Workflow')
+      expect(strings).toContain('Button')
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('also reads a top-level design/copy-deck.json', () => {
+    const cwd = setup()
+    writeFileSync(join(cwd, 'design', 'copy-deck.json'), JSON.stringify(deck), 'utf8')
+    try {
+      expect(deriveTier0AuditOptions({ cwd }).copyAllowedStrings).toContain('Workflow detail')
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('throws loudly on a malformed deck instead of silently disarming the copy gate', () => {
+    const cwd = setup()
+    writeFileSync(join(cwd, 'design', 'copy-deck.json'), JSON.stringify({ wave: 'w', entries: [{ region: 'r', key: 'k' }] }), 'utf8')
+    try {
+      expect(() => deriveTier0AuditOptions({ cwd })).toThrow(/copy-deck/)
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
   })
 })

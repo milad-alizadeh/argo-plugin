@@ -111,7 +111,10 @@ mechanisms close those gaps without new tooling.
   spawn prompt. This is a hint layer only: the designer still verifies each
   entry once and falls back to its own lookup + stop-and-ask per its
   standalone contract (`agents/designer.md`), so an unfilled or wrong hint
-  never breaks the run.
+  never breaks the run. When a screen's binding manifest already exists and
+  is validate-manifest-clean, pre-seed THAT into the spawn prompt instead —
+  it is the checked decision artifact, not a hint — and never spawn a screen
+  compose whose manifest hasn't passed `argo design validate-manifest`.
 - **Flat fan-out.** Spawn each `designer` directly from the main session, one
   per component, never route a designer's output through another designer
   (mirrors the builder no-wrapper rule in §1). The leaf rule itself lives in
@@ -132,10 +135,21 @@ mechanisms close those gaps without new tooling.
   (labels rendering "Runnin" for "Running"), child overflow, edge anchoring
   of full-bleed regions. The verifier owns what survives the gate: does the
   composition actually read like the reference (spacing rhythm, crowding,
-  material) at a glance. Route its findings through the R9 lanes as ONE
-  numbered fix list; the building agent's self-audit and montage are
-  inputs, never the acceptance. A live screen shipped with four such
-  defects past its own clean self-report.
+  material) at a glance. **Narrow both verifier spawn prompts to the
+  manifest (design-phase-quality-plan.md W5 — the token offset that keeps
+  the W1 decision pass net-neutral).** Completeness (`design-verifier`):
+  give it the screen's binding-manifest rows + the mechanical checklist and
+  ask "does the canvas match the manifest" — per row, is the named component
+  present as a real instance in the named variant/states — never an
+  open-ended re-derivation of intent from the screenshot. Fidelity
+  (`fidelity-verifier`): per-region rulings against the brief's reference
+  image at identical frame size, per its own contract. Both stay **blind**
+  (never the transcript, never the self-report), **mandatory**, and at
+  their **full model tier** — narrow the scope, never the capability;
+  open-ended blind detection is the only reliable catch. Route findings
+  through the R9 lanes as ONE numbered fix list; the building agent's
+  self-audit and montage are inputs, never the acceptance. A live screen
+  shipped with four such defects past its own clean self-report.
 - **Two feedback lanes (R9).** Classify every ruling into exactly one lane
   the moment it's known:
   - **Stop-the-line**, a gate bug (a violation tagged

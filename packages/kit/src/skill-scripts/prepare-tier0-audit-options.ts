@@ -13,9 +13,10 @@
  * same files.
  */
 
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { registryComponentNames } from '../design-kit/component-names.js'
+import { copyDeckStrings } from '../design-kit/copy-deck.js'
 import { findArgoJson } from '../config/argo-json.js'
 import { TW_COLLECTION_FAMILY } from '../recipes/shadcn-tailwind/tier0-rules.js'
 
@@ -174,6 +175,37 @@ export function deriveTier0AuditOptions({
   // membership in this set (registry-driven identity, replacing the old
   // page-name heuristic). Always derived (named audit AND sweep), so a screen
   // audited by nodeId still gets its screen-frame exemptions.
+  // W4 (untraced-copy rule #13): flatten every wave copy deck under design/
+  // (design/copy-deck.json + design/<wave>/copy-deck.json, one level) via
+  // copyDeckStrings, then append every registry entry's documented
+  // defaultStrings. No deck anywhere → null, and the rule stays INERT — a
+  // project that never adopted copy decks sees zero behavior change. A deck
+  // that EXISTS but is malformed throws loudly (copyDeckStrings/zod): a broken
+  // deck silently disarming the copy gate would be a false pass.
+  const designDir = join(cwd, 'design')
+  const deckPaths: string[] = []
+  if (existsSync(join(designDir, 'copy-deck.json'))) deckPaths.push(join(designDir, 'copy-deck.json'))
+  if (existsSync(designDir)) {
+    for (const entry of readdirSync(designDir, { withFileTypes: true })) {
+      if (entry.isDirectory() && existsSync(join(designDir, entry.name, 'copy-deck.json'))) {
+        deckPaths.push(join(designDir, entry.name, 'copy-deck.json'))
+      }
+    }
+  }
+  let copyAllowedStrings: string[] | null = null
+  if (deckPaths.length > 0) {
+    copyAllowedStrings = deckPaths.flatMap((p) => {
+      try {
+        return copyDeckStrings(JSON.parse(readFileSync(p, 'utf8')))
+      } catch (err) {
+        throw new Error(`prepare-tier0-audit-options: invalid copy-deck at ${p}: ${(err as Error).message}`)
+      }
+    })
+    for (const c of Object.values(registryComponents) as any[]) {
+      if (Array.isArray(c?.defaultStrings)) copyAllowedStrings.push(...c.defaultStrings.filter((s: any) => typeof s === 'string'))
+    }
+  }
+
   const screenNodeIds = Object.values(registryComponents)
     .filter((c: any) => c?.kind === 'screen')
     .map((c: any) => c?.nodeId)
@@ -197,7 +229,8 @@ export function deriveTier0AuditOptions({
     viewport: designBlock?.viewport,
     sweepNodeIds,
     sweepPageNames,
-    screenNodeIds
+    screenNodeIds,
+    copyAllowedStrings
   }
 }
 

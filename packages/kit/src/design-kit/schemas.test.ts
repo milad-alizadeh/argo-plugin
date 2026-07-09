@@ -107,6 +107,16 @@ describe('RegistryEntrySchema (design-memory-placement.md, thin pointer index, s
   it('accepts an entry with no description at all', () => {
     expect(RegistryEntrySchema.safeParse(valid).success).toBe(true)
   })
+
+  it('accepts optional defaultStrings (W4: canonical default copy the untraced-copy rule accepts)', () => {
+    const result = RegistryEntrySchema.safeParse({ ...valid, defaultStrings: ['Button', 'Submit'] })
+    expect(result.success).toBe(true)
+    expect(result.data?.defaultStrings).toEqual(['Button', 'Submit'])
+  })
+
+  it('rejects non-string defaultStrings entries', () => {
+    expect(RegistryEntrySchema.safeParse({ ...valid, defaultStrings: [42] }).success).toBe(false)
+  })
 })
 
 describe('RegistryHeaderSchema', () => {

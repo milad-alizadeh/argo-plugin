@@ -4,7 +4,7 @@ import { lookupRegistry, parseCliArgs } from './registry-lookup.js'
 const REGISTRY = {
   header: { generatedAt: '2026-07-08' },
   components: {
-    Buttons: { nodeId: '73:3681', kind: 'kit', status: 'draft', adopted: true, notes: 'a very long note '.repeat(50), variantMatrix: [1, 2, 3] },
+    Buttons: { nodeId: '73:3681', kind: 'kit', status: 'draft', adopted: true, whenToUse: 'Primary actions and form submits.', notes: 'a very long note '.repeat(50), variantMatrix: [1, 2, 3] },
     SessionCard: { nodeId: '5015:1', kind: 'code-owned', status: 'audit-clean', adopted: false, notes: 'x', variantMatrix: [] },
     StatusBar: { nodeId: '5015:2', kind: 'code-owned', status: 'audit-clean', adopted: true, notes: 'y' },
     'D02.6 Chat': { nodeId: '5319:1712', kind: 'screen', status: 'audit-clean' },
@@ -16,7 +16,7 @@ describe('lookupRegistry', () => {
   it('returns a compact index of every component with a nodeId when no names/search given', () => {
     const out = lookupRegistry(REGISTRY, {})
     expect(out).toEqual([
-      { name: 'Buttons', nodeId: '73:3681', kind: 'kit', status: 'draft', adopted: true },
+      { name: 'Buttons', nodeId: '73:3681', kind: 'kit', status: 'draft', adopted: true, whenToUse: 'Primary actions and form submits.' },
       { name: 'SessionCard', nodeId: '5015:1', kind: 'code-owned', status: 'audit-clean', adopted: false },
       { name: 'StatusBar', nodeId: '5015:2', kind: 'code-owned', status: 'audit-clean', adopted: true },
       { name: 'D02.6 Chat', nodeId: '5319:1712', kind: 'screen', status: 'audit-clean' }
@@ -49,8 +49,15 @@ describe('lookupRegistry', () => {
   it('filters to exact names when --names is given (order follows the request)', () => {
     expect(lookupRegistry(REGISTRY, { names: ['StatusBar', 'Buttons'] })).toEqual([
       { name: 'StatusBar', nodeId: '5015:2', kind: 'code-owned', status: 'audit-clean', adopted: true },
-      { name: 'Buttons', nodeId: '73:3681', kind: 'kit', status: 'draft', adopted: true }
+      { name: 'Buttons', nodeId: '73:3681', kind: 'kit', status: 'draft', adopted: true, whenToUse: 'Primary actions and form submits.' }
     ])
+  })
+
+  it('includes whenToUse in the compact index (usage guidance belongs in the resolution index)', () => {
+    const buttons = lookupRegistry(REGISTRY, { names: ['Buttons'] })[0] as any
+    expect(buttons.whenToUse).toBe('Primary actions and form submits.')
+    const card = lookupRegistry(REGISTRY, { names: ['SessionCard'] })[0] as any
+    expect(card).not.toHaveProperty('whenToUse')
   })
 
   it('reports a requested name that is absent so a miss is explicit, not silent', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, detectChangedKitComponents, isPascalCaseComponentName, parseCodeOwnedPath, parseCodeOwnedFromAnnotations, resolveCodeOwnedPath, buildCodeOwnedEntries, deriveAdoption, hasScreenAnnotation, buildScreenEntries } from './registry-reconcile.js'
+import { reconcileRegistrySweep, isScratchPageName, isKitPageName, isDividerPageName, kitPageIndices, extractVariantMatrix, buildKitRegistryEntries, detectChangedKitComponents, isPascalCaseComponentName, parseCodeOwnedPath, parseCodeOwnedFromAnnotations, resolveCodeOwnedPath, buildCodeOwnedEntries, deriveAdoption, hasScreenAnnotation, buildScreenEntries, parseWhenToUse, parseWhenToUseFromAnnotations, resolveWhenToUse } from './registry-reconcile.js'
 
 describe('hasScreenAnnotation', () => {
   it('matches @screen in label or labelMarkdown on a word boundary', () => {
@@ -493,5 +493,92 @@ describe('buildCodeOwnedEntries (deterministic derivation from the Figma marker)
     )
     expect(written.SceneWallpaper).toMatchObject({ codePath: 'src/new/Path.tsx', status: 'out-of-sync' })
     expect(changed[0].reasons).toContain('codePath changed')
+  })
+})
+
+describe('parseWhenToUse (@when-to-use marker)', () => {
+  it('extracts the text after the marker up to the end of the line', () => {
+    expect(parseWhenToUse('@when-to-use: The children-tree section of a session detail screen.\nMore prose.')).toBe(
+      'The children-tree section of a session detail screen.'
+    )
+  })
+  it('returns null when the marker is absent or empty', () => {
+    expect(parseWhenToUse('Just a description.')).toBeNull()
+    expect(parseWhenToUse('@when-to-use:   ')).toBeNull()
+    expect(parseWhenToUse(undefined)).toBeNull()
+  })
+})
+
+describe('resolveWhenToUse (annotation-first, description legacy fallback)', () => {
+  it('reads the marker from a Dev annotation label or labelMarkdown', () => {
+    expect(parseWhenToUseFromAnnotations([{ label: '@when-to-use: Row in any session list.' }])).toBe('Row in any session list.')
+    expect(parseWhenToUseFromAnnotations([{ labelMarkdown: '@when-to-use: Row in any session list.' }])).toBe('Row in any session list.')
+    expect(parseWhenToUseFromAnnotations([{ label: '@code-owned: x.tsx' }])).toBeNull()
+  })
+  it('annotation wins over a conflicting legacy description marker', () => {
+    expect(
+      resolveWhenToUse({
+        description: '@when-to-use: old text',
+        annotations: [{ label: '@when-to-use: new text' }]
+      })
+    ).toBe('new text')
+  })
+  it('falls back to the description marker when no annotation carries it', () => {
+    expect(resolveWhenToUse({ description: '@when-to-use: legacy text', annotations: [{ label: '@screen' }] })).toBe('legacy text')
+    expect(resolveWhenToUse({})).toBeNull()
+  })
+})
+
+describe('whenToUse sync into registry entries', () => {
+  it('buildKitRegistryEntries carries whenToUse from the annotation marker', () => {
+    const entries = buildKitRegistryEntries(
+      {
+        liveKitComponents: [{ name: 'Button', nodeId: '73:1', annotations: [{ label: '@when-to-use: Primary actions.' }] }],
+        existingNames: new Set<string>()
+      },
+      'now'
+    )
+    expect(entries.Button.whenToUse).toBe('Primary actions.')
+  })
+
+  it('detectChangedKitComponents flags a whenToUse edit and carries the new text', () => {
+    const changed = detectChangedKitComponents({
+      liveKitComponents: [{ name: 'Button', nodeId: '73:1', annotations: [{ label: '@when-to-use: New guidance.' }] }],
+      registryComponents: { Button: { kind: 'kit', variantMatrix: {}, whenToUse: 'Old guidance.' } }
+    })
+    expect(changed[0]).toMatchObject({ name: 'Button', reasons: ['whenToUse changed'], whenToUse: 'New guidance.' })
+  })
+
+  it('buildCodeOwnedEntries syncs whenToUse and flags its drift', () => {
+    const { written, changed } = buildCodeOwnedEntries(
+      {
+        liveComponents: [
+          {
+            name: 'SceneWallpaper',
+            nodeId: '1:1',
+            annotations: [{ label: '@code-owned: src/scene/SceneWallpaper.tsx' }, { label: '@when-to-use: Ambient backdrop behind the stage.' }]
+          }
+        ],
+        registryComponents: {
+          SceneWallpaper: { kind: 'code-owned', nodeId: '1:1', codePath: 'src/scene/SceneWallpaper.tsx', variantMatrix: {} }
+        }
+      },
+      'now'
+    )
+    expect(changed[0].reasons).toEqual(['whenToUse changed'])
+    expect(written.SceneWallpaper.whenToUse).toBe('Ambient backdrop behind the stage.')
+  })
+
+  it('buildScreenEntries syncs whenToUse from the screen frame annotations', () => {
+    const { written } = buildScreenEntries(
+      {
+        liveScreenFrames: [
+          { name: 'D02.6 Chat', nodeId: '10:2', annotations: [{ label: '@screen' }, { label: '@when-to-use: Live conversation view of one session.' }] }
+        ],
+        registryComponents: {}
+      },
+      'now'
+    )
+    expect(written['D02.6 Chat']).toMatchObject({ kind: 'screen', whenToUse: 'Live conversation view of one session.' })
   })
 })

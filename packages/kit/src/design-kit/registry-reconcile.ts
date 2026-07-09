@@ -159,6 +159,45 @@ export function isPascalCaseComponentName(name: string): boolean {
   return /^[A-Z][A-Za-z0-9]*$/.test(name)
 }
 
+/**
+ * The `@when-to-use: <text>` usage marker — free-text guidance ("this IS the
+ * children-tree solution") a resolving designer reads from the compact registry
+ * index instead of guessing among look-alike components. Annotation-first, like
+ * every argo marker (Dev Mode annotations are argo's documentation layer in
+ * Figma — the same surface as `@screen` and `@code-owned`); the description
+ * read below is the legacy transition fallback and drops a release later.
+ * Captures the rest of the marker's line; pure and deterministic.
+ */
+export function parseWhenToUse(text?: string): string | null {
+  if (!text) return null
+  const m = text.match(/@when-to-use:[ \t]*([^\n]+)/)
+  const value = m?.[1]?.trim()
+  return value ? value : null
+}
+
+/** Annotation-source read of `@when-to-use:` — the canonical home. */
+export function parseWhenToUseFromAnnotations(annotations?: Array<{ label?: string; labelMarkdown?: string }>): string | null {
+  if (!Array.isArray(annotations)) return null
+  for (const a of annotations) {
+    const fromLabel = parseWhenToUse(a?.label)
+    if (fromLabel) return fromLabel
+    const fromMd = parseWhenToUse(a?.labelMarkdown)
+    if (fromMd) return fromMd
+  }
+  return null
+}
+
+/** Dual-source resolver: annotation wins, legacy description marker is fallback (same transition pattern as `resolveCodeOwnedPath`). */
+export function resolveWhenToUse({
+  description,
+  annotations
+}: {
+  description?: string
+  annotations?: Array<{ label?: string; labelMarkdown?: string }>
+}): string | null {
+  return parseWhenToUseFromAnnotations(annotations) ?? parseWhenToUse(description)
+}
+
 type LiveKitComponent = {
   name: string
   nodeId: string
@@ -175,6 +214,7 @@ type LeanKitEntry = {
   lastSyncedAt: string
   variantMatrix: Record<string, string[]>
   description?: string
+  whenToUse?: string
 }
 
 /**
@@ -201,7 +241,8 @@ export function buildKitRegistryEntries(
       status: 'draft',
       lastSyncedAt: now,
       variantMatrix: extractVariantMatrix(c.componentPropertyDefinitions),
-      ...(c.description ? { description: c.description } : {})
+      ...(c.description ? { description: c.description } : {}),
+      ...(resolveWhenToUse(c) ? { whenToUse: resolveWhenToUse(c)! } : {})
     }
   }
   return entries
@@ -212,6 +253,7 @@ export type ChangedKitComponent = {
   reasons: string[]
   variantMatrix: Record<string, string[]>
   description?: string
+  whenToUse?: string
 }
 
 /**
@@ -229,7 +271,7 @@ export function detectChangedKitComponents({
   registryComponents
 }: {
   liveKitComponents: LiveKitComponent[]
-  registryComponents: Record<string, { kind?: string; variantMatrix?: Record<string, string[]>; description?: string }>
+  registryComponents: Record<string, { kind?: string; variantMatrix?: Record<string, string[]>; description?: string; whenToUse?: string }>
 }): ChangedKitComponent[] {
   const changed: ChangedKitComponent[] = []
   for (const c of liveKitComponents) {
@@ -238,10 +280,19 @@ export function detectChangedKitComponents({
     const entry = registryComponents[c.name]
     if (!entry || entry.kind !== 'kit') continue // new or non-kit handled elsewhere
     const liveMatrix = extractVariantMatrix(c.componentPropertyDefinitions)
+    const liveWhenToUse = resolveWhenToUse(c)
     const reasons: string[] = []
     if (JSON.stringify(liveMatrix) !== JSON.stringify(entry.variantMatrix ?? {})) reasons.push('variantMatrix changed')
     if ((c.description ?? '') !== (entry.description ?? '')) reasons.push('description changed')
-    if (reasons.length) changed.push({ name: c.name, reasons, variantMatrix: liveMatrix, ...(c.description ? { description: c.description } : {}) })
+    if ((liveWhenToUse ?? '') !== (entry.whenToUse ?? '')) reasons.push('whenToUse changed')
+    if (reasons.length)
+      changed.push({
+        name: c.name,
+        reasons,
+        variantMatrix: liveMatrix,
+        ...(c.description ? { description: c.description } : {}),
+        ...(liveWhenToUse ? { whenToUse: liveWhenToUse } : {})
+      })
   }
   return changed
 }
@@ -307,6 +358,7 @@ type CodeOwnedEntry = {
   variantMatrix: Record<string, string[]>
   codePath: string
   description?: string
+  whenToUse?: string
 }
 
 /**
@@ -327,7 +379,7 @@ export function buildCodeOwnedEntries(
     registryComponents
   }: {
     liveComponents: LiveKitComponent[]
-    registryComponents: Record<string, { kind?: string; nodeId?: string; codePath?: string; status?: string; variantMatrix?: Record<string, string[]>; description?: string }>
+    registryComponents: Record<string, { kind?: string; nodeId?: string; codePath?: string; status?: string; variantMatrix?: Record<string, string[]>; description?: string; whenToUse?: string }>
   },
   now: string
 ): { written: Record<string, CodeOwnedEntry>; changed: ChangedKitComponent[] } {
@@ -338,6 +390,7 @@ export function buildCodeOwnedEntries(
     if (!codePath) continue
     const prev = registryComponents[c.name]
     const variantMatrix = extractVariantMatrix(c.componentPropertyDefinitions)
+    const whenToUse = resolveWhenToUse(c)
     const reasons: string[] = []
     if (!prev || prev.kind !== 'code-owned') reasons.push('new code-owned')
     else {
@@ -345,6 +398,7 @@ export function buildCodeOwnedEntries(
       if (prev.codePath !== codePath) reasons.push('codePath changed')
       if (JSON.stringify(prev.variantMatrix ?? {}) !== JSON.stringify(variantMatrix)) reasons.push('variantMatrix changed')
       if ((prev.description ?? '') !== (c.description ?? '')) reasons.push('description changed')
+      if ((whenToUse ?? '') !== (prev.whenToUse ?? '')) reasons.push('whenToUse changed')
     }
     if (reasons.length === 0) continue
     written[c.name] = {
@@ -355,9 +409,10 @@ export function buildCodeOwnedEntries(
       lastSyncedAt: now,
       variantMatrix,
       codePath,
-      ...(c.description ? { description: c.description } : {})
+      ...(c.description ? { description: c.description } : {}),
+      ...(whenToUse ? { whenToUse } : {})
     }
-    changed.push({ name: c.name, reasons, variantMatrix, ...(c.description ? { description: c.description } : {}) })
+    changed.push({ name: c.name, reasons, variantMatrix, ...(c.description ? { description: c.description } : {}), ...(whenToUse ? { whenToUse } : {}) })
   }
   return { written, changed }
 }
@@ -378,7 +433,7 @@ export function hasScreenAnnotation(annotations?: Array<{ label?: string; labelM
 }
 
 type LiveScreenFrame = { name: string; nodeId: string; annotations?: Array<{ label?: string; labelMarkdown?: string }> }
-type ScreenEntry = { nodeId: string; kind: 'screen'; status: string; lastSyncedAt: string }
+type ScreenEntry = { nodeId: string; kind: 'screen'; status: string; lastSyncedAt: string; whenToUse?: string }
 
 /**
  * Deterministic derivation of `kind:"screen"` registry entries from the live
@@ -395,7 +450,7 @@ export function buildScreenEntries(
     registryComponents
   }: {
     liveScreenFrames: LiveScreenFrame[]
-    registryComponents: Record<string, { kind?: string; nodeId?: string; status?: string }>
+    registryComponents: Record<string, { kind?: string; nodeId?: string; status?: string; whenToUse?: string }>
   },
   now: string
 ): { written: Record<string, ScreenEntry>; changed: Array<{ name: string; reasons: string[] }> } {
@@ -404,16 +459,22 @@ export function buildScreenEntries(
   for (const f of liveScreenFrames) {
     if (!hasScreenAnnotation(f.annotations)) continue
     const prev = registryComponents[f.name]
+    // Screens are plain FRAMEs (no description), so @when-to-use is annotation-only here.
+    const whenToUse = parseWhenToUseFromAnnotations(f.annotations)
     const reasons: string[] = []
     if (!prev || prev.kind !== 'screen') reasons.push('new screen')
-    else if (prev.nodeId !== f.nodeId) reasons.push('nodeId changed')
+    else {
+      if (prev.nodeId !== f.nodeId) reasons.push('nodeId changed')
+      if ((whenToUse ?? '') !== (prev.whenToUse ?? '')) reasons.push('whenToUse changed')
+    }
     if (reasons.length === 0) continue
     written[f.name] = {
       ...prev,
       nodeId: f.nodeId,
       kind: 'screen',
       status: (prev?.status as string) ?? 'audit-clean',
-      lastSyncedAt: now
+      lastSyncedAt: now,
+      ...(whenToUse ? { whenToUse } : {})
     }
     changed.push({ name: f.name, reasons })
   }

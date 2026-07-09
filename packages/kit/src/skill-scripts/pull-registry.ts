@@ -254,6 +254,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       ...prev,
       variantMatrix: c.variantMatrix,
       ...(c.description !== undefined ? { description: c.description } : {}),
+      ...(c.whenToUse !== undefined ? { whenToUse: c.whenToUse } : {}),
       status: 'out-of-sync',
       lastSyncedAt: now
     }

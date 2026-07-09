@@ -100,7 +100,14 @@ operator promoting them into a sync/fix pass that then damages them.
    It derives `kind: 'code-owned'` + `codePath` for those (the marker
    overrides positional kit/custom classification) — the machine-written way
    a Three.js/canvas placeholder gets flagged; the registry is never
-   hand-edited for this.
+   hand-edited for this. It also syncs each component's/screen's
+   `@when-to-use: <text>` usage marker into the entry's `whenToUse` field —
+   same dual-source read (Dev annotation canonical and wins, legacy
+   description fallback dropping a release later; screens are
+   annotation-only since plain frames have no description). `whenToUse`
+   rides `registry-lookup`'s compact resolution index so a resolving
+   designer can tell which component is the intended solution for a
+   region/pattern.
 
    **Code-owned annotation migration (one-shot).** `pull-registry` reports
    `codeOwnedMigrationPending` — the code-owned components still carrying the

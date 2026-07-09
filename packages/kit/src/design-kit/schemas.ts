@@ -45,6 +45,14 @@ export const RegistryEntrySchema = z.object({
   /** Repo-relative path to the code implementation; set only for `code-owned`. */
   codePath: z.string().optional(),
   /**
+   * Usage guidance synced from the component's `@when-to-use:` marker
+   * (Dev annotation first, legacy description fallback — pull-registry derives
+   * it, never hand-maintained here). Small free text that rides the compact
+   * registry-lookup index so a resolving designer can tell WHICH component is
+   * the intended solution for a region/pattern.
+   */
+  whenToUse: z.string().optional(),
+  /**
    * Kit-only adoption flag (directive 3 refined, 2026-07-08). `true` when a
    * project surface (a custom/code-owned component or a composed screen)
    * instances this kit master — figma-sync's reconcile walk derives it. Only

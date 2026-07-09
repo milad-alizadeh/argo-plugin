@@ -114,10 +114,14 @@ file → skip; never invent one.
      `design/registry.json` grows with the project (the per-component
      `notes`/`variantMatrix` prose dominates its size), so NEVER `Read` it whole
      into context. Use the deterministic verb: `argo design registry-lookup`
-     prints the compact `{name, nodeId, kind, status, adopted}` index (heavy
-     prose stripped); `--names '["Button","Card"]'` filters to exact names
-     (misses reported explicitly), `--search <substr>` fuzzy-filters. One small
-     call, not a raw Read or ad hoc grep. Also consult the host's reuse
+     prints the compact `{name, nodeId, kind, status, adopted, whenToUse}`
+     index (heavy prose stripped); `--names '["Button","Card"]'` filters to
+     exact names (misses reported explicitly), `--search <substr>`
+     fuzzy-filters. One small call, not a raw Read or ad hoc grep.
+     **Read each candidate's `whenToUse`**: when a candidate's usage guidance
+     matches the region/pattern being built, that candidate is presumptively
+     THE component — use it (stop-and-ask only when MULTIPLE candidates'
+     `whenToUse` match, or none carries guidance and several are plausible). Also consult the host's reuse
      authority (its COMPONENT-INVENTORY / RECONCILIATION docs) — the base roster
      lives in the design file, browsable on its component pages (icons are a
      family — search the icon page live for a specific glyph, never
@@ -231,6 +235,15 @@ reusable components. Read it before touching the screen — **no brief, stop and
 say so**, never infer the decomposition from the wireframe's grey boxes (that
 IS the reskin-the-wireframe failure this path exists to kill).
 
+**Reference image (optional-but-strongly-recommended brief input).** The brief
+SHOULD carry a `Reference image` — a wireframe export, an annotated sibling
+screenshot, or the original design. If the brief has NO reference image and
+the screen is not a sibling-clone patch (clone shell + swap content region),
+**STOP AND ASK** for one — or for explicit permission to proceed prose-only —
+before building. Never silently interpret prose alone: the observed fidelity
+misses were prose-misread failures, and a reference image is what the content
+self-check compares the built screenshot against (see design-screen P3/P4).
+
 Build in this order, every time:
 
 1. **Inventory.** From the brief's *Regions → component map*, list every
@@ -247,12 +260,22 @@ Build in this order, every time:
    audited component do you move on. Prefer base components for any region
    that maps to one (check-before-you-build above); a `composite` is
    justified only by structure the base set doesn't ship.
-3. **Compose the screen** on its `D<NN>` page purely from those component
+3. **Compose the screen region-by-region, with a checkpoint per region.**
+   Compose on its `D<NN>` page purely from those component
    INSTANCES + `layout` containers (Auto Layout, bound spacing). A region the
    brief tagged `composite` SHOULD appear as an instance of the matching
    component; inlining it as a loose container full of atoms is the
    reskin-the-wireframe smell to avoid. A region tagged `layout` is the only
    thing meant to be a bare Auto-Layout container.
+   Work through the brief's region list IN ORDER: after each major region
+   lands, take ONE inline screenshot of that region
+   (`await regionNode.screenshot()` in the same `use_figma` call as its last
+   write) and fix any visible defect BEFORE starting the next region — a
+   defect caught at region scope can't compound into the assembled screen.
+   Lightweight by design: one screenshot per region, no per-region audits or
+   re-reviews (the tier-0 audit and the P3 one-pass cap are unchanged); this
+   section-checkpoint pass REPLACES an end-only visual self-review of the
+   composed screen, it does not add to it.
 
 The point of building components first is that the screen becomes a thin
 composition sheet — if you find yourself styling anything directly on the
@@ -313,13 +336,30 @@ that creates the component:** `component.description = "<one-line purpose>. Cate
 description (status is registry-side lifecycle state, never in-file — see
 `templates/design/memory-model.md`).
 
+**Usage marker (`@when-to-use`) — mandatory on every component you author.**
+Dev Mode annotations are argo's documentation layer in Figma — the single
+surface every argo marker lives on (`@screen`, `@code-owned:`,
+`@when-to-use:`). In the same `use_figma` call that creates the component, add
+a Dev annotation carrying `@when-to-use: <one sentence: which region/pattern
+this component is the solution for>` (e.g. `@when-to-use: The children-tree
+section of a session detail screen.`). Write it as an ANNOTATION, not into the
+description — the description read is a legacy transition fallback only.
+`pull-registry` syncs the marker into the registry's `whenToUse` field
+(annotation first, description fallback; the description read drops a release
+later), which is what makes `registry-lookup`'s resolution index
+self-describing — a later designer resolving components reads it instead of
+guessing among look-alikes. When adding annotations, append to any existing
+ones (`@screen`/`@code-owned`), never overwrite them.
+
 **Code-owned placeholders.** When the component is a flat screenshot standing
 in for something whose real implementation is code (a Three.js/WebGL scene, a
-canvas viz — anything Figma can't faithfully hold), append a `@code-owned:`
-marker line to the description:
-`"<one-line purpose>. Category: <category>.\n@code-owned: <repo-relative path to the code component>"`.
+canvas viz — anything Figma can't faithfully hold), set a Dev annotation
+carrying `@code-owned: <repo-relative path to the code component>` on the
+component (annotation-first, like every argo marker; the description-borne
+marker is the legacy transition fallback pull-registry still reads, never
+where you author it).
 This marker is the SINGLE source of truth for the code↔design link — the
-Figma description, never a config file or a hand-edited registry. Downstream
+Figma annotation, never a config file or a hand-edited registry. Downstream
 it makes the component tier-0 exempt (a screenshot can't satisfy binding
 rules) and tells figma-to-code to import the existing component instead of
 generating one. You write the marker; the registry classification is derived
@@ -348,11 +388,15 @@ key (never overwrite the whole file from a stale in-memory copy; flat
 concurrent designer sessions make last-write-wins a real entry-loss risk).
 Entry shape (`RegistryEntrySchema`, imported from `@argohq/kit/design-kit`):
 `{ nodeId, kind: 'kit' | 'custom', status: 'audit-clean', lastSyncedAt,
-variantMatrix }`. `status` is Figma-side lifecycle ONLY — this skill only ever
+variantMatrix }`, plus `whenToUse: <the text of the component's @when-to-use
+annotation>` (you just wrote that annotation — mirror it into the entry so the
+resolution index is useful immediately, without waiting for the next
+pull-registry). `status` is Figma-side lifecycle ONLY — this skill only ever
 writes `audit-clean` (the outcome of its own self-audit loop); `synced`/`coded`
 are owned by other skills' outputs and never written here. **For a code-owned
-placeholder** (description carries the `@code-owned:` marker), derive the kind
-deterministically with `parseCodeOwnedPath` from `@argohq/kit/design-kit` — if
+placeholder** (the `@code-owned:` marker on a Dev annotation, or legacy
+description), derive the kind deterministically with `resolveCodeOwnedPath`
+from `@argohq/kit/design-kit` — if
 it returns a path, write `kind: 'code-owned'` + `codePath: <that path>` instead
 of `kit`/`custom`. Never hand-classify by judgment; the marker decides. A later
 `argo design pull-registry` applies the exact same rule, so the two never

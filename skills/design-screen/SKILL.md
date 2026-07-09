@@ -41,6 +41,14 @@ inventory every time.
 - **A wireframe is OPTIONAL** — reference context only, never frozen or verified
   against. Use one only when a screen's layout is a genuine open question; skip it
   when the shape is known.
+- **A reference image is optional-but-strongly-recommended** on every screen
+  brief (`Reference image` input: a wireframe export, an annotated sibling
+  screenshot, or the original design). If the brief has NO reference image and
+  the screen is not a sibling-clone patch, the designer **STOPS AND ASKS** for
+  one — or for explicit permission to proceed prose-only — never silently
+  interprets prose alone (the observed fidelity misses were prose-misread
+  failures). When present, it is the comparison target for the content
+  self-check (see P4b below).
 - **INVENTORY / RECONCILIATION / BUILD-ORDER** mounted **READ-ONLY** — the
   anti-recreation authority. The net-new budget is a ceiling only a human raises.
 - **design-guard armed** (the app's `design.<app>` block present in
@@ -55,18 +63,32 @@ composite/tree-like region, resolve its binding in this order: (a) if the PRD
 has an optional `Component Bindings` section naming this region, verify the
 entry ONCE (`get_metadata`: exists, right type, fits the brief) and use it;
 (b) absent or failed verification → run your own
-`argo design registry-lookup`/search pass; (c) if a plausible existing
-component (or multiple candidates) surfaces, STOP AND ASK the human to
+`argo design registry-lookup`/search pass, and READ each candidate's
+`whenToUse` field — when one candidate's usage guidance matches the
+region/pattern being built, it is presumptively THE component, use it;
+(c) if MULTIPLE candidates' `whenToUse` match, or plausible candidates
+surface with no guidance to disambiguate, STOP AND ASK the human to
 confirm the binding — never silently assemble from primitives past a
 candidate, never silently trust a stale entry. The PRD section is a hint
-layer; this flow is standalone and works without it.
+layer; this flow is standalone and works without it. When AUTHORING a new
+component, write its `@when-to-use:` Dev annotation (figma-create's usage
+marker step) so the registry stays self-describing.
 
 Walk BUILD-ORDER: `figma-create` each composite in dependency order — audit-gated,
 registered, with the registry as the reuse authority (check it before proposing
 anything NEW). An unmatched composite ESCALATES to a
 human — NEVER auto-`NEW` past the budget. Only when the components exist do you
-compose the screen from **instances** (not fresh frames). Right after composing
-a screen, **mark its identity**: a screen frame is a plain FRAME with **no
+compose the screen from **instances** (not fresh frames).
+
+**Compose region-by-region with a checkpoint per region:** work through the
+brief's region list in order; after each major region lands, take ONE inline
+screenshot of that region (`await regionNode.screenshot()` in the same
+`use_figma` call as its last write) and fix visible defects BEFORE the next
+region. This replaces an end-only self-review of the composed frame — it does
+NOT add extra full-screen audits (the P3 one-audit cap stands), and it stays
+lightweight: one screenshot per region, no per-region re-audits.
+
+Right after composing a screen, **mark its identity**: a screen frame is a plain FRAME with **no
 `description` field** (plain frames are not `PublishableMixin`), so screen
 identity rides a Dev Mode annotation, not the `@code-owned:` description model.
 Set a `@screen`-labelled annotation on the top-level frame
@@ -98,8 +120,12 @@ positioned) is exempt — auto-layout would be a no-op there.
 
 **One mechanical pass (P3 cap):** the tier-0 audit is deterministic — run it
 once per component/screen and re-run ONLY after actual fixes, never as a
-repeat sweep. The screenshot-vs-brief visual self-review is separate and
-stays (see designer.md).
+repeat sweep. The visual content self-check is separate and stays (see
+designer.md) — and when the brief carries a `Reference image`, that check
+compares the built screenshot against the REFERENCE IMAGE, not against your
+own reading of the prose (prose-misread was the observed fidelity failure
+mode; prose-only comparison is the fallback only when the human explicitly
+approved proceeding without a reference).
 
 ## 4. Completeness — deterministic pre-check + advisory check, then you (P4)
 No frozen contract; completeness is a cheap layered check:

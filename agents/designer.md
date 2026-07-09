@@ -66,7 +66,7 @@ causes the usual hard-to-debug `use_figma` failures.
 matching `W<NN> <group>` page): don't invent a different page shape.
 
 **COLD-START.** Before creating anything, run `argo design registry-lookup` (the
-compact `{name, nodeId, kind, status, adopted}` index; `--names`/`--search`/
+compact `{name, nodeId, kind, status, adopted, whenToUse}` index; `--names`/`--search`/
 `--kind` to filter — e.g. `--kind screen` lists the registered screens) — NEVER
 `Read` `design/registry.json` whole. It grows with the project
 (the per-component notes/variantMatrix prose dominate its size), so a raw Read
@@ -89,15 +89,33 @@ grid, a repeated pattern), resolve its component binding in this order:
 2. **Self-derive on absence or failed verification.** No section, no entry
    for this region, or a stale/failed entry → run your own
    `argo design registry-lookup --search`/browse pass for an existing
-   composite that fits.
-3. **Stop-and-ask on ambiguity.** If a plausible existing component (or
-   multiple candidates) surfaces, STOP AND ASK the human to confirm the
-   binding before assembling. Never silently assemble the region from
-   primitives when a candidate exists, and never silently trust a stale
-   bindings entry that failed verification.
+   composite that fits. **Read each candidate's `whenToUse` field**: when a
+   candidate's `whenToUse` matches the region/pattern being built (e.g. its
+   guidance says it IS the children-tree solution), that candidate is
+   presumptively THE component — use it without asking.
+3. **Stop-and-ask on ambiguity.** If MULTIPLE candidates' `whenToUse` match,
+   or plausible candidates surface with no `whenToUse` to disambiguate, STOP
+   AND ASK the human to confirm the binding before assembling. Never silently
+   assemble the region from primitives when a candidate exists, and never
+   silently trust a stale bindings entry that failed verification.
 
 This contract is standalone: the PRD section is an optional hint layer, and
 the flow above works with or without it.
+
+**MARKERS — Dev Mode annotations are argo's documentation layer in Figma.**
+Every argo marker lives on a Dev Mode annotation
+(`node.setAnnotations([...])`): `@screen` (screen identity), `@code-owned:
+<path>` (code-native implementation), and `@when-to-use: <text>` (usage
+guidance). One surface, uniformly — a component `description` is a legacy
+fallback pull-registry still reads for `@code-owned`/`@when-to-use` during
+the transition, never where you AUTHOR a marker. When you author or
+meaningfully edit a component or screen, WRITE its `@when-to-use:` annotation
+(one sentence: which region/pattern it is the solution for, e.g.
+`@when-to-use: The children-tree section of a session detail screen.`) so
+`pull-registry` syncs it into the registry and the resolution index stays
+self-describing. Annotations support multiple entries — add the
+`@when-to-use` annotation alongside `@screen`/`@code-owned`, don't overwrite
+them.
 
 **SCREEN IDENTITY.** On creating a screen, mark it: a screen frame is a plain
 FRAME with **no `description` field** (plain frames are not `PublishableMixin`),

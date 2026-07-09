@@ -10,10 +10,20 @@ reskinning grayscale boxes.
 
 A screen is not started (wireframe or hi-fi) until its brief exists.
 
-Copy the four sections below verbatim; fill them for the screen. Keep it tight
+Copy the sections below verbatim; fill them for the screen. Keep it tight
 — this is a spec, not a document.
 
 ---
+
+## Reference image
+
+**Optional but strongly recommended.** A path/link to the visual the built
+screen is compared against: a wireframe export, an annotated sibling
+screenshot, or the original design. Prose misreads are the observed fidelity
+failure mode — the designer's content self-check compares the built screenshot
+against THIS image, not against its own reading of the prose. If this section
+is absent and the screen is not a sibling-clone patch, the designer stops and
+asks for a reference (or for explicit permission to proceed prose-only).
 
 ## Purpose
 

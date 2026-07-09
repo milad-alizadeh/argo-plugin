@@ -22,6 +22,8 @@ export interface RegistryIndexEntry {
   kind?: string
   status?: string
   adopted?: boolean
+  /** `@when-to-use:` usage guidance — small text that belongs in the resolution index. */
+  whenToUse?: string
 }
 
 export type LookupResult = RegistryIndexEntry | { name: string; missing: true }
@@ -44,7 +46,8 @@ export function lookupRegistry(
     nodeId: entry.nodeId,
     ...(entry.kind !== undefined ? { kind: entry.kind } : {}),
     ...(entry.status !== undefined ? { status: entry.status } : {}),
-    ...(entry.adopted !== undefined ? { adopted: entry.adopted } : {})
+    ...(entry.adopted !== undefined ? { adopted: entry.adopted } : {}),
+    ...(entry.whenToUse !== undefined ? { whenToUse: entry.whenToUse } : {})
   })
 
   // `if (names)` not `names.length > 0`: an explicit empty list means "resolve
@@ -111,7 +114,7 @@ export function parseCliArgs(args: string[]): CliArgs {
 
 const USAGE = `registry-lookup — deterministic, compact lookup of design/registry.json.
 
-Emits only { name, nodeId, kind, status, adopted } per component (strips the
+Emits only { name, nodeId, kind, status, adopted, whenToUse } per component (strips the
 heavy notes/variantMatrix prose) so a cold-start agent resolves components in one
 small call instead of a whole-file Read.
 

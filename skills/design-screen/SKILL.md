@@ -1,18 +1,19 @@
 ---
 name: design-screen
-description: Build out an EXISTING screen (or wave of screens) in Figma autonomously — ONE long-lived designer session works a BUILD-ORDER wave component-first, straight to hi-fi from the PRD, gated by a single hard tier-0 audit plus a cheap deterministic instance-presence check and an advisory completeness pass. The design analog of /argo:build-plan. Use when a screen's PRD exists (a rough wireframe is optional context) and you want the hi-fi built hands-off; for a single component jump straight to /argo:figma-create.
+description: Build out an EXISTING screen (or wave of screens) in Figma autonomously — ONE long-lived designer session works a BUILD-ORDER wave component-first, straight to hi-fi from the PRD, gated by a single hard tier-0 audit plus a cheap deterministic instance-presence check and an advisory completeness pass. The design analog of /argo:build-plan. Use when a screen's PRD exists (carrying its ASCII wireframe + flow as layout intent) and you want the hi-fi built hands-off; for a single component jump straight to /argo:figma-create.
 ---
 
 # Design a Screen (hi-fi in Figma, single-session, component-first, PRD-driven)
 
 The **automated** design stage of the canonical loop: take a screen whose intent
-already exists (a **PRD**, optionally a rough wireframe for reference) and build
+already exists (a **PRD**, carrying its ASCII wireframe + flow) and build
 its hi-fi in Figma, component-first, so it turns cleanly into code. This is the
-simplified flow (design-process-simplification.md, 2026-07-07): the old
-contract-freeze / region-coverage / structural-receipt / wireframe-verifier
-machinery is retired. It was disproportionate bookkeeping — maintaining a second
-synced lo-fi artifact per screen — for a solo designer with settled taste and a
-known product shape.
+simplified flow (design-process-simplification.md, 2026-07-07; completed by
+remove-figma-wireframe-stage.md): the old contract-freeze / region-coverage /
+structural-receipt machinery is retired, and the `figma-wireframe` skill +
+`wireframe-verifier` agent are deleted outright — maintaining a second synced
+lo-fi artifact per screen was disproportionate bookkeeping. Layout intent now
+lives as the PRD's ASCII wireframe, agreed with the user at PRD time.
 
 Why one long-lived session (like `build-plan`): a wave's components are built in
 dependency order, then composed — a fresh context per component re-reads the
@@ -40,12 +41,13 @@ inventory every time.
 - **A PRD** for the feature (`.claude/prds/<feature>.md`) with a feature→screen
   matrix and `Visible in build?` rows for this screen. No PRD → stop; author it
   first (`/argo:write-prd`).
-- **A wireframe is OPTIONAL** — reference context only, never frozen or verified
-  against. Use one only when a screen's layout is a genuine open question; skip it
-  when the shape is known.
+- **The PRD's ASCII wireframe + flow is the layout reference** — intent, never
+  frozen or verified against. A hand-drawn Figma wireframe is no longer an
+  argo-owned stage; a human may still produce one out-of-band as an extra
+  reference image.
 - **A reference image is optional-but-strongly-recommended** on every screen
-  brief (`Reference image` input: a wireframe export, an annotated sibling
-  screenshot, or the original design). If the brief has NO reference image and
+  brief (`Reference image` input: the PRD's ASCII wireframe, an annotated
+  sibling screenshot, or the original design). If the brief has NO reference image and
   the screen is not a sibling-clone patch, the designer **STOPS AND ASKS** for
   one — or for explicit permission to proceed prose-only — never silently
   interprets prose alone (the observed fidelity misses were prose-misread

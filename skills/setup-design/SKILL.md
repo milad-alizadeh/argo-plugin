@@ -91,17 +91,8 @@ that skills read from the app's `design.<app>` block:
   starter the duplicate came from — recorded so `design-upgrade`'s starter
   refresh knows where deltas come from; no skill binds through it at
   runtime.
-- **Wireframe kit** → `figma.wireframeKitFileKey` (optional). A lo-fi wireframe
-  component library `figma-wireframe` instances from, so wireframes come out
-  rough and consistent instead of hand-drawn hi-fi greyscale. Recommend a kit
-  with real components + variants (an in-house one, or a community kit like
-  IMPAKT / Wireframe Kit 2.1). Skip → `figma-wireframe` falls back to
-  hand-drawn greyboxes on the fixed lo-fi palette.
-
 Accept a full `figma.com/file/<KEY>/…` or `figma.com/design/<KEY>/…` URL and
-parse the `<KEY>` segment out — store the bare key, never the whole URL. For
-cross-file instancing to work, the wireframe kit must be **published as a team
-library** (Professional plan); note this to the user if they add a kit key.
+parse the `<KEY>` segment out — store the bare key, never the whole URL.
 
 ## 0d. Entry mode — first run or re-run
 

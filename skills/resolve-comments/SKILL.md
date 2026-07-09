@@ -1,6 +1,6 @@
 ---
 name: resolve-comments
-description: Address open Figma comments as an explicit amendment pass — pull the unresolved comment threads on a project's Figma file, classify each by the page its pin sits on (lo-fi wireframe / hi-fi screen / component master), apply the fix under that surface's conventions with the matching audit gate, and post a "✅ Fixed" reply so the human can resolve the thread. Use when the user says "resolve the Figma comments", "address my comments", "pick up the comments on the wireframe", or "/argo:resolve-comments" — a deliberate, invoked task, never an automatic session-start sweep.
+description: Address open Figma comments as an explicit amendment pass — pull the unresolved comment threads on a project's Figma file, classify each by the page its pin sits on (hi-fi screen / component master), apply the fix under that surface's conventions with the matching audit gate, and post a "✅ Fixed" reply so the human can resolve the thread. Use when the user says "resolve the Figma comments", "address my comments", or "/argo:resolve-comments" — a deliberate, invoked task, never an automatic session-start sweep.
 ---
 
 # resolve-comments
@@ -12,8 +12,8 @@ gives spatial, in-context correction ("this arrow points the wrong way", pinned
 to the arrow); this skill picks those up, fixes them, and replies in-thread.
 
 Builds on `figma:figma-use` (for any node edit) and dispatches the real fix work
-to whichever authoring skill owns the surface — `figma-wireframe`, `figma-create`,
-or `figma-audit`. It does not reimplement their rules; it routes to them.
+to whichever authoring skill owns the surface — `figma-create` or
+`figma-audit`. It does not reimplement their rules; it routes to them.
 
 ## Why explicit, not session-start (the design decision)
 
@@ -85,20 +85,24 @@ click); a thread whose **last** reply is a `❓` question is dropped as
 reply without the `✅ Fixed` prefix, or a question without the `❓` prefix, the
 next sweep will re-triage the thread and redo the work. Always prefix.
 
-## Three-way routing — classify by the pin's page, not the file
+## Two-way routing — classify by the pin's page, not the file
 
-Wireframes, hi-fi screens, and component masters can all live in one file — as
-different PAGES of `figma.projectFileKey`: `W##`, `D##`, and
-`Custom Components`. So classification is **per comment, by the page its pin
-sits on** — not one decision for the whole file. Resolve the pin's `nodeId` to
-its page via the Plugin API (`figma.getNodeByIdAsync(nodeId)`, then walk
-`.parent` up to the `PAGE`), read the page name, and route:
+Hi-fi screens and component masters can live in one file — as different PAGES
+of `figma.projectFileKey`: `D##` and `Custom Components`. So classification is
+**per comment, by the page its pin sits on** — not one decision for the whole
+file. Resolve the pin's `nodeId` to its page via the Plugin API
+(`figma.getNodeByIdAsync(nodeId)`, then walk `.parent` up to the `PAGE`), read
+the page name, and route:
 
 | Pin's page | Surface | Fix convention (skill that owns it) | Audit |
 | --- | --- | --- | --- |
-| `W##` (wireframe) | lo-fi wireframe | `figma-wireframe` — grayscale, lo-fi palette, kit instances, ONE typeface, no Semantic bindings | advisory (W pages are tier-0 exempt) |
 | `D##` (screen) | hi-fi screen | `figma-create` component-first screen path — composition from instances, bound spacing | **hard** tier-0 on the touched screen node |
 | `Custom Components` / `foundations/*` | component master | `figma-create` authoring rules — variant naming (D18), Semantic bindings, icons-as-instances | **hard** tier-0 named-component gate on the master |
+
+A pin that resolves to a legacy `W##`/`Cover` page (a project wireframed
+before the lo-fi stage was retired) falls through to `unmatched`: post a `❓`
+noting wireframing is retired and asking whether the fix should move to the
+screen brief / PRD's ASCII wireframe instead.
 
 Component masters are the highest-stakes surface for a reason the other two lack:
 **editing a master ripples to every instance across every `D##` screen.** So a
@@ -149,16 +153,13 @@ last, one at a time):
 conservatism rule above defers changes to an *existing* master's variants;
 minting a *new* component from a frame is additive and is the entire point of the
 design system. Fall back to a `❓` only when the request is genuinely ambiguous —
-the component boundary is unclear (which subtree?), no name is given or obvious,
-or the pin sits on a `W##` wireframe page (lo-fi wireframes compose kit instances
-only and own no bespoke masters, so "make this a component" there needs the user
-to name the kit component they mean). Even then, post the `❓`; never drop the
-thread.
+the component boundary is unclear (which subtree?), or no name is given or
+obvious. Even then, post the `❓`; never drop the thread.
 
 ## Optional scope argument
 
 Invoked bare, the skill processes every open thread on the file. An argument
-narrows it: `wireframe` (only `W##` pins), `design`/`screen` (only `D##`),
+narrows it: `design`/`screen` (only `D##`),
 `components` (only the component surface), or a page name / node id. Use this
 when the user only wants one surface amended.
 
@@ -189,8 +190,8 @@ un-replied because the batch never got posted.
    line defining the input (`const NODE_IDS = [ …ids… ]`) and pass the script
    body **verbatim** — do not hand-author the resolution loop each run. **Tag
    the call `figma-read-only` in the `use_figma` `skillNames` parameter**
-   (fidelity-geometry-verifier.md Slice 13, same mechanism as figma-wireframe's
-   `figma-wireframe` tag): this is a pure introspection call (no mutation), and
+   (fidelity-geometry-verifier.md Slice 13, same mechanism as the legacy
+   `figma-wireframe` write-exemption tag): this is a pure introspection call (no mutation), and
    the design-guard record hook reads the tag to skip the tier-0 write counter
    for it — omit it and this read alone arms a spurious audit-owed gate. It
    returns `{ [nodeId]: { page, surface, nodeName, nodeType } }`, or
@@ -199,7 +200,7 @@ un-replied because the batch never got posted.
      since-deleted or reworked node (the common case: feedback outlives the node)
      degrades to `{ error }` for that one thread instead of failing the batch.
    - **Deterministic surface classification baked in** — page name →
-     `wireframe` / `screen` / `master` / `file-note` / `unmatched` via the
+     `screen` / `master` / `file-note` / `unmatched` via the
      routing table, so no model cycles and no subagent spent on a lookup.
    - **Read-only, non-disruptive** — `getNodeByIdAsync` + a `.parent` walk only,
      never `setCurrentPageAsync` (which would bump the design-guard write counter
@@ -219,8 +220,8 @@ un-replied because the batch never got posted.
    `{ commentId, nodeId, page, surface, decision: 'fix'|'question', editPlan,
    replyText }`. Nothing writes in this phase.
 3. **Apply + reply — single writer, serial, one comment at a time.** Apply the
-   drafted edits in this order: `W##` wireframe fixes first (audit-exempt),
-   then `D##` screens, then component masters **last and strictly one at a
+   drafted edits in this order: `D##` screens first, then component masters
+   **last and strictly one at a
    time** (blast radius — a master edit ripples to every instance, so two
    "disjoint" fixes can still collide through a shared master; a single
    inline draft pass also keeps every master thread visible to one reasoner,
@@ -243,10 +244,8 @@ inherently sequential; the only concurrency worth having is inside the read
 ## Procedure
 
 1. **Resolve the target file key(s)** from `.claude/argo.json` — the app's
-   `design.<app>.figma.projectFileKey` (the file the screens/wireframes/components
-   live in). If a project ever configures separate wireframe and design files,
-   process each configured key; here it's the one project file with W/D/Custom
-   pages.
+   `design.<app>.figma.projectFileKey` (the file the screens/components
+   live in) — the one project file with D/Custom pages.
 2. **Confirm the token** (env or `.argo/figma-token`). Missing → stop and ask.
 3. **Pull open threads:** run
    `node ${CLAUDE_PLUGIN_ROOT}/skills/resolve-comments/scripts/figma-comments.ts list <fileKey>`
@@ -272,7 +271,7 @@ inherently sequential; the only concurrency worth having is inside the read
    drafted items `{ commentId, nodeId, page, surface, decision, editPlan,
    replyText }`.
 5. **Apply the fixes and reply per thread — single writer, serial** (see
-   "Execution shape"), ordered `W##` → `D##` → masters (masters one at a
+   "Execution shape"), ordered `D##` → masters (masters one at a
    time). For each thread, in turn:
    - **Clear and actionable** → apply the fix using the routed convention,
      **then immediately** reply one terse line (see "Keep replies terse"):
@@ -295,8 +294,7 @@ inherently sequential; the only concurrency worth having is inside the read
    nodes and **record a fresh `design/audit-receipt.json`**
    (`argo design record-audit-receipt`) at the current guard write count.
    `design-guard-stop.mjs` blocks the session otherwise — comment-driven Figma
-   writes are still Figma writes. Wireframe-only (`W##`) edits are audit-exempt,
-   so no receipt is required for a run that touched only wireframe pages. (The
+   writes are still Figma writes. (The
    stop gate is per-session since kit 0.2.1, so a concurrent designer editing
    the same file no longer invalidates this run's receipt — but keep the audit
    to the end of the serial write phase regardless.)
@@ -310,7 +308,7 @@ inherently sequential; the only concurrency worth having is inside the read
 
 - **Does not resolve threads** (no API for it) — posts `✅ Fixed`, user resolves.
 - **Does not run on its own** at session start or on any schedule — invoked only.
-- **Does not reimplement authoring rules** — it routes to `figma-wireframe` /
+- **Does not reimplement authoring rules** — it routes to
   `figma-create` / `figma-audit`, which own the conventions and gates.
 - **Does not restructure a component master's variants** without a confirming
   question first.

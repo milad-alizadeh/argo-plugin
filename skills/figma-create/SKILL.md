@@ -234,17 +234,17 @@ file → skip; never invent one.
 
 ## Component-first screen path (the screen brief is a required input)
 
-A screen is **built from its brief, not traced from its wireframe**. The
-wireframe is a lo-fi layout reference; the brief (host repo, e.g.
+A screen is **built from its brief, not traced from a layout sketch**. The
+PRD's ASCII wireframe is layout *intent*; the brief (host repo, e.g.
 `<app>/design/briefs/<screen>.md`, format in
 `templates/design/screen-brief.md`) is the spec that names which regions are
 reusable components. Read it before touching the screen — **no brief, stop and
-say so**, never infer the decomposition from the wireframe's grey boxes (that
+say so**, never infer the decomposition from the sketch's boxes alone (that
 IS the reskin-the-wireframe failure this path exists to kill).
 
 **Reference image (optional-but-strongly-recommended brief input).** The brief
-SHOULD carry a `Reference image` — a wireframe export, an annotated sibling
-screenshot, or the original design. If the brief has NO reference image and
+SHOULD carry a `Reference image` — normally the PRD's ASCII wireframe (cited
+or embedded), an annotated sibling screenshot, or the original design. If the brief has NO reference image and
 the screen is not a sibling-clone patch (clone shell + swap content region),
 **STOP AND ASK** for one — or for explicit permission to proceed prose-only —
 before building. Never silently interpret prose alone: the observed fidelity
@@ -337,8 +337,7 @@ component instead of building a second one under another name.
 
 Page placement follows `templates/design/file-structure.md`, the canonical
 file-organization convention: components go on the
-`Custom Components` page; screens go on their `D<NN> <group>` page, mirroring
-the `W<NN> <group>` wireframe page of the same group 1:1.
+`Custom Components` page; screens go on their `D<NN> <group>` page.
 
 **Category placement (design-memory-placement.md, step 6) — one deterministic
 op, no coordinate math:**

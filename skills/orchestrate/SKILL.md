@@ -75,23 +75,23 @@ running agent with "Rate limited", it is not a usage limit and not fatal:
 
 ## 5. Design fan-out (NEW-A)
 
-Supervising a fleet of `designer` agents (figma-create/figma-audit/
-figma-wireframe runs) follows the same "someone must watch it" contract as a
+Supervising a fleet of `designer` agents (figma-create/figma-audit
+runs) follows the same "someone must watch it" contract as a
 build, with design-specific mechanics, the main session improvised this
 once and produced real defects (a spawned sub-fleet, a token-burning
 idle-wait on a gate false positive, a rejected component patch); these three
 mechanisms close those gaps without new tooling.
 
-- **Brief before wireframe, component before screen (ordering the supervisor
+- **Brief before screen, component before screen (ordering the supervisor
   enforces).** A screen's product brief (`design/briefs/<screen>.md`,
-  `templates/design/screen-brief.md`) is authored and settled BEFORE its
-  wireframe is spawned, a wireframe with no brief is the reskin-the-wireframe
-  failure this pipeline exists to kill, so don't spawn one. Then, for hi-fi:
+  `templates/design/screen-brief.md`) is authored and settled BEFORE any
+  design run for that screen is spawned. Then, for hi-fi:
   every `composite` a screen's brief names is built + registered as its own
   audited component BEFORE the screen that consumes it is assembled. Sequence
   the fan-out that way, component runs first, the screen-composition run last,
   reading the now-existing components as instances. A screen run spawned before
-  its components exist will trace the wireframe; don't spawn it early.
+  its components exist will inline loose structure (the reskin-the-wireframe
+  failure); don't spawn it early.
 - **Bank the canonical shell before the compose fan-out (build-order step).**
   For a wave of screens that share layout chrome, the supervisor enforces
   `design-screen`'s step 1b: after the shared composites exist and before the
@@ -126,7 +126,7 @@ mechanisms close those gaps without new tooling.
   builder's report and cannot un-read it (the same contamination
   `agents/design-verifier.md` bars for completeness). Instead the supervisor
   spawns `argo:fidelity-verifier`, a blind fidelity check given ONLY the
-  reference (brief/wireframe/original screenshot), the built screenshot
+  reference (brief/PRD ASCII wireframe/original screenshot), the built screenshot
   at IDENTICAL frame size, and a structural fact sheet (frame dimensions,
   per-region node metrics) — never the transcript, never the self-report.
   The measurable subset is a tier-0 gate concern, not the verifier's job:

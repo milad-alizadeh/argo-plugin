@@ -401,3 +401,142 @@ between `allow` and `deny-edits`:
   fixture (missing key → allow).
 
 Depends on item 5 landing first (hook + config resolver are mid-change).
+
+## Item 7: design-to-code screen mode + screen spec-diff (queued 2026-07-09)
+
+Host decision (argo-v2, 2026-07-08): a screen is generated as a THIN
+CONTAINER + PURE PRESENTATIONAL VIEW with Storybook stories — one story per
+PRD state, fixtures typed off the view-model, spec-diff gating the rendered
+story at the screen frame's dimensions. The plugin's design pack grows the
+machinery; nothing here is argo-v2-specific.
+
+Code-reality notes (verified 2026-07-09, adjust again at build time):
+
+- The figma-to-code skill body is
+  `packages/toolkit/packs/design/craft/figma-to-code.md` (component mode,
+  presentation-regen seam, D22 gate order); `skills/figma-to-code/SKILL.md`
+  is a 6-line INCLUDE shim. Edit the craft doc, not the shim.
+- `RegistryEntrySchema` (`src/packs/design/design-kit/schemas.ts`) already
+  has `kind: "screen"`, and `registerScreen`/`pullRegistry`
+  (`src/packs/design/registry/index.ts`) upsert screen frames — but
+  **nothing captures frame dimensions today**: `marshalScreenFrames`
+  (`skill-scripts/pull-registry.ts:135`) marshals only
+  `name`/`nodeId`/`annotations`, and the registry card has no
+  width/height. Slice C must add dimension capture.
+- The spec-diff walker is NOT URL/iframe-based: `runSpecDiffWalker`
+  (`src/packs/design/walkers/spec-diff.ts`) is a factory the host shim
+  (`test/spec-diff/`) calls with a `Record<path, storyModule>` glob map,
+  imported specs JSON, and the host Storybook's `composeStories`; stories
+  render via `Story.run()` inside the host's browser-mode vitest project.
+  No story URL or Storybook dev server is involved — the "story iframe" in
+  the host decision maps to this composed-story browser render. The story
+  join key that DOES exist is `StoryMapEntrySchema.storyId`
+  (`design-kit/schemas.ts`).
+- Binding manifest: `design-kit/binding-manifest.ts`
+  (`BindingManifestRowSchema`: requirement → component → variant/states),
+  written to the app's `design/<wave>/binding-manifest.json`. This is the
+  composition source for screen View generation.
+- Lint seam for checkable code conventions: the recipe's installed rules
+  file `templates/design/recipes/shadcn-tailwind/code-target/lint/design-lint.md`
+  (installed by setup-design only when the host has a lint config), plus
+  the deterministic commit-time precedent
+  `src/packs/design/design-commit-gate.ts` (PreToolUse receipt gate,
+  scoped via `gatedComponentFiles` in `src/config/argo-json.ts`). The
+  Figma-side `recipes/shadcn-tailwind/design-rules.ts` predicates are the
+  wrong seam — they walk Figma nodes, not source files.
+- `requiresLaunch` lives in `src/packs/code/trust-gate.ts` (line ~131:
+  `if (mode?.requiresLaunch !== true) process.exit(0)`), read from
+  `.argo/evidence/build-mode.json`.
+
+### Slice A — figma-to-code screen mode (craft doc + templates)
+
+Extend `craft/figma-to-code.md` with a screen mode, keyed off the
+registry entry's `kind: "screen"`:
+
+- **`<Screen>View.tsx`** — pure presentational: composes already-generated
+  component instances per the screen's binding-manifest rows (row →
+  imported component + variant/states); props are one typed view-model
+  object; NO hooks, NO IPC/bridge imports, no data fetching.
+- **`<Screen>View.stories.tsx`** — one story per PRD state (the states the
+  PRD's requirement rows name for this screen), args from fixtures.
+- **`fixtures.ts`** — fixture per PRD state, typed off the view-model type
+  exported by the View (`satisfies <Screen>ViewModel`), so a view-model
+  change breaks fixtures at typecheck.
+- **`<Screen>.tsx`** — thin container: hooks/IPC/bridge wiring only, renders
+  `<ScreenView {...viewModel}/>`. NO story, NO spec — it is exercised by
+  e2e, not Storybook.
+- Presentation-regen seam applies at screen level: regen rewrites
+  View/stories/fixtures, never the container.
+
+Testable markers: craft doc names all four files and the kind:"screen"
+trigger; a fixture registry + manifest walked through the doc's steps
+produces the four-file layout (manual dry run, same standard as the
+existing "Verification" section — no repo fixture exists for skill prose).
+
+### Slice B — "View imports no IPC/bridge" check
+
+Two layers, mirroring the existing pattern:
+
+1. Rules-file layer: add a third rule to
+   `templates/design/recipes/shadcn-tailwind/code-target/lint/design-lint.md`
+   — `*View.tsx` files must not import IPC/bridge/preload modules
+   (host-configured import specifiers, e.g. `@electron-toolkit/*`,
+   `window.api` typings, `ipcRenderer`); containers own that.
+2. Deterministic layer: a pure, unit-testable predicate
+   `src/packs/design/design-kit/view-purity.ts` —
+   `viewPurityViolations(source, {forbiddenSpecifiers})` scanning import
+   declarations (string-level, no TS program needed), wired into
+   `design-commit-gate.ts` for staged `*View.tsx` files under
+   `gatedComponentFiles` scope. Forbidden specifiers come from the app's
+   `design.<app>` block in `.argo/config.json` (setup-design asks; default
+   list per recipe); missing config → the check is inert, like other
+   gate arming.
+
+Testable markers: `view-purity.test.ts` next to source (clean View passes;
+`import { ipcRenderer } from 'electron'` blocks; non-View file ignored);
+design-commit-gate fixture with a staged offending View blocks with the
+rule named.
+
+### Slice C — screen-level spec-diff target
+
+1. Dimension capture: `marshalScreenFrames` also marshals the frame's
+   `absoluteBoundingBox` width/height from the REST node; `registerScreen`/
+   `upsertScreenEntry` carry optional `frame: {width, height}` on the
+   screen card (`RegistryEntrySchema` gains the optional field); figma-sync
+   dumps a screen spec entry (`design/specs/<Screen>.json`, one
+   `variants`-shaped entry per PRD-state story is NOT required — a screen
+   spec is per-story-name, reusing the existing per-story keying so the
+   walker's `componentSpec.variants[storyName]` lookup works unchanged).
+2. Walker: `runSpecDiffWalker` gains screen awareness — when a spec entry
+   carries `frame`, the walker sets the render surface to frame dimensions
+   before measuring (browser-mode viewport via the vitest `page` API, or a
+   fixed-size wrapper container — decide at build time; the composed story
+   renders in-page, so no story URL/id plumbing exists or is needed; the
+   story is identified exactly as today, by glob-map file + exported story
+   name, joinable to Figma via `StoryMapEntrySchema.storyId`).
+3. Host shim unchanged in shape: screens flow through the same
+   `test/spec-diff/` glob map once `<Screen>View.stories.tsx` matches it.
+
+Testable markers: `pull-registry.test.ts` asserts width/height marshaled;
+`schemas.test.ts` accepts/round-trips the optional `frame` field;
+`spec-diff` walker vacuity/behavior test (next to source, fixtures under
+`test/fixtures/` where file-shaped) proves a frame-carrying spec renders at
+frame dimensions and a frameless spec behaves exactly as before.
+
+### Slice D — explicit non-goal: stories never satisfy launch evidence
+
+Screen stories do NOT satisfy `requiresLaunch`: the trust gate's launch
+receipt (`.argo/evidence/launch-receipt.json`, checked in
+`src/packs/code/trust-gate.ts`) stays e2e-only. A composed story proves the
+View renders; it proves nothing about the container's real IPC wiring.
+State this in the craft doc's screen-mode section and in trust-gate.ts's
+header comment (one line each, no mechanism change).
+
+Testable marker: trust-gate tests unchanged and still green; grep shows no
+code path where a spec-diff receipt feeds launch evidence.
+
+### Ordering / dependencies
+
+A → B and A → C are independent after A; D is prose-only and can ride A.
+Item 5's `.argo/` path moves touch the same config resolver — build this
+after item 5 lands (design-commit-gate and config paths are mid-change).

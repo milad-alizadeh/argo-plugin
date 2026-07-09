@@ -234,7 +234,7 @@ swap to `^version`. Monorepo and single-repo hosts are both first-class (dual-mo
 acid suites run every gate against a fixture of each).
 
 **Source is TypeScript, compiled to `packages/kit/dist/`** (`tsc`, strict,
-NodeNext — see `.claude/plans/kit-typescript-migration.md`). `dist/` is
+NodeNext — see `.argo/plans/kit-typescript-migration.md`). `dist/` is
 **gitignored**, not committed: the sole consumer (argo-v2) resolves the kit via
 `bun link` (a symlink to this checkout), so it runs whatever `dist/` the checkout
 holds — committing the generated output only churned git. When working on

@@ -2,7 +2,7 @@
  * `.argo/` — argo's ONLY per-project directory — resolved in ONE place so a
  * future move is a single edit (the old `.claude/argo.json` location was
  * inlined at emit-shims, argo-json and init independently; consolidation
- * plan: `.claude/plans/playbook-rename-phase2.md` item 5).
+ * plan: `.argo/plans/playbook-rename-phase2.md` item 5).
  *
  * Layout:
  *   .argo/config.json   — the consolidated per-project config (committed)

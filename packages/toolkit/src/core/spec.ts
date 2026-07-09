@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 /**
- * Stage-spec vocabulary, per `.claude/design/playbook-engine.md`'s "The
+ * Stage-spec vocabulary, per `.argo/design/playbook-engine.md`'s "The
  * stage spec (core)" section: `requires / produces / allows / policy / gate /
  * skill / session / retries / repeat / maxRounds`. Stages are a flat list —
  * no branch field (audit 1.5: runtime forks resolve inside a stage's skill,
@@ -49,6 +49,12 @@ export const StageSpecSchema = z.object({
 
 export const PlaybookSpecSchema = z.object({
   name: z.string().min(1),
+  /**
+   * Authored pretty name for UI surfaces (host PRD RUNS-R12: pretty names
+   * everywhere in UI, slugs only in CLI text). Optional — `argo playbook
+   * list` derives a sentence-cased fallback from `name` when absent.
+   */
+  displayName: z.string().min(1).optional(),
   stages: z.array(StageSpecSchema).min(1)
 })
 
@@ -86,4 +92,14 @@ export function registerPlaybook(spec: PlaybookSpec): void {
 
 export function getPlaybook(name: string): PlaybookSpec | undefined {
   return playbooks.get(name)
+}
+
+/**
+ * Every registered spec, in registration order — the enumeration surface
+ * `argo playbook list --json` (host-app catalog derivation, argo-v2 PRD
+ * RUNS-R24) renders from. Returns the live spec objects (specs are pure,
+ * immutable-by-convention data); callers must not mutate them.
+ */
+export function listPlaybooks(): PlaybookSpec[] {
+  return [...playbooks.values()]
 }

@@ -16,6 +16,7 @@ import { definePlaybook, registerPlaybook } from '../../../core/index.js'
 
 export const codeToDesignSpec = definePlaybook({
   name: 'code-to-design',
+  displayName: 'Code to design',
   stages: [
     {
       name: 'drift-detect',

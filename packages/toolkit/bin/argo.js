@@ -92,6 +92,10 @@ const DESIGN_VERBS = {
   'validate-manifest': '../dist/packs/design/skill-scripts/validate-manifest.js',
   'ack-pending-work': '../dist/packs/design/skill-scripts/ack-pending-work.js',
   'assemble-skill': '../dist/cli/assemble-skill.js',
+  // `argo design sync --check [--json]` — headless drift check over the
+  // last-synced committed design/ artifacts (RUNS-R27); the module itself
+  // enforces --check and documents the no-live-Figma limitation in --help.
+  sync: '../dist/packs/design/skill-scripts/sync-check.js',
 }
 
 function runDesignVerb(verb, args) {
@@ -137,6 +141,13 @@ switch (cmd) {
       '../dist/core/index.js'
     )
     switch (verb) {
+      case 'list': {
+        // Catalog derivation surface (argo-v2 PRD RUNS-R24). --json is the
+        // only format and is accepted for explicitness.
+        const { runPlaybookList } = await import('../dist/cli/playbook-list.js')
+        console.log(JSON.stringify(runPlaybookList(), null, 2))
+        break
+      }
       case 'start': {
         const result = playbookStart(
           { name: flagValue(args, '--name'), target: flagValue(args, '--target'), key: flagValue(args, '--key') },
@@ -169,7 +180,7 @@ switch (cmd) {
       }
       default:
         process.stderr.write(
-          `argo playbook: unknown verb "${verb ?? ''}" (known: start|status|advance|adopt|diagram)\n`
+          `argo playbook: unknown verb "${verb ?? ''}" (known: list|start|status|advance|adopt|diagram)\n`
         )
         process.exit(1)
     }

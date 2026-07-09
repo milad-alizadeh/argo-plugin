@@ -1,6 +1,15 @@
 node_modules/
 .claude/tdd-guard/data/
-.argo/
+# Deny-by-default .argo/ block (same shape runInit seeds into host projects —
+# see GITIGNORE_BLOCK in packages/toolkit/src/config/argo-paths.ts): .argo/
+# also holds secrets/session-local files, so only the committed surfaces are
+# re-included.
+/.argo/*
+!/.argo/config.json
+!/.argo/plans/
+!/.argo/design/
+# Acid-suite fixtures get an .argo/ written by runInit at test time — never committed.
+test/fixtures/*/.argo/
 
 # Build output — @argohq/toolkit compiles src/*.ts to dist/ (tsc). Not committed:
 # local dev keeps it fresh via `bun run dev` (tsc --watch) over the bun-linked

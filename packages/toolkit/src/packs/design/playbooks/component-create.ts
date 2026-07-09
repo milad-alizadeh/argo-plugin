@@ -18,6 +18,7 @@ import { definePlaybook, registerPlaybook } from '../../../core/index.js'
 
 export const componentCreateSpec = definePlaybook({
   name: 'component-create',
+  displayName: 'Create component',
   stages: [
     {
       name: 'exists-check',

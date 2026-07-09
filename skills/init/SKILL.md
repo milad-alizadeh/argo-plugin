@@ -251,7 +251,7 @@ Run the kit CLI against the project root. On first run the kit isn't installed y
 so invoke it from the plugin's own workspace copy:
 
 ```
-node "${CLAUDE_PLUGIN_ROOT}/packages/kit/bin/argo.js" init --host-root "<abs repo root>"
+node "${CLAUDE_PLUGIN_ROOT}/packages/toolkit/bin/argo.js" init --host-root "<abs repo root>"
 ```
 
 (Once `bun install` has run, `npx --no -p @argohq/toolkit argo init` works too.) It

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Playbook permission gate — the generic PreToolUse hook body (design doc /
- * `.claude/plans/playbook-engine-phase1.md`, Slice 8 step 23) wired into kit's
+ * `.argo/plans/playbook-engine-phase1.md`, Slice 8 step 23) wired into kit's
  * real hook chain. Unlike `trust-gate.ts`/`red-proof-gate.ts` (hardwired to
  * `git commit` on Bash), this hook runs on EVERY tool call — matcher `*` in
  * `hooks/hooks.json` — because `@argohq/claude-adapter-plugin`'s `runPermissionHook`

@@ -2,6 +2,7 @@ import { assertPackAvailable, readConfig } from '../config.js'
 import { getPlaybook } from '../spec.js'
 import { deriveInstanceKey, setActiveInstance, writeInstance, type StateOptions, type PlaybookInstance } from '../state.js'
 import { PlaybookNotFoundError } from './errors.js'
+import { PLAYBOOK_LIFECYCLE_EVENTS, type PlaybookLifecycleEventRecord } from '../events.js'
 
 export interface PlaybookStartInput {
   /** Name of a spec previously registered via `registerPlaybook`. */
@@ -15,6 +16,8 @@ export interface PlaybookStartInput {
 export interface PlaybookStartResult {
   key: string
   instance: PlaybookInstance
+  /** Lifecycle transitions this call caused (playbook_started + first stage_started). */
+  events: PlaybookLifecycleEventRecord[]
 }
 
 /**
@@ -58,5 +61,13 @@ export function playbookStart(input: PlaybookStartInput, opts: StateOptions = {}
   // the permission hook has no other way to know which instance a generic
   // tool call should be checked against (see `setActiveInstance`'s doc).
   setActiveInstance(key, opts)
-  return { key, instance }
+  const at = new Date().toISOString()
+  return {
+    key,
+    instance,
+    events: [
+      { event: PLAYBOOK_LIFECYCLE_EVENTS.PLAYBOOK_STARTED, playbook: spec.name, at },
+      { event: PLAYBOOK_LIFECYCLE_EVENTS.STAGE_STARTED, playbook: spec.name, stage: spec.stages[0].name, at }
+    ]
+  }
 }

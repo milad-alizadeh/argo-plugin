@@ -1,5 +1,5 @@
 /**
- * Gate interface + registry, per `.claude/design/playbook-engine.md`'s
+ * Gate interface + registry, per `.argo/design/playbook-engine.md`'s
  * "Gates (core interface, pack implementations)" section. Gates judge
  * finished artifacts at stage exit only — `GateInput` deliberately has no
  * transcript/self-report field (the anti-reward-hack rule as a type).

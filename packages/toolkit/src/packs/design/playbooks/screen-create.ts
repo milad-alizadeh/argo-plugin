@@ -26,6 +26,7 @@ import { definePlaybook, registerPlaybook } from '../../../core/index.js'
 
 export const screenCreateSpec = definePlaybook({
   name: 'screen-create',
+  displayName: 'Create screen',
   stages: [
     {
       name: 'brief',

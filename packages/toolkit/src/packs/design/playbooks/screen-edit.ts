@@ -15,6 +15,7 @@ import { definePlaybook, registerPlaybook } from '../../../core/index.js'
 
 export const screenEditSpec = definePlaybook({
   name: 'screen-edit',
+  displayName: 'Edit screen',
   stages: [
     {
       name: 'update-brief',

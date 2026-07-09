@@ -26,6 +26,7 @@ import { definePlaybook, registerPlaybook } from '../../../core/index.js'
 
 export const designToCodeSpec = definePlaybook({
   name: 'design-to-code',
+  displayName: 'Design to code',
   stages: [
     {
       name: 'metadata-reads',

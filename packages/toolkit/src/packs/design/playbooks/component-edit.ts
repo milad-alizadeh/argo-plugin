@@ -16,6 +16,7 @@ import { definePlaybook, registerPlaybook } from '../../../core/index.js'
 
 export const componentEditSpec = definePlaybook({
   name: 'component-edit',
+  displayName: 'Edit component',
   stages: [
     {
       name: 'edit',

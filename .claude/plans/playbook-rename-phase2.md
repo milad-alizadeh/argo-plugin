@@ -1,6 +1,6 @@
 # Phase 2 (first items): playbook rename + naming sweep + structure + PRD wireframes
 
-Status: planned. Runs AFTER the phase-1 build (`workflow-engine-phase1.md`)
+Status: planned. Runs AFTER the phase-1 build (`playbook-engine-phase1.md`)
 lands and merges — never concurrently with it. Items:
 
 1. Rename "workflow" → "playbook" across the engine (mechanical pass).
@@ -133,20 +133,28 @@ succeeds and a file edit + republish updates the same URL.
 
 ## Item 3: naming sweep — packages + tier0 residue
 
-### Decision (owner, 2026-07-09)
+### Decision (owner, 2026-07-09; revised same day: ONE package) — BUILT
 
-The plugin repo's packages carry one consistent naming scheme, all under
-the existing turborepo/bun-workspaces monorepo:
+The three-package split (`core` / `toolkit` / `claude-adapter-plugin`)
+was revised to **one npm package** after review: hosts install only
+`@argohq/toolkit`, no second consumer exists, and inter-package plumbing
+(workspace links, bun link, hoisting) caused real breakage for zero
+benefit. Built structure — domain boundaries are FOLDERS with subpath
+exports, not packages:
 
-- `@argohq/core` — engine (already named right; `packages/core/`).
-- `@argohq/kit` → **`@argohq/toolkit`** (`packages/kit/` → `packages/toolkit/`,
-  bin/CLI references, workspace deps, the `link:` dep in argo-v2's root
-  package.json, docs).
-- `packages/adapter-claude/` → **`packages/claude-adapter-plugin`**
-  (`@argohq/claude-adapter-plugin`).
+- `src/core/` — playbook engine (spec, state, gate, judge, CLI verbs)
+- `src/packs/design/` — playbooks + AI gates + design-kit + recipes +
+  walkers + skill-scripts + design-commit-gate; non-TS assets in
+  `packs/design/craft/` and `packs/design/templates/`
+- `src/packs/code/` — red-proof, trust, test-smell, format-on-write
+  gates + the Playwright tdd-guard reporter
+- `src/adapter-claude/` — Claude glue incl. playbook-permission-gate
+- `src/cli/`, `src/config/`, `src/lib/` — the argo CLI + shared plumbing
 
-If these later split into three separate git repos, that's a distinct
-decision; this item is the naming, not the split.
+Public subpaths stay stable (`./design-kit/*`, `./walkers`,
+`./reporters/playwright`) plus new `./core`, `./adapter-claude`,
+`./packs/design`. Extracting a real package later is a mechanical move
+along these folder seams — only if a second independent consumer appears.
 
 ### tier0 → design-rules (finish the stalled rename)
 

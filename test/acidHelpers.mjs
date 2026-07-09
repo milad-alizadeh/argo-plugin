@@ -1,7 +1,7 @@
 /**
  * Shared harness for the dual-mode acid suites (Slice 6) — copies a committed
  * fixture repo to a temp dir, materializes what `bun link` produces (a
- * node_modules/@argohq/kit symlink into THIS repo's packages/kit + the bin
+ * node_modules/@argohq/toolkit symlink into THIS repo's packages/toolkit + the bin
  * shim), and runs the real `argo` CLI against it. Lives in test/ by the
  * co-location exceptions (harness, not a unit test).
  */
@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url'
 import { execFileSync, spawnSync } from 'node:child_process'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
-export const KIT_DIR = join(REPO_ROOT, 'packages', 'kit')
+export const KIT_DIR = join(REPO_ROOT, 'packages', 'toolkit')
 export const ARGO_BIN = join(KIT_DIR, 'bin', 'argo.js')
 
 export const FIXTURES = {
@@ -28,13 +28,13 @@ export function materializeFixture(fixturePath) {
   return dir
 }
 
-/** What `bun link @argohq/kit` produces in a consumer, materialized hermetically.
+/** What `bun link @argohq/toolkit` produces in a consumer, materialized hermetically.
  * `withVitest` also links this repo's vitest install (a real host has its own). */
 export function linkKit(hostRoot, { withVitest = false } = {}) {
   mkdirSync(join(hostRoot, 'node_modules', '@argohq'), { recursive: true })
-  symlinkSync(KIT_DIR, join(hostRoot, 'node_modules', '@argohq', 'kit'))
+  symlinkSync(KIT_DIR, join(hostRoot, 'node_modules', '@argohq', 'toolkit'))
   mkdirSync(join(hostRoot, 'node_modules', '.bin'), { recursive: true })
-  symlinkSync(join(hostRoot, 'node_modules', '@argohq', 'kit', 'bin', 'argo.js'), join(hostRoot, 'node_modules', '.bin', 'argo'))
+  symlinkSync(join(hostRoot, 'node_modules', '@argohq', 'toolkit', 'bin', 'argo.js'), join(hostRoot, 'node_modules', '.bin', 'argo'))
   if (withVitest) {
     symlinkSync(join(REPO_ROOT, 'node_modules', 'vitest'), join(hostRoot, 'node_modules', 'vitest'))
   }

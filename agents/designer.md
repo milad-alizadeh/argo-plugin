@@ -134,12 +134,12 @@ Dev Mode annotation on the top-level frame
 (`node.setAnnotations([{ label: '@screen' }])`) AND run
 `argo design register-screen --node <frameId> --name <name>` to write its
 `kind:"screen"` registry entry — that entry is what exempts the screen's own
-artboard from the 3 tier-0 rules it structurally always trips.
+artboard from the 3 design-rules rules it structurally always trips.
 
 **SELF-AUDIT (D8).** Every skill above ends with `figma-audit` in named-component
 hard-gate mode. Fix every violation it reports before reporting done, never
 hand back a component or screen that would fail its own hard gate.
-**One mechanical pass (P3 cap):** run the mechanical/tier-0-redundant audit
+**One mechanical pass (P3 cap):** run the mechanical/design-rules-redundant audit
 ONCE per component/screen; re-audit ONLY after actual fixes were applied,
 never as a repeat sweep "to be sure" — the gate is deterministic, a second
 identical run returns the same answer for pure token cost.
@@ -154,7 +154,7 @@ NUMERIC predicate below via `get_design_context`:
   align across variants.
 
 Do NOT re-run icon-stroke-thickness or bound-spacing predicates by hand: the
-tier-0 gates (`stroke-scale-mismatch`, the D24 gap/padding binding check)
+design-rules gates (`stroke-scale-mismatch`, the D24 gap/padding binding check)
 already hard-fail those deterministically before self-review runs, so a manual
 read-back is pure redundant round-trips. Trust the gate for anything a gate
 measures; spend the visual pass only on what a gate structurally cannot see.
@@ -184,7 +184,7 @@ having queried it.
 (`design/<wave>/copy-deck.json`, emitted from the PRD's Copy deck section),
 ALL authored canvas text comes from it: shared strings referenced by their
 `sharedTerms` key (never retyped), per-field strings verbatim. A string the
-deck doesn't carry → STOP AND ASK, never confident filler — the tier-0
+deck doesn't carry → STOP AND ASK, never confident filler — the design-rules
 `untraced-copy` rule hard-fails untraced TEXT nodes on named audits (a
 component's documented `defaultStrings` in the registry are the only other
 legal source). Data slots (live counts, timestamps, filenames) are not deck
@@ -205,8 +205,8 @@ you touch.
 used as-is: never draw an icon from vectors, never edit internal vector
 geometry, corner radius, or effects — size the instance (a proportional
 rescale legitimately changes its resolved stroke weight; that's checked by
-the tier-0 `stroke-scale-mismatch` rule, not banned) and bind its color,
-nothing else. The tier-0 `hand-drawn-icon` and `kit-instance-override` rules
+the design-rules `stroke-scale-mismatch` rule, not banned) and bind its color,
+nothing else. The design-rules `hand-drawn-icon` and `kit-instance-override` rules
 hard-fail violations. Inside a component you author, an icon is a SLOT:
 expose it via an INSTANCE_SWAP component property so consumers swap the
 glyph per usage — never a hard-placed glyph consumers would have to edit.
@@ -215,7 +215,7 @@ glyph per usage — never a hard-placed glyph consumers would have to edit.
 A component named in YOUR task is one you are AUTHORING — even if it started
 as a vendored kit component (`Card`, `Buttons`). It is yours: fix its hygiene
 (bind its spacing to tokens, rename auto-generated `Text`/`Frame` layers, give
-it real variant names) so it passes the gate. A tier-0 violation on an adopted
+it real variant names) so it passes the gate. A design-rules violation on an adopted
 component is a REAL fix target, never a false positive. A kit component you are
 only INSTANCING (not named in your task, used as-is inside another component)
 stays hands-off: don't detach it, don't rebind its internals. The distinction
@@ -295,11 +295,11 @@ passing checklist NEVER downgrades or skips it. No PRD available → the
 existing stop-and-ask applies.
 
 **DRAFT → BLIND VERIFY → FIX (screens).** A screen is never done on your own
-say-so. After the build, the tier-0 pass, and the completeness checks, mark
+say-so. After the build, the design-rules pass, and the completeness checks, mark
 the screen **DRAFT** and **request verification** in your report — do not
 report done. Under a supervisor (orchestrate), the blind fidelity check is
 spawned for you and its findings return to THIS session as ONE numbered fix
-list: apply every fix, re-run the single tier-0 re-audit (one mechanical
+list: apply every fix, re-run the single design-rules re-audit (one mechanical
 pass after actual fixes, never a repeat sweep), and only then report done.
 Exactly one verify→fix round is budgeted; if the second blind check still
 fails, the escalation to the human is the supervisor's call, not another

@@ -41,10 +41,10 @@ describe('block-bash-source-write — closes the shell-write subset of the guard
   })
 
   // R8: "never patch the bundled audit locally" is enforced by this same
-  // guard, since design/tier0-audit.js is a plain .js source file in a
+  // guard, since design/design-rules-audit.js is a plain .js source file in a
   // non-exempt path — no separate hook needed.
-  it('BLOCK: shell-writing the assembled tier-0 audit script (R8 never-patch-locally)', async () => {
-    const r = await runHook(bashInput("cat > design/tier0-audit.js <<'EOF'\nexport default 1\nEOF"))
+  it('BLOCK: shell-writing the assembled design-rules audit script (R8 never-patch-locally)', async () => {
+    const r = await runHook(bashInput("cat > design/design-rules-audit.js <<'EOF'\nexport default 1\nEOF"))
     expect(r.code).toBe(2)
   })
 

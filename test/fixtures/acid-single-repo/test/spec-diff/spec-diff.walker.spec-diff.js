@@ -4,7 +4,7 @@
  * host passes its Storybook package's composeStories; this fixture uses a
  * storybook-free stand-in (story modules are already runnable objects).
  */
-import { runSpecDiffWalker } from '@argohq/kit/walkers'
+import { runSpecDiffWalker } from '@argohq/toolkit/walkers'
 import specs from '../../design/specs/button.stories.json'
 
 const stories = import.meta.glob('../../stories/*.stories.js', { eager: true })

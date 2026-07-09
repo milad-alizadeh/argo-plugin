@@ -52,7 +52,7 @@ import { join } from 'node:path'
  * Lifecycle nudge: point an installed-but-not-set-up project at /argo:init.
  * State lives in .claude/argo.json (the consolidated config). There is no
  * version-comparison / migration nudge — the plugin's real logic lives in the
- * versioned @argohq/kit, so a project's installed rules/templates are static
+ * versioned @argohq/toolkit, so a project's installed rules/templates are static
  * suggestions written once at setup, never reconciled against a plugin version.
  * A legacy argo-config.json is deliberately NOT read (no-legacy ruling).
  */

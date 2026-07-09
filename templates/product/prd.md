@@ -171,7 +171,7 @@ Rules the design stage enforces against this deck:
   ASKS** (extends the existing missing → ASK convention), never invents filler.
 - Data slots (live values: counts, timestamps, filenames) are not deck entries —
   only authored copy is.
-- The tier-0 `untraced-copy` rule (hard on named audits) checks every TEXT
+- The design-rules `untraced-copy` rule (hard on named audits) checks every TEXT
   node's content against this deck plus each component's documented
   `defaultStrings` in `design/registry.json`.
 - **Provenance:** this deck is authored from the PRD/brief ONLY, before any

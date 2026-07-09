@@ -4,12 +4,12 @@
  * hooks.json). Dependency-free on purpose: it must work in a project where
  * `bun install` has never run.
  *
- * Replaces the raw `npx --no @argohq/kit argo-hook <event> || exit 2`
+ * Replaces the raw `npx --no @argohq/toolkit argo-hook <event> || exit 2`
  * one-liner, which deadlocked bootstrap: it failed closed on ANY npx failure,
- * blocking the very `bun install` that would install @argohq/kit.
+ * blocking the very `bun install` that would install @argohq/toolkit.
  *
  * Decision table (walking up from the hook's cwd):
- *   - no package.json on the ancestry declares @argohq/kit and no install is
+ *   - no package.json on the ancestry declares @argohq/toolkit and no install is
  *     resolvable → ALLOW (exit 0) with a one-line warning: the project is not
  *     argo-initialized, there is nothing to enforce yet
  *   - declared but not installed → BLOCK (exit 2) naming the fix
@@ -21,7 +21,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 
-const KIT = '@argohq/kit'
+const KIT = '@argohq/toolkit'
 const event = process.argv[2] ?? ''
 
 function readStdin() {
@@ -54,7 +54,7 @@ function ancestry(start) {
   }
 }
 
-/** Nearest package.json that declares @argohq/kit (any dep field), or null. */
+/** Nearest package.json that declares @argohq/toolkit (any dep field), or null. */
 function findDeclaration(dirs) {
   for (const dir of dirs) {
     const pkg = readJson(join(dir, 'package.json'))

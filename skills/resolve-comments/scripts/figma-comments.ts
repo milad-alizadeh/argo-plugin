@@ -1,9 +1,9 @@
 // Self-contained Figma REST client for the resolve-comments skill.
 //
-// Authored as TypeScript so it folds into @argohq/kit as a typed
+// Authored as TypeScript so it folds into @argohq/toolkit as a typed
 // `argo design comments <verb>` CLI verb once the kit's TS migration lands.
 // Until then it lives here under the skill and stays kit-independent (zero
-// @argohq/kit import) so it can't collide with the migration's bin/exports/
+// @argohq/toolkit import) so it can't collide with the migration's bin/exports/
 // version churn. It is written in erasable TS only (no enums/namespaces/param
 // properties), so it runs today via Node's type stripping:
 //   node --experimental-strip-types figma-comments.ts <verb> …

@@ -42,7 +42,7 @@ either-side-only bump.
      file (the usual path: copy the changed components from the starter's
      export page into the project file, replacing the old mirrors by hand).
    Either way, record the new `figma.projectFileKey` if the file changed.
-4. **Re-run the tier-0 audit on the touched components** in the project
+4. **Re-run the design-rules audit on the touched components** in the project
    file (`figma-audit`, named-component hard gate) — pasted components can
    carry stray literals or names; never assume a paste landed clean.
 5. **Re-sync.** Run `figma-sync` on the touched components so

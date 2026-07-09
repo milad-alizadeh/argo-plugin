@@ -132,7 +132,7 @@ mechanisms close those gaps without new tooling.
   reference (brief/PRD ASCII wireframe/original screenshot), the built screenshot
   at IDENTICAL frame size, and a structural fact sheet (frame dimensions,
   per-region node metrics) — never the transcript, never the self-report.
-  The measurable subset is a tier-0 gate concern, not the verifier's job:
+  The measurable subset is a design-rules gate concern, not the verifier's job:
   frame dimensions vs the configured viewport (a designer growing the
   canvas to fit content is a defect, not a layout choice), text truncation
   (labels rendering "Runnin" for "Running"), child overflow, edge anchoring
@@ -153,7 +153,7 @@ mechanisms close those gaps without new tooling.
   verifier's findings back to the SAME designer session** (hot context —
   never a fresh session that re-pays the cold-start) via SendMessage, through
   the R9 lanes as **ONE numbered fix list** with the act-and-continue rider;
-  the designer applies the fixes, re-runs its single tier-0 re-audit, and
+  the designer applies the fixes, re-runs its single design-rules re-audit, and
   only then reports done. **EXACTLY ONE verify→fix round is budgeted per
   screen: if the second blind check still fails, escalate to the human with
   both verifier reports — never loop unbounded.** The building agent's
@@ -174,8 +174,8 @@ mechanisms close those gaps without new tooling.
 - **Pending-rulings buffer (R10).** Every ruling, from either lane, is a
   candidate for `aesthetic-profile.md` (a DO/DON'T entry, mandatory,
   auto-discovered) and, where a measurable proxy exists (a px gap, a ratio,
-  an alignment delta), a tier-0-rule task. The **orchestrator** writes the
-  ruling into the profile (and opens the tier-0 task where checkable)
+  an alignment delta), a design-rules-rule task. The **orchestrator** writes the
+  ruling into the profile (and opens the design-rules task where checkable)
   **before spawning the next dependent designer**, a chat-only ruling that
   hasn't been drained into the profile does not authorize that spawn. Any
   minted gate rule must pass the R7 fixture suite before shipping.
@@ -187,7 +187,7 @@ mechanisms close those gaps without new tooling.
   covered / deferred / **UNACCOUNTED (must be 0 to land)** / MISSING, PRD
   requirements present / **absent (must be 0)**, dishonest deferrals, and
   anti-recreation collisions, a screen with UNACCOUNTED>0 or absent>0 is FAILED
-  regardless of tier-0. The supervisor MUST also track the **clean after ≤1 fix
+  regardless of design-rules. The supervisor MUST also track the **clean after ≤1 fix
   round rate** — the fraction of screens whose supervisor-spawned blind
   verification was clean either first-pass or after the single budgeted
   verify→fix round — as the batch success metric (first-pass perfection is

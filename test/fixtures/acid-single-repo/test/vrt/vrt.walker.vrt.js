@@ -3,7 +3,7 @@
  * already-imported modules + the committed-baselines glob map to the kit's
  * walker factory, never paths.
  */
-import { runVrtWalker } from '@argohq/kit/walkers'
+import { runVrtWalker } from '@argohq/toolkit/walkers'
 
 const stories = import.meta.glob('../../stories/*.stories.js', { eager: true })
 const committedBaselines = import.meta.glob('../../design/screenshots/**/*.png')

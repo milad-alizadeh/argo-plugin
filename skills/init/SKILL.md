@@ -1,6 +1,6 @@
 ---
 name: init
-description: Detect the host project's stack and initialize argo — install ADAPTED argo rules into the project's own .claude/, place the @argohq/kit dependency, and write .claude/argo.json, tailored to what's there and never imposed. Use once when adding the argo pack to a project, or when the user says "set up argo" / "init argo" / "configure argo for this project" / "adapt the rules to my stack".
+description: Detect the host project's stack and initialize argo — install ADAPTED argo rules into the project's own .claude/, place the @argohq/toolkit dependency, and write .claude/argo.json, tailored to what's there and never imposed. Use once when adding the argo pack to a project, or when the user says "set up argo" / "init argo" / "configure argo for this project" / "adapt the rules to my stack".
 ---
 
 # Initialize Argo in This Project
@@ -17,7 +17,7 @@ reason, ask before writing, never overwrite what the user hand-wrote.
 **Division of labor:** this skill owns the wizard (detection, consent, adapted rule
 text). The deterministic half — kit dep placement, `.claude/settings.json`
 `enabledPlugins`/`extraKnownMarketplaces`, the `.claude/argo.json` skeleton — is
-`argo init` (`@argohq/kit`'s CLI), invoked in §6d below. Never hand-write what the
+`argo init` (`@argohq/toolkit`'s CLI), invoked in §6d below. Never hand-write what the
 CLI owns.
 
 ## 0. Wizard UX — forms, not walls of text
@@ -40,7 +40,7 @@ Read `.claude/argo.json` first; it decides the mode:
 - **Present → re-run offer**: "argo is already set up here — re-run detection
   anyway (re-derive the rules/config), or exit?" via AskUserQuestion. There is
   no version-comparison / migration mode: the plugin's real logic lives in the
-  versioned `@argohq/kit`, so the installed `.claude/rules/*.md` and config are
+  versioned `@argohq/toolkit`, so the installed `.claude/rules/*.md` and config are
   static suggestions written once here, not artifacts reconciled against a plugin
   version. If the on-disk shape predates a breaking change, rip-and-re-init.
 
@@ -87,7 +87,7 @@ literal in an installed file.
 ## 6. Gated builds — `.argo/` receipts (no workflows to install)
 The automated build stage (`/argo:build-plan`) is a **single long-lived builder
 session**, not a workflow script — there is nothing to copy into `.claude/workflows/`.
-Its commit gates (red-proof, trust — dispatched via `@argohq/kit`'s `argo-hook`) are
+Its commit gates (red-proof, trust — dispatched via `@argohq/toolkit`'s `argo-hook`) are
 **inert by default**: they arm only while a build maintains `.argo/build-mode.json`,
 so installing the pack never gates a host project's normal commits.
 
@@ -131,7 +131,7 @@ whom it's written** — layered, treating auto-fixable (format) differently from
 
 - **Format = auto-fix, never a gate.** The kit's format-on-write hook (dispatched via
   `argo-hook post-edit-write`, matcher `Edit|Write`) runs the project's own `prettier`
-  on each touched file. It activates once `@argohq/kit` resolves (§6d). (No project
+  on each touched file. It activates once `@argohq/toolkit` resolves (§6d). (No project
   prettier → it no-ops silently.)
 - **Tests/e2e = gated builds, not git hooks.** Gated builds run scoped verification per
   slice and the full suite (incl. e2e) at checkpoint and final review; the integrator
@@ -172,9 +172,9 @@ project's own test reporter as ground truth. It enforces **order**, not test **q
   runner → print `TDD enforcement unavailable for <runner> — skipping tdd-guard` and
   move on. **Never** install an inert or all-blocking hook as a fallback.
 - **Playwright:** upstream has no reporter, but the kit ships one as a normal subpath
-  export — `@argohq/kit/reporters/playwright` (schema-verified against
+  export — `@argohq/toolkit/reporters/playwright` (schema-verified against
   tdd-guard-vitest). Wire it in the project's playwright config:
-  `reporter: [['list'], ['@argohq/kit/reporters/playwright', { projectRoot: '<abs repo root>' }]]`.
+  `reporter: [['list'], ['@argohq/toolkit/reporters/playwright', { projectRoot: '<abs repo root>' }]]`.
   The kit dep is already resolvable after §6d — **nothing to vendor**, no plugin-cache
   `file:` paths, ever.
 - **Auth pre-check (hard requirement):** tdd-guard's validation model must run on the
@@ -231,11 +231,11 @@ so invoke it from the plugin's own workspace copy:
 node "${CLAUDE_PLUGIN_ROOT}/packages/kit/bin/argo.js" init --host-root "<abs repo root>"
 ```
 
-(Once `bun install` has run, `npx --no -p @argohq/kit argo init` works too.) It
+(Once `bun install` has run, `npx --no -p @argohq/toolkit argo init` works too.) It
 deterministically:
 
 - detects **monorepo** (`workspaces` in the root `package.json`) vs **single-repo**;
-- places `"@argohq/kit": "link:@argohq/kit"` at the workspace root (monorepo) or the
+- places `"@argohq/toolkit": "link:@argohq/toolkit"` at the workspace root (monorepo) or the
   single `package.json` — the dev-phase link protocol; a published release swaps this
   to a normal `^version` dep;
 - writes `.claude/settings.json`'s `enabledPlugins` (and `extraKnownMarketplaces`
@@ -248,7 +248,7 @@ deterministically:
 
 Then register the link source once per machine (`cd <plugin repo>/packages/kit &&
 bun link`) if not already registered, and run `bun install` in the host project so
-the dep resolves. Verify the dep resolves: `npx --no -p @argohq/kit argo` prints
+the dep resolves. Verify the dep resolves: `npx --no -p @argohq/toolkit argo` prints
 its usage (the kit CLI is reachable).
 
 ## 6e. rtk — shell-output token compression (opt-in, GLOBAL, offered not imposed)
@@ -312,7 +312,7 @@ commit the graph.
 - **Single touchpoint, single writer = a `post-merge` git hook** (installed via
   `lefthook`), on-device. It fires **only when `main` integrates commits** (a merge or
   `git pull`) — the one moment the graph should advance — and runs `argo graph refresh`
-  (the `@argohq/kit` CLI): `graphify update --force` + `graphify label --missing-only
+  (the `@argohq/toolkit` CLI): `graphify update --force` + `graphify label --missing-only
   --backend=claude-cli` (spawns on-device `claude` — subscription auth, **no API key**)
   + a pathspec-scoped commit. The verb self-guards (graphify-missing, main-only, skips
   worktrees), so worktree/feature-branch commits never write the graph → no write-race.

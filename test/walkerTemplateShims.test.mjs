@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 /**
  * Post kit-extraction, the walker TEMPLATES must be thin glob-map shims that
- * call the @argohq/kit/walkers factories — never full walker bodies. A full
+ * call the @argohq/toolkit/walkers factories — never full walker bodies. A full
  * body in a template forks the gate logic from the kit: hosts templated
  * before a kit fix keep the stale walk forever.
  */
@@ -17,8 +17,8 @@ const SHIM_TEMPLATES = [
 describe.each(SHIM_TEMPLATES)('walker template %s is a thin factory shim', (rel) => {
   const src = readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf8')
 
-  it('imports its factory from @argohq/kit/walkers', () => {
-    expect(src).toContain("from '@argohq/kit/walkers'")
+  it('imports its factory from @argohq/toolkit/walkers', () => {
+    expect(src).toContain("from '@argohq/toolkit/walkers'")
     expect(src).toMatch(/run(SpecDiff|Vrt)Walker\(/)
   })
 

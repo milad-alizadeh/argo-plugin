@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
  * fix: every kit GATE line dispatches through hooks/kit-dispatch.mjs (never a
  * raw npx one-liner — that fails closed on ANY npx failure and deadlocks the
  * `bun install` that would install the kit). The dispatcher itself must:
- *   - BLOCK (exit 2) for an ARMED project (declares @argohq/kit) with the kit
+ *   - BLOCK (exit 2) for an ARMED project (declares @argohq/toolkit) with the kit
  *     missing — dead gates never silently pass a gated command through
  *   - ALLOW (exit 0, one-line warning) for a project that is not
  *     argo-initialized, so it can still self-initialize
@@ -37,11 +37,11 @@ let armed
 let unarmed
 
 beforeAll(() => {
-  // ARMED: declares @argohq/kit but never ran bun install.
+  // ARMED: declares @argohq/toolkit but never ran bun install.
   armed = mkdtempSync(join(tmpdir(), 'argo-fail-closed-armed-'))
   writeFileSync(
     join(armed, 'package.json'),
-    JSON.stringify({ name: 'armed-host', devDependencies: { '@argohq/kit': '^0.1.1' } })
+    JSON.stringify({ name: 'armed-host', devDependencies: { '@argohq/toolkit': '^0.1.1' } })
   )
   // UNARMED: plugin enabled but the project was never argo-initialized.
   unarmed = mkdtempSync(join(tmpdir(), 'argo-fail-closed-unarmed-'))
@@ -71,7 +71,7 @@ function runWrapper(command, cwd, toolCommand) {
 describe('fail-closed hook wrappers', () => {
   it('hooks.json routes every kit gate through the kit-dispatch dispatcher, never raw npx', () => {
     expect(bashWrapper, 'no kit-dispatch bash-pretooluse wrapper found in hooks.json').toBeTruthy()
-    expect(kitWrappers.length).toBeGreaterThanOrEqual(3) // bash-pretooluse, post-edit-write, workflow-permission (design-guard retired, Slice 13)
+    expect(kitWrappers.length).toBeGreaterThanOrEqual(3) // bash-pretooluse, post-edit-write, playbook-permission (design-guard retired, Slice 13)
     for (const cmd of allCommands(hooksJson)) {
       expect(cmd, `raw npx kit wrapper survives in hooks.json: ${cmd}`).not.toContain('npx')
     }

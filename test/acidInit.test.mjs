@@ -33,7 +33,7 @@ describe('acid: argo init — monorepo fixture', () => {
     const res = runArgo(host, ['init'])
     expect(res.status).toBe(0)
 
-    expect(readJson(host, 'package.json').dependencies['@argohq/kit']).toBe('link:@argohq/kit')
+    expect(readJson(host, 'package.json').dependencies['@argohq/toolkit']).toBe('link:@argohq/toolkit')
     expect(readJson(host, 'apps/a/package.json').dependencies).toBeUndefined()
 
     const argoJson = readJson(host, '.claude', 'argo.json')
@@ -49,7 +49,7 @@ describe('acid: argo init — monorepo fixture', () => {
     const host = scratch(FIXTURES.monorepo)
     runArgo(host, ['init'])
     linkKit(host)
-    expect(existsSync(join(host, 'node_modules', '@argohq', 'kit', 'bin', 'argo.js'))).toBe(true)
+    expect(existsSync(join(host, 'node_modules', '@argohq', 'toolkit', 'bin', 'argo.js'))).toBe(true)
     expect(existsSync(join(host, 'node_modules', '.bin', 'argo'))).toBe(true)
   })
 })
@@ -59,7 +59,7 @@ describe('acid: argo init — single-repo fixture', () => {
     const host = scratch(FIXTURES.singleRepo)
     const res = runArgo(host, ['init'])
     expect(res.status).toBe(0)
-    expect(readJson(host, 'package.json').dependencies['@argohq/kit']).toBe('link:@argohq/kit')
+    expect(readJson(host, 'package.json').dependencies['@argohq/toolkit']).toBe('link:@argohq/toolkit')
     const argoJson = readJson(host, '.claude', 'argo.json')
     expect(Object.keys(argoJson.design)).toEqual(['.'])
     expect(argoJson.design['.']).toEqual({ root: '.', componentsPath: 'src/components' })

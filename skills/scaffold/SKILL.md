@@ -31,7 +31,7 @@ Relay the scaffolder's one-line result (generator + commit SHA).
 
 ## 4. Chain into project setup
 After a successful scaffold, **hand off to the `init` skill** (`/argo:init`) to wire the new
-project's `.claude/` — rules adapted to the just-scaffolded stack, the `@argohq/kit`
+project's `.claude/` — rules adapted to the just-scaffolded stack, the `@argohq/toolkit`
 dependency, graphify, and a
 `CLAUDE.md` with the canonical loop. `init` reads `package.json` to detect the
 stack, so it runs immediately after scaffolding (deps install / build / dev server are

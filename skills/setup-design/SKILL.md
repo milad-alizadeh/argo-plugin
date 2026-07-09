@@ -1,6 +1,6 @@
 ---
 name: setup-design
-description: Install/adapt the Figma-to-code design pack into a host project — shadcn init, Storybook + Vitest addon, VRT/spec-diff walker shims, gate wiring, lint rule, the app's design.<app> block in .claude/argo.json (the kit design modules resolve via @argohq/kit). Use when the user says "set up design", "install the design pack", "wire up Figma-to-code", or when init's recommendations pass mentions it.
+description: Install/adapt the Figma-to-code design pack into a host project — shadcn init, Storybook + Vitest addon, VRT/spec-diff walker shims, gate wiring, lint rule, the app's design.<app> block in .claude/argo.json (the kit design modules resolve via @argohq/toolkit). Use when the user says "set up design", "install the design pack", "wire up Figma-to-code", or when init's recommendations pass mentions it.
 ---
 
 # Set Up the Design Pack
@@ -25,7 +25,7 @@ final report.
 
 AskUserQuestion, single question: "Does this project use Figma as its design
 source of truth?" If no: **stop** — explain in one paragraph that this pack
-is a Figma-to-code pipeline (tier-0 hygiene audit, spec-diff/VRT gates,
+is a Figma-to-code pipeline (design-rules hygiene audit, spec-diff/VRT gates,
 figma-sync artifacts) and doesn't apply without Figma. Never force Figma onto a project that
 doesn't use it.
 
@@ -50,7 +50,7 @@ is a duplicated single file with local variables.
 AskUserQuestion: which recipe to install. Today there is exactly one option,
 `shadcn-tailwind` (label it recommended/only choice, per this skill's
 existing "recommended option first and labeled" convention below). The
-recipe ID matches its kit subpath (`@argohq/kit/design-kit/shadcn-tailwind`);
+recipe ID matches its kit subpath (`@argohq/toolkit/design-kit/shadcn-tailwind`);
 its template directory is explicitly mapped:
 `shadcn-tailwind` → `templates/design/recipes/shadcn-tailwind/`.
 Store the choice into the app's `design.<app>.recipe` field in
@@ -58,9 +58,9 @@ Store the choice into the app's `design.<app>.recipe` field in
 dispatch to, resolving to files installed from the mapped
 `templates/design/recipes/<dir>/`:
 
-- **recipe audit checks** — `@argohq/kit/design-kit/<recipe>/tier0-walker`
+- **recipe audit checks** — `@argohq/toolkit/design-kit/<recipe>/design-rules-walker`
   (e.g. `shadcn-tailwind`'s), baked into the audit bundle by import at
-  `bundle-tier0-audit` time (kit-extraction restructure — no longer a
+  `bundle-design-rules-audit` time (kit-extraction restructure — no longer a
   template installed/spliced into this project)
 - **token writer** — `code-target/token-writer.md`, consumed by
   `figma-sync` step 7
@@ -107,7 +107,7 @@ blocks):
 - **`recipe` already present — re-run offer**: "the design pack is already set
   up for this app — re-run detection anyway (re-derive the shims/config), or
   exit?" via AskUserQuestion. There is no version-comparison / migration mode:
-  the deterministic logic lives in the versioned `@argohq/kit`, so the files
+  the deterministic logic lives in the versioned `@argohq/toolkit`, so the files
   this pack writes are static suggestions, never reconciled against a plugin
   version.
 
@@ -204,22 +204,22 @@ The block seeds `componentCategories` with the thin default
 `["primitive", "composite"]` (design-memory-placement.md A1) — a project with
 real domain groupings (e.g. `rail`/`controls`/`status`/
 `foundation-atoms`) sets its own list here instead. Validate it with
-`validateComponentCategories` from `@argohq/kit/design-kit`
+`validateComponentCategories` from `@argohq/toolkit/design-kit`
 before writing: a non-empty array of unique, non-empty strings, or refuse to
 proceed and report why. This is the enum `figma-create`'s placement step and
 `figma-audit`'s reconcile sweep both validate a category against — see
 `templates/design/file-structure.md`.
 
-**The tier-0 audit is never installed into the host project** (kit-extraction
-restructure — this killed the old assemble-into-`design/tier0-audit.js`
+**The design-rules audit is never installed into the host project** (kit-extraction
+restructure — this killed the old assemble-into-`design/design-rules-audit.js`
 splice model, the exact source of the drift bug that motivated the rewrite:
 a kit-side fix that never reached a project's already-assembled copy).
-`figma-audit` bundles it fresh, on demand, straight from `@argohq/kit` via
-`argo design bundle-tier0-audit --recipe <recipe>` (wraps
-`bundleTier0AuditForRecipe`) — nothing for this skill to assemble or copy
+`figma-audit` bundles it fresh, on demand, straight from `@argohq/toolkit` via
+`argo design bundle-design-rules-audit --recipe <recipe>` (wraps
+`bundleDesignRulesAuditForRecipe`) — nothing for this skill to assemble or copy
 here. `config.semanticCollectionName` (filled above) and the project's own
 DATA (`design/registry.json`'s composite names) still flow through
-`argo design prepare-tier0-audit-options` at call time —
+`argo design prepare-design-rules-audit-options` at call time —
 see figma-audit/SKILL.md for the full procedure. Install the
 chosen recipe's remaining templates per their `templates-reference.md`
 install-when conditions: `code-target/lint/design-lint.md`
@@ -242,21 +242,21 @@ generate it here from an unsynced file.
 
 ## 5. The design-kit dep is already resolvable — nothing to vendor
 
-The design-kit modules ship inside `@argohq/kit` (`/argo:init` placed the
-`"@argohq/kit": "link:@argohq/kit"` dependency, resolvable after
-`bun install`). Walker test files and the assembled `tier0-audit.js` import
-the subpaths directly — `@argohq/kit/design-kit`,
-`@argohq/kit/design-kit/tier0-rules`, and (for the shadcn-tailwind recipe)
-`@argohq/kit/design-kit/shadcn-tailwind/tier0-rules`. There is no vendoring
+The design-kit modules ship inside `@argohq/toolkit` (`/argo:init` placed the
+`"@argohq/toolkit": "link:@argohq/toolkit"` dependency, resolvable after
+`bun install`). Walker test files and the assembled `design-rules-audit.js` import
+the subpaths directly — `@argohq/toolkit/design-kit`,
+`@argohq/toolkit/design-kit/design-rules`, and (for the shadcn-tailwind recipe)
+`@argohq/toolkit/design-kit/shadcn-tailwind/design-rules`. There is no vendoring
 step, no `resolveVendorPlan`, no `design/vendor/` dir, and never a `file:`
-dependency pointing at the plugin cache. If `@argohq/kit` does not resolve
+dependency pointing at the plugin cache. If `@argohq/toolkit` does not resolve
 here, stop and run `/argo:init` (or `bun install`) first — do not improvise
 a path dependency.
 
 ## 5a. Re-run
 
 On a re-run (§0d), re-derive the pack's files (walker shims, the `design.<app>`
-block via `mergeConfigShape` from `@argohq/kit`, the idempotent §3a/§5 foreign-file
+block via `mergeConfigShape` from `@argohq/toolkit`, the idempotent §3a/§5 foreign-file
 checks) exactly as first-run does, and never overwrite a file whose on-disk
 content no longer matches what setup last wrote (hand-edited) — surface the
 conflict and let the user choose keep / overwrite / merge. There is no

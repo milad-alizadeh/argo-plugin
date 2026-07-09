@@ -117,7 +117,7 @@ converging:
    not per-screen, so the same entity is named identically across screens. This
    is the single upstream source of authored copy: downstream, design-screen /
    figma-create source ALL canvas text from it (missing entry → the designer
-   stops and asks), and the tier-0 `untraced-copy` rule hard-checks every TEXT
+   stops and asks), and the design-rules `untraced-copy` rule hard-checks every TEXT
    node against it on named audits. Data slots (live counts/timestamps) are not
    deck entries. **Provenance is one-directional: the deck is authored here,
    from the PRD/brief, BEFORE any canvas exists or is read — designers never

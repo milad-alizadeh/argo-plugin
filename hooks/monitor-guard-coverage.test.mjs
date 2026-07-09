@@ -21,7 +21,7 @@ function guardsForTool(toolName) {
   for (const entry of hooksJson.hooks.PreToolUse) {
     // "*" is the plugin format's documented "match every tool" wildcard, not
     // a regex literal (as a bare regex, `*` throws — "nothing to repeat") —
-    // the workflow-permission entry uses it because @argohq/adapter-claude's
+    // the playbook-permission entry uses it because @argohq/claude-adapter-plugin's
     // generic permission hook must see every tool call, not just Bash/Monitor.
     const matches = entry.matcher === '*' ? true : new RegExp(`^(${entry.matcher})$`).test(toolName)
     if (matches) {

@@ -521,6 +521,10 @@ export function unsectionedComponentViolation(node: AnyNode): Violation | null {
 /** Mechanism 3: a component with no description misses the one place in-file facts (purpose + usage) can't drift. Advisory on the file-wide sweep, hard on a named audit. */
 export function missingComponentDescriptionViolation(node: AnyNode): Violation | null {
   if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return null
+  // Variant children inside a COMPONENT_SET don't each need a description —
+  // the set root is the documented unit (live-sweep calibration 2026-07-10:
+  // 154 findings, bulk of them `type=..., state=...` variants).
+  if (node.type === 'COMPONENT' && node.parent?.type === 'COMPONENT_SET') return null
   if (node.description) return null
   return {
     rule: 'missing-component-description',

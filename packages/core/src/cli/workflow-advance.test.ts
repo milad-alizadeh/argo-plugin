@@ -108,6 +108,21 @@ describe('workflowAdvance', () => {
     expect(readInstance('advance-fail-stuck', { cwd, stateRoot })?.status).toBe('stuck')
   })
 
+  it('goes stuck on the first failure when the stage declares no retries', async () => {
+    const gateName = `advance-fail-no-retries-gate-${Math.random()}`
+    registerGate(makeGate(gateName, { passed: false, findings: [], evidence: [] }))
+    const workflowName = `advance-fail-no-retries-workflow-${Math.random()}`
+    registerWorkflow(
+      defineWorkflow({ name: workflowName, stages: [{ name: 'build', allows: ['file-edit'], gate: gateName }] })
+    )
+    writeInstance('advance-fail-no-retries', makeInstance({ workflow: workflowName, stage: 'build' }), { cwd, stateRoot })
+
+    const result = await workflowAdvance('advance-fail-no-retries', { cwd, stateRoot })
+
+    expect(result.status).toBe('stuck')
+    expect(result.attempts).toHaveLength(1)
+  })
+
   it('advances immediately when the stage declares no gate', async () => {
     const workflowName = `advance-no-gate-workflow-${Math.random()}`
     registerWorkflow(

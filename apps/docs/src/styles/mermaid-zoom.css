@@ -1,0 +1,32 @@
+svg[id^='mermaid-'] {
+  cursor: zoom-in;
+  border-radius: 0.5rem;
+  transition: outline-color 0.15s ease;
+  outline: 2px solid transparent;
+  outline-offset: 6px;
+}
+
+svg[id^='mermaid-']:hover,
+svg[id^='mermaid-']:focus-visible {
+  outline-color: var(--sl-color-accent);
+}
+
+.mermaid-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4vw;
+  background: #0b0c0f;
+  cursor: zoom-out;
+}
+
+.mermaid-zoom-overlay svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  cursor: zoom-out;
+}

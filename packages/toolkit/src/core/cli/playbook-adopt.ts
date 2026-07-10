@@ -1,6 +1,13 @@
 import { getGate, type GateContext } from '../gate.js'
 import { getPlaybook } from '../spec.js'
-import { deriveInstanceKey, writeInstance, type HistoryEntry, type StateOptions, type PlaybookInstance } from '../state.js'
+import {
+  deriveInstanceKey,
+  setActiveInstance,
+  writeInstance,
+  type HistoryEntry,
+  type StateOptions,
+  type PlaybookInstance
+} from '../state.js'
 import { GateNotFoundError, PlaybookNotFoundError } from './errors.js'
 
 export interface PlaybookAdoptInput {
@@ -16,6 +23,9 @@ export interface PlaybookAdoptOptions extends StateOptions {
    * AI-judging gates (`fresh-eyes-review`) can reach `ctx.judge(...)` during
    * re-verification. */
   ctx?: GateContext
+  /** Session affinity for the active-instance pointer this adopt call sets —
+   * mirrors `playbookStart`'s `sessionId` (see `setActiveInstance`'s doc). */
+  sessionId?: string | null
 }
 
 /**
@@ -96,5 +106,11 @@ export async function playbookAdopt(input: PlaybookAdoptInput, opts: PlaybookAdo
     history
   }
   writeInstance(key, instance, opts)
+  // Adopted instance becomes "the" active playbook for this worktree, same as
+  // `playbookStart` — without this, a crash-recovered instance is invisible
+  // to the permission hook's `getActiveInstance` lookup, defeating the whole
+  // point of adopt as a crash-recovery path (state.ts's own doc for
+  // `setActiveInstance` already assumed both callers set it).
+  setActiveInstance(key, opts)
   return instance
 }

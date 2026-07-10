@@ -194,7 +194,7 @@ switch (cmd) {
           process.exit(1)
         }
         const sessionId = process.env.CLAUDE_CODE_SESSION_ID || null
-        setActiveInstance(key, { cwd: hostRoot, sessionId })
+        setActiveInstance(key, { cwd: hostRoot, sessionId, claim: true })
         console.log(JSON.stringify({ key, sessionId }))
         break
       }
@@ -219,9 +219,12 @@ switch (cmd) {
         break
       }
       case 'adopt': {
+        // Session affinity, same seam as `start`: adopt now sets the active
+        // pointer (crash recovery), so it must record the owning session too.
+        const sessionId = process.env.CLAUDE_CODE_SESSION_ID || null
         const result = await playbookAdopt(
           { name: flagValue(args, '--name'), target: flagValue(args, '--target'), key: flagValue(args, '--key') },
-          { cwd: hostRoot, artifacts: parseArtifactsFlag(args), ctx: { judge: core.judge } }
+          { cwd: hostRoot, artifacts: parseArtifactsFlag(args), ctx: { judge: core.judge }, sessionId }
         )
         console.log(JSON.stringify(result))
         break

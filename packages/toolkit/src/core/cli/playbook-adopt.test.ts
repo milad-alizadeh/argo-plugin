@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { registerGate, type Gate, type GateVerdict } from '../gate.js'
 import { definePlaybook, registerPlaybook } from '../spec.js'
-import { deriveInstanceKey, readInstance } from '../state.js'
+import { deriveInstanceKey, getActiveInstance, readInstance } from '../state.js'
 import { playbookAdopt } from './playbook-adopt.js'
 
 function makeGate(name: string, verdict: GateVerdict): Gate {
@@ -100,5 +100,19 @@ describe('playbookAdopt', () => {
     expect(instance.stage).toBe('build')
     expect(instance.status).toBe('done')
     expect(readInstance(key, { cwd, stateRoot })).toEqual(instance)
+  })
+
+  it('sets the active-instance pointer, matching playbook-start — crash recovery depends on it', async () => {
+    const gateName = `adopt-active-pointer-gate-${Math.random()}`
+    registerGate(makeGate(gateName, { passed: true, findings: [], evidence: [] }))
+    const playbookName = `adopt-active-pointer-${Math.random()}`
+    registerPlaybook(definePlaybook({ name: playbookName, stages: [{ name: 'build', allows: ['file-edit'], gate: gateName }] }))
+
+    const instance = await playbookAdopt(
+      { name: playbookName, target: 'fixture-screen' },
+      { cwd, stateRoot, sessionId: 'session-A' }
+    )
+
+    expect(getActiveInstance({ cwd, stateRoot, forSessionId: 'session-A' })).toEqual(instance)
   })
 })

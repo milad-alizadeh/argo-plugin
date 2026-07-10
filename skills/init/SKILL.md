@@ -195,6 +195,37 @@ whom it's written** — layered, treating auto-fixable (format) differently from
 Do not gate formatting in any hook or CI-as-failure beyond a `--check` backstop —
 a machine can fix whitespace; failing a build on it is waste.
 
+## 6bb. Boundary lint — mechanized module-boundary enforcement
+The file-structure rule's "Module boundaries" section is enforced by a
+dependency linter wired into the project's `lint` script, never by a skill or
+agent memory. Offer this only where the host's stack has a matching linter
+(dependency-cruiser for TS/JS; skip silently for stacks without one yet).
+
+1. **Detect layout.** For each module root the project actually has (e.g.
+   `src/main`, `src`), list its real top-level folders and propose a role for
+   each — `composition-root` | `infrastructure` | `domain` | `shared` — per
+   the file-structure rule's role-map pattern. Never propose a role for a folder
+   the project doesn't have.
+2. **Propose the role map via AskUserQuestion**, batched with §0's other
+   questions where it fits: show the detected folders and proposed roles,
+   let the user correct any before writing.
+3. **Install the config.** Add `dependency-cruiser` as a devDependency and
+   write a project-root (or per-workspace) `.dependency-cruiser.cjs` encoding
+   the accepted role map as its single source of truth, plus the derived
+   forbidden rules and the structure-guard rule — see the file-structure rule's
+   "Boundary-lint config pattern" section for the exact shape. Add a `lint:boundaries`
+   script and wire it into `lint` (e.g. `"lint": "eslint . && npm run
+   lint:boundaries"`).
+4. **Report-only baseline, then grandfather.** Run the linter once in
+   report-only mode against the existing tree. Any violation found becomes a
+   waiver entry (one rule + one path glob + one-line reason) in the
+   project's boundary-lint ignorelist — never a hard error on day one against
+   pre-existing violations. Flip the gate on afterward; it now fails only on
+   NEW violations. An empty waiver list (greenfield) skips this step.
+5. **Record the posture** in `.argo/config.json`'s `boundaryLint` field
+   (`{ enforcedBy, configPath, waivers }` — same index-pointer convention as
+   `testDiscipline`) so `argo status` can report it read-only.
+
 ## 6c. TDD enforcement (probity) — default-on, language-agnostic
 Deterministic tests-fail-first enforcement belongs in a hook, not agent narration.
 [probity](https://github.com/nizos/probity) is the PreToolUse guard (nizos'
@@ -332,20 +363,36 @@ recommended-first): "Human-facing docs for this project? Starlight site
   docs site uses (`bunx create-astro@latest --template starlight`) into
   `apps/docs` (monorepo — reuse this project's own §2 monorepo detection) or
   `docs/` (single package).
-- **Markdown** → seed a `docs/` tree with four empty Diátaxis folders
-  (`tutorials/`, `how-to/`, `explanation/`, `reference/`) plus one placeholder
-  `docs/README.md` explaining the structure. No prose generation on this
-  path — "prose generated once" applies to this plugin's own docs site and to
-  Starlight-mode projects that later run the generator, not to markdown mode's
-  initial scaffold.
+- **Markdown** → seed a `docs/` tree with the two-tier IA
+  `documentation-content.md` prescribes: `guides/` and `reference/` folders
+  plus one placeholder `docs/README.md` explaining the structure (explanation
+  lives inside guides, never as its own top-level quadrant). No prose
+  generation on this path — "prose generated once" applies to this plugin's
+  own docs site and to Starlight-mode projects that later run the generator,
+  not to markdown mode's initial scaffold.
 - **None** → no scaffold; record `"docs": { "mode": "none" }` so later stages
   skip silently.
 
-**Always, regardless of mode chosen (except "none"):** drop a "Working with
-argo" pointer stub — one short markdown file at the chosen docs tree's most
-visible entry point (`index.mdx`/`index.md` for Starlight, `docs/README.md`
-for markdown) linking to this plugin's own `apps/docs` site for argo concepts.
-Argo concepts never get copied into a project's own docs.
+**Always, regardless of mode chosen (except "none"):**
+- Install BOTH docs rules — `documentation-style.md` (sentence level) and
+  `documentation-content.md` (grounding, IA, page-vs-table threshold,
+  requirements matrix) — via the same §5 consent + `argo rules record` flow
+  as every other rule.
+- Drop a "Working with argo" pointer stub — one short markdown file at the
+  chosen docs tree's most visible entry point (`index.mdx`/`index.md` for
+  Starlight, `docs/README.md` for markdown) linking to this plugin's own
+  `apps/docs` site for argo concepts. Argo concepts never get copied into a
+  project's own docs.
+
+**Any docs prose generation — now or later — is gated on the facts
+inventory.** Per `documentation-content.md`'s grounding rule: before writing
+prose, build `.argo/design/docs-facts.md` from a deep read of the actual
+source (command/skill bodies, config schemas, implementations — never just
+READMEs and frontmatter), covering the supported matrix, requirements and
+prerequisites, journey traces, and boundary declarations, every fact with a
+source reference. Docs claims must trace to inventory lines. A generation
+pass that skips this ships plausible, hollow docs — the exact failure this
+stage exists to prevent.
 
 Mention `/argo:docs-refresh` in the wizard's closing report whenever Starlight
 or markdown mode is chosen — it's the command a human runs later to resolve a

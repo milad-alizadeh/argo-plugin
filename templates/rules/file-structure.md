@@ -112,6 +112,62 @@ other's internals (information hiding / dependency inversion).
   layer rules in a dependency linter (dependency-cruiser or
   eslint-plugin-boundaries for TS, import-linter for Python, `internal/` +
   depguard for Go) so a new leak fails the build instead of relying on review.
+  Wire the linter into the project's `lint` script (e.g. `eslint && lint:boundaries`)
+  so a boundary leak fails the same gate as any other lint error — never a
+  standalone skill or agent memory that can be skipped.
+
+### Boundary-lint config pattern (TypeScript / dependency-cruiser)
+
+A single **role map** is the config's source of truth: each top-level folder
+of a module layer declares one role — `composition-root` | `infrastructure` |
+`domain` | `shared` — and every forbidden rule derives from it, so adding a
+role never means writing a new rule:
+
+```js
+const topLevelRoles = {
+  bootstrap: 'composition-root',
+  platform: 'infrastructure',
+  domains: 'domain',
+  lib: 'shared'
+}
+```
+
+- **Composition root** may import anything (it's the wiring layer).
+- **Infrastructure / composition-root** may import a domain only via that
+  domain's `index.ts` barrel, never a domain leaf file.
+- **A domain** may import another domain only via that domain's `index.ts`
+  barrel; same-domain internal imports are unrestricted. dependency-cruiser
+  v18 supports capture-group substitution — `from.path`'s `$1` substitutes
+  into `to.pathNot` — so this rule is one entry, not one per domain pair:
+  `from: { path: '^domains/([^/]+)/' }, to: { path: '^domains/', pathNot: ['^domains/$1/', '^domains/[^/]+/index\\.ts$'] }`.
+- **Shared** imports nothing above it in the layer.
+- **A structure-guard rule** fails lint on any import targeting a top-level
+  folder absent from the role map, so a rogue folder can't silently escape
+  the rules. Adding a legitimate new top-level folder = declare its role in
+  the map in the same commit; an undeclared folder is a structure violation,
+  not an oversight to grandfather.
+
+The role names above (`composition-root`/`infrastructure`/`domain`/`shared`)
+are the fixed vocabulary; the folder names inside `topLevelRoles` are NOT —
+derive them from the host project's actual layout, and only gate a grouping
+folder the project has actually adopted. Never write a rule for a layer or
+folder that doesn't exist yet.
+
+### Brownfield rollout — report-only, then grandfather
+
+A fresh boundary-lint config against an existing codebase will surface
+pre-existing violations. Never turn the gate on as a hard error against
+those on day one:
+
+1. Run the linter in report-only mode and record every current violation.
+2. Grandfather each into a per-project waiver ignorelist (same shape as
+   [Per-project waivers](#per-project-waivers-not-silent-exceptions) below:
+   one rule + one path glob + one-line reason per entry).
+3. Flip the gate on — it now fails only on **new** violations, not the
+   inherited backlog.
+
+Burning down the waiver list is a suggested follow-up, never a requirement of
+turning the gate on.
 
 ### Per-project waivers, not silent exceptions
 

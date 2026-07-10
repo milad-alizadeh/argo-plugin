@@ -179,6 +179,26 @@ describe('setActiveInstance / getActiveInstance', () => {
     setActiveInstance('never-written', { stateRoot, cwd })
     expect(getActiveInstance({ stateRoot, cwd })).toBeNull()
   })
+
+  it('session affinity: the run is active only for its owning session', () => {
+    const instance = makeInstance()
+    writeInstance('owned-fixture', instance, { stateRoot, cwd })
+    setActiveInstance('owned-fixture', { stateRoot, cwd, sessionId: 'session-A' })
+
+    // Owning session sees it; a different session does NOT (its gate goes inert).
+    expect(getActiveInstance({ stateRoot, cwd, forSessionId: 'session-A' })).toEqual(instance)
+    expect(getActiveInstance({ stateRoot, cwd, forSessionId: 'session-B' })).toBeNull()
+    // A caller with no session identity (bare CLI) still sees it.
+    expect(getActiveInstance({ stateRoot, cwd })).toEqual(instance)
+  })
+
+  it('legacy pointer without a sessionId gates every session (back-compat)', () => {
+    const instance = makeInstance()
+    writeInstance('legacy-fixture', instance, { stateRoot, cwd })
+    setActiveInstance('legacy-fixture', { stateRoot, cwd })
+
+    expect(getActiveInstance({ stateRoot, cwd, forSessionId: 'any-session' })).toEqual(instance)
+  })
 })
 
 describe('durability: atomic writes, advisory lock', () => {

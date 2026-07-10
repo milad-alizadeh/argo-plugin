@@ -88,6 +88,7 @@ const DESIGN_VERBS = {
   'generate-token-manifest': '../dist/packs/design/skill-scripts/generate-token-manifest.js',
   'emit-shims': '../dist/packs/design/skill-scripts/emit-shims.js',
   'pull-registry': '../dist/packs/design/skill-scripts/pull-registry.js',
+  'refresh-card': '../dist/packs/design/skill-scripts/refresh-card.js',
   'assemble-fidelity-rubric': '../dist/packs/design/skill-scripts/assemble-fidelity-rubric.js',
   'validate-manifest': '../dist/packs/design/skill-scripts/validate-manifest.js',
   'ack-pending-work': '../dist/packs/design/skill-scripts/ack-pending-work.js',
@@ -157,11 +158,29 @@ switch (cmd) {
         break
       }
       case 'start': {
+        // Session affinity: the starting session owns the run — the
+        // permission gate stays inert for every other session. Same env seam
+        // record-audit-receipt uses (equal to the hook payload's session_id).
+        const sessionId = process.env.CLAUDE_CODE_SESSION_ID || null
         const result = playbookStart(
           { name: flagValue(args, '--name'), target: flagValue(args, '--target'), key: flagValue(args, '--key') },
-          { cwd: hostRoot }
+          { cwd: hostRoot, sessionId }
         )
         console.log(JSON.stringify(result))
+        break
+      }
+      case 'claim': {
+        // Fresh-session takeover (stages marked session:"fresh"): the new
+        // executor re-stamps the pointer with its own session id.
+        const { setActiveInstance, readInstance } = await import('../dist/core/index.js')
+        const key = flagValue(args, '--key')
+        if (!key || !readInstance(key, { cwd: hostRoot })) {
+          process.stderr.write(`playbook claim: no instance at key "${key}"\n`)
+          process.exit(1)
+        }
+        const sessionId = process.env.CLAUDE_CODE_SESSION_ID || null
+        setActiveInstance(key, { cwd: hostRoot, sessionId })
+        console.log(JSON.stringify({ key, sessionId }))
         break
       }
       case 'status': {

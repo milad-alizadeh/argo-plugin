@@ -26,7 +26,10 @@ export interface PlaybookStartResult {
  * spec's terminal stage hands off to a disabled pack, then writes the initial
  * instance at the first stage.
  */
-export function playbookStart(input: PlaybookStartInput, opts: StateOptions = {}): PlaybookStartResult {
+export function playbookStart(
+  input: PlaybookStartInput,
+  opts: StateOptions & { sessionId?: string | null } = {}
+): PlaybookStartResult {
   const spec = getPlaybook(input.name)
   if (!spec) throw new PlaybookNotFoundError(input.name)
 

@@ -251,29 +251,54 @@ function activePointerPath(opts: StateOptions = {}): string {
   return join(stateRoot, projectId, 'active-playbooks', `${worktreeId(cwd)}.json`)
 }
 
-/** Marks `key` as the active playbook instance for THIS worktree (atomic). */
-export function setActiveInstance(key: string, opts: StateOptions = {}): void {
-  atomicWriteJson(activePointerPath(opts), { key })
+/**
+ * Marks `key` as the active playbook instance for THIS worktree (atomic).
+ * `sessionId` (when known — CLI callers read `CLAUDE_CODE_SESSION_ID`, hook
+ * callers the payload's `session_id`) records the OWNING session: the
+ * permission gate is inert for every other session, so a run gates only the
+ * session executing it, never the whole project (2026-07-10 lesson — a
+ * project-wide pointer gated the supervisor and parallel agents alike).
+ * Without a sessionId the pointer stays worktree-wide (legacy behavior).
+ */
+export function setActiveInstance(key: string, opts: StateOptions & { sessionId?: string | null } = {}): void {
+  const sessionId = opts.sessionId ?? null
+  atomicWriteJson(activePointerPath(opts), sessionId ? { key, sessionId } : { key })
+}
+
+/** The active pointer's full contents — `null` on missing/malformed. */
+export function getActiveInstancePointer(opts: StateOptions = {}): { key: string; sessionId: string | null } | null {
+  const path = activePointerPath(opts)
+  if (!existsSync(path)) return null
+  try {
+    const parsed = JSON.parse(readFileSync(path, 'utf8'))
+    if (typeof parsed?.key !== 'string') return null
+    return { key: parsed.key, sessionId: typeof parsed.sessionId === 'string' ? parsed.sessionId : null }
+  } catch {
+    return null
+  }
 }
 
 /** Returns the active instance's key, or `null` if no pointer exists or it is
  * malformed (never throws — same inert-on-malformed convention as
  * `readInstance`). */
 export function getActiveInstanceKey(opts: StateOptions = {}): string | null {
-  const path = activePointerPath(opts)
-  if (!existsSync(path)) return null
-  try {
-    const parsed = JSON.parse(readFileSync(path, 'utf8'))
-    return typeof parsed?.key === 'string' ? parsed.key : null
-  } catch {
-    return null
-  }
+  return getActiveInstancePointer(opts)?.key ?? null
 }
 
-/** Resolves the active pointer and reads that instance — `null` if there is
- * no active pointer OR the pointed-at instance file is missing/malformed. */
-export function getActiveInstance(opts: StateOptions = {}): PlaybookInstance | null {
-  const key = getActiveInstanceKey(opts)
-  if (!key) return null
-  return readInstance(key, opts)
+/**
+ * Resolves the active pointer and reads that instance — `null` if there is
+ * no active pointer OR the pointed-at instance file is missing/malformed.
+ *
+ * `forSessionId`: session-affinity filter. When the pointer records an owning
+ * sessionId AND the caller identifies itself with a different one, the run is
+ * not active FOR THAT CALLER — return `null` (the permission gate goes inert
+ * for every session except the run's executor). A caller that passes no
+ * `forSessionId` (CLI status/advance) sees the instance regardless.
+ */
+export function getActiveInstance(opts: StateOptions & { forSessionId?: string | null } = {}): PlaybookInstance | null {
+  const pointer = getActiveInstancePointer(opts)
+  if (!pointer) return null
+  const caller = opts.forSessionId ?? null
+  if (pointer.sessionId && caller && pointer.sessionId !== caller) return null
+  return readInstance(pointer.key, opts)
 }

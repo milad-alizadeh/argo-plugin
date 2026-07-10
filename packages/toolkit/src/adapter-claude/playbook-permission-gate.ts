@@ -76,7 +76,14 @@ const input: HookInput = {
 // else `@argohq/toolkit/core`'s state store is exercised in tests.
 const stateRoot = process.env.ARGO_STATE_ROOT
 const config = readConfig(cwd)
-const decision = runPermissionHook(input, config, () => getActiveInstance({ cwd, stateRoot }))
+// Session affinity: a run gates ONLY the session executing it. The pointer
+// records the owning sessionId (playbook start/claim); every other session's
+// tool calls see "no active instance" and pass ungated (2026-07-10: a
+// project-wide pointer gated the supervisor and parallel agents alike).
+const callerSessionId = typeof hook?.session_id === 'string' && hook.session_id.length > 0 ? hook.session_id : null
+const decision = runPermissionHook(input, config, () =>
+  getActiveInstance({ cwd, stateRoot, forSessionId: callerSessionId })
+)
 
 if (decision.decision === 'allow') {
   if (decision.advisory !== undefined) {

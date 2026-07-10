@@ -1,0 +1,14 @@
+{
+  "packs": {},
+  "noPlaybook": "allow",
+  "boundaryLint": {
+    "enforcedBy": "dependency-cruiser",
+    "configPath": "packages/toolkit/.dependency-cruiser.cjs",
+    "waivers": []
+  },
+  "tooling": {
+    "lsp": {
+      "typescript": "recommended-not-installed"
+    }
+  }
+}

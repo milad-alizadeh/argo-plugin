@@ -13,8 +13,8 @@
     "eval:prompts": "evalite run evals/*.eval.ts"
   },
   "devDependencies": {
+    "@nizos/probity": "^1.10.0",
     "evalite": "^0.16.0",
-    "tdd-guard-vitest": "^0.2.0",
     "vitest": "^3.2.4",
     "@argohq/toolkit": "workspace:*"
   }

@@ -42,7 +42,7 @@ inactive" — is a standing vitest assertion: `hooks/fail-closed-hook.test.mjs`.
 
 1. **`bun install` does NOT install a linked package's own dependencies** into
    the consumer (`1 package installed` = the symlink only). The kit's runtime
-   deps (`zod`, `tdd-guard`) resolve through Node's directory walk-up from the
+   deps (e.g. `zod`) resolve through Node's directory walk-up from the
    REAL path of `packages/toolkit` — i.e. from the plugin repo's own root
    `node_modules`. This is why Slice 5 step 20 makes the plugin repo a bun
    workspace (`workspaces: ["packages/*"]`) and keeps its root install green:

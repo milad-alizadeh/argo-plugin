@@ -1,6 +1,10 @@
 {
   "packs": {},
   "noPlaybook": "allow",
+  "testDiscipline": {
+    "enforcedBy": "probity",
+    "configPath": "probity.config.ts"
+  },
   "boundaryLint": {
     "enforcedBy": "dependency-cruiser",
     "configPath": "packages/toolkit/.dependency-cruiser.cjs",

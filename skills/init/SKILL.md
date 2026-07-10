@@ -25,7 +25,7 @@ Every decision in this skill goes through the **AskUserQuestion tool** — nativ
 multiple-choice prompts, never a paragraph ending in "shall I?". Rules:
 
 - Batch related decisions into one call (up to 4 questions per screen): e.g. one
-  screen for {landing mode, tdd-guard, rtk (§6e — global, default-off), rules-to-install (multiSelect)}.
+  screen for {landing mode, TDD enforcement (probity), rtk (§6e — global, default-off), rules-to-install (multiSelect)}.
 - Put the recommended option FIRST, labeled `(Recommended)`, with the detected
   evidence in its description ("vitest found in package.json").
 - Free-form input (custom commands, paths) rides the built-in "Other" option —
@@ -197,70 +197,59 @@ whom it's written** — layered, treating auto-fixable (format) differently from
 Do not gate formatting in any hook or CI-as-failure beyond a `--check` backstop —
 a machine can fix whitespace; failing a build on it is waste.
 
-## 6c. TDD enforcement (tdd-guard) — default-on where supported
+## 6c. TDD enforcement (probity) — default-on, language-agnostic
 Deterministic tests-fail-first enforcement belongs in a hook, not agent narration.
-[tdd-guard](https://github.com/nizos/tdd-guard) is the community-standard PreToolUse
-guard: it blocks implementation edits that aren't preceded by a failing test, using the
-project's own test reporter as ground truth. It enforces **order**, not test **quality**
-— the red-proof commit gate (§6) and the reviewer stay responsible for quality.
+[probity](https://github.com/nizos/probity) is the PreToolUse guard (nizos'
+successor to tdd-guard): it blocks implementation edits that aren't preceded by a
+failing test. It enforces **order**, not test **quality** — the red-proof commit
+gate (§6) and the reviewer stay responsible for quality. Two properties make it the
+successor: it validates from **session activity** (no per-runner test reporter to
+wire, no `test.json` evidence store to keep fresh) and it is **parallel-session and
+cross-repo safe** by construction, so the whole tdd-guard reporter/evidence-bridge
+apparatus is gone.
 
-- **Detect the runner first** (from §2): tdd-guard supports Vitest, Jest, Storybook,
-  pytest, PHPUnit, Go testing, cargo (Rust), RSpec and Minitest. Supported → install
-  **default-on**: `/plugin marketplace add nizos/tdd-guard`, `/plugin install
-  tdd-guard@tdd-guard`, then `/tdd-guard:setup` to wire the reporter. Unsupported
-  runner → print `TDD enforcement unavailable for <runner> — skipping tdd-guard` and
-  move on. **Never** install an inert or all-blocking hook as a fallback.
-- **Playwright:** upstream has no reporter, but the kit ships one as a normal subpath
-  export — `@argohq/toolkit/reporters/playwright` (schema-verified against
-  tdd-guard-vitest). Wire it in the project's playwright config:
-  `reporter: [['list'], ['@argohq/toolkit/reporters/playwright', { projectRoot: '<abs repo root>' }]]`.
-  The kit dep is already resolvable after §6d — **nothing to vendor**, no plugin-cache
-  `file:` paths, ever.
-- **Auth pre-check (hard requirement):** tdd-guard's validation model must run on the
-  Claude Code SDK/subscription auth (its default, `VALIDATION_CLIENT=sdk`) — metered
-  API keys are banned here. Confirm `ANTHROPIC_API_KEY` is NOT set in the environment
-  (if set, Claude Code may bill it); if the project can only run tdd-guard via an API
-  key, STOP and surface — do not adopt.
-- **Opt-out:** `--no-tdd` (or the user saying so) skips this whole step. Mid-session,
-  tdd-guard has its own toggle for legitimate exceptions — spikes disable it for the
-  session (throwaway code has a "no tests" contract by design; see the spike skill).
-- **Session-start clears its evidence.** tdd-guard wipes `test.json` at the start of
-  every session — red/green must be re-established by running tests *within* the
-  current session, and via a **direct runner invocation** (a turbo cache hit skips
-  the runner and leaves `test.json` stale, looking un-run). tdd-guard's live file is
-  not durable proof across sessions; `.argo/evidence/red-proof.json` is.
-- **Wire the reporter into EVERY workspace whose tests must feed the guard** — not
-  just the app. A workspace without the reporter produces no evidence, and the guard
-  will false-block edits there for want of red it cannot see (observed: hook
-  development in a plugin workspace).
-- **Cosmetic-change lane (custom instructions).** tdd-guard reads
-  `.claude/tdd-guard/data/instructions.md` into every validation, and its
-  SessionStart hook only writes defaults when the file is MISSING — custom rules
-  survive restarts. Append the project rule: cosmetic/styling-only edits (class/
-  token values, spacing, alignment, sizing, colors, label copy) are refactor-class —
-  allowed on green, no new failing test, and never pixel-geometry tests to justify
-  them; the exemption ends where behavior begins (enabled/disabled, shown/hidden,
-  handlers). Mirrors the testing rule this skill installs.
-- **Minimal-fix fast path (same instructions file).** Also append: approve the
+- **One dependency, one config, one hook** — no runner detection, no per-workspace
+  reporter wiring:
+  1. Add `@nizos/probity` as a devDependency (any language/runner — it reads the
+     session, not a reporter).
+  2. Write `probity.config.ts` at the repo root scoping enforcement to the source
+     tree. `fastPath: true` is the built-in minimal-fix lane (see below):
+     ```ts
+     import { defineConfig, enforceTdd } from '@nizos/probity'
+     export default defineConfig({
+       rules: [{ files: ['src/**', 'packages/**', 'test/**'], rules: [enforceTdd({ fastPath: true })] }],
+     })
+     ```
+     probity **fails closed** when no config resolves — write the config before
+     wiring the hook, never wire an all-blocking hook with no config.
+  3. Wire the PreToolUse hook in `.claude/settings.json`:
+     ```json
+     { "hooks": { "PreToolUse": [{ "matcher": "Bash|Write|Edit|NotebookEdit",
+       "hooks": [{ "type": "command", "command": "npx @nizos/probity --agent claude-code" }] }] } }
+     ```
+  `probity.config.ts` is a **protected path** (§ argo's own permissions floor) — an
+  agent cannot weaken enforcement by editing it mid-session; init is its sole writer.
+- **Auth pre-check (hard requirement):** probity's validation model must run on the
+  Claude Code SDK/subscription auth, not a metered key. Confirm `ANTHROPIC_API_KEY`
+  is NOT set (if set, Claude Code may bill it); if the project can only validate via
+  an API key, STOP and surface — do not adopt.
+- **Opt-out:** `--no-tdd` (or the user saying so) skips this whole step. Throwaway
+  spike code has a "no tests" contract by design (see the spike skill).
+- **Cosmetic-change lane.** Scope `files` so pure styling surfaces (token/CSS files)
+  fall outside enforcement, and keep the standing testing rule: cosmetic/styling-only
+  edits (class/token values, spacing, alignment, sizing, colors, label copy) are
+  refactor-class — allowed on green, no new failing test, never pixel-geometry tests
+  to justify them; the exemption ends where behavior begins (enabled/disabled,
+  shown/hidden, handlers).
+- **Minimal-fix fast path** = `enforceTdd({ fastPath: true })`. It approves the
   minimal change that makes the CURRENT failing assertion pass — both a single
-  statement whose field/symbol the assertion names, AND a small coordinated
-  cluster driven by ONE failing behavioral assertion at the **public interface**
-  (UI element shown/hidden, CLI stdout/exit-code, returned value, response body):
-  e.g. a new handler plus the one or two call sites that invoke it. That one
-  assertion is sufficient Red for the whole cluster — don't demand a separate
-  unit Red per new symbol. Bound it: every edit must be on the path the assertion
-  exercises; a new branch/action it doesn't reach is net-new and needs its own
-  Red. Do not block for the confirmation run first, and an identical-or-subset
-  edit already assessed as plausibly minimal MUST be approved on re-presentation
-  — never re-block it. Include one worked example verbatim (a UI project's
-  natural one: an e2e assertion justifying a new handler + its two call sites in
-  one pass). This is interface-neutral by design — it mirrors the testing rule
-  ("assert through the public interface"), and stays safe default-on because it
-  only triggers when a fresh failing behavioral assertion is on record; the next
-  test run remains the real green gate. (Observed in dogfooding: the guard
-  blocked a 4-line handler+wiring change 5+ times, each time conceding "if the
-  e2e IS your red this may be acceptable" then re-blocking on per-symbol Red —
-  pure round-trip waste; the change was correct and its e2e red was on record.)
+  statement the assertion names AND a small coordinated cluster driven by ONE failing
+  behavioral assertion at the **public interface** (UI shown/hidden, CLI stdout/exit,
+  returned value, response body): e.g. a new handler plus the one or two call sites
+  that invoke it. That one assertion is sufficient Red for the whole cluster — no
+  separate unit Red per new symbol. This is what the tdd-guard era hand-wrote as a
+  custom-instructions rule after the guard false-blocked a 4-line handler+wiring
+  change 5+ times; in probity it is a first-class config flag.
 
 ## 6d. Run `argo init` — the deterministic half
 Run the kit CLI against the project root. On first run the kit isn't installed yet,

@@ -177,7 +177,7 @@ describe('bash-safety-guards — bash source write', () => {
       'ls -la out/renderer/assets/*.js 2>/dev/null | head -3',
       'mkdir -p .argo/evidence && cat > .argo/evidence/build-mode.json <<EOF\n{"slice":"s1"}\nEOF',
       "node -e \"const fs=require('fs'); fs.writeFileSync('../.argo/evidence/red-proof.json', JSON.stringify({slice:'s1'}))\"",
-      'cp worktree/.claude/tdd-guard/data/test.json main/.claude/tdd-guard/data/test.json',
+      'cp worktree/.argo/evidence/red-proof.json main/.argo/evidence/red-proof.json',
       'python3 - <<EOF\nimport json\nprint(json.dumps({"a":1}))\nEOF',
       'which typescript-language-server',
       'sed -n 1,40p plugin/hooks/hooks.json',

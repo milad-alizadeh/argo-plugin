@@ -607,11 +607,11 @@ green, write .argo/evidence/red-proof.json</span>
     <script>
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-      const stages = Array.from(document.querySelectorAll('.stage'))
-      const gates = Array.from(document.querySelectorAll('.gate'))
+      const stages = Array.from(document.querySelectorAll<HTMLElement>('.stage'))
+      const gates = Array.from(document.querySelectorAll<HTMLElement>('.gate'))
       const railDesc = document.getElementById('rail-desc')
 
-      function setDesc(stage) {
+      function setDesc(stage: HTMLElement) {
         if (!railDesc) return
         const label = stage.querySelector('.stage-label')?.textContent ?? ''
         railDesc.textContent = `${label}: ${stage.dataset.desc ?? ''}`

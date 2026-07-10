@@ -41,3 +41,18 @@ describe('markHumanOwned', () => {
     expect(result).toEqual([])
   })
 })
+
+describe('docs-refresh page-selection (fixture-driven)', () => {
+  it("proposes exactly listEditedPages's output as the prompt set, across a mixed fixture", () => {
+    let manifest = recordGenerated('untouched.md', 'v1', {})
+    manifest = recordGenerated('edited-one.md', 'v1', manifest)
+    manifest = recordGenerated('edited-two.md', 'v1', manifest)
+    const currentContent = {
+      'untouched.md': 'v1',
+      'edited-one.md': 'v2',
+      'edited-two.md': 'v2'
+    }
+    const proposedPromptSet = listEditedPages(manifest, (path) => currentContent[path])
+    expect(proposedPromptSet.sort()).toEqual(['edited-one.md', 'edited-two.md'])
+  })
+})

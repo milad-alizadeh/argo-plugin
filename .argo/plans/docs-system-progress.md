@@ -9,6 +9,6 @@
 | 3 (prose) | done | (this commit) | 9 pages written sourced from README/PIPELINE, build+check-links green (63 links), .argo/docs-manifest.json seeded with initial content hashes |
 | 4 (style rule + lint) | done | (this commit) | templates/rules/documentation-style.md + lint-docs-style.mjs, red-first test green; rewrote all Slice 3 prose + landing copy to drop em dashes (the rule's own forbidden phrase); reference/ (generated, sourced from skill/agent frontmatter) excluded from the lint scope — out of bounds for this plan |
 | 5 (manifest + integrator) | done | (this commit) | docs-manifest.mjs (hashOf/readManifest/writeManifest/isAiOwned/recordGenerated/markHumanOwned/listEditedPages), 6/6 tests green; agents/integrator.md STEP 1 updated with the auto-update/skip-silently split |
-| 5b (docs-refresh skill) | pending | | |
+| 5b (docs-refresh skill) | done | (this commit) | skills/docs-refresh/SKILL.md written; page-selection fixture test added to docs-manifest.test.mjs (7/7 green); cross-referenced from integrator.md (Slice 5) and documentation-style.md |
 | 6 (init opt-in) | pending | | |
 | 7 (slim README) | pending | | |

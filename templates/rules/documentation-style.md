@@ -8,8 +8,8 @@ not an aspiration.
 ## Forbidden phrases
 
 The exact literal phrases below (case-insensitive) never appear in shipped docs
-prose. `lint-docs-style.mjs` reads this list mechanically — keep every entry inside
-the fenced block below, one per line, nothing else in the block.
+prose. `apps/docs/scripts/lint-docs-style.mjs` reads this list mechanically — keep
+every entry inside the fenced block below, one per line, nothing else in the block.
 
 ```forbidden-phrases
 em dash
@@ -29,3 +29,9 @@ in today's world
   If a sentence reads better as a sentence, write a sentence.
 - **Never restate the question.** Answer directly; don't open a section by
   paraphrasing its own heading back at the reader.
+
+## Edited pages
+
+A prose page hand-edited since it was last generated is human-owned — routine
+doc-sync skips it silently rather than overwriting it. Run `/argo:docs-refresh`
+to review and optionally regenerate the edited set under this rule.

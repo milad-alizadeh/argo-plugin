@@ -1,5 +1,4 @@
 node_modules/
-.claude/tdd-guard/data/
 # Deny-by-default .argo/ block (same shape runInit seeds into host projects —
 # see GITIGNORE_BLOCK in packages/toolkit/src/config/argo-paths.ts): .argo/
 # also holds secrets/session-local files, so only the committed surfaces are
@@ -17,3 +16,11 @@ test/fixtures/*/.argo/
 # tarball via `files` + `prepublishOnly`. See kit-typescript-migration.md.
 packages/toolkit/dist/
 .claude/worktrees/
+
+# argo graphify — commit ONLY graph.json (the queryable structural graph);
+# ignore the analysis/manifest/cache bulk. Covers per-workspace graphify-out/.
+**/graphify-out/*
+!**/graphify-out/graph.json
+!**/graphify-out/graph.html
+!**/graphify-out/GRAPH_REPORT.md
+!**/graphify-out/.graphify_labels.json

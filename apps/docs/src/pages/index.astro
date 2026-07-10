@@ -1,0 +1,645 @@
+---
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+const docsUrl = `${BASE}/start-here/what-is-argo/`
+const githubUrl = 'https://github.com/milad-alizadeh/argo-plugin'
+
+const stages = [
+  { name: 'prd', label: 'PRD', desc: 'the durable what and why' },
+  { name: 'grill', label: 'grill', desc: 'interrogate the plan until it holds' },
+  { name: 'plan', label: 'plan', desc: 'sliced, checkable, queued' },
+  { name: 'build', label: 'test-first build', desc: 'red, then green, per slice' },
+  { name: 'review', label: 'review', desc: 'a reviewer that was not the builder' },
+  { name: 'land', label: 'land', desc: 'the integrator merges' },
+]
+const gates = [
+  'sign-off',
+  'plans check',
+  'red-proof + trust receipts',
+  'reviewer pass',
+  'integrator',
+]
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Argo, a gated way of working for Claude Code</title>
+    <meta
+      name="description"
+      content="A gated pipeline from PRD to shipped code for Claude Code: red-first TDD enforced by receipts, Figma-to-code with acceptance gates, six staged design playbooks."
+    />
+    <link rel="icon" href={`${BASE}/favicon.svg`} type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;650;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header class="nav">
+      <a class="wordmark" href={`${BASE}/`}>ARGO</a>
+      <nav class="nav-links">
+        <a href={docsUrl}>Docs</a>
+        <a href={githubUrl}>GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow">A way of working for Claude Code</p>
+        <h1>Nothing lands<br />on vibes.</h1>
+        <p class="lede">
+          Argo turns Claude Code into a gated pipeline. Every stage from PRD to merge
+          is owned by a skill or agent, and every seam between stages is guarded by a
+          mechanical gate that blocks the commit, not a prompt that asks nicely.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href={docsUrl}>Read the docs</a>
+          <a class="btn btn-ghost" href={githubUrl}>View on GitHub</a>
+        </div>
+
+        <div class="rail" id="rail" aria-label="The gated pipeline: PRD, grill, plan, test-first build, review, land">
+          {
+            stages.map((s, i) => (
+              <>
+                <div class="stage" data-stage={i}>
+                  <span class="stage-dot" />
+                  <span class="stage-label">{s.label}</span>
+                  <span class="stage-desc">{s.desc}</span>
+                </div>
+                {i < gates.length && (
+                  <div class="gate" data-gate={i}>
+                    <span class="gate-diamond" />
+                    <span class="gate-label">{gates[i]}</span>
+                  </div>
+                )}
+              </>
+            ))
+          }
+        </div>
+        <p class="rail-caption">
+          The gates are hooks, not narration. A stage that skipped its gate cannot
+          commit; the pipeline fails closed.
+        </p>
+      </section>
+
+      <section class="section reveal">
+        <div class="section-head">
+          <p class="eyebrow">Test-first, enforced</p>
+          <h2>The commit gate reads receipts, not promises.</h2>
+        </div>
+        <div class="split">
+          <div class="split-copy">
+            <p>
+              Probity guards every edit in the session: one new failing test per edit,
+              run red immediately before the implementation, minimal code to turn it
+              green. Refactors happen on green only.
+            </p>
+            <p>
+              Then the red-proof gate guards the commit itself. A slice lands only
+              with machine-checkable proof its test failed first and passes now: a
+              receipt with a non-zero red exit, a zero green exit, a timestamp newer
+              than HEAD, and the red test staged in the same commit. No receipt, no
+              commit, exit 2.
+            </p>
+            <p>
+              Gated builds add a trust gate on top: slices that require a launch need
+              a fresh receipt proving the code was actually exercised.
+            </p>
+          </div>
+          <div class="terminal" aria-label="A blocked commit under the red-proof gate">
+            <div class="terminal-bar">
+              <span class="tdot" /><span class="tdot" /><span class="tdot" />
+              <span class="terminal-title">gated build</span>
+            </div>
+            <pre><code><span class="t-prompt">$</span> git commit -m "feat(parser): handle empty input"
+<span class="t-red">Red-proof gate: BLOCKED</span> <span class="t-dim">no red-proof receipt for slice
+"parser-empty-input": run the test red, implement, run it
+green, write .argo/evidence/red-proof.json</span>
+<span class="t-dim">exit status 2</span>
+
+<span class="t-prompt">$</span> npx vitest run src/parser/empty-input.test.ts
+<span class="t-red"> FAIL </span> empty input returns an empty AST  <span class="t-dim">1 failed</span>
+<span class="t-prompt">$</span> npx vitest run src/parser/empty-input.test.ts
+<span class="t-green"> PASS </span> empty input returns an empty AST  <span class="t-dim">1 passed</span>
+
+<span class="t-prompt">$</span> git commit -m "feat(parser): handle empty input"
+<span class="t-green">[slice/parser 3f2c1d9]</span> feat(parser): handle empty input</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <div class="section-head">
+          <p class="eyebrow">Figma to code, honestly scoped</p>
+          <h2>One implemented recipe. Stated plainly.</h2>
+        </div>
+        <div class="split">
+          <div class="split-copy">
+            <p>
+              The design pack ships exactly one recipe today: <strong>shadcn-tailwind</strong>.
+              Not a matrix of logos, one recipe that works, with extension points
+              (audit checks, token writer, upgrade flow) for the next one.
+            </p>
+            <p>
+              It requires a Figma file on a <strong>Professional plan or higher</strong>.
+              Below Professional, variable collections are capped at one mode, and the
+              starter's theming model is modes on the file's local Semantic collection.
+              A deliberately single-theme project may proceed on a lower plan.
+            </p>
+            <p>
+              Generation is bidirectional: a design-to-code playbook reads committed
+              synced artifacts and generates through the test-first loop; a
+              code-to-design playbook pushes screens back into Figma. Generated code
+              passes tiered acceptance gates in order: spec-diff, then gestalt review,
+              then baseline commit.
+            </p>
+          </div>
+          <div class="matrix">
+            <div class="matrix-row">
+              <span class="matrix-key">Recipe</span>
+              <span class="matrix-val"><span class="chip chip-green">shadcn-tailwind</span> the one implemented recipe</span>
+            </div>
+            <div class="matrix-row">
+              <span class="matrix-key">Figma plan</span>
+              <span class="matrix-val">Professional or higher (multi-mode variable collections)</span>
+            </div>
+            <div class="matrix-row">
+              <span class="matrix-key">Directions</span>
+              <span class="matrix-val">design-to-code and code-to-design playbooks</span>
+            </div>
+            <div class="matrix-row">
+              <span class="matrix-key">Acceptance</span>
+              <span class="matrix-val">spec-diff <span class="arrow">&rarr;</span> gestalt <span class="arrow">&rarr;</span> baseline commit</span>
+            </div>
+            <div class="matrix-row">
+              <span class="matrix-key">Source of truth</span>
+              <span class="matrix-val">a duplicated starter file, all variables local</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <div class="section-head">
+          <p class="eyebrow">Design playbooks</p>
+          <h2>Six staged, gated flows on the Figma surface.</h2>
+        </div>
+        <ul class="ledger">
+          <li><span class="ledger-name">screen-create</span><span class="ledger-desc">build a hi-fi screen from its PRD, component-first</span></li>
+          <li><span class="ledger-name">screen-edit</span><span class="ledger-desc">amend an existing screen under the same audit</span></li>
+          <li><span class="ledger-name">component-create</span><span class="ledger-desc">new component with Semantic bindings and Auto Layout</span></li>
+          <li><span class="ledger-name">component-edit</span><span class="ledger-desc">edit a master, then self-audit before reporting done</span></li>
+          <li><span class="ledger-name">design-to-code</span><span class="ledger-desc">synced artifacts to code through the tiered gates</span></li>
+          <li><span class="ledger-name">code-to-design</span><span class="ledger-desc">push what shipped back into the design file</span></li>
+        </ul>
+        <p class="ledger-caption">
+          Every playbook ends in a gate: a hard design-rules audit for the Figma
+          surface, the acceptance tiers for code.
+        </p>
+      </section>
+
+      <section class="section reveal install">
+        <div class="section-head">
+          <p class="eyebrow">Install</p>
+          <h2>Three commands in Claude Code.</h2>
+        </div>
+        <div class="terminal terminal-install">
+          <div class="terminal-bar">
+            <span class="tdot" /><span class="tdot" /><span class="tdot" />
+            <span class="terminal-title">claude</span>
+          </div>
+          <pre><code><span class="t-prompt">&gt;</span> /plugin marketplace add milad-alizadeh/argo-plugin
+<span class="t-prompt">&gt;</span> /plugin install argo@argo
+<span class="t-prompt">&gt;</span> /argo:init</code></pre>
+        </div>
+        <p class="install-note">
+          Init detects your stack and adapts the rules to it: language, test runner,
+          styling system, monorepo layout. Never a fork of your project, never
+          imposed defaults.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href={docsUrl}>Start here</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span class="wordmark wordmark-small">ARGO</span>
+      <nav class="footer-links">
+        <a href={docsUrl}>Docs</a>
+        <a href={githubUrl}>GitHub</a>
+      </nav>
+    </footer>
+
+    <style>
+      :root {
+        --void: #0a0e15;
+        --slate: #151c2b;
+        --graphite: #1b2432;
+        --hairline: #263244;
+        --cloud: #b8cfe8;
+        --mist: #94b9e1;
+        --steel: #7d97ba;
+        --bright: #e6f0ff;
+        --pass: #56cf8c;
+        --blocked: #d6473a;
+        --attention: #e0a82e;
+        --font-display: 'Archivo', sans-serif;
+        --font-body: 'Instrument Sans', sans-serif;
+        --font-mono: 'IBM Plex Mono', monospace;
+        --measure: 62ch;
+      }
+      * { box-sizing: border-box; margin: 0; }
+      html { scroll-behavior: smooth; }
+      body {
+        background: var(--void);
+        color: var(--mist);
+        font-family: var(--font-body);
+        font-size: 1.0625rem;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; }
+      a:focus-visible, .btn:focus-visible {
+        outline: 2px solid var(--pass);
+        outline-offset: 3px;
+      }
+
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 76rem;
+        margin: 0 auto;
+        padding: 1.5rem 2rem;
+      }
+      .wordmark {
+        font-family: var(--font-mono);
+        font-weight: 600;
+        letter-spacing: 0.35em;
+        color: var(--bright);
+        text-decoration: none;
+        font-size: 0.95rem;
+      }
+      .nav-links a, .footer-links a {
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        color: var(--steel);
+        text-decoration: none;
+        margin-left: 1.75rem;
+        transition: color 0.15s;
+      }
+      .nav-links a:hover, .footer-links a:hover { color: var(--bright); }
+
+      .hero {
+        max-width: 76rem;
+        margin: 0 auto;
+        padding: 5rem 2rem 3rem;
+      }
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--steel);
+        margin-bottom: 1.25rem;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(2.8rem, 7.5vw, 5.5rem);
+        line-height: 1.02;
+        letter-spacing: -0.03em;
+        color: var(--bright);
+      }
+      .lede {
+        max-width: var(--measure);
+        margin-top: 1.75rem;
+        font-size: 1.2rem;
+        color: var(--cloud);
+      }
+      .cta-row { display: flex; gap: 1rem; margin-top: 2.25rem; flex-wrap: wrap; }
+      .btn {
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+      }
+      .btn-primary {
+        background: var(--cloud);
+        color: var(--void);
+        border: 1px solid var(--cloud);
+      }
+      .btn-primary:hover { background: var(--bright); border-color: var(--bright); }
+      .btn-ghost {
+        border: 1px solid var(--hairline);
+        color: var(--cloud);
+      }
+      .btn-ghost:hover { border-color: var(--steel); }
+
+      .rail {
+        display: flex;
+        align-items: flex-start;
+        margin-top: 5rem;
+        border: 1px solid var(--hairline);
+        border-radius: 12px;
+        background:
+          radial-gradient(ellipse 70% 45% at 50% 0%, rgba(230, 240, 255, 0.05) 0%, transparent 100%),
+          var(--slate);
+        padding: 2.5rem 2rem 2.25rem;
+        overflow-x: auto;
+      }
+      .stage {
+        flex: 1 1 0;
+        min-width: 7.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        opacity: 0.35;
+        transition: opacity 0.45s;
+      }
+      .stage.lit { opacity: 1; }
+      .stage-dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: var(--steel);
+        transition: background 0.3s, box-shadow 0.3s;
+      }
+      .stage.lit .stage-dot {
+        background: var(--pass);
+        box-shadow: 0 0 8px var(--pass);
+      }
+      .stage-label {
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--bright);
+        white-space: nowrap;
+      }
+      .stage-desc { font-size: 0.82rem; color: var(--steel); line-height: 1.45; }
+      .gate {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0 1rem;
+        margin-top: 1px;
+        opacity: 0.35;
+        transition: opacity 0.45s;
+      }
+      .gate.lit { opacity: 1; }
+      .gate-diamond {
+        width: 9px;
+        height: 9px;
+        transform: rotate(45deg);
+        border: 1.5px solid var(--steel);
+        transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+      }
+      .gate.lit .gate-diamond { border-color: var(--pass); }
+      .gate.blocked .gate-diamond {
+        border-color: var(--blocked);
+        background: var(--blocked);
+        box-shadow: 0 0 10px var(--blocked);
+      }
+      .gate.passed .gate-diamond {
+        border-color: var(--pass);
+        background: var(--pass);
+        box-shadow: 0 0 8px var(--pass);
+      }
+      .gate-label {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--steel);
+        white-space: nowrap;
+      }
+      .gate.blocked .gate-label { color: var(--blocked); }
+      .gate.blocked .gate-label::after { content: ' / blocked'; }
+      .gate.passed .gate-label { color: var(--pass); }
+      .rail-caption {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: var(--steel);
+        max-width: var(--measure);
+      }
+
+      .section {
+        max-width: 76rem;
+        margin: 0 auto;
+        padding: 6rem 2rem 0;
+      }
+      .section-head { margin-bottom: 2.5rem; }
+      h2 {
+        font-family: var(--font-display);
+        font-weight: 650;
+        font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+        letter-spacing: -0.02em;
+        line-height: 1.12;
+        color: var(--bright);
+        max-width: 30ch;
+      }
+      .split {
+        display: grid;
+        grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+        gap: 3rem;
+        align-items: start;
+      }
+      .split-copy p { max-width: var(--measure); }
+      .split-copy p + p { margin-top: 1.1rem; }
+      .split-copy strong { color: var(--bright); font-weight: 600; }
+
+      .terminal {
+        background: #05070b;
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 14px 42px rgba(0, 0, 0, 0.46);
+      }
+      .terminal-bar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0.6rem 0.9rem;
+        background: var(--graphite);
+        border-bottom: 1px solid var(--hairline);
+      }
+      .tdot { width: 10px; height: 10px; border-radius: 50%; background: #2f3846; }
+      .terminal-title {
+        margin-left: 0.6rem;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--steel);
+      }
+      .terminal pre {
+        padding: 1.25rem 1.4rem;
+        overflow-x: auto;
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        line-height: 1.75;
+        color: var(--cloud);
+      }
+      .t-prompt { color: var(--steel); }
+      .t-red { color: var(--blocked); font-weight: 600; }
+      .t-green { color: var(--pass); font-weight: 600; }
+      .t-dim { color: var(--steel); }
+
+      .matrix {
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        background: var(--slate);
+        overflow: hidden;
+      }
+      .matrix-row {
+        display: grid;
+        grid-template-columns: 9.5rem 1fr;
+        gap: 1rem;
+        padding: 1rem 1.4rem;
+      }
+      .matrix-row + .matrix-row { border-top: 1px solid var(--hairline); }
+      .matrix-key {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--steel);
+        padding-top: 0.2rem;
+      }
+      .matrix-val { font-size: 0.95rem; color: var(--cloud); }
+      .arrow { color: var(--steel); }
+      .chip {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        padding: 0.15rem 0.55rem;
+        border-radius: 6px;
+        margin-right: 0.5rem;
+        white-space: nowrap;
+      }
+      .chip-green {
+        color: var(--pass);
+        border: 1px solid rgba(86, 207, 140, 0.35);
+        background: rgba(86, 207, 140, 0.08);
+      }
+
+      .ledger { list-style: none; padding: 0; border-top: 1px solid var(--hairline); }
+      .ledger li {
+        display: grid;
+        grid-template-columns: 15rem 1fr;
+        gap: 1.5rem;
+        padding: 1.05rem 0.25rem;
+        border-bottom: 1px solid var(--hairline);
+        transition: background 0.15s;
+      }
+      .ledger li:hover { background: rgba(255, 255, 255, 0.03); }
+      .ledger-name {
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--bright);
+      }
+      .ledger-desc { color: var(--mist); font-size: 0.98rem; }
+      .ledger-caption { margin-top: 1.25rem; font-size: 0.9rem; color: var(--steel); max-width: var(--measure); }
+
+      .install { padding-bottom: 2rem; }
+      .terminal-install { max-width: 46rem; }
+      .terminal-install pre { font-size: 0.95rem; }
+      .install-note { margin-top: 1.5rem; max-width: var(--measure); }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 76rem;
+        margin: 5rem auto 0;
+        padding: 2rem;
+        border-top: 1px solid var(--hairline);
+      }
+      .wordmark-small { font-size: 0.8rem; color: var(--steel); }
+
+      .reveal {
+        opacity: 0;
+        transform: translateY(18px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+      }
+      .reveal.shown { opacity: 1; transform: none; }
+
+      @media (max-width: 900px) {
+        .split { grid-template-columns: 1fr; }
+        .rail { flex-direction: column; gap: 1.4rem; padding: 2rem 1.5rem; }
+        .stage { min-width: 0; }
+        .gate { flex-direction: row; padding: 0; }
+        .gate-diamond { flex: 0 0 auto; }
+        .ledger li { grid-template-columns: 1fr; gap: 0.25rem; }
+        .hero { padding-top: 3.5rem; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        .reveal { opacity: 1; transform: none; transition: none; }
+        .stage, .gate, .stage-dot, .gate-diamond { transition: none; }
+      }
+    </style>
+
+    <script>
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+      const stages = Array.from(document.querySelectorAll('.stage'))
+      const gates = Array.from(document.querySelectorAll('.gate'))
+
+      function lightAll() {
+        stages.forEach((s) => s.classList.add('lit'))
+        gates.forEach((g) => g.classList.add('lit', 'passed'))
+      }
+
+      if (reduced) {
+        lightAll()
+        document.querySelectorAll('.reveal').forEach((el) => el.classList.add('shown'))
+      } else {
+        let t = 400
+        stages.forEach((stage, i) => {
+          setTimeout(() => stage.classList.add('lit'), t)
+          t += 260
+          const gate = gates[i]
+          if (!gate) return
+          const at = t
+          if (i === gates.length - 1) {
+            setTimeout(() => gate.classList.add('lit', 'blocked'), at)
+            setTimeout(() => {
+              gate.classList.remove('blocked')
+              gate.classList.add('passed')
+            }, at + 900)
+            t += 1100
+          } else {
+            setTimeout(() => gate.classList.add('lit', 'passed'), at)
+            t += 260
+          }
+        })
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('shown')
+                observer.unobserve(entry.target)
+              }
+            })
+          },
+          { threshold: 0.12 }
+        )
+        document.querySelectorAll('.reveal').forEach((el) => observer.observe(el))
+      }
+    </script>
+  </body>
+</html>

@@ -2,31 +2,16 @@
  * Canonical design-rules Figma hygiene audit — the one copy of this logic;
  * every caller shares it. A thin Plugin-API walker: marshals live `figma.*`
  * node/variable objects into plain-object shapes and delegates the actual
- * rule logic to this package's unit-tested pure functions.
- *
- * Every project-specific value (Semantic collection name, the recipe
- * extension point below) arrives through `options` at call time, never
+ * rule logic to this package's unit-tested pure functions. Every
+ * project-specific value arrives through `options` at call time, never
  * through a splice/placeholder step baked into a committed copy.
- *
- * `options.runRecipeDesignRulesChecks(node, { hard })` — recipe-owned per-node
- * checks. Omit for a recipe with no checks; the guarded call below no-ops.
- *
- * Universal per-node a11y/overflow checks (hug-overflow, touch-target, WCAG
- * text contrast) run on every audited node, no role tags or category config.
- * The contrast check resolves a text node's background deterministically
- * (nearest fully-opaque solid ancestor fill) and skips when it can't, never
- * guesses.
  *
  * Reports violations as { severity: 'hard' | 'advisory', rule, nodeId, nodeName, detail }.
  * `hard` fails the calling skill loud; `advisory` surfaces on a file-wide
- * sweep but doesn't block.
- *
- * Cannot be unit-tested outside Figma's Plugin API sandbox; the
- * options-passing plumbing around it is tested separately.
- *
- * Runs exclusively inside Figma's `use_figma` Plugin API sandbox, where
- * `figma` is a runtime global — declared `any` locally, matching the
- * pragmatic typing used throughout this package's Figma node/variable shapes.
+ * sweep but doesn't block. Cannot be unit-tested outside Figma's Plugin API
+ * sandbox; the options-passing plumbing around it is tested separately.
+ * `figma` is a runtime global here — declared `any` locally, matching the
+ * pragmatic typing used throughout this package's node/variable shapes.
  */
 declare const figma: any
 
@@ -477,7 +462,7 @@ export async function runDesignRulesAudit(
     }
 
     // Name-resolution fallback (ONLY for a target with no registry nodeId —
-    // e.g. a foundation frame/SCREEN never entered into design/registry.json).
+    // e.g. a foundation frame/SCREEN never entered into the registry).
     // A name lookup resolves TO a nodeId here, confirmed by requiring an
     // UNAMBIGUOUS single match — never a blind multi-node sweep, which is
     // exactly the bug this fallback must not reintroduce.
@@ -503,14 +488,11 @@ export async function runDesignRulesAudit(
     }
   } else if (pageId) {
     // Legacy single-page whole-page walk — explicit opt-in only, reachable
-    // ONLY when a caller passes `pageId` (D25, 2026-07-08). This is no
-    // longer reachable as a silent fallback: the scoped-sweep branch below
-    // is now the sole default whenever neither a named audit nor `pageId` is
-    // requested, so an empty/misconfigured `sweepNodeIds`/`sweepPageNames`
-    // can never accidentally degrade into a whole-file walk (council-review
-    // finding, 2026-07-08 — the previous `else if (sweepNodeIds.length ||
-    // sweepPageNames.length) ... else { legacy }` gate silently fell through
-    // to this branch whenever both scoped inputs resolved empty).
+    // ONLY when a caller passes `pageId`. This is no longer reachable as a
+    // silent fallback: the scoped-sweep branch below is now the sole default
+    // whenever neither a named audit nor `pageId` is requested, so an
+    // empty/misconfigured `sweepNodeIds`/`sweepPageNames` can never
+    // accidentally degrade into a whole-file walk.
     const page = await figma.getNodeByIdAsync(pageId)
     if (page && !isCoverPageName(page.name)) {
       await figma.setCurrentPageAsync(page)
@@ -534,29 +516,24 @@ export async function runDesignRulesAudit(
       }
     }
   } else {
-    // Scoped sweep (D26, 2026-07-08) — the sole DEFAULT file-wide sweep path
-    // now: every registry-listed component (`sweepNodeIds`, derived by
-    // `prepare-design-rules-audit-options.js` from ALL of `design/registry.json` —
-    // kit or custom, no exemption) plus every composed-screen page. A page
-    // is in scope when it matches the project's real `D<NN> <group>` screen
-    // convention (`isDesignPageName`, file-structure.md) OR is explicitly
-    // named in `sweepPageNames` (additive — e.g. a project with a literal
-    // "Screens" catch-all page, or any other non-`D<NN>` convention it wants
-    // included). Matching by `isDesignPageName` unconditionally (not gating
-    // the whole branch on `sweepPageNames` being non-empty) fixes a council-
-    // review finding: the earlier default `sweepPageNames: ['Screens']`
-    // matched a literal page named "Screens", which does not exist in this
-    // project's convention of one page per screen (`D01 Onboarding`, `D02
-    // Home`, ...) — so the "screens" half of the sweep silently matched zero
-    // pages. Kit primitive pages, demo/example pages, and icon libraries
-    // stay out of scope: almost entirely stock content nobody in the project
-    // touched, and on a 50+ page file, large enough to risk the `use_figma`
-    // transport's size/time budget in one whole-file walk (the exact
-    // failure this scoping also incidentally fixes, by shrinking the walked
-    // surface rather than chunking it). `loadAllPagesAsync` resolves every
-    // `sweepNodeIds` entry regardless of which page it lives on without
-    // ever switching `figma.currentPage` — so this can audit the whole
-    // scoped surface in ONE `use_figma` call.
+    // Scoped sweep — the sole DEFAULT file-wide sweep path now: every
+    // registry-listed component (`sweepNodeIds`, kit or custom, no exemption)
+    // plus every composed-screen page. A page is in scope when it matches the
+    // project's real `D<NN> <group>` screen convention (`isDesignPageName`)
+    // OR is explicitly named in `sweepPageNames` (additive — e.g. a project
+    // with a literal "Screens" catch-all page, or any other non-`D<NN>`
+    // convention it wants included). Matching by `isDesignPageName`
+    // unconditionally (not gating the whole branch on `sweepPageNames` being
+    // non-empty) avoids a default `sweepPageNames: ['Screens']` silently
+    // matching zero pages on a project whose convention is one page per
+    // screen (`D01 Onboarding`, `D02 Home`, ...). Kit primitive pages,
+    // demo/example pages, and icon libraries stay out of scope: almost
+    // entirely stock content nobody in the project touched, and on a 50+ page
+    // file, large enough to risk the `use_figma` transport's size/time budget
+    // in one whole-file walk. `loadAllPagesAsync` resolves every
+    // `sweepNodeIds` entry regardless of which page it lives on without ever
+    // switching `figma.currentPage` — so this can audit the whole scoped
+    // surface in ONE `use_figma` call.
     try {
       await figma.loadAllPagesAsync()
     } catch {

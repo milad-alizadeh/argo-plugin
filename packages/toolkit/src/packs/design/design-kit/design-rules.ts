@@ -1,20 +1,15 @@
 /**
- * Design-rules mechanism rules (figma-to-code-pipeline.md §5 tier 0), extracted from
- * templates/design/design-rules-audit.js into pure predicate functions over plain-object
+ * Design-rules mechanism rules, extracted into pure predicate functions over plain-object
  * node/variable shapes — no `figma.*` calls, so these are unit-testable outside
- * Figma's Plugin API sandbox. The recipe-owned rules (non-semantic-binding,
- * retired-file-key-binding, kit-patches-conformance) live in the sibling
- * `figma-design-kit-shadcn-tailwind` package, not here (D23).
+ * Figma's Plugin API sandbox. Recipe-owned rules live in their own recipe package, not here.
  *
  * Each function returns a violation object `{ rule, detail }` (or an array of
  * them, for checks that can fire more than once per node), or `null`/`[]` when
  * the node passes. Callers (the Plugin-API walker) attach severity/nodeId/
  * nodeName, which depend on audit context, not rule logic.
  *
- * Node/variable shapes here are walker-marshaled plain objects mirroring a
- * subset of Figma's Plugin API node fields, not a modeled Figma type — kept
- * as `any`-keyed records deliberately (this migration adds compile-time
- * typing to the module's own logic, not a full Figma domain model).
+ * Node/variable shapes here are walker-marshaled plain objects, kept as `any`-keyed
+ * records deliberately — this is not a full Figma domain model.
  */
 
 import { rgb as wcagContrastRatio } from 'wcag-contrast'
@@ -23,10 +18,7 @@ export type Violation = { rule: string; detail: string }
 type AnyNode = Record<string, any>
 
 export function unboundFillViolations(node: AnyNode): Violation[] {
-  // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
-  // kit internals bind the kit's own color collections — not ours to
-  // rebind; flagging them made a pristine kit instance (e.g. Switch) fail
-  // the hard gate on its own internal frames.
+  // Kit internals bind the kit's own color collections — not ours to rebind.
   if (node.insideInstance) return []
   const violations: Violation[] = []
   if ('fills' in node && Array.isArray(node.fills)) {
@@ -40,9 +32,7 @@ export function unboundFillViolations(node: AnyNode): Violation[] {
 }
 
 export function unboundStrokeViolations(node: AnyNode): Violation[] {
-  // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
-  // kit internals bind the kit's own color collections — not ours to
-  // rebind; see unboundFillViolations for the same reasoning.
+  // Kit internals bind the kit's own color collections — not ours to rebind.
   if (node.insideInstance) return []
   const violations: Violation[] = []
   if ('strokes' in node && Array.isArray(node.strokes)) {
@@ -59,18 +49,14 @@ const PER_CORNER_RADIUS_FIELDS = ['topLeftRadius', 'topRightRadius', 'bottomLeft
 
 /**
  * A `cornerRadius` of 0 (or absent) carries no radius design intent, so it's
- * never flagged — every plain frame defaults to 0. A radius counts as bound
- * either via the uniform `boundVariables.cornerRadius`, or via all four
- * per-corner fields being bound (the only bindable radius fields on many
- * node types) — fix: 2026-07, closed a 71-hit false-positive class. A
- * COMPONENT_SET container node is skipped entirely: Figma gives every
- * combineAsVariants container a default cornerRadius of 5 (the purple
- * dashed editor chrome), which is not a design surface and can't
- * meaningfully bind a token.
+ * never flagged. A radius counts as bound either via the uniform
+ * `boundVariables.cornerRadius`, or via all four per-corner fields being bound.
+ * A COMPONENT_SET container is skipped entirely: Figma gives every
+ * combineAsVariants container a default cornerRadius of 5 (the purple dashed
+ * editor chrome), not a design surface and not bindable to a token.
  */
 export function unboundRadiusViolation(node: AnyNode): Violation | null {
-  // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
-  // kit internals bind the kit's own radius collections — not ours to rebind.
+  // Kit internals bind the kit's own radius collections — not ours to rebind.
   if (node.insideInstance) return null
   if (node.type === 'COMPONENT_SET') return null
   if (!('cornerRadius' in node) || typeof node.cornerRadius !== 'number' || node.cornerRadius === 0) return null
@@ -85,15 +71,12 @@ export function unboundRadiusViolation(node: AnyNode): Violation | null {
  * Requires a text node to carry a defined shared text style (a preset from
  * the type ramp) — a raw `fontSize`/`lineHeight` variable binding is NOT
  * sufficient. A preset text style bundles size, line-height, weight and
- * letter-spacing as one reusable decision, so authoring against the ramp
- * (rather than picking scale tokens à la carte) is what keeps typography
- * consistent (owner mandate, 2026-07-08). `textStyleId` is `figma.mixed`
- * (an object) when mixed across a range, and `''` when unset, so only a
- * non-empty string counts as "styled".
+ * letter-spacing as one reusable decision, keeping typography consistent.
+ * `textStyleId` is `figma.mixed` (an object) when mixed across a range, and
+ * `''` when unset, so only a non-empty string counts as "styled".
  */
 export function textStyleRequiredViolation(node: AnyNode): Violation | null {
-  // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
-  // kit internals carry the kit's own text styling — not ours to restyle.
+  // Kit internals carry the kit's own text styling — not ours to restyle.
   if (node.insideInstance) return null
   if (!('fontName' in node)) return null
   const hasTextStyle = typeof node.textStyleId === 'string' && node.textStyleId !== ''
@@ -133,29 +116,26 @@ export function textTruncationViolation(node: AnyNode): Violation | null {
 const NAMED_AUDIT_TARGET_TYPES = new Set(['COMPONENT', 'COMPONENT_SET', 'FRAME', 'SECTION'])
 
 /**
- * Named-component audit matching predicate (figma-audit's hard-gate mode).
- * A named audit must be able to target SCREENS and foundation frames, not
- * only components — those are FRAME/SECTION nodes, which a
- * COMPONENT/COMPONENT_SET-only match silently misses (fix: 2026-07, closed
- * a false-pass where a named audit of a frame returned zero matches instead
- * of walking it).
+ * Named audit matching predicate. A named audit must be able to target
+ * SCREENS and foundation frames, not only components — those are
+ * FRAME/SECTION nodes, which a COMPONENT/COMPONENT_SET-only match would
+ * silently miss.
  */
 export function isNamedAuditTarget(node: AnyNode, name: string): boolean {
   return node.name === name && NAMED_AUDIT_TARGET_TYPES.has(node.type)
 }
 
 /**
- * Cover-page exemption: the `Cover` page (the design-language legend,
- * file-structure.md page 1) is never code-synced. Nodes on it produce zero
- * design-rules violations at every severity — unbound fills/strokes there are
- * expected, not a defect.
+ * Cover-page exemption: the `Cover` page (the design-language legend) is never
+ * code-synced. Nodes on it produce zero design-rules violations at every
+ * severity — unbound fills/strokes there are expected, not a defect.
  */
 export function isCoverPageName(name: string): boolean {
   return name === 'Cover'
 }
 
 /**
- * Hi-fi screen page naming (file-structure.md `D<NN> <group>`). Used to gate the
+ * Hi-fi screen page naming (`D<NN> <group>`). Used to gate the
  * screen-viewport-mismatch check to top-level screen frames only, never
  * component-definition frames on Custom Components.
  */
@@ -165,15 +145,12 @@ export function isDesignPageName(name: string): boolean {
 
 /**
  * A screen's top-level frame must exactly match the project's canonical
- * viewport (opt-in via `design.<app>.viewport` in .argo/config.json;
- * skipped entirely when unconfigured, non-breaking for a project that
- * hasn't set it). `isScreenFrame` is marshaled by the walker: true only
- * for the top-level node of a walk whose owning page matches
- * isDesignPageName, never for a descendant, and never for a
- * component-definition frame on Custom Components. Catches a screen that
- * ships at the wrong height (e.g. 1440x1120 instead of a project's
- * 1440x900) because the canvas was grown to fit content instead of
- * fitting content into the canvas.
+ * viewport (opt-in config; skipped entirely when unconfigured, non-breaking
+ * for a project that hasn't set it). `isScreenFrame` is marshaled by the
+ * walker: true only for the top-level node of a walk whose owning page
+ * matches isDesignPageName, never for a descendant or a component-definition
+ * frame. Catches a screen that ships at the wrong height because the canvas
+ * was grown to fit content instead of fitting content into the canvas.
  */
 export function screenViewportMismatchViolation(
   node: AnyNode,
@@ -188,33 +165,25 @@ export function screenViewportMismatchViolation(
 }
 
 export function missingAutoLayoutViolation(node: AnyNode): Violation | null {
-  // Nodes inside a library instance are exempt (2026-07-05, live D01 build):
-  // kit internals structure their own layout — not ours to Auto-Layout.
+  // Kit internals structure their own layout — not ours to Auto-Layout.
   if (node.insideInstance) return null
   // A registered screen's own top-level artboard is exempt: a 1440x900 screen
-  // frame is a fixed canvas, not a stacked-content container, and its
-  // documented ABSOLUTE-children carve-out is structurally unreachable
-  // (layoutPositioning='ABSOLUTE' requires the parent's layoutMode!=='NONE').
-  // isScreenFrame is set from registry membership by the walker, frame-only —
-  // descendants are still gated.
+  // frame is a fixed canvas, not a stacked-content container. isScreenFrame is
+  // set from registry membership by the walker, frame-only — descendants are
+  // still gated.
   if (node.isScreenFrame) return null
-  // INSTANCE nodes are exempt (revised 2026-07-05): an instance's layoutMode
-  // mirrors its main component — locally-authored components are already
-  // audited at their definition, and kit-library instances (single-vector
-  // icon leaves especially) structurally cannot have Auto Layout enabled on
-  // the instance. Flagging them forced authors to detach kit instances to
-  // pass the gate, losing swap/update propagation.
+  // An instance's layoutMode mirrors its main component — locally-authored
+  // components are already audited at their definition, and kit-library
+  // instances (single-vector icon leaves especially) structurally cannot have
+  // Auto Layout enabled on the instance. Flagging them forced authors to
+  // detach kit instances to pass the gate, losing swap/update propagation.
   if ((node.type === 'FRAME' || node.type === 'COMPONENT') && node.layoutMode === 'NONE') {
-    // Absolute-canvas exemption: a frame whose children are ALL absolutely
-    // positioned (a deliberate backdrop / orb-scene / overlay layer) gains
-    // nothing from Auto Layout — it is a no-op on all-absolute children, so
-    // requiring it is rigidity, not hygiene. An empty or non-absolute-child
-    // frame is unaffected, so normal stacked content still flags (keeping the
-    // D24 gap/padding-token leverage intact).
+    // A frame whose children are ALL absolutely positioned (a deliberate
+    // backdrop / orb-scene / overlay layer) gains nothing from Auto Layout —
+    // requiring it there is rigidity, not hygiene.
     const children: AnyNode[] = node.children ?? []
-    // Zero-child exemption (StatusDot false positive, 2026-07-07): a leaf
-    // shape has nothing to lay out — explicit, not implied via .every()'s
-    // vacuous pass, so the intent survives edits to the absolute-canvas check.
+    // Explicit zero-child check, not implied via .every()'s vacuous pass — a
+    // leaf shape has nothing to lay out.
     if (children.length === 0) return null
     if (children.every((c) => c?.layoutPositioning === 'ABSOLUTE')) return null
     return { rule: 'missing-auto-layout', detail: 'frame-like node has no Auto Layout' }
@@ -223,18 +192,15 @@ export function missingAutoLayoutViolation(node: AnyNode): Violation | null {
 }
 
 /**
- * Advisory (task ask: "advisory first, promote later"). Flags a child
- * whose absoluteBoundingBox extends past its parent's while the parent
- * has clipsContent disabled, e.g. a progress-segment row overflowing its
- * card's right edge can ship past every other gate this way. Uses
- * absoluteBoundingBox (the layout box), never
- * absoluteRenderBounds (which pads for shadows/blurs/effects), a drop
- * shadow bleeding past a card's edge is expected and must not false-
- * positive here. A child with layoutPositioning ABSOLUTE is exempt, same
- * carve-out as missingAutoLayoutViolation's absolute-canvas exemption:
- * a deliberately absolutely-positioned decorative child (e.g. a TreeNode
- * connector rail) legitimately extends past its parent in some designs,
- * and is a design choice, not a defect.
+ * Advisory. Flags a child whose absoluteBoundingBox extends past its
+ * parent's while the parent has clipsContent disabled — e.g. a
+ * progress-segment row overflowing its card's right edge can ship past
+ * every other gate this way. Uses absoluteBoundingBox (the layout box),
+ * never absoluteRenderBounds (which pads for shadows/blurs/effects) — a drop
+ * shadow bleeding past a card's edge is expected and must not
+ * false-positive here. A child with layoutPositioning ABSOLUTE is exempt: a
+ * deliberately absolutely-positioned decorative child legitimately extends
+ * past its parent in some designs, and is a design choice, not a defect.
  */
 export function unclippedOverflowViolations(node: AnyNode): Violation[] {
   if (node.clipsContent !== false) return []
@@ -270,24 +236,19 @@ export function handDrawnIconViolation(node: AnyNode): Violation | null {
 }
 
 /**
- * Kit components are used AS-IS (R10 denylist reframe, 2026-07-05): a
- * DENYLIST of the specific illegal edits a user named, not an allowlist.
- * The allowlist form (`ALLOWED_KIT_INSTANCE_OVERRIDES`) needed emergency
- * same-day growth to add `characters` + `styledTextSegments` — a hard gate's
- * false-positive/false-negative costs are asymmetric (detach-and-edit-icons
- * vs. one visual-review catch), so it fails OPEN: an override outside this
- * list (e.g. `rotation`, `boundVariables`) passes, and only vector geometry,
- * the cornerRadius family, and `effects` hard-fail here.
+ * Kit components are used AS-IS: a DENYLIST of the specific illegal edits, not
+ * an allowlist — a hard gate's false-positive/false-negative costs are
+ * asymmetric (detach-and-edit-icons vs. one visual-review catch), so it fails
+ * OPEN: an override outside this list (e.g. `rotation`, `boundVariables`)
+ * passes, and only vector geometry, the cornerRadius family, and `effects`
+ * hard-fail here.
  *
- * CARVE-OUT (live-file correction, 2026-07-05): `strokeWeight` (and its
- * per-side/join/cap siblings) is deliberately NOT in this denylist. Figma
- * records a proportional icon rescale — the sanctioned fix for the R6/NEW-3
- * stroke-distortion gotcha — as a `strokeWeight` override on the instance;
- * a live library carries that override on every correctly-rescaled
- * icon. Denying it unconditionally would hard-fail every correctly-rescaled
- * icon, recreating the exact false-positive disaster R10 exists to prevent.
- * strokeWeight legality is owned solely by `strokeScaleViolation` (NEW-3)'s
- * proportionality check, never this override list.
+ * `strokeWeight` (and its per-side/join/cap siblings) is deliberately NOT in
+ * this denylist. Figma records a proportional icon rescale as a
+ * `strokeWeight` override on the instance; a live library carries that
+ * override on every correctly-rescaled icon. Denying it unconditionally would
+ * hard-fail every correctly-rescaled icon. strokeWeight legality is owned
+ * solely by `strokeScaleViolation`'s proportionality check, never this list.
  *
  * The walker marshals `isRemoteInstance` from getMainComponentAsync().remote
  * and `overriddenFields` from InstanceNode.overrides.
@@ -359,20 +320,18 @@ export function nonSemanticNameViolation(node: AnyNode): Violation | null {
   if (/^(Frame|Group|Rectangle|Ellipse|Text|Vector)\s?\d*$/.test(node.name)) {
     return { rule: 'non-semantic-name', detail: `node name "${node.name}" looks auto-generated, not semantic` }
   }
-  // A top-level screen frame carries a human-facing, page-style name
-  // (file-structure.md's screen convention) and is addressed by a CLI slug,
-  // never consumed as a code identifier — so the code-friendly-name predicate
-  // below must not fire on the screen frame's own name. isScreenFrame is set
-  // only for the frame itself (see the walker); descendant containers are
-  // still gated as normal.
+  // A top-level screen frame carries a human-facing, page-style name and is
+  // addressed by a CLI slug, never consumed as a code identifier — so the
+  // code-friendly-name predicate below must not fire on the screen frame's
+  // own name. isScreenFrame is set only for the frame itself; descendant
+  // containers are still gated as normal.
   if (node.isScreenFrame) return null
-  // Code-friendly naming (owner mandate 2026-07-08): structural containers must
-  // carry a role name figma-to-code can map to an identifier. Scoped to
-  // FRAME/GROUP — a TEXT layer's name is usually its content ("@@ -35 +35 @@",
-  // a file path), and icon INSTANCEs carry kit names, so neither is ours to
-  // gate here. Advisory in a file-wide sweep, hard on a named audit (the
-  // report() caller assigns severity), so authoring a component with a vague
-  // layer name fails loud while an untouched design only gets a nudge.
+  // Structural containers must carry a role name figma-to-code can map to an
+  // identifier. Scoped to FRAME/GROUP — a TEXT layer's name is usually its
+  // content, and icon INSTANCEs carry kit names, so neither is ours to gate
+  // here. Advisory in a file-wide sweep, hard on a named audit (the report()
+  // caller assigns severity), so authoring a component with a vague layer
+  // name fails loud while an untouched design only gets a nudge.
   if (node.type === 'FRAME' || node.type === 'GROUP') {
     const trimmed = node.name.trim()
     if (GENERIC_LAYER_NAMES.has(trimmed.toLowerCase())) {
@@ -405,11 +364,10 @@ export function variantNamingViolations(node: AnyNode): Violation[] {
 }
 
 /**
- * Style-hygiene advisory (owner mandate, 2026-07-07): authored copy never
- * carries an em dash. Inspects TEXT.characters only — layer/component names
- * are naming-convention territory (nonSemanticNameViolation), not copy.
- * `—` spelled as an escape so the character can't be silently
- * normalized away by an editor touching this file.
+ * Style-hygiene advisory: authored copy never carries an em dash. Inspects
+ * TEXT.characters only — layer/component names are naming-convention
+ * territory, not copy. `—` spelled as an escape so the character can't be
+ * silently normalized away by an editor touching this file.
  */
 export function emDashViolation(node: AnyNode): Violation | null {
   if (node.type === 'TEXT' && typeof node.characters === 'string' && node.characters.includes('\u2014')) {
@@ -433,30 +391,18 @@ export function storyUrlScopeViolation(node: AnyNode): Violation | null {
   return null
 }
 
-/**
- * Collection membership is resolved by the walker; this function is pure over
- * the marshaled shape (D24, revised 2026-07-05). The single legal state for a
- * non-zero gap/padding field: bound to a spacing variable in the Primitives or
- * Semantic collection. Unbound literals — on-scale or not — are violations:
- * binding makes off-scale unrepresentable (you can only bind a token that
- * exists) and leaves exactly one authoring convention, so files can't drift
- * into a bound-here-literal-there mix. COMPONENT_SET containers are skipped —
- * their gap/padding is Figma's variant-grid chrome, not a design value.
- */
 const STROKE_SCALE_TOLERANCE = 0.15
 
 /**
- * NEW-3 (promoted out of R6/R3, 2026-07-05): flags an icon-like remote
- * instance (a lucide icon — a 24x24 frame wrapping one VECTOR at
- * strokeWeight 2, per the observed live shape) whose resolved strokeWeight
- * doesn't track its rescale ratio — the walker marshals the plain shape
- * `{ instanceSize, nativeSize, resolvedStrokeWeight, baseStrokeWeight }`
- * (icon-like = a remote instance whose main component is a single-VECTOR
- * component). The ratio only holds when the instance was rescaled
- * proportionally (Figma's sanctioned "Scale" tool on the instance); a
- * width/height-only resize leaves the original stroke weight in place,
- * producing a visually chunky/thin glyph (#4). ±15% tolerance absorbs
- * legitimate rounding to a whole-pixel stroke weight.
+ * Flags an icon-like remote instance (a lucide icon — a 24x24 frame wrapping
+ * one VECTOR at strokeWeight 2, per the observed live shape) whose resolved
+ * strokeWeight doesn't track its rescale ratio — the walker marshals the
+ * plain shape `{ instanceSize, nativeSize, resolvedStrokeWeight,
+ * baseStrokeWeight }`. The ratio only holds when the instance was rescaled
+ * proportionally (Figma's sanctioned "Scale" tool); a width/height-only
+ * resize leaves the original stroke weight in place, producing a visually
+ * chunky/thin glyph. ±15% tolerance absorbs legitimate rounding to a
+ * whole-pixel stroke weight.
  */
 export function strokeScaleViolation({
   instanceSize,
@@ -483,13 +429,12 @@ export function strokeScaleViolation({
 }
 
 /**
- * R8 mechanical false-positive discriminator: a violation on a node that
- * resolves to a kit main component (a remote instance, or a node inside
- * one) whose only overrides are size/fill/stroke is presumptively a GATE
- * BUG, not a real hygiene defect — the designer never touched anything else
- * on that node. Tagging is mechanical (never self-graded by the agent
- * reporting it), and does NOT license detaching or editing kit internals
- * (agents/designer.md ICONS section states that loudly).
+ * Mechanical false-positive discriminator: a violation on a node that
+ * resolves to a kit main component (a remote instance, or a node inside one)
+ * whose only overrides are size/fill/stroke is presumptively a GATE BUG, not
+ * a real hygiene defect — the designer never touched anything else on that
+ * node. Tagging is mechanical (never self-graded by the agent reporting it),
+ * and does NOT license detaching or editing kit internals.
  */
 const POSSIBLE_FALSE_POSITIVE_OVERRIDE_FIELDS = ['width', 'height', 'fills', 'strokes', 'fillStyleId', 'strokeStyleId']
 
@@ -501,13 +446,13 @@ export function possibleGateFalsePositiveTag(node: AnyNode): boolean {
 }
 
 /**
- * design-memory-placement.md Mechanism 1: advisory-only reconciliation for a
- * component that isn't a child of any category shelf frame on
- * `Custom Components` — a human manually rearranged it, or an agent placed
- * it directly on the page instead of `appendChild`-ing to the resolved
- * shelf. Never blocks — self-corrects on the next design-component upsert.
- * `insideCategoryShelf` is marshaled by the walker from the node's parent
- * chain against the configured `componentCategories` shelf frames.
+ * Advisory-only reconciliation for a component that isn't a child of any
+ * category shelf frame on `Custom Components` — a human manually rearranged
+ * it, or an agent placed it directly on the page instead of `appendChild`-ing
+ * to the resolved shelf. Never blocks — self-corrects on the next
+ * design-component upsert. `insideCategoryShelf` is marshaled by the walker
+ * from the node's parent chain against the configured `componentCategories`
+ * shelf frames.
  */
 export function unsectionedComponentViolation(node: AnyNode): Violation | null {
   if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return null
@@ -518,12 +463,11 @@ export function unsectionedComponentViolation(node: AnyNode): Violation | null {
   }
 }
 
-/** Mechanism 3: a component with no description misses the one place in-file facts (purpose + usage) can't drift. Advisory on the file-wide sweep, hard on a named audit. */
+/** A component with no description misses the one place in-file facts (purpose + usage) can't drift. Advisory on the file-wide sweep, hard on a named audit. */
 export function missingComponentDescriptionViolation(node: AnyNode): Violation | null {
   if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return null
   // Variant children inside a COMPONENT_SET don't each need a description —
-  // the set root is the documented unit (live-sweep calibration 2026-07-10:
-  // 154 findings, bulk of them `type=..., state=...` variants).
+  // the set root is the documented unit.
   if (node.type === 'COMPONENT' && node.parent?.type === 'COMPONENT_SET') return null
   if (node.description) return null
   return {
@@ -533,15 +477,13 @@ export function missingComponentDescriptionViolation(node: AnyNode): Violation |
 }
 
 /**
- * Option B (design-first-council-ruling.md Gate ruling, ADVISORY only): in a
- * composed SCREEN, a node named after a known composite (`compositeNames` —
- * the project's registered composite names, e.g. `design/registry.json`
- * entries) that is a plain FRAME rather than an INSTANCE of that component is
- * under-decomposition — a traced screen, not one composed from built
- * components via design-component's component-first screen path (#4). This is
- * the under-decomposition catch the council promoted to advisory, NOT the
- * hard authoritative decomposition gate (Option C), which is deferred until
- * its brief/story-map schema lands — never wire this as a hard-fail.
+ * ADVISORY only: in a composed SCREEN, a node named after a known composite
+ * (`compositeNames` — the project's registered composite names) that is a
+ * plain FRAME rather than an INSTANCE of that component is under-decomposition
+ * — a traced screen, not one composed from built components. This is
+ * deliberately advisory, NOT a hard authoritative decomposition gate, which is
+ * deferred until its brief/story-map schema lands — never wire this as a
+ * hard-fail.
  */
 export function compositeRegionNamingViolation(node: AnyNode, compositeNames: string[]): Violation | null {
   if (node.type !== 'FRAME') return null
@@ -571,11 +513,11 @@ const HUG_OVERFLOW_EPSILON_PX = 0.1
 export function hugOverflowViolations(node: AnyNode): Violation[] {
   const violations: Violation[] = []
   for (const child of node.children ?? []) {
-    // hidden children don't render, so they can't overflow; absolute-
-    // positioned children are out of flow, so HUG never includes them (same
-    // exclusion unclippedOverflowViolations makes); child.x/child.y are
-    // already in the parent's coordinate space — the node's own width/height
-    // are the bounds, never node.x/node.y (a different coordinate space)
+    // Hidden children don't render, so they can't overflow; absolute-
+    // positioned children are out of flow, so HUG never includes them.
+    // child.x/child.y are already in the parent's coordinate space — the
+    // node's own width/height are the bounds, never node.x/node.y (a
+    // different coordinate space).
     if (child.visible === false) continue
     if (child.layoutPositioning === 'ABSOLUTE') continue
     if (node.layoutSizingHorizontal === 'HUG' && child.x + child.width > node.width + HUG_OVERFLOW_EPSILON_PX) {
@@ -618,8 +560,7 @@ const to255 = (c: { r: number; g: number; b: number }): [number, number, number]
  * down the walk from the nearest ancestor with a fully-opaque solid fill).
  * Deterministic-or-skip: no resolvable solid background, a semi-transparent
  * fill, or any compositing ambiguity means SKIP, never guess — a wrong
- * hard violation costs more than a missed advisory (same asymmetry as
- * kitInstanceOverrideViolation's denylist economics).
+ * hard violation costs more than a missed advisory.
  */
 export function textContrastViolation(node: AnyNode): Violation | null {
   if (node.insideInstance) return null
@@ -656,20 +597,17 @@ export type GapPaddingCollectionsConfig = {
 }
 
 /**
- * Live field bug (2026-07-07, first migration run): this check used to
- * hardcode the literal collection names `"Primitives"`/`"Semantic"` — a
- * stock kit duplicate that never renamed its Semantic collection (named
- * `mode`) and splits spacing tokens across a `tw/*` collection family failed
- * this check on every one of its own untouched components. No collection-
- * name literals here now — every accepted name is configured/declared by the
- * caller.
+ * No collection-name literals here: a stock kit duplicate that never renamed
+ * its Semantic collection (named `mode`) and splits spacing tokens across a
+ * `tw/*` collection family would fail this check on every one of its own
+ * untouched components if the accepted names were hardcoded — every accepted
+ * name is configured/declared by the caller instead.
  */
 export function gapPaddingSpacingViolations(node: AnyNode, config: GapPaddingCollectionsConfig = {}): Violation[] {
   const { semanticCollectionName = 'Semantic', primitivesCollectionName = 'Primitives', additionalAllowedCollectionNames = [] } = config
   const acceptedCollections = new Set([semanticCollectionName, primitivesCollectionName, ...additionalAllowedCollectionNames])
-  // Nodes inside a library instance are exempt (2026-07-05): kit internals
-  // bind the kit's own spacing collections (e.g. tw/gap) — not ours to
-  // rebind; flagging them made pristine kit instances fail the hard gate.
+  // Kit internals bind the kit's own spacing collections (e.g. tw/gap) — not
+  // ours to rebind.
   if (node.insideInstance) return []
   // INSTANCE nodes' own gap/padding mirrors their component definition —
   // locally-authored components are audited at the definition; kit instances'
@@ -702,13 +640,12 @@ function normalizeCopy(text: string): string {
 }
 
 /**
- * Rule #13 — untraced copy (design-phase-quality-plan.md W4). Every TEXT
- * node's content must trace to a copy-deck entry or a registry component's
- * documented default string. Mechanism, not judgment: `copyAllowedStrings`
- * is derived Node-side by `prepare-design-rules-audit-options` (wave copy-deck
- * artifacts flattened via `copyDeckStrings`, plus every registry entry's
- * `defaultStrings`) — when it is absent (no copy deck in the project), the
- * rule is INERT, so a project that never adopted decks sees zero change.
+ * Untraced copy: every TEXT node's content must trace to a copy-deck entry or
+ * a registry component's documented default string. Mechanism, not judgment:
+ * `copyAllowedStrings` is derived Node-side (wave copy-deck artifacts
+ * flattened, plus every registry entry's `defaultStrings`) — when it is
+ * absent (no copy deck in the project), the rule is INERT, so a project that
+ * never adopted decks sees zero change.
  *
  * Deliberately NOT `insideInstance`-exempt: a kit master's un-overridden
  * placeholder label ("Button") leaking into a composed screen IS the

@@ -66,10 +66,8 @@ JS); UI framework + whether a components dir exists; styling system + the **real
 token source file**; test runner + e2e tool + the real `lint`/`test` commands; the
 **observed** file-naming/folder convention (sample real names — don't impose);
 **monorepo layout** (workspaces in `package.json` / `pnpm-workspace.yaml` /
-`turbo.json` / multiple `apps/*`|`packages/*`); whether the `graphify` CLI is present;
-whether the **context-mode** plugin is present (`enabledPlugins` in
-`.claude/settings.json`, or a `context-mode` MCP server registration). Both are
-context-optimizing tools whose routing rules §8a offers to make durable.
+`turbo.json` / multiple `apps/*`|`packages/*`); whether the `graphify` CLI is present
+— a context-optimizing tool whose routing rules §8a offers to make durable.
 
 ## 3. Classify greenfield vs brownfield
 Empty/near-empty repo → greenfield: defaults ON. Substantial existing tree →
@@ -292,9 +290,8 @@ before execution: the agent gets compact output without calling `rtk` explicitly
   Claude Code is **global only** (`rtk init -g`, one entry in
   `~/.claude/settings.json`, affecting every project on the box). There is NO
   project-scoped hook: `rtk init` (local) only injects a "prefix everything with
-  `rtk`" block into the project's `CLAUDE.md` — no rewrite, relies on compliance,
-  and it directly duels with context-mode's routing rules where a project runs
-  context-mode. So argo does NOT wire rtk through `argo init`'s per-project
+  `rtk`" block into the project's `CLAUDE.md` — no rewrite, relies on compliance.
+  So argo does NOT wire rtk through `argo init`'s per-project
   settings; surface it as a one-time global opt-in the user makes deliberately,
   then move on. Default-OFF.
 - **Detect first.** If `rtk` is already on PATH (`rtk --version`), skip install.
@@ -305,16 +302,12 @@ before execution: the agent gets compact output without calling `rtk` explicitly
 - **Install hook-only.** `rtk init -g --hook-only --auto-patch`: registers the
   transparent hook and writes NEITHER an `RTK.md` nor an `@RTK.md` line in
   `~/.claude/CLAUDE.md`. Drop `--hook-only` and rtk adds that instruction block
-  globally — reintroducing the context-mode conflict in every project. The hook
+  globally — polluting every project with an unwanted instruction block. The hook
   alone delivers the savings; the prose is noise here. Takes effect on the next
   Claude Code restart, not mid-session.
-- **Coexistence with context-mode (state it plainly).** Both fire on Bash. rtk is
-  the lighter touch for fire-and-forget commands you only want the gist of (`git
-  push`, dir listings); context-mode is for anything you may re-query in detail,
-  since rtk's compression is lossy and an rtk-rewritten command gets indexed in
-  its already-compressed form. Standing guidance for such a project: route
-  processing/analysis through `ctx_execute` (full-fidelity, queryable); let rtk
-  trim the shell noise context-mode's routing leaves in raw Bash (`git`, `ls`).
+- **Lossy but safe on failure.** rtk's compression is lossy — an rtk-rewritten
+  command gets indexed in its already-compressed form, so it's best for
+  fire-and-forget commands you only want the gist of (`git push`, dir listings).
   rtk tees the full unfiltered output on failure, so a failed command stays
   readable without a re-run.
 - **Opt-out / uninstall:** `rtk init -g --uninstall` removes the hook (and any
@@ -364,8 +357,8 @@ placeholders) and the canonical loop: **scaffold → grill → plan → test-fir
 handoff.**
 
 ## 8a. Durable tool-routing block (conditional — only for detected tools)
-context-mode and graphify both inject routing guidance per session (via their own
-hooks/skills), but injected context is **summarized away on `/compact`** — mid-long-session,
+graphify injects routing guidance per session (via its own hooks/skills), but
+injected context is **summarized away on `/compact`** — mid-long-session,
 Claude drifts back to raw `Read`/`grep`/`WebFetch` and the context savings evaporate. The
 fix is to keep the routing in the **project-root CLAUDE.md**, which survives compaction. A
 path-scoped `.claude/rules/*.md` would NOT work here — those load only when a matching file
@@ -384,24 +377,6 @@ across compaction)` heading:
   graphify knowledge graph first when a `graphify-out/` exists; faster and more complete
   than cold grep. Fall back to grep only if the graph doesn't answer.
 - Refresh only via `argo graph refresh` — single writer, on `main`, on-device.
-```
-
-**context-mode sub-block** (if context-mode present):
-```markdown
-**context-mode (context window):**
-- Processing data (filter/count/parse/aggregate/search) → `ctx_execute` /
-  `ctx_batch_execute`, `console.log` only the answer. Never read raw data into context
-  just to eyeball it.
-- Analyzing a file (not editing it) → `ctx_execute_file`. Native `Read` only when the
-  next step is `Edit`.
-- Web content → `ctx_fetch_and_index` then `ctx_search`. Never `WebFetch` raw pages.
-- Bash ONLY for: `git`, `mkdir`, `rm`, `mv`, `cd`, `ls`, install commands. Everything
-  else routes through the ctx tools.
-- On resume / after compaction → `ctx_search(sort: "timeline")` BEFORE asking the user.
-- Stats/health → the `/ctx-stats` and `/ctx-doctor` slash commands (not the bare phrase
-  "ctx stats", which grabs the skill instead of the tool).
-- Images/screenshots can't be sandboxed and reads-for-editing must be native — routing
-  has a real ceiling, don't force it.
 ```
 
 ## 8b. Recommendations (read-only — propose, never install)

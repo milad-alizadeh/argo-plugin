@@ -8,7 +8,7 @@ describe('componentCreateSpec', () => {
   })
 
   it('is a flat stage list in the documented order, no branch field anywhere', () => {
-    expect(componentCreateSpec.stages.map((s) => s.name)).toEqual(['exists-check', 'build', 'annotate', 'registry-card'])
+    expect(componentCreateSpec.stages.map((s) => s.name)).toEqual(['exists-check', 'build', 'annotate', 'review', 'registry-card'])
     for (const stage of componentCreateSpec.stages) {
       expect(stage).not.toHaveProperty('branch')
     }

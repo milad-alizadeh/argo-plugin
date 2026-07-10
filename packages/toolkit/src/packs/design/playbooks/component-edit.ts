@@ -1,7 +1,13 @@
 /**
  * `component-edit` playbook spec (playbook-engine-phase1.md Slice 11, step
- * 31; design doc "Playbook matrices #3"): `edit` → `card-refresh` →
- * `instance-impact-scan`.
+ * 31; design doc "Playbook matrices #3"): `edit` → `review` →
+ * `card-refresh` → `instance-impact-scan`.
+ *
+ * `review` is the blind fresh-eyes pass every designer output gets (screens
+ * had it from day one; components gained it 2026-07-10): a judge that sees
+ * ONLY the finished component + the ask it was built against, never the
+ * working transcript — the deterministic audit catches hygiene, this
+ * catches "reads wrong".
  *
  * `edit` resolves "code-owned? code-first : figma-edit" inside the stage's
  * skill (reads the `@code-owned` annotation), not a spec branch — same
@@ -27,8 +33,16 @@ export const componentEditSpec = definePlaybook({
       retries: 2
     },
     {
-      name: 'card-refresh',
+      name: 'review',
       requires: ['edit'],
+      allows: ['figma-read'],
+      gate: 'fresh-eyes-review',
+      maxRounds: 1,
+      retries: 1
+    },
+    {
+      name: 'card-refresh',
+      requires: ['review'],
       allows: ['registry-write']
     },
     {

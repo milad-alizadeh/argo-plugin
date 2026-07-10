@@ -41,8 +41,19 @@ export const componentCreateSpec = definePlaybook({
       retries: 2
     },
     {
-      name: 'registry-card',
+      // Blind fresh-eyes pass — every designer output gets one (components
+      // gained it 2026-07-10, matching screens): judge sees only the built
+      // component + the ask, never the transcript.
+      name: 'review',
       requires: ['annotate'],
+      allows: ['figma-read'],
+      gate: 'fresh-eyes-review',
+      maxRounds: 1,
+      retries: 1
+    },
+    {
+      name: 'registry-card',
+      requires: ['review'],
       allows: ['registry-write']
     }
   ]

@@ -17,7 +17,7 @@ function nodeLabel(stage: StageSpec): string {
 }
 
 export function renderPlaybookDiagram(spec: PlaybookSpec): string {
-  const lines: string[] = ['flowchart TD']
+  const lines: string[] = ['flowchart LR']
 
   for (const stage of spec.stages) {
     lines.push(`  ${nodeId(stage.name)}["${nodeLabel(stage)}"]`)

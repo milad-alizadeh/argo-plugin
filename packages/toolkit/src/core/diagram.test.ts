@@ -49,7 +49,7 @@ describe('renderPlaybookDiagram', () => {
     const diagram = renderPlaybookDiagram(spec)
 
     expect(diagram).not.toMatch(/\{.*\}/) // mermaid's diamond/decision node syntax
-    expect(diagram).toContain('flowchart TD')
+    expect(diagram).toContain('flowchart LR')
     expect(diagram).toMatch(/brief --\>\|gate: brief-check\| build/)
     expect(diagram).toMatch(/build --\>\|gate: design-rules-check\| review/)
     expect(diagram).toMatch(/build --\>\|retry, budget 2\| build/)

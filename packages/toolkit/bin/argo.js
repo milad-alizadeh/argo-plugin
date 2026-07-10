@@ -144,6 +144,10 @@ switch (cmd) {
     // time — without this, start/status/advance can't resolve any pack
     // playbook by name (only `list` imported it, via playbook-list.js).
     await import('../dist/packs/design/playbooks/index.js')
+    // Headless gate set (receipt-backed design-rules-check etc.) — without
+    // this, advance threw GateNotFoundError on every audit-gated stage.
+    const { registerCliGates } = await import('../dist/packs/design/gates/register-cli-gates.js')
+    registerCliGates()
     switch (verb) {
       case 'list': {
         // Catalog derivation surface (argo-v2 PRD RUNS-R24). --json is the
@@ -166,7 +170,9 @@ switch (cmd) {
         break
       }
       case 'advance': {
-        const result = await playbookAdvance(flagValue(args, '--key'), { cwd: hostRoot })
+        // settings.cwd feeds receipt-backed gates (design/audit-receipt.json
+        // lives under the APP workspace — run advance from apps/<app>).
+        const result = await playbookAdvance(flagValue(args, '--key'), { cwd: hostRoot, settings: { cwd: hostRoot } })
         console.log(JSON.stringify(result))
         break
       }

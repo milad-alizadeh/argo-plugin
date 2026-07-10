@@ -91,7 +91,8 @@ async function auditNode(
     viewport,
     isScreenFrame = false,
     ancestorSolidFill = null,
-    copyAllowedStrings = null
+    copyAllowedStrings = null,
+    insideCategoryShelf = false
   }: {
     hard: boolean
     semanticCollectionName?: string
@@ -105,6 +106,7 @@ async function auditNode(
     isScreenFrame?: boolean
     ancestorSolidFill?: any
     copyAllowedStrings?: string[] | null
+    insideCategoryShelf?: boolean
   }
 ) {
   const violations: any[] = []
@@ -161,7 +163,9 @@ async function auditNode(
           ? ancestorSolidFill
           : prop === 'isScreenFrame'
             ? isScreenFrame
-            : target[prop]
+            : prop === 'insideCategoryShelf'
+              ? insideCategoryShelf
+              : target[prop]
   })
 
   for (const v of unboundFillViolations(nodeCtx)) report(v.rule, v.detail)
@@ -276,7 +280,10 @@ async function auditNode(
   // Always advisory regardless of `hard`: self-corrects on the next
   // design-component upsert, never a structural defect that should fail a
   // named audit.
-  const unsectioned = unsectionedComponentViolation(node)
+  // nodeCtx, not node — the rule reads the walker-marshaled
+  // insideCategoryShelf, and the sandbox node proxy THROWS on unknown
+  // property reads (live crash, 2026-07-10 first playbook run).
+  const unsectioned = unsectionedComponentViolation(nodeCtx)
   if (unsectioned) {
     violations.push({ severity: 'advisory', rule: unsectioned.rule, nodeId: node.id, nodeName: node.name, detail: unsectioned.detail })
   }
@@ -404,7 +411,13 @@ async function walk(node: any, opts: any, out: any[]) {
       ...opts,
       isScreenFrame: false,
       insideInstance: node.type === 'INSTANCE' ? true : opts.insideInstance,
-      ancestorSolidFill: ownSolid ?? opts.ancestorSolidFill ?? null
+      ancestorSolidFill: ownSolid ?? opts.ancestorSolidFill ?? null,
+      // A category shelf is a plain FRAME on Custom Components named after a
+      // configured componentCategories entry; everything under it counts as
+      // sectioned for unsectionedComponentViolation.
+      insideCategoryShelf:
+        opts.insideCategoryShelf ||
+        (node.type === 'FRAME' && (opts.componentCategories ?? []).includes(node.name))
     }
     for (const child of node.children) await walk(child, childOpts, out)
   }
@@ -447,6 +460,7 @@ export async function runDesignRulesAudit(
     sweepPageNames?: string[]
     screenNodeIds?: string[]
     copyAllowedStrings?: string[] | null
+    componentCategories?: string[]
   } = {}
 ) {
   const {
@@ -463,7 +477,8 @@ export async function runDesignRulesAudit(
     sweepNodeIds = [],
     sweepPageNames = [],
     screenNodeIds = [],
-    copyAllowedStrings = null
+    copyAllowedStrings = null,
+    componentCategories = []
   } = options
   const violations: any[] = []
   // Screen identity is registry-driven (design/registry.json entries with
@@ -495,7 +510,7 @@ export async function runDesignRulesAudit(
     } catch {
       /* sandbox: figma.root.findAll sees only loaded pages */
     }
-    const walkOpts = { hard: true, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeDesignRulesChecks, viewport, copyAllowedStrings }
+    const walkOpts = { hard: true, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeDesignRulesChecks, viewport, copyAllowedStrings, componentCategories }
 
     // Authoritative path (field bug fix, 2026-07-07 live D01 build): target
     // by the registry's real nodeId, resolved by the caller Node-side before
@@ -604,7 +619,7 @@ export async function runDesignRulesAudit(
     } catch {
       /* sandbox: figma.root.findAll / cross-page getNodeByIdAsync sees only loaded pages */
     }
-    const sweepOpts = { hard: false, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeDesignRulesChecks, viewport, copyAllowedStrings }
+    const sweepOpts = { hard: false, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeDesignRulesChecks, viewport, copyAllowedStrings, componentCategories }
     for (const nodeId of sweepNodeIds) {
       const match = await figma.getNodeByIdAsync(nodeId)
       if (!match) {

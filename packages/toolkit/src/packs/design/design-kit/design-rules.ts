@@ -505,7 +505,7 @@ export function possibleGateFalsePositiveTag(node: AnyNode): boolean {
  * component that isn't a child of any category shelf frame on
  * `Custom Components` — a human manually rearranged it, or an agent placed
  * it directly on the page instead of `appendChild`-ing to the resolved
- * shelf. Never blocks — self-corrects on the next figma-create upsert.
+ * shelf. Never blocks — self-corrects on the next design-component upsert.
  * `insideCategoryShelf` is marshaled by the walker from the node's parent
  * chain against the configured `componentCategories` shelf frames.
  */
@@ -538,7 +538,7 @@ export function missingComponentDescriptionViolation(node: AnyNode): Violation |
  * the project's registered composite names, e.g. `design/registry.json`
  * entries) that is a plain FRAME rather than an INSTANCE of that component is
  * under-decomposition — a traced screen, not one composed from built
- * components via figma-create's component-first screen path (#4). This is
+ * components via design-component's component-first screen path (#4). This is
  * the under-decomposition catch the council promoted to advisory, NOT the
  * hard authoritative decomposition gate (Option C), which is deferred until
  * its brief/story-map schema lands — never wire this as a hard-fail.

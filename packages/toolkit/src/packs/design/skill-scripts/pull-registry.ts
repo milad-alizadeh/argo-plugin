@@ -148,7 +148,7 @@ export function marshalScreenFrames(doc: RestDocument): MarshaledScreenFrame[] {
  * Pure composition: classify each marshaled component's kind by its page
  * name, then build the upsert target for newly-seen kit components. Custom
  * (project-owned) components are counted but never upserted here — that
- * stays figma-create's own per-task incremental write.
+ * stays design-component's own per-task incremental write.
  */
 export function buildPullRegistryResult({
   liveComponents,

@@ -1,7 +1,7 @@
 /**
  * Component-category enum (design-memory-placement.md A1): a closed,
  * project-defined set of category names, config-driven rather than a
- * speculative fixed taxonomy. `figma-create`'s placement step resolves a
+ * speculative fixed taxonomy. `design-component`'s placement step resolves a
  * component's target Auto-Layout shelf as a pure function of this enum;
  * `figma-audit`'s reconcile sweep validates a live category against it.
  */

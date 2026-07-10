@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { mkdtempSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { assembleSkill } from './assemble-skill.js'
+import { assembleSkill, assembleSkillInPlace } from './assemble-skill.js'
 
 const REPO_ROOT = join(import.meta.dirname, '..', '..', '..', '..')
 
@@ -44,7 +44,7 @@ describe('assembleSkill', () => {
   describe('real skills (repo snapshot)', () => {
     const skills = [
       ['design-screen', 'design-screen'],
-      ['figma-create', 'figma-create'],
+      ['design-component', 'design-component'],
       ['figma-audit', 'figma-audit'],
       ['figma-sync', 'figma-sync'],
       ['figma-to-code', 'figma-to-code'],
@@ -52,19 +52,47 @@ describe('assembleSkill', () => {
     ] as const
 
     for (const [skillDir, craftName] of skills) {
-      it(`${skillDir}/SKILL.md assembles to byte-for-byte match its craft file`, () => {
+      it(`${skillDir}/SKILL.md is committed IN SYNC with its craft file (block form, no drift)`, () => {
         const skillPath = join(REPO_ROOT, 'skills', skillDir, 'SKILL.md')
         const craftPath = join(REPO_ROOT, 'packages', 'toolkit', 'packs', 'design', 'craft', `${craftName}.md`)
         const craftContent = readFileSync(craftPath, 'utf8')
 
-        const assembled = assembleSkill({ skillPath, cwd: REPO_ROOT })
+        // The committed wrapper carries the craft content inline (the
+        // installed plugin loads SKILL.md verbatim; there is no packaging
+        // step), delimited by the INCLUDE block markers...
+        const committed = readFileSync(skillPath, 'utf8')
+        expect(committed).toContain(craftContent.replace(/\n$/, ''))
 
-        // The include portion of the assembled skill must match the pack's
-        // craft file byte-for-byte — the whole point of the mechanism.
-        expect(assembled).toContain(craftContent)
-        // And the marker itself must be gone from the assembled output.
-        expect(assembled).not.toMatch(/<!--\s*INCLUDE:/)
+        // ...and re-assembling in place is a no-op, i.e. the committed copy
+        // has not drifted from the craft doc.
+        const { changed } = assembleSkillInPlace({ skillPath, cwd: REPO_ROOT })
+        expect(changed).toBe(false)
       })
     }
+  })
+
+  it('assembleSkillInPlace upgrades a bare marker to the block form and is then idempotent', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'assemble-skill-'))
+    mkdirSync(join(dir, 'craft'), { recursive: true })
+    writeFileSync(join(dir, 'craft', 'example.md'), '# Craft body\n\nSome craft content.\n')
+    const wrapperPath = join(dir, 'SKILL.md')
+    writeFileSync(wrapperPath, '---\nname: example\n---\n\n<!-- INCLUDE: craft/example.md -->\n')
+
+    const first = assembleSkillInPlace({ skillPath: wrapperPath, cwd: dir })
+    expect(first.changed).toBe(true)
+    expect(first.assembled).toBe(
+      '---\nname: example\n---\n\n<!-- INCLUDE: craft/example.md -->\n# Craft body\n\nSome craft content.\n<!-- /INCLUDE -->\n'
+    )
+
+    writeFileSync(wrapperPath, first.assembled)
+    const second = assembleSkillInPlace({ skillPath: wrapperPath, cwd: dir })
+    expect(second.changed).toBe(false)
+
+    // After the craft doc changes, re-assembly picks up the new content.
+    writeFileSync(join(dir, 'craft', 'example.md'), '# Craft body v2\n')
+    const third = assembleSkillInPlace({ skillPath: wrapperPath, cwd: dir })
+    expect(third.changed).toBe(true)
+    expect(third.assembled).toContain('# Craft body v2')
+    expect(third.assembled).not.toContain('Some craft content.')
   })
 })

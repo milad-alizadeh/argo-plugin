@@ -43,7 +43,7 @@ Invoke `test:vrt` at:
 ## Tier 0 and tier 4 (not test-command-driven)
 
 - **Tier 0** (Figma hygiene audit) only runs via `use_figma` inside
-  `/argo:figma-audit`, `/argo:figma-sync`, and `/argo:figma-create` — never
+  `/argo:figma-audit`, `/argo:figma-sync`, and `/argo:design-component` — never
   a test command, since it requires live Figma Plugin API access.
 - **Tier 4** (static lint) is enforced by this project's existing lint step
   (`{{LINT_CMD}}`) plus the design-pack's lint rule addition — see the

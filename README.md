@@ -35,7 +35,7 @@ flowchart LR
     subgraph D [DESIGN LOOP · Figma]
         brief["screen brief<br/>regions · flow · arrangement<br/>cites the PRD's ASCII wireframe"]:::stage
         manifest{"decision gate<br/>binding manifest vs registry<br/>deterministic"}:::det
-        hifi["design-screen / figma-create<br/>component-first hi-fi"]:::stage
+        hifi["design-screen / design-component<br/>component-first hi-fi"]:::stage
         t0{"design-rules audit +<br/>instance-presence receipts<br/>deterministic"}:::det
         dv{"design-verifier<br/>adversarial LLM judge<br/>sees only PRD + screenshots"}:::judge
     end
@@ -144,7 +144,7 @@ breaking change, rip-and-re-init via a fresh `/argo:init`.
    sign-off, done in text, no Figma lo-fi stage.
 2. **`/argo:grill-me`** — stress-test the design/plan until no guess remains.
 3. **Design pack** (UI work): brief →
-   `/argo:design-screen` (or `/argo:figma-create` for one component) →
+   `/argo:design-screen` (or `/argo:design-component` for one component) →
    `/argo:figma-sync` → `/argo:figma-to-code`.
 4. **`argo:planner`** — read-only implementation plan grounded in real code
    (`.argo/plans/`, frontmatter `status: draft | queued`; `argo plans` lists them
@@ -206,7 +206,7 @@ whether it's day 1 or a year later. Full rationale in
   standalone in any terminal; the Argo cockpit only adds a runtime seed on top.
 - **Skills** (`skills/`) — the twenty-one disciplines listed above.
 - **Hooks** (`hooks/`) — the two-tier split from the table: plugin-side safety
-  guardrails (always on, verbatim) and kit-dispatched gates (fail-closed,
+  guardrails (always on, verbatim) and toolkit-dispatched gates (fail-closed,
   armed by project state: `.argo/evidence/build-mode.json` for build gates,
   `.argo/config.json` `design` blocks for design gates; `format-on-write` and
   `test-smell` always on).

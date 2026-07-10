@@ -75,7 +75,7 @@ running agent with "Rate limited", it is not a usage limit and not fatal:
 
 ## 5. Design fan-out (NEW-A)
 
-Supervising a fleet of `designer` agents (figma-create/figma-audit
+Supervising a fleet of `designer` agents (design-component/figma-audit
 runs) follows the same "someone must watch it" contract as a
 build, with design-specific mechanics, the main session improvised this
 once and produced real defects (a spawned sub-fleet, a token-burning
@@ -195,7 +195,7 @@ mechanisms close those gaps without new tooling.
 - **Dropped:** seed-injection of a node-id context pack at spawn time -
   deferred until a companion artifact for it is designed; the near-term
   cold-start cost is covered by the registry read-order in
-  `agents/designer.md` and `skills/figma-create/SKILL.md`.
+  `agents/designer.md` and `skills/design-component/SKILL.md`.
 
 ## 6. Score every run, dogfooding is the point
 

@@ -2,7 +2,7 @@
 
 The **product spec** for one screen. Authored (in the host repo, e.g.
 `<app>/design/briefs/<screen>.md`) before hi-fi design, and read by
-`figma-create` / `design-screen`. It carries the two things the PRD's HTML
+`design-component` / `design-screen`. It carries the two things the PRD's HTML
 wireframe deliberately doesn't fully spell out — **what each region is/does**
 and **which regions are reusable components** — so hi-fi builds a real
 component architecture instead of reskinning sketch boxes.

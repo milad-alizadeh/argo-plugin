@@ -39,7 +39,7 @@ export function shouldSpawnFidelityVerifier(rubric: FidelityRubric): boolean {
  * flags, already parsed — this repo has no markdown-frontmatter parser
  * anywhere (grepped, none found), so reading `templates/design/category-
  * rubrics/<category>.md`'s YAML frontmatter into `{ category, criteria }`
- * is the CALLER's job (the figma-create step-4 spawner), not this script's;
+ * is the CALLER's job (the design-component step-4 spawner), not this script's;
  * inventing a frontmatter parser for one CLI wrapper is exactly the
  * speculative surface the owner mandate forbids.
  */

@@ -12,7 +12,7 @@
  * missing-auto-layout, non-semantic-binding), and so screens are addressable via
  * `registry-lookup --kind screen`.
  *
- * `figma-create`/`design-screen` call this on screen create (after setting the
+ * `design-component`/`design-screen` call this on screen create (after setting the
  * `@screen` annotation); a human can also run it, or add the JSON line directly.
  * pull-registry syncs live `@screen` annotations into the same entry shape, so a
  * repeated run is idempotent. Writes only; no hook consumes its exit code.

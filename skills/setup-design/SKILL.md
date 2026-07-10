@@ -160,7 +160,7 @@ If the host project has `.claude/tdd-guard/data/` (tdd-guard installed by
 `.claude/tdd-guard/data/config.json` — with consent, showing the diff, never
 silently editing a file another skill already owns. Do this BEFORE §4's
 template copy: without it, tdd-guard blocks every design-pack template file
-this skill (and `figma-sync`/`figma-create`/`design-upgrade`) copies or
+this skill (and `figma-sync`/`design-component`/`design-upgrade`) copies or
 assembles into `design/` as "premature implementation" — those files are
 Figma Plugin-API scripts that run only inside Figma via `use_figma` and can
 never be exercised by this project's own test runner, so no failing test can
@@ -206,7 +206,7 @@ real domain groupings (e.g. `rail`/`controls`/`status`/
 `foundation-atoms`) sets its own list here instead. Validate it with
 `validateComponentCategories` from `@argohq/toolkit/design-kit`
 before writing: a non-empty array of unique, non-empty strings, or refuse to
-proceed and report why. This is the enum `figma-create`'s placement step and
+proceed and report why. This is the enum `design-component`'s placement step and
 `figma-audit`'s reconcile sweep both validate a category against — see
 `templates/design/file-structure.md`.
 

@@ -1,4 +1,4 @@
-# figma-create
+# design-component
 
 Creates a component or screen in Figma to the design-pack's authoring
 conventions, then self-audits and fixes before reporting done — never hand

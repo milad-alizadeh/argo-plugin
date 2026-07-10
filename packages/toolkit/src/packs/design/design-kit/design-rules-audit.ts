@@ -1,7 +1,7 @@
 /**
  * Canonical design-rules Figma hygiene audit (figma-to-code-pipeline.md §5 tier 0).
  *
- * Owned by /argo:figma-audit (X3) — /argo:figma-sync and /argo:figma-create
+ * Owned by /argo:figma-audit (X3) — /argo:figma-sync and /argo:design-component
  * call this SAME function; there is exactly one copy of this logic. This is
  * a thin Plugin-API walker: it marshals live `figma.*` node/variable objects
  * into plain-object shapes and delegates the actual rule logic to this
@@ -274,7 +274,7 @@ async function auditNode(
   for (const v of variantNamingViolations(node)) report(v.rule, v.detail)
 
   // Always advisory regardless of `hard`: self-corrects on the next
-  // figma-create upsert, never a structural defect that should fail a
+  // design-component upsert, never a structural defect that should fail a
   // named audit.
   const unsectioned = unsectionedComponentViolation(node)
   if (unsectioned) {

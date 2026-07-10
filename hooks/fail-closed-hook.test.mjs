@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 /**
  * Fail-closed acid test for the hooks.json kit wiring, post bootstrap-deadlock
- * fix: every kit GATE line dispatches through hooks/kit-dispatch.mjs (never a
+ * fix: every kit GATE line dispatches through hooks/toolkit-dispatch.mjs (never a
  * raw npx one-liner — that fails closed on ANY npx failure and deadlocks the
  * `bun install` that would install the kit). The dispatcher itself must:
  *   - BLOCK (exit 2) for an ARMED project (declares @argohq/toolkit) with the kit
@@ -30,7 +30,7 @@ function allCommands(hooksJson) {
 }
 
 const hooksJson = JSON.parse(readFileSync(join(HOOKS_DIR, 'hooks.json'), 'utf8'))
-const kitWrappers = allCommands(hooksJson).filter((c) => c.includes('kit-dispatch.mjs'))
+const kitWrappers = allCommands(hooksJson).filter((c) => c.includes('toolkit-dispatch.mjs'))
 const bashWrapper = kitWrappers.find((c) => c.includes('bash-pretooluse'))
 
 let armed
@@ -69,14 +69,14 @@ function runWrapper(command, cwd, toolCommand) {
 }
 
 describe('fail-closed hook wrappers', () => {
-  it('hooks.json routes every kit gate through the kit-dispatch dispatcher, never raw npx', () => {
-    expect(bashWrapper, 'no kit-dispatch bash-pretooluse wrapper found in hooks.json').toBeTruthy()
+  it('hooks.json routes every toolkit gate through the toolkit-dispatch dispatcher, never raw npx', () => {
+    expect(bashWrapper, 'no toolkit-dispatch bash-pretooluse wrapper found in hooks.json').toBeTruthy()
     expect(kitWrappers.length).toBeGreaterThanOrEqual(3) // bash-pretooluse, post-edit-write, playbook-permission (design-guard retired, Slice 13)
     for (const cmd of allCommands(hooksJson)) {
       expect(cmd, `raw npx kit wrapper survives in hooks.json: ${cmd}`).not.toContain('npx')
     }
     for (const cmd of kitWrappers) {
-      expect(cmd).toContain('${CLAUDE_PLUGIN_ROOT}/hooks/kit-dispatch.mjs')
+      expect(cmd).toContain('${CLAUDE_PLUGIN_ROOT}/hooks/toolkit-dispatch.mjs')
     }
   })
 

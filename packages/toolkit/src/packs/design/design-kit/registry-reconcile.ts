@@ -5,7 +5,7 @@
  * catching drift the per-task incremental upsert can't see on its own (a
  * crashed agent that never reached its final upsert, a human rename). Both
  * findings are advisory (never block a commit) and self-correct on the next
- * `figma-create` upsert. The nodeId-heal step ("re-resolve + persist any
+ * `design-component` upsert. The nodeId-heal step ("re-resolve + persist any
  * entry whose nodeId moved") is a live-Figma-only concern (the walker must
  * call `getNodeByIdAsync`/`findAll`) and is documented, not implemented,
  * here — see `skills/figma-sync/SKILL.md`.
@@ -223,7 +223,7 @@ type LeanKitEntry = {
  * pre-existing decision-8 staleness sweep's job, which already runs
  * file-wide over every registry entry regardless of kind); this only
  * fills the gap for a component with no entry at all. status: 'draft'
- * (never audited, never synced before), figma-create's own upsert is
+ * (never audited, never synced before), design-component's own upsert is
  * the only writer of 'audit-clean', and only after its own self-audit.
  */
 export function buildKitRegistryEntries(
@@ -299,7 +299,7 @@ export function detectChangedKitComponents({
 
 /**
  * The `@code-owned: <path>` marker read from a component `description`. The
- * marker is authored by the designer/figma-create when a placeholder screenshot
+ * marker is authored by the designer/design-component when a placeholder screenshot
  * stands in for a code-native implementation. Returns the repo-relative path, or
  * null when the marker is absent/empty. The path is the first whitespace-
  * delimited token after the colon; the rest of the text (purpose, category) is

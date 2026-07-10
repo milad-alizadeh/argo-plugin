@@ -184,7 +184,7 @@ silently assume.
 
 ## Handoff
 
-- **Design branch:** hi-fi design (`design-screen` / `figma-create`) —
+- **Design branch:** hi-fi design (`design-screen` / `design-component`) —
   consuming this doc's HTML wireframe + flow directly; the screen briefs
   project this doc's matrix columns. The design-verifier is intended to check
   these requirements as the semantic completeness contract — this depends on

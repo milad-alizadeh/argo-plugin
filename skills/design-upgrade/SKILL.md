@@ -30,7 +30,7 @@ either-side-only bump.
    changed/new components onto a dedicated export page in whichever file
    they were authored in, then copy-paste them into the starter by hand in
    the Figma UI. Author/adjust the mirrors with the same conventions
-   `figma-create` enforces (Semantic bindings, Auto Layout, D18 naming,
+   `design-component` enforces (Semantic bindings, Auto Layout, D18 naming,
   ), then run `figma-audit` on them in the starter.
 3. **Project opt-in.** Existing projects do NOT update automatically — their
    design file is an independent duplicate. A project adopts the refresh by

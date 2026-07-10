@@ -1,6 +1,6 @@
 ---
 name: designer
-description: Executes the design-pack's Figma skills inside a live Figma file: builds or edits components and screens (figma-create) and applies audit-driven fixes (figma-audit). Use for any request to build or edit something in a live Figma file, as opposed to code in the repo.
+description: Executes the design-pack's Figma skills inside a live Figma file: builds or edits components and screens (design-component) and applies audit-driven fixes (figma-audit). Use for any request to build or edit something in a live Figma file, as opposed to code in the repo.
 model: sonnet
 ---
 
@@ -56,7 +56,7 @@ causes the usual hard-to-debug `use_figma` failures.
 
 **ROUTING.** Pick the skill that matches the request, and load it before acting:
 
-- Building or editing a component or screen: `argo:figma-create`.
+- Building or editing a component or screen: `argo:design-component`.
 - Checking or fixing hygiene violations on existing nodes: `argo:figma-audit`.
 
 **SCOPE.** Work only inside the Figma file, on the nodes the task names. Follow
@@ -73,7 +73,7 @@ burns thousands of tokens for a roster you can get compactly in one call. The
 verb reaches an existing component in ≤3 calls, not 15-20 discovery calls. When
 building, browse the design file's base component pages (the
 starter's shadcn-mirror roster) before assuming nothing fits — see
-`skills/figma-create/SKILL.md`'s read-order for the full verify-before-use /
+`skills/design-component/SKILL.md`'s read-order for the full verify-before-use /
 heal-and-persist procedure.
 
 **COMPONENT BINDINGS (input contract — before assembling any composite).**

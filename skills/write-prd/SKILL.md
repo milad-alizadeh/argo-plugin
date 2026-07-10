@@ -116,7 +116,7 @@ converging:
    `region → field-key → canonical string` row per rendered field. Wave-scoped,
    not per-screen, so the same entity is named identically across screens. This
    is the single upstream source of authored copy: downstream, design-screen /
-   figma-create source ALL canvas text from it (missing entry → the designer
+   design-component source ALL canvas text from it (missing entry → the designer
    stops and asks), and the design-rules `untraced-copy` rule hard-checks every TEXT
    node against it on named audits. Data slots (live counts/timestamps) are not
    deck entries. **Provenance is one-directional: the deck is authored here,
@@ -150,7 +150,7 @@ converging:
      one-line pointer to the wireframe file (template's `Wireframe + flow`
      section); the PRD stays the completeness oracle, the wireframe file is
      the layout sign-off. This is the layout-intent input
-     `design-screen`/`figma-create` consume (a screen brief satisfies its
+     `design-screen`/`design-component` consume (a screen brief satisfies its
      `Reference image` section by citing the wireframe file; no Figma
      wireframe is needed).
 
@@ -180,7 +180,7 @@ converging:
 ## Handoff
 
 When the PRD is settled it feeds both branches: the design branch
-(`design-screen` / `figma-create`, consuming the PRD's HTML wireframe + flow
+(`design-screen` / `design-component`, consuming the PRD's HTML wireframe + flow
 directly, with a completeness gate intended to check the PRD's requirements
 once P5 ingests them) and the code branch (`argo:planner` →
 `build-plan`). Summarise the feature's core bet, its scope line, and the two or

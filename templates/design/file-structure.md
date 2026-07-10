@@ -2,7 +2,7 @@
 
 Every argo project's Figma design file uses the same page shape, so any
 agent (or human) can find "where does X live" without re-deriving it per
-project. This is the single source of truth for that shape: `figma-create`
+project. This is the single source of truth for that shape: `design-component`
 and (eventually) `setup-design`'s install-time scaffolding
 point here instead of restating it.
 
@@ -18,7 +18,7 @@ point here instead of restating it.
 3. **`D01 <group>`, `D02 <group>`, …**: one page per surface group,
    numbered sequentially. Hi-fi screens here are
    composition only: component instances and layout containers, never loose
-   rectangles or raw styles (figma-create's screen rule).
+   rectangles or raw styles (design-component's screen rule).
 4. **`Custom Components`**: every project-owned component, plus imported
    raster assets named `asset/<name>`. This is the only page components live
    on; a screen never hosts a component definition inline.
@@ -30,7 +30,7 @@ point here instead of restating it.
    component-categories.js`) is rendered as its own named **Auto-Layout
    WRAP frame**: `layoutMode: 'HORIZONTAL'`, `layoutWrap: 'WRAP'`, a FIXED
    `itemSpacing` (never `SPACE_BETWEEN` — it swallows a set `itemSpacing`,
-   see the R6 gotcha in `figma-create/SKILL.md`). Placement is one
+   see the R6 gotcha in `design-component/SKILL.md`). Placement is one
    deterministic op: `appendChild` the new/moved component to the frame
    resolved as a pure function of its category — never coordinate math, a
    bare `SECTION` can't Auto Layout so any "next slot" instruction would

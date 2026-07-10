@@ -277,7 +277,18 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (help) {
     console.log(USAGE)
   } else {
-    const options = deriveDesignRulesAuditOptions({ cwd: cwd ?? process.cwd(), componentNames })
+    const resolvedCwd = cwd ?? process.cwd()
+    // A missing design block here means every downstream default (recipe
+    // null, semanticCollectionName 'Semantic', no sweep scoping) is silently
+    // wrong for THIS project — fail loud instead of emitting a hollow options
+    // object that lets a named or swept audit pass vacuously.
+    if (findDesignBlock(resolvedCwd) === null) {
+      console.error(
+        `prepare-design-rules-audit-options: no design block found for cwd ${resolvedCwd} — run from the app workspace (e.g. apps/desktop)`
+      )
+      process.exit(1)
+    }
+    const options = deriveDesignRulesAuditOptions({ cwd: resolvedCwd, componentNames })
     console.log(JSON.stringify(options))
   }
 }

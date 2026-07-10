@@ -2,7 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { deriveDesignRulesAuditOptions, parseCliArgs, resolveComponentNodeIds } from './prepare-design-rules-audit-options.js'
+
+// Spawned as a real subprocess — dist, not the sibling .ts source. Requires
+// `bun run build` to have produced a current packages/toolkit/dist/.
+const CLI = fileURLToPath(new URL('../../../../dist/packs/design/skill-scripts/prepare-design-rules-audit-options.js', import.meta.url))
 
 describe('deriveDesignRulesAuditOptions (figma-audit Node wrapper — anti-recreation gate wiring)', () => {
   it('reads design/registry.json, resolves a requested name to its nodeId, and passes all entries as compositeNames', () => {
@@ -329,6 +335,21 @@ describe('parseCliArgs (CLI flag parsing — must not silently no-op on a typo)'
 
   it('still throws on a genuinely unrecognized flag (not a known alias)', () => {
     expect(() => parseCliArgs(['--bogus', 'x'])).toThrow(/unrecognized flag.*--bogus/)
+  })
+})
+
+describe('CLI (argo design prepare-design-rules-audit-options) fails loud with no design block', () => {
+  it('exits non-zero with a clear error when cwd has no .argo/config.json design block, instead of emitting hollow defaults', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'design-rules-audit-options-no-block-'))
+    try {
+      const result = spawnSync('node', [CLI], { cwd, encoding: 'utf8' })
+      expect(result.status).not.toBe(0)
+      expect(result.stderr).toMatch(/no design block found for cwd/)
+      expect(result.stderr).toMatch(/apps\/desktop/)
+      expect(result.stdout.trim()).toBe('')
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
   })
 })
 

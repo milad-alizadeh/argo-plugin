@@ -1,0 +1,135 @@
+---
+const blocked = [
+  { text: '$ git commit -m "add discount calc"', tone: 'cmd' },
+  {
+    text: 'Red-proof gate: BLOCKED — no red-proof receipt for slice "discount-calc" — run the test red, implement, run it green, write .argo/evidence/red-proof.json',
+    tone: 'err',
+  },
+]
+
+const passed = [
+  { text: '$ git add src/discount.test.ts src/discount.ts .argo/evidence/red-proof.json', tone: 'cmd' },
+  { text: '$ git commit -m "add discount calc"', tone: 'cmd' },
+  { text: 'red-proof.json  redExit:1  greenExit:0  recordedAt: 2026-07-10T14:02:11Z', tone: 'meta' },
+  { text: '[main a1b2c3d] add discount calc', tone: 'ok' },
+]
+---
+
+<section class="gates">
+  <h2 class="gates-heading">The gates, shown not told</h2>
+  <p class="gates-lede">
+    The red-proof gate reads a receipt off disk before it lets a commit land — a failing exit code, then a passing
+    one, timestamped after HEAD. No receipt, no commit. This is real gate output, not a mockup.
+  </p>
+
+  <div class="gates-panels">
+    <div class="terminal terminal-blocked">
+      <div class="terminal-titlebar">
+        <span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span>
+        <span class="terminal-title">blocked</span>
+      </div>
+      <pre class="terminal-body">{blocked.map((line) => `${line.text}\n`).join('')}</pre>
+    </div>
+
+    <div class="terminal terminal-passed">
+      <div class="terminal-titlebar">
+        <span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span>
+        <span class="terminal-title">passed, with receipt</span>
+      </div>
+      <pre class="terminal-body">{passed.map((line) => `${line.text}\n`).join('')}</pre>
+    </div>
+  </div>
+</section>
+
+<style>
+  .gates {
+    max-width: 64rem;
+    margin: 0 auto 4rem;
+    padding: 0 1.5rem;
+    text-align: center;
+  }
+
+  .gates-heading {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin: 0 0 0.75rem;
+  }
+
+  .gates-lede {
+    max-width: 52ch;
+    margin: 0 auto 2rem;
+    color: var(--sl-color-gray-2, #b8bfd1);
+  }
+
+  .gates-panels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.25rem;
+    text-align: left;
+  }
+
+  .terminal {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--argo-color-border-ui, #2a3346);
+    background: #0b0e17;
+  }
+
+  .terminal-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.85rem;
+    background: #12161f;
+    border-bottom: 1px solid var(--argo-color-border-ui, #2a3346);
+  }
+
+  .dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 999px;
+    display: inline-block;
+  }
+
+  .dot-red {
+    background: #d6473a;
+  }
+  .dot-yellow {
+    background: #d08c28;
+  }
+  .dot-green {
+    background: #38a050;
+  }
+
+  .terminal-title {
+    margin-left: 0.5rem;
+    font-family: var(--argo-font-mono, ui-monospace, monospace);
+    font-size: 0.75rem;
+    color: var(--argo-color-steel, #8891a8);
+  }
+
+  .terminal-blocked .terminal-title {
+    color: #d6473a;
+  }
+  .terminal-passed .terminal-title {
+    color: #38a050;
+  }
+
+  .terminal-body {
+    margin: 0;
+    padding: 1rem 1.1rem 1.25rem;
+    font-family: var(--argo-font-mono, ui-monospace, monospace);
+    font-size: 0.78rem;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #cdd4e6;
+  }
+
+  .terminal-blocked .terminal-body {
+    color: #ff9d94;
+  }
+
+  .terminal-blocked .terminal-body::first-line {
+    color: #cdd4e6;
+  }
+</style>

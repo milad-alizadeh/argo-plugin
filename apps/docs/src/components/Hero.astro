@@ -1,4 +1,6 @@
 ---
+import PipelineWalkthrough from './PipelineWalkthrough.astro'
+
 interface Props {
   headline: string
   subhead: string
@@ -6,23 +8,9 @@ interface Props {
   secondaryCta: { text: string; href: string }
 }
 const { headline, subhead, primaryCta, secondaryCta } = Astro.props
-const stages = ['PRD', 'grill', 'plan', 'build', 'review', 'land']
 ---
 
 <section class="hero">
-  <div class="hero-trail" aria-hidden="true">
-    {
-      stages.map((stage, i) => (
-        <>
-          <span class="hero-trail-node" style={`--i:${i}`}>
-            {stage}
-          </span>
-          {i < stages.length - 1 && <span class="hero-trail-edge" style={`--i:${i}`} />}
-        </>
-      ))
-    }
-  </div>
-
   <h1 class="hero-headline">{headline}</h1>
   <p class="hero-subhead">{subhead}</p>
 
@@ -34,6 +22,8 @@ const stages = ['PRD', 'grill', 'plan', 'build', 'review', 'land']
       {secondaryCta.text}
     </a>
   </div>
+
+  <PipelineWalkthrough />
 </section>
 
 <style>
@@ -44,51 +34,6 @@ const stages = ['PRD', 'grill', 'plan', 'build', 'review', 'land']
     gap: 1.75rem;
     padding: 5rem 1.5rem 3rem;
     text-align: center;
-  }
-
-  .hero-trail {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0;
-    font-family: var(--argo-font-mono, ui-monospace, monospace);
-    font-size: 0.8rem;
-    letter-spacing: 0.04em;
-    text-transform: lowercase;
-    color: var(--argo-color-steel, #8891a8);
-    margin-bottom: 0.5rem;
-  }
-
-  .hero-trail-node {
-    padding: 0.2rem 0.65rem;
-    border: 1px solid var(--argo-color-border-ui, #2a3346);
-    border-radius: 999px;
-    animation: hero-node-in 0.5s ease backwards;
-    animation-delay: calc(var(--i) * 80ms);
-  }
-
-  .hero-trail-edge {
-    width: 1.5rem;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      var(--argo-color-border-ui, #2a3346),
-      var(--argo-color-accent, #5b7cfa)
-    );
-    animation: hero-node-in 0.5s ease backwards;
-    animation-delay: calc(var(--i) * 80ms + 40ms);
-  }
-
-  @keyframes hero-node-in {
-    from {
-      opacity: 0;
-      transform: translateY(4px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
   }
 
   .hero-headline {
@@ -139,10 +84,4 @@ const stages = ['PRD', 'grill', 'plan', 'build', 'review', 'land']
     color: var(--sl-color-white, #f3f4f8);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .hero-trail-node,
-    .hero-trail-edge {
-      animation: none;
-    }
-  }
 </style>

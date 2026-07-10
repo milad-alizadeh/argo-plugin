@@ -5,8 +5,10 @@ template: splash
 ---
 
 import Hero from '../../components/Hero.astro'
-import FeatureBlock from '../../components/FeatureBlock.astro'
-import FeatureGrid from '../../components/FeatureGrid.astro'
+import GateShowcase from '../../components/GateShowcase.astro'
+import FigmaBidirectional from '../../components/FigmaBidirectional.astro'
+import WorksAnywhere from '../../components/WorksAnywhere.astro'
+import FinalCta from '../../components/FinalCta.astro'
 
 <Hero
   headline="Claude Code, batteries included"
@@ -15,21 +17,13 @@ import FeatureGrid from '../../components/FeatureGrid.astro'
   secondaryCta={{ text: 'GitHub', href: 'https://github.com/milad-alizadeh/argo-plugin' }}
 />
 
-<FeatureGrid>
-  <FeatureBlock
-    label="The canonical loop"
-    description="PRD, then grill, then plan, then test-first build, then review, then land, one path from idea to shipped code, not a pile of disconnected commands."
-  />
-  <FeatureBlock
-    label="Gates that make it trustworthy"
-    description="Probity enforces red-first TDD, commit gates check receipts before code lands, and deterministic design-rules audits catch drift mechanically, not by asking an LLM to remember."
-  />
-  <FeatureBlock
-    label="Figma-to-code, both directions"
-    description="The design system is the source of truth. Spec-diff and gestalt acceptance gates hold generated code to what the design actually says, in either direction."
-  />
-  <FeatureBlock
-    label="Works with any Claude Code project"
-    description="A project-scoped install that adapts to your stack via init, never a fork, never a lock-in."
-  />
-</FeatureGrid>
+<GateShowcase />
+
+<FigmaBidirectional />
+
+<WorksAnywhere />
+
+<FinalCta
+  docsHref={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/start-here/what-is-argo/`}
+  githubHref="https://github.com/milad-alizadeh/argo-plugin"
+/>

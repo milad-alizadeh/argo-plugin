@@ -1,0 +1,72 @@
+---
+interface Props {
+  docsHref: string
+  githubHref: string
+}
+const { docsHref, githubHref } = Astro.props
+const installLines = [
+  '/plugin marketplace add milad-alizadeh/argo-plugin',
+  '/plugin install argo@argo            # project scope recommended',
+  '/argo:init                           # adapt to this project',
+]
+---
+
+<section class="final-cta">
+  <h2 class="final-cta-heading">Try it in your own project</h2>
+  <pre class="final-cta-install">{installLines.map((line) => `${line}\n`).join('')}</pre>
+  <div class="final-cta-links">
+    <a class="final-cta-link final-cta-link-primary" href={docsHref}>Read the docs</a>
+    <a class="final-cta-link" href={githubHref}>GitHub</a>
+  </div>
+</section>
+
+<style>
+  .final-cta {
+    max-width: 42rem;
+    margin: 0 auto 5rem;
+    padding: 0 1.5rem;
+    text-align: center;
+  }
+
+  .final-cta-heading {
+    font-size: clamp(1.4rem, 2.6vw, 1.85rem);
+    margin: 0 0 1.25rem;
+  }
+
+  .final-cta-install {
+    text-align: left;
+    background: #0b0e17;
+    border: 1px solid var(--argo-color-border-ui, #2a3346);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    font-family: var(--argo-font-mono, ui-monospace, monospace);
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: #cdd4e6;
+    overflow-x: auto;
+    margin: 0 0 1.5rem;
+  }
+
+  .final-cta-links {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .final-cta-link {
+    padding: 0.6rem 1.3rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.92rem;
+    border: 1px solid var(--argo-color-border-ui, #2a3346);
+    color: var(--sl-color-white, #f3f4f8);
+  }
+
+  .final-cta-link-primary {
+    background: var(--argo-color-accent, #5b7cfa);
+    color: #0b0e17;
+    border-color: transparent;
+  }
+</style>

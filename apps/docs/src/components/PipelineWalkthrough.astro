@@ -1,0 +1,242 @@
+---
+interface Stage {
+  id: string
+  label: string
+  owner: string
+  detail: string
+  gate: string
+}
+
+const stages: Stage[] = [
+  {
+    id: 'prd',
+    label: 'PRD',
+    owner: 'write-prd',
+    detail: 'A lightweight product brief: checkable requirements, a feature-to-screen matrix, a user-signed-off wireframe.',
+    gate: 'Every requirement has an acceptance pair, every screen layout is confirmed.',
+  },
+  {
+    id: 'grill',
+    label: 'grill',
+    owner: 'grill-me',
+    detail: 'An interview pass that stress-tests the plan until no guess is left unresolved.',
+    gate: 'No unresolved guess remains.',
+  },
+  {
+    id: 'plan',
+    label: 'plan',
+    owner: 'build-plan',
+    detail: 'The PRD becomes a slice-by-slice plan doc, one vertical slice at a time, ready to build.',
+    gate: 'The plan is sliced testably, each slice with a clear red-green boundary.',
+  },
+  {
+    id: 'build',
+    label: 'build',
+    owner: 'test-first',
+    detail: 'Red-green-refactor per slice: a test is seen failing for the right reason before the code that passes it exists.',
+    gate: 'A red-proof receipt — failing exit code, then passing exit code, timestamped after HEAD.',
+  },
+  {
+    id: 'review',
+    label: 'review',
+    owner: 'reviewer',
+    detail: 'An adversarial pass over the diff for correctness, reuse, and drift from the PRD, before it lands.',
+    gate: 'Merge-gate review passes.',
+  },
+  {
+    id: 'land',
+    label: 'land',
+    owner: 'integrator',
+    detail: 'The reviewed slice merges, the branch is retired, the next slice starts clean.',
+    gate: 'Trust gate: a launch receipt proving the app ran and was actually exercised.',
+  },
+]
+---
+
+<div class="walkthrough" data-pipeline-walkthrough>
+  <div class="walkthrough-trail" role="tablist" aria-label="The canonical loop">
+    {
+      stages.map((stage, i) => (
+        <>
+          <button
+            type="button"
+            class="trail-node"
+            data-stage={stage.id}
+            role="tab"
+            aria-selected={i === 0 ? 'true' : 'false'}
+            aria-controls={`panel-${stage.id}`}
+            id={`tab-${stage.id}`}
+            style={`--i:${i}`}
+          >
+            {stage.label}
+          </button>
+          {i < stages.length - 1 && <span class="trail-edge" aria-hidden="true" style={`--i:${i}`} />}
+        </>
+      ))
+    }
+  </div>
+
+  {
+    stages.map((stage, i) => (
+      <div
+        class="walkthrough-panel"
+        id={`panel-${stage.id}`}
+        role="tabpanel"
+        aria-labelledby={`tab-${stage.id}`}
+        data-panel={stage.id}
+        hidden={i !== 0}
+      >
+        <p class="panel-owner">
+          owned by <code>{stage.owner}</code>
+        </p>
+        <p class="panel-detail">{stage.detail}</p>
+        <p class="panel-gate">
+          <span class="gate-label">gate before the next stage</span>
+          {stage.gate}
+        </p>
+      </div>
+    ))
+  }
+</div>
+
+<script>
+  const root = document.querySelector('[data-pipeline-walkthrough]')
+  if (root) {
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('.trail-node'))
+    const panels = Array.from(root.querySelectorAll<HTMLElement>('.walkthrough-panel'))
+
+    const activate = (stageId: string) => {
+      for (const tab of tabs) tab.setAttribute('aria-selected', tab.dataset.stage === stageId ? 'true' : 'false')
+      for (const panel of panels) panel.hidden = panel.dataset.panel !== stageId
+    }
+
+    for (const tab of tabs) {
+      tab.addEventListener('click', () => activate(tab.dataset.stage!))
+      tab.addEventListener('mouseenter', () => activate(tab.dataset.stage!))
+      tab.addEventListener('focus', () => activate(tab.dataset.stage!))
+    }
+  }
+</script>
+
+<style>
+  .walkthrough {
+    width: 100%;
+    max-width: 44rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .walkthrough-trail {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0;
+    font-family: var(--argo-font-mono, ui-monospace, monospace);
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+  }
+
+  .trail-node {
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--argo-color-border-ui, #2a3346);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--argo-color-steel, #8891a8);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    text-transform: lowercase;
+    animation: node-in 0.5s ease backwards;
+    animation-delay: calc(var(--i) * 80ms);
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease,
+      background 0.15s ease;
+  }
+
+  .trail-node[aria-selected='true'] {
+    color: var(--sl-color-white, #f3f4f8);
+    border-color: var(--argo-color-accent, #5b7cfa);
+    background: rgba(91, 124, 250, 0.12);
+  }
+
+  .trail-node:hover,
+  .trail-node:focus-visible {
+    color: var(--sl-color-white, #f3f4f8);
+    border-color: var(--argo-color-accent, #5b7cfa);
+  }
+
+  .trail-edge {
+    width: 1.25rem;
+    height: 1px;
+    background: linear-gradient(90deg, var(--argo-color-border-ui, #2a3346), var(--argo-color-accent, #5b7cfa));
+    animation: node-in 0.5s ease backwards;
+    animation-delay: calc(var(--i) * 80ms + 40ms);
+  }
+
+  @keyframes node-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .walkthrough-panel {
+    border: 1px solid var(--argo-color-border-ui, #2a3346);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    background: var(--argo-color-surface, #151c2b);
+    text-align: left;
+  }
+
+  .panel-owner {
+    margin: 0 0 0.5rem;
+    font-family: var(--argo-font-mono, ui-monospace, monospace);
+    font-size: 0.8rem;
+    color: var(--argo-color-accent, #5b7cfa);
+  }
+
+  .panel-owner code {
+    color: inherit;
+    background: none;
+    padding: 0;
+  }
+
+  .panel-detail {
+    margin: 0 0 0.75rem;
+    color: var(--sl-color-gray-2, #b8bfd1);
+    line-height: 1.5;
+  }
+
+  .panel-gate {
+    margin: 0;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--argo-color-border-ui, #2a3346);
+    font-size: 0.9rem;
+    color: var(--sl-color-gray-3, #8791a8);
+  }
+
+  .gate-label {
+    display: block;
+    font-family: var(--argo-font-mono, ui-monospace, monospace);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--argo-color-steel, #8891a8);
+    margin-bottom: 0.25rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trail-node,
+    .trail-edge {
+      animation: none;
+    }
+  }
+</style>

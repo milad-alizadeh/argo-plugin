@@ -1,0 +1,147 @@
+---
+const tiers = [
+  { name: 'spec-diff', detail: 'generated code compared node-for-node against the synced design source' },
+  { name: 'gestalt', detail: 'a judge gate rules on visual intent a byte diff cannot see' },
+  { name: 'baseline commit', detail: 'the accepted render becomes the new reference for next time' },
+]
+---
+
+<section class="figma">
+  <h2 class="figma-heading">Figma-to-code, bidirectional</h2>
+  <p class="figma-lede">
+    <code>figma-sync</code> pulls the Figma source of truth into committed artifacts — tokens, a story-map, per-variant
+    specs. <code>figma-to-code</code> reads those artifacts and generates the component through the normal test-first
+    loop, gated by tiered acceptance checks, in order.
+  </p>
+
+  <div class="figma-flow">
+    <div class="figma-node figma-node-source">
+      <span class="figma-node-label">Figma frame</span>
+      <span class="figma-node-sub">story-map.json entry</span>
+    </div>
+    <span class="figma-arrow" aria-hidden="true">→</span>
+    <div class="figma-node figma-node-code">
+      <span class="figma-node-label">generated component</span>
+      <span class="figma-node-sub">test-first build</span>
+    </div>
+  </div>
+
+  <ol class="figma-tiers">
+    {
+      tiers.map((tier, i) => (
+        <li class="figma-tier">
+          <span class="tier-index">{i + 1}</span>
+          <span class="tier-name">{tier.name}</span>
+          <span class="tier-detail">{tier.detail}</span>
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<style>
+  .figma {
+    max-width: 64rem;
+    margin: 0 auto 4rem;
+    padding: 0 1.5rem;
+    text-align: center;
+  }
+
+  .figma-heading {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin: 0 0 0.75rem;
+  }
+
+  .figma-lede {
+    max-width: 56ch;
+    margin: 0 auto 2rem;
+    color: var(--sl-color-gray-2, #b8bfd1);
+  }
+
+  .figma-lede code {
+    color: var(--argo-color-accent, #5b7cfa);
+  }
+
+  .figma-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .figma-node {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem 1.5rem;
+    border: 1px solid var(--argo-color-border-ui, #2a3346);
+    border-radius: 10px;
+    background: var(--argo-color-surface, #151c2b);
+    min-width: 12rem;
+  }
+
+  .figma-node-source {
+    border-color: #5b7cfa;
+  }
+
+  .figma-node-code {
+    border-color: #38a050;
+  }
+
+  .figma-node-label {
+    font-weight: 600;
+    color: var(--sl-color-white, #f3f4f8);
+  }
+
+  .figma-node-sub {
+    font-family: var(--argo-font-mono, ui-monospace, monospace);
+    font-size: 0.75rem;
+    color: var(--argo-color-steel, #8891a8);
+  }
+
+  .figma-arrow {
+    font-size: 1.5rem;
+    color: var(--argo-color-steel, #8891a8);
+  }
+
+  .figma-tiers {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+  }
+
+  .figma-tier {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--argo-color-border-ui, #2a3346);
+    border-radius: 8px;
+    background: var(--argo-color-surface, #151c2b);
+  }
+
+  .tier-index {
+    font-family: var(--argo-font-mono, ui-monospace, monospace);
+    color: var(--argo-color-accent, #5b7cfa);
+    font-weight: 700;
+  }
+
+  .tier-name {
+    font-family: var(--argo-font-mono, ui-monospace, monospace);
+    font-weight: 600;
+    color: var(--sl-color-white, #f3f4f8);
+    min-width: 8rem;
+  }
+
+  .tier-detail {
+    color: var(--sl-color-gray-2, #b8bfd1);
+    font-size: 0.9rem;
+  }
+</style>

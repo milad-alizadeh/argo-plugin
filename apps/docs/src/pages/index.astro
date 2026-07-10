@@ -14,7 +14,7 @@ const stages = [
 const gates = [
   'sign-off',
   'plans check',
-  'red-proof + trust receipts',
+  'red-proof + trust',
   'reviewer pass',
   'integrator',
 ]
@@ -65,10 +65,9 @@ const gates = [
           {
             stages.map((s, i) => (
               <>
-                <div class="stage" data-stage={i}>
+                <div class="stage" data-stage={i} data-desc={s.desc}>
                   <span class="stage-dot" />
                   <span class="stage-label">{s.label}</span>
-                  <span class="stage-desc">{s.desc}</span>
                 </div>
                 {i < gates.length && (
                   <div class="gate" data-gate={i}>
@@ -80,6 +79,7 @@ const gates = [
             ))
           }
         </div>
+        <p class="rail-desc" id="rail-desc" aria-live="polite"></p>
         <p class="rail-caption">
           The gates are hooks, not narration. A stage that skipped its gate cannot
           commit; the pipeline fails closed.
@@ -358,13 +358,18 @@ green, write .argo/evidence/red-proof.json</span>
         overflow-x: auto;
       }
       .stage {
-        flex: 1 1 0;
-        min-width: 7.5rem;
+        flex: 1 1 auto;
+        min-width: fit-content;
         display: flex;
         flex-direction: column;
+        align-items: flex-start;
         gap: 0.5rem;
         opacity: 0.35;
         transition: opacity 0.45s;
+      }
+      .stage.current { opacity: 1; }
+      .stage.current .stage-dot {
+        box-shadow: 0 0 12px var(--pass), 0 0 24px rgba(86, 207, 140, 0.35);
       }
       .stage.lit { opacity: 1; }
       .stage-dot {
@@ -385,14 +390,21 @@ green, write .argo/evidence/red-proof.json</span>
         color: var(--bright);
         white-space: nowrap;
       }
-      .stage-desc { font-size: 0.82rem; color: var(--steel); line-height: 1.45; }
+      .rail-desc {
+        margin-top: 0.9rem;
+        min-height: 1.4em;
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        color: var(--mist);
+        transition: opacity 0.3s;
+      }
       .gate {
         flex: 0 0 auto;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 0.5rem;
-        padding: 0 1rem;
+        padding: 0 0.5rem;
         margin-top: 1px;
         opacity: 0.35;
         transition: opacity 0.45s;
@@ -597,10 +609,19 @@ green, write .argo/evidence/red-proof.json</span>
 
       const stages = Array.from(document.querySelectorAll('.stage'))
       const gates = Array.from(document.querySelectorAll('.gate'))
+      const railDesc = document.getElementById('rail-desc')
+
+      function setDesc(stage) {
+        if (!railDesc) return
+        const label = stage.querySelector('.stage-label')?.textContent ?? ''
+        railDesc.textContent = `${label}: ${stage.dataset.desc ?? ''}`
+      }
 
       function lightAll() {
         stages.forEach((s) => s.classList.add('lit'))
         gates.forEach((g) => g.classList.add('lit', 'passed'))
+        const last = stages[stages.length - 1]
+        if (last) setDesc(last)
       }
 
       if (reduced) {
@@ -609,7 +630,11 @@ green, write .argo/evidence/red-proof.json</span>
       } else {
         let t = 400
         stages.forEach((stage, i) => {
-          setTimeout(() => stage.classList.add('lit'), t)
+          setTimeout(() => {
+            stage.classList.add('lit', 'current')
+            stages.forEach((s) => s !== stage && s.classList.remove('current'))
+            setDesc(stage)
+          }, t)
           t += 260
           const gate = gates[i]
           if (!gate) return

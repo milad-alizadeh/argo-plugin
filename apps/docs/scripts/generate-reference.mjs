@@ -34,8 +34,7 @@ function writePage(relPath, frontmatterTitle, body) {
   writeFileSync(outPath, `---\ntitle: ${frontmatterTitle}\n---\n\n${body}\n`, 'utf8')
 }
 
-function generatePlaybooks() {
-  const catalog = JSON.parse(runArgo(['playbook', 'list']))
+function generatePlaybooks(catalog) {
   rmSync(join(REFERENCE_DIR, 'playbooks'), { recursive: true, force: true })
   for (const entry of catalog) {
     const diagram = runArgo(['playbook', 'diagram', '--name', entry.slug]).trim()
@@ -122,8 +121,8 @@ async function generateConfigSchema() {
   )
 }
 
-const playbookCount = generatePlaybooks()
 const catalog = JSON.parse(runArgo(['playbook', 'list']))
+const playbookCount = generatePlaybooks(catalog)
 const playbookSlugs = new Set(catalog.map((e) => e.slug))
 const skillCount = generateSkills(playbookSlugs)
 const agentCount = generateAgents()

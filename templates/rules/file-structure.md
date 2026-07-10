@@ -120,27 +120,48 @@ other's internals (information hiding / dependency inversion).
 
 A single **role map** is the config's source of truth: each top-level folder
 of a module layer declares one role — `composition-root` | `infrastructure` |
-`domain` | `shared` — and every forbidden rule derives from it, so adding a
-role never means writing a new rule:
+`domain` | `shared`. `@argohq/toolkit`'s `boundaryRules(roleMap, { root })`
+(exported from `@argohq/toolkit/core`) derives every `forbidden` rule from
+that map, so a project's `.dependency-cruiser.cjs` shrinks to the role map,
+the generator call, and any hand-written rules the project needs on top
+(e.g. main/renderer process isolation — those are app-level layer bans, not
+role-map-derived, and stay hand-written alongside the generated rules):
 
 ```js
+const { boundaryRules } = require('@argohq/toolkit/core')
+
 const topLevelRoles = {
   bootstrap: 'composition-root',
   platform: 'infrastructure',
   domains: 'domain',
   lib: 'shared'
 }
+
+module.exports = {
+  forbidden: [
+    ...boundaryRules(topLevelRoles, { root: 'src/main' }),
+    // hand-written rules that aren't role-map-derived, e.g.:
+    {
+      name: 'no-main-to-renderer',
+      severity: 'error',
+      from: { path: '^src/main' },
+      to: { path: '^src/renderer' }
+    }
+  ],
+  options: { doNotFollow: { path: 'node_modules' } }
+}
 ```
 
-- **Composition root** may import anything (it's the wiring layer).
+- **Composition root** may import anything (it's the wiring layer) — no
+  rules are generated against it as a `from`.
 - **Infrastructure / composition-root** may import a domain only via that
   domain's `index.ts` barrel, never a domain leaf file.
 - **A domain** may import another domain only via that domain's `index.ts`
   barrel; same-domain internal imports are unrestricted. dependency-cruiser
   v18 supports capture-group substitution — `from.path`'s `$1` substitutes
-  into `to.pathNot` — so this rule is one entry, not one per domain pair:
-  `from: { path: '^domains/([^/]+)/' }, to: { path: '^domains/', pathNot: ['^domains/$1/', '^domains/[^/]+/index\\.ts$'] }`.
-- **Shared** imports nothing above it in the layer.
+  into `to.pathNot` — so the generator emits one entry per domain grouping
+  folder, not one per domain pair.
+- **Shared** may not import any of the other roles under the module root.
 - **A structure-guard rule** fails lint on any import targeting a top-level
   folder absent from the role map, so a rogue folder can't silently escape
   the rules. Adding a legitimate new top-level folder = declare its role in

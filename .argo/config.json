@@ -14,5 +14,9 @@
     "lsp": {
       "typescript": "recommended-not-installed"
     }
+  },
+  "landing": "pr",
+  "design": {
+    "packages/toolkit": {}
   }
 }

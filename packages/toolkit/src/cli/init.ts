@@ -15,6 +15,20 @@ import { argoConfigPath, GITIGNORE_BLOCK } from '../config/argo-paths.js'
 
 const KIT_DEP_LINE = 'link:@argohq/toolkit'
 
+// The plugin's own repo is the PRODUCER, not a consumer of its marketplace
+// release: adding the link: dep would make the toolkit workspace depend on
+// itself, and self-enabling argo@argo would load the released cache over the
+// local source under development.
+function isArgoPluginRepo(hostRoot: string): boolean {
+  const manifest = join(hostRoot, '.claude-plugin', 'plugin.json')
+  if (!existsSync(manifest)) return false
+  try {
+    return readJson(manifest).name === 'argo'
+  } catch {
+    return false
+  }
+}
+
 function readJson(path: string): any {
   return JSON.parse(readFileSync(path, 'utf8'))
 }
@@ -53,23 +67,26 @@ export function runInit({ hostRoot, marketplaceSource }: { hostRoot: string; mar
 
   const isMonorepo = pkg.workspaces != null
   const apps = isMonorepo ? expandWorkspaces(hostRoot, pkg.workspaces) : ['.']
+  const selfRepo = isArgoPluginRepo(hostRoot)
 
   const depAlreadyPresent = pkg.dependencies?.['@argohq/toolkit'] === KIT_DEP_LINE
-  if (!depAlreadyPresent) {
+  if (!selfRepo && !depAlreadyPresent) {
     pkg.dependencies = { ...pkg.dependencies, '@argohq/toolkit': KIT_DEP_LINE }
     writeJson(pkgPath, pkg)
   }
 
-  const settingsPath = join(hostRoot, '.claude', 'settings.json')
-  const settings = existsSync(settingsPath) ? readJson(settingsPath) : {}
-  settings.enabledPlugins = { ...settings.enabledPlugins, 'argo@argo': true }
-  if (marketplaceSource) {
-    settings.extraKnownMarketplaces = {
-      ...settings.extraKnownMarketplaces,
-      argo: { source: marketplaceSource },
+  if (!selfRepo) {
+    const settingsPath = join(hostRoot, '.claude', 'settings.json')
+    const settings = existsSync(settingsPath) ? readJson(settingsPath) : {}
+    settings.enabledPlugins = { ...settings.enabledPlugins, 'argo@argo': true }
+    if (marketplaceSource) {
+      settings.extraKnownMarketplaces = {
+        ...settings.extraKnownMarketplaces,
+        argo: { source: marketplaceSource },
+      }
     }
+    writeJson(settingsPath, settings)
   }
-  writeJson(settingsPath, settings)
 
   const argoJsonPath = argoConfigPath(hostRoot)
   const shape = {
@@ -96,5 +113,6 @@ export function runInit({ hostRoot, marketplaceSource }: { hostRoot: string; mar
     apps,
     depAlreadyPresent,
     addedKeys,
+    selfRepo,
   }
 }

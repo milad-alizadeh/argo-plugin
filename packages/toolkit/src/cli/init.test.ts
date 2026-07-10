@@ -80,6 +80,37 @@ describe('runInit — monorepo mode', () => {
   })
 })
 
+describe('runInit — argo plugin self-repo (producer, not consumer)', () => {
+  beforeEach(() => {
+    writeFileSync(join(host, 'package.json'), JSON.stringify({ name: '@argo/plugin-dev', private: true, workspaces: ['packages/*'] }))
+    mkdirSync(join(host, '.claude-plugin'), { recursive: true })
+    writeFileSync(join(host, '.claude-plugin', 'plugin.json'), JSON.stringify({ name: 'argo', version: '0.0.0' }))
+  })
+
+  it('does NOT add a self-referential @argohq/toolkit dependency', () => {
+    const report = runInit({ hostRoot: host })
+    expect(readJson('package.json').dependencies).toBeUndefined()
+    expect(report.selfRepo).toBe(true)
+  })
+
+  it('does NOT self-enable argo@argo from the marketplace cache', () => {
+    runInit({ hostRoot: host })
+    let settings: Record<string, unknown> | undefined
+    try {
+      settings = readJson('.claude', 'settings.json')
+    } catch {
+      settings = undefined
+    }
+    expect(settings?.enabledPlugins).toBeUndefined()
+  })
+
+  it('still seeds config.json and the gitignore block', () => {
+    runInit({ hostRoot: host })
+    expect(readJson('.argo', 'config.json')).toBeTruthy()
+    expect(readFileSync(join(host, '.gitignore'), 'utf8')).toContain('/.argo/*')
+  })
+})
+
 describe('runInit — single-repo mode', () => {
   beforeEach(() => {
     writeFileSync(join(host, 'package.json'), JSON.stringify({ name: 'solo', dependencies: { react: '^19.0.0' } }))

@@ -1,7 +1,7 @@
 /**
  * Card-routing eval — does the SessionStart way-of-working card (the CARD
- * const in hooks/session-context.mjs) actually make a session route work
- * to the right argo skill/agent?
+ * const in packages/toolkit/src/hooks/session-context.ts) actually make a
+ * session route work to the right argo skill/agent?
  *
  * The card text is read from the real source via extractCard(), never
  * pasted, so this eval always scores current wording.
@@ -34,7 +34,7 @@ import { fileURLToPath } from 'node:url'
 import { extractCard } from './lib/card.mjs'
 import { scoreRouting } from './lib/scoreRouting.mjs'
 
-const HOOK_PATH = fileURLToPath(new URL('../hooks/session-context.mjs', import.meta.url))
+const HOOK_PATH = fileURLToPath(new URL('../packages/toolkit/src/hooks/session-context.ts', import.meta.url))
 const CARD = extractCard(HOOK_PATH)
 
 /**

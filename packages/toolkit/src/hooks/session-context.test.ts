@@ -5,11 +5,10 @@ import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-const HOOK = fileURLToPath(new URL('./session-context.mjs', import.meta.url))
+const HOOK = fileURLToPath(new URL('../../dist/hooks/session-context.js', import.meta.url))
 
-/** Run the hook as Claude Code does: hook-input JSON on stdin, observe exit + stdout. */
-function runHook(stdin) {
-  return new Promise((resolve) => {
+function runHook(stdin: string) {
+  return new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve) => {
     const child = spawn('node', [HOOK], { stdio: ['pipe', 'pipe', 'pipe'] })
     let stdout = ''
     let stderr = ''
@@ -20,8 +19,7 @@ function runHook(stdin) {
   })
 }
 
-const sessionStartInput = (source = 'startup') =>
-  JSON.stringify({ hook_event_name: 'SessionStart', source })
+const sessionStartInput = (source = 'startup') => JSON.stringify({ hook_event_name: 'SessionStart', source })
 
 describe('session-context — SessionStart way-of-working card', () => {
   it('emits an additionalContext card on SessionStart, within the 600-token (~2400 char) budget', async () => {
@@ -40,7 +38,6 @@ describe('session-context — SessionStart way-of-working card', () => {
     for (const pointer of ['grill-me', 'build-plan', 'root-cause', 'graphify']) {
       expect(context).toContain(pointer)
     }
-    // Stack specifics belong to init's installed rules, never this card.
     for (const stackWord of ['bun ', 'turbo', 'vitest', 'playwright', 'npm ', 'electron']) {
       expect(context.toLowerCase()).not.toContain(stackWord)
     }

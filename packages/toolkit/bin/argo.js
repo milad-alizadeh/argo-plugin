@@ -2,7 +2,8 @@
 /**
  * @argohq/toolkit single CLI entry. Subcommands:
  *   argo-hook <event>   — Claude Code hook dispatch (bash-pretooluse, post-edit-write,
- *                         playbook-permission)
+ *                         playbook-permission, bash-safety-guards, block-lockfile-edit,
+ *                         block-designer-spawn, session-context)
  *   design <verb>       — skill-script CLI verbs (Slice 2)
  *   init | graph refresh — lifecycle verbs (Slices 4+)
  *   playbook <start|status|advance|adopt|diagram> — @argohq/core's playbook-engine
@@ -52,6 +53,14 @@ const HOOK_CHAINS = {
   // since @argohq/claude-adapter-plugin's runPermissionHook needs to see Bash,
   // Edit/Write, and Figma calls alike.
   'playbook-permission': ['../dist/adapter-claude/playbook-permission-gate.js'],
+  // Plugin-side SAFETY hooks (moved out of the plugin checkout — see
+  // hooks/hooks.json in the plugin repo, which now runs every route through
+  // `npx --no-install @argohq/toolkit argo-hook <route>` instead of
+  // hand-written .mjs files):
+  'bash-safety-guards': ['../dist/hooks/bash-safety-guards.js'],
+  'block-lockfile-edit': ['../dist/hooks/block-lockfile-edit.js'],
+  'block-designer-spawn': ['../dist/hooks/block-designer-spawn.js'],
+  'session-context': ['../dist/hooks/session-context.js'],
 }
 
 function readStdin() {

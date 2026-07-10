@@ -2,11 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
-const HOOK = fileURLToPath(new URL('./block-lockfile-edit.mjs', import.meta.url))
+const HOOK = fileURLToPath(new URL('../../dist/hooks/block-lockfile-edit.js', import.meta.url))
 
-/** Run the hook as Claude Code does: hook-input JSON on stdin, observe exit code. */
-function runHook(stdin) {
-  return new Promise((resolve) => {
+function runHook(stdin: string) {
+  return new Promise<{ code: number | null; stderr: string }>((resolve) => {
     const child = spawn('node', [HOOK], { stdio: ['pipe', 'pipe', 'pipe'] })
     let stderr = ''
     child.stderr.on('data', (d) => (stderr += d))
@@ -15,7 +14,7 @@ function runHook(stdin) {
   })
 }
 
-const editInput = (tool_name, file_path) =>
+const editInput = (tool_name: string, file_path: string) =>
   JSON.stringify({ hook_event_name: 'PreToolUse', tool_name, tool_input: { file_path } })
 
 describe('block-lockfile-edit — never hand-edit a lockfile, use the package manager', () => {

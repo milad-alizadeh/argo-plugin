@@ -61,7 +61,7 @@ import { join } from 'node:path'
  * suggestions written once at setup, never reconciled against a plugin version.
  * A legacy argo-config.json is deliberately NOT read (no-legacy ruling).
  */
-function setupNudge(cwd) {
+export function setupNudge(cwd?: string): string {
   if (!cwd) return ''
   const configPath = join(cwd, '.argo', 'config.json')
   if (!existsSync(configPath)) {
@@ -70,14 +70,14 @@ function setupNudge(cwd) {
   return ''
 }
 
-function main() {
+function main(): void {
   let raw = ''
   try {
     raw = readFileSync(0, 'utf8')
   } catch {
     process.exit(0)
   }
-  let hook
+  let hook: any
   try {
     hook = JSON.parse(raw)
   } catch {

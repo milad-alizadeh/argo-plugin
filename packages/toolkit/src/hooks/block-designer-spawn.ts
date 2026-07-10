@@ -14,11 +14,9 @@
  * DETECTION: Claude Code's PreToolUse payload carries no direct "which agent
  * is running" field, so this reads the session's own transcript
  * (`hook.transcript_path`) and looks for a marker string unique to
- * designer.md's own system-prompt body — a real, if indirect, signal that
- * mirrors how the runtime-seed marker is appended to an agent's prompt.
- * Fail-open on any missing/unreadable transcript or malformed stdin — this
- * is a backstop for a prose rule already stated in designer.md, not the only
- * line of defense.
+ * designer.md's own system-prompt body. Fail-open on any missing/unreadable
+ * transcript or malformed stdin — this is a backstop for a prose rule already
+ * stated in designer.md, not the only line of defense.
  */
 import { readFileSync, existsSync } from 'node:fs'
 
@@ -26,12 +24,12 @@ import { readFileSync, existsSync } from 'node:fs'
 // other agent's prompt.
 const DESIGNER_MARKER = 'You build and edit designs inside a live Figma file'
 
-export function isDesignerTranscript(content) {
+export function isDesignerTranscript(content: unknown): boolean {
   return typeof content === 'string' && content.includes(DESIGNER_MARKER)
 }
 
-function main() {
-  let hook
+function main(): void {
+  let hook: any
   try {
     hook = JSON.parse(readFileSync(0, 'utf8'))
   } catch {
@@ -42,7 +40,7 @@ function main() {
   const transcriptPath = hook?.transcript_path
   if (typeof transcriptPath !== 'string' || !existsSync(transcriptPath)) process.exit(0)
 
-  let content
+  let content: string
   try {
     content = readFileSync(transcriptPath, 'utf8')
   } catch {
@@ -60,10 +58,11 @@ function main() {
   process.exit(0)
 }
 
-// Guarded (unlike a naive trailing call): importing this module for its pure
-// `isDesignerTranscript` export (as the unit test does) must NOT trigger a
-// synchronous stdin read — that blocked the whole suite when a bare `main()`
-// call ran on import with no stdin attached. Claude Code always invokes this
-// file directly (`node hooks/block-designer-spawn.mjs`), where this check is
-// true, so the hook's real CLI behavior is unchanged.
+// Guarded (unlike the other hook modules in this dir): this file's pure
+// `isDesignerTranscript` export is imported directly by its unit test (not
+// spawned as a subprocess) — a bare top-level `main()` call would
+// synchronously block on stdin during that import and hang the test runner.
+// Claude Code always invokes this file directly via `argo-hook
+// block-designer-spawn` (spawned, `import.meta.url === argv[1]`), where this
+// check is true, so the real CLI behavior is unchanged.
 if (import.meta.url === `file://${process.argv[1]}`) main()

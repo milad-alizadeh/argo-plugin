@@ -98,12 +98,16 @@ design→code **handoff**) — lives in **[PIPELINE.md](PIPELINE.md)**.
 | design-verifier / fidelity-verifier | end of a hi-fi build | adversarial LLM judge | screens that miss PRD requirements; visual drift from the reference |
 | reviewer | before merge | LLM judge | correctness/security defects in the diff |
 
-Safety guardrails run verbatim from the plugin (dependency-free, alive before any
-`npm install`). Everything else dispatches into `@argohq/toolkit` via
-`npx --no @argohq/toolkit argo-hook <name>` and **fails closed** — a missing kit
-blocks with the fix command (`bun install` / `/argo:init`). There is no
-plugin↔kit version handshake: the plugin and kit release together, so the hook
-just runs whatever kit is installed.
+Every hook in `hooks/hooks.json` runs the same way — `npx --no-install --offline
+@argohq/toolkit argo-hook <route>` — the plugin checkout carries no executable
+JS of its own; all hook logic (safety guardrails included) lives in
+`@argohq/toolkit`. `--no-install --offline` guarantees zero network access: a
+project that hasn't installed the toolkit yet gets a fail-**open** one-line
+warning (gates inactive, run `bun install` / `/argo:init`) instead of a hang or
+a deadlocked bootstrap, while a genuine gate **BLOCK** verdict from an installed
+toolkit still propagates and stops the tool call. There is no plugin↔kit version
+handshake: the plugin and kit release together, so the hook just runs whatever
+kit is installed on the host.
 
 ## Install
 
@@ -209,11 +213,11 @@ whether it's day 1 or a year later. Full rationale in
   `design-verifier`, `fidelity-verifier`. Each runs
   standalone in any terminal; the Argo cockpit only adds a runtime seed on top.
 - **Skills** (`skills/`) — the twenty-one disciplines listed above.
-- **Hooks** (`hooks/`) — the two-tier split from the table: plugin-side safety
-  guardrails (always on, verbatim) and toolkit-dispatched gates (fail-closed,
-  armed by project state: `.argo/evidence/build-mode.json` for build gates,
-  `.argo/config.json` `design` blocks for design gates; `format-on-write` and
-  `test-smell` always on).
+- **Hooks** (`hooks/hooks.json` — the only file in `hooks/`) — every route
+  (safety guardrails, build gates, design gates, `format-on-write` /
+  `test-smell`) dispatches into the host-installed `@argohq/toolkit` via `npx
+  --no-install --offline`; armed by project state (`.argo/evidence/build-mode.json`
+  for build gates, `.argo/config.json` `design` blocks for design gates).
 
 Only agent/skill **descriptions** load into context until invoked — the pack is
 ~1.6k tokens always-on.

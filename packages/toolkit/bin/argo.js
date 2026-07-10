@@ -18,6 +18,10 @@
  *                         source-template hash at install time; `status
  *                         --templates-dir <dir>` diffs recorded hashes against
  *                         the CURRENT templates — advisory only, never a gate
+ *   status              — read-only posture report over `.argo/config.json`'s
+ *                         index (testDiscipline/boundaryLint/packs/provenance),
+ *                         flags config-vs-reality mismatches as plain text;
+ *                         never fixes anything (no doctor, no migrations)
  *
  * Hook dispatch model: each hook module stays a standalone fail-closed script
  * (stdin JSON in, exit code out) — the dispatcher reads stdin ONCE and replays
@@ -108,6 +112,60 @@ function flagValue(args, name) {
   return i === -1 ? undefined : args[i + 1]
 }
 
+const HELP_FLAGS = new Set(['--help', '-h'])
+
+const USAGE = {
+  'argo-hook': () => `usage: argo argo-hook <event>\n  known events: ${Object.keys(HOOK_CHAINS).join(', ')}`,
+  design: () => `usage: argo design <verb> [...args]\n  known verbs: ${Object.keys(DESIGN_VERBS).join(', ')}`,
+  init: () => 'usage: argo init [--host-root <path>] [--marketplace-repo <owner/repo>]',
+  playbook: () => 'usage: argo playbook <list|start|claim|status|advance|adopt|diagram> [...args]',
+  rules: () => 'usage: argo rules <record|status> [...args]',
+  plans: () => 'usage: argo plans [check --plan <path>] [--host-root <path>]',
+  graph: () => 'usage: argo graph refresh [--host-root <path>]',
+  status: () => 'usage: argo status [--host-root <path>]'
+}
+
+const TOP_LEVEL_USAGE = `usage: argo <${Object.keys(USAGE).join('|')}> ...`
+
+/** `--help`/`-h` anywhere in argv short-circuits BEFORE any real (side-effecting)
+ * command runs — prints usage for the named subcommand (or the top-level
+ * banner) and exits 0. */
+function printHelpAndExit(cmd) {
+  process.stdout.write(`${(USAGE[cmd] ?? (() => TOP_LEVEL_USAGE))()}\n`)
+  process.exit(0)
+}
+
+/** Warns (never blocks) on an argv flag token (`--foo`) not present in `known`
+ * — misspelled/unrecognized flags used to be silently swallowed. */
+function warnUnknownFlags(args, label, known) {
+  const knownSet = new Set([...known, '--help', '-h'])
+  for (const a of args) {
+    if (a.startsWith('--') && !knownSet.has(a)) {
+      process.stderr.write(`argo ${label}: warning: unrecognized flag "${a}"\n`)
+    }
+  }
+}
+
+const PLAYBOOK_KNOWN_FLAGS = {
+  list: ['--host-root'],
+  start: ['--host-root', '--name', '--target', '--key'],
+  claim: ['--host-root', '--key'],
+  status: ['--host-root', '--key'],
+  advance: ['--host-root', '--key', '--artifacts'],
+  adopt: ['--host-root', '--name', '--target', '--key', '--artifacts'],
+  diagram: ['--host-root', '--name']
+}
+
+// Union of every flag any design verb script reads via its own argv parsing
+// (grepped from packages/toolkit/src/packs/design/skill-scripts) — best
+// effort, warn-only, since each verb owns its own flag set.
+const DESIGN_KNOWN_FLAGS = [
+  '--host-root', '--cwd', '--name', '--names', '--node', '--screen', '--kind', '--status', '--result',
+  '--component', '--component-names', '--componentNames', '--manifest', '--template', '--options', '--out',
+  '--emit', '--record', '--search', '--session', '--reason', '--check', '--cached', '--built', '--prd',
+  '--briefRequirements'
+]
+
 /** Parses `--artifacts '<json>'` (item 1) into the `Record<string, string>`
  * `playbookAdvance`/`playbookAdopt` expect on `opts.artifacts` — a JSON object
  * mapping artifactKey -> path/uri. Returns `undefined` when the flag is
@@ -126,11 +184,19 @@ function parseArtifactsFlag(args) {
 
 const [cmd, ...rest] = process.argv.slice(2)
 
+// `design` is exempt: each verb script owns its own `--help` (some print a
+// verb-specific limitation notice, e.g. `design sync --help`) — re-exec'd via
+// runDesignVerb below, which already never runs the side-effecting path.
+if (cmd !== 'design' && (HELP_FLAGS.has(cmd) || rest.some((a) => HELP_FLAGS.has(a)))) {
+  printHelpAndExit(cmd)
+}
+
 switch (cmd) {
   case 'argo-hook':
     await runHookChain(rest[0])
     break
   case 'design':
+    warnUnknownFlags(rest.slice(1), `design ${rest[0] ?? ''}`, DESIGN_KNOWN_FLAGS)
     runDesignVerb(rest[0], rest.slice(1))
     break
   case 'init': {
@@ -147,6 +213,7 @@ switch (cmd) {
     const verb = rest[0]
     const args = rest.slice(1)
     const hostRoot = flagValue(args, '--host-root') ?? process.cwd()
+    warnUnknownFlags(args, `playbook ${verb ?? ''}`, PLAYBOOK_KNOWN_FLAGS[verb] ?? [])
     const { playbookStart, playbookStatus, playbookAdvance, playbookAdopt, playbookDiagram } = await import(
       '../dist/core/index.js'
     )
@@ -304,6 +371,11 @@ switch (cmd) {
     console.log(JSON.stringify(plans, null, 2))
     break
   }
+  case 'status': {
+    const { runStatus } = await import('../dist/core/cli/status.js')
+    console.log(JSON.stringify(runStatus(flagValue(rest, '--host-root') ?? process.cwd()), null, 2))
+    break
+  }
   case 'graph': {
     if (rest[0] !== 'refresh') {
       process.stderr.write(`argo graph: unknown verb "${rest[0] ?? ''}" (known: refresh)\n`)
@@ -314,6 +386,6 @@ switch (cmd) {
     break
   }
   default:
-    process.stderr.write('usage: argo <argo-hook|design|init|graph|playbook|plans> ...\n')
-    process.exit(cmd ? 1 : 0)
+    process.stderr.write(`${TOP_LEVEL_USAGE}\n`)
+    process.exit(1) // bare `argo` and an unknown command are both usage errors — never a silent 0
 }

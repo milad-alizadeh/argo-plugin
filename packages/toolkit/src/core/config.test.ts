@@ -20,7 +20,8 @@ describe('readConfig', () => {
       packs: {},
       noPlaybook: 'allow',
       testDiscipline: undefined,
-      land: undefined,
+      boundaryLint: undefined,
+      landing: undefined,
       provenance: {}
     })
   })
@@ -44,8 +45,9 @@ describe('readConfig', () => {
       JSON.stringify({
         packs: { 'pack-design': true, 'pack-code': false },
         noPlaybook: 'deny-edits',
-        testDiscipline: { mode: 'test-first' },
-        land: { mode: 'squash' }
+        testDiscipline: { enforcedBy: 'probity', configPath: 'probity.config.ts' },
+        boundaryLint: { enforcedBy: 'dependency-cruiser', configPath: '.dependency-cruiser.cjs', waivers: [] },
+        landing: 'pr'
       })
     )
 
@@ -55,8 +57,9 @@ describe('readConfig', () => {
     expect(readConfig(nested)).toEqual({
       packs: { 'pack-design': true, 'pack-code': false },
       noPlaybook: 'deny-edits',
-      testDiscipline: { mode: 'test-first' },
-      land: { mode: 'squash' },
+      testDiscipline: { enforcedBy: 'probity', configPath: 'probity.config.ts' },
+      boundaryLint: { enforcedBy: 'dependency-cruiser', configPath: '.dependency-cruiser.cjs', waivers: [] },
+      landing: 'pr',
       provenance: {}
     })
   })
@@ -70,7 +73,8 @@ describe('readConfig', () => {
       packs: {},
       noPlaybook: 'deny-edits',
       testDiscipline: undefined,
-      land: undefined,
+      boundaryLint: undefined,
+      landing: undefined,
       provenance: {}
     })
   })
@@ -85,7 +89,8 @@ describe('readConfig', () => {
       packs: {},
       noPlaybook: 'allow',
       testDiscipline: undefined,
-      land: undefined,
+      boundaryLint: undefined,
+      landing: undefined,
       provenance: {}
     })
   })
@@ -115,7 +120,7 @@ describe('readConfig', () => {
 
 describe('assertPackAvailable', () => {
   function makeConfig(packs: Record<string, boolean>): ArgoConfig {
-    return { packs, noPlaybook: 'allow', testDiscipline: undefined, land: undefined, provenance: {} }
+    return { packs, noPlaybook: 'allow', testDiscipline: undefined, boundaryLint: undefined, landing: undefined, provenance: {} }
   }
 
   it('throws PackUnavailableError naming the disabled pack (design-to-code -> pack-code)', () => {

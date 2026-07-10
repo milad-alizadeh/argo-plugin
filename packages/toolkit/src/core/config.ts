@@ -2,12 +2,22 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 
 /**
- * `.argo/config.json` reader — the home for `packs`/`noPlaybook`/
- * `testDiscipline`/`land`. Since the `.argo/` consolidation the SAME file also
- * carries the `design.<app>` blocks, read separately by design-commit-gate via
+ * `.argo/config.json` reader — a declarative INDEX of posture flags and
+ * pointers at third-party tool configs (`packs`/`noPlaybook`/
+ * `testDiscipline`/`boundaryLint`/`landing`/`provenance`), never a wrapper
+ * that re-encodes those tools' own settings: `testDiscipline` and
+ * `boundaryLint` name WHO enforces a posture and WHERE its real config
+ * lives (`probity.config.ts`, `.dependency-cruiser.cjs`) — the tool config
+ * itself stays untouched and un-duplicated. Since the `.argo/`
+ * consolidation the SAME file also carries the `design.<app>` blocks, read
+ * separately by design-commit-gate via
  * `packages/toolkit/src/config/argo-json.ts`'s `findArgoJson` — same
- * walk-up-to-nearest-file idiom, but a different shape slice, so it is not
- * imported from here (core stays free of the config package).
+ * walk-up-to-nearest-file idiom, but a different shape slice (design
+ * authoring config, not posture/pointers), so it is not imported from here
+ * (core stays free of the config package). The two `ArgoConfig` types
+ * coexist because they cover disjoint concerns; `argo status`
+ * (`cli/status.ts`) is the one place that resolves this index against
+ * on-disk reality.
  *
  * Read LIVE per call — no session-start cache, per the settled decision (a
  * config edit mid-session must take effect on the next hook invocation).
@@ -22,6 +32,27 @@ import { dirname, join, resolve } from 'node:path'
  * see `assertPackAvailable`. Default: `{}` (every pack disabled). */
 export type PackAvailability = Record<string, boolean>
 
+/** WHO enforces test discipline and WHERE its real config lives — a pointer,
+ * not a wrapper. `probity` is the only enforcer wired today (this repo's own
+ * `probity.config.ts`); the shape stays generic (`enforcedBy` is a string,
+ * not a union) so a future host can name a different tool without a schema
+ * change. */
+export interface TestDisciplinePosture {
+  enforcedBy: string
+  configPath: string
+}
+
+/** WHO enforces module-boundary rules and WHERE its config lives, same
+ * pointer shape as `TestDisciplinePosture`. `waivers` names repo-relative
+ * paths exempted from the boundary check (kept in the index itself, unlike
+ * `configPath`, because waivers are an argo-side posture decision — not part
+ * of the underlying tool's own config). Default: `[]`. */
+export interface BoundaryLintPosture {
+  enforcedBy: string
+  configPath: string
+  waivers: string[]
+}
+
 export interface ArgoConfig {
   /** Which packs are installed/enabled. Default: `{}`. */
   packs: PackAvailability
@@ -32,13 +63,21 @@ export interface ArgoConfig {
    * coaching (enforced by adapter-claude's hook, not here). Default:
    * `"allow"` — the one default explicitly named in the design doc. */
   noPlaybook: 'allow' | 'coach' | 'deny-edits'
-  /** Reserved for pack-code's TDD policies (`test-first`/`reproduce-first`/
-   * `tests-stay-green`) — phase 2. Default: `undefined` (no discipline
-   * configured; meaningless without pack-code to enforce it). */
-  testDiscipline?: unknown
-  /** Reserved for the `land` playbook's settings (`land.mode`) — phase 2.
-   * Default: `undefined` (no land config; the playbook doesn't exist yet). */
-  land?: unknown
+  /** Pointer at the tool enforcing TDD, e.g.
+   * `{ enforcedBy: 'probity', configPath: 'probity.config.ts' }`. Default:
+   * `undefined` (no discipline configured). Read by `argo status` to flag a
+   * `configPath` that doesn't exist on disk. */
+  testDiscipline?: TestDisciplinePosture
+  /** Pointer at the tool enforcing module-boundary rules, e.g.
+   * `{ enforcedBy: 'dependency-cruiser', configPath: '.dependency-cruiser.cjs',
+   * waivers: [] }`. Default: `undefined` (no boundary lint configured). */
+  boundaryLint?: BoundaryLintPosture
+  /** The landing/merge mode a host's `land` playbook reads (e.g. `"pr"` or
+   * `"merge"`) — written by `argo init` (`cli/init.ts`) under this name
+   * (renamed from a dead, never-read `land` key that no reader ever
+   * matched). Kept `unknown` here since the land playbook itself owns and
+   * validates the value shape. Default: `undefined`. */
+  landing?: unknown
   /** Repo-relative installed path (e.g. `.claude/rules/testing.md`) ->
    * source template hash, recorded by `argo init` at install time
    * (skills/init/SKILL.md §5). Covers any file argo installs from a
@@ -54,7 +93,8 @@ const DEFAULT_CONFIG: ArgoConfig = {
   packs: {},
   noPlaybook: 'allow',
   testDiscipline: undefined,
-  land: undefined,
+  boundaryLint: undefined,
+  landing: undefined,
   provenance: {}
 }
 
@@ -90,7 +130,8 @@ export function readConfig(cwd: string = process.cwd()): ArgoConfig {
           ? parsed.noPlaybook
           : DEFAULT_CONFIG.noPlaybook,
       testDiscipline: 'testDiscipline' in parsed ? parsed.testDiscipline : DEFAULT_CONFIG.testDiscipline,
-      land: 'land' in parsed ? parsed.land : DEFAULT_CONFIG.land,
+      boundaryLint: 'boundaryLint' in parsed ? parsed.boundaryLint : DEFAULT_CONFIG.boundaryLint,
+      landing: 'landing' in parsed ? parsed.landing : DEFAULT_CONFIG.landing,
       provenance:
         typeof parsed.provenance === 'object' && parsed.provenance !== null
           ? parsed.provenance

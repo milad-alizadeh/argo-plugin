@@ -431,6 +431,15 @@ switch (cmd) {
     console.log(JSON.stringify(runGraphRefresh({ cwd: flagValue(rest, '--host-root') ?? process.cwd() })))
     break
   }
+  case 'docs': {
+    if (rest[0] !== 'sync-theme') {
+      process.stderr.write(`argo docs: unknown verb "${rest[0] ?? ''}" (known: sync-theme)\n`)
+      process.exit(1)
+    }
+    const { runDocsSyncTheme } = await import('../dist/cli/docs-sync-theme.js')
+    console.log(JSON.stringify(runDocsSyncTheme({ cwd: flagValue(rest, '--host-root') ?? process.cwd() })))
+    break
+  }
   default:
     process.stderr.write(`${TOP_LEVEL_USAGE}\n`)
     process.exit(1) // bare `argo` and an unknown command are both usage errors — never a silent 0

@@ -87,6 +87,21 @@ this yourself; the config is the only authority.
    established doc format; do not start a parallel doc system. Commit doc
    updates on the branch before pushing. This is the only writing you do —
    never feature code.
+
+   **When the project's `.argo/config.json` has a `"docs"` block and
+   `.argo/docs-manifest.json` exists:** for the manifest-tracked prose pages,
+   never prompt interactively — you run non-interactively both in
+   `/argo:build-plan` worktrees and bare-terminal invocations, with no
+   reliable channel to block on a human's yes/no mid-run. Instead: a page
+   whose current content hash still matches its recorded manifest hash is
+   AI-owned — regenerate it silently (safe, no human input at risk). A page
+   whose hash has diverged is human-edited — skip it silently, and name every
+   skipped page in your final report so a human sees exactly what wasn't
+   touched. Mechanical reference pages (playbooks/skills/agents/CLI/config
+   schema) have no ownership state — they are never hand-edited by design, so
+   always regenerate them regardless of the manifest. State both counts
+   (auto-updated / skipped-as-human-owned) in your OUTPUT report, and point
+   the reader at `/argo:docs-refresh` to resolve the skipped set.
 2. **Push** the branch to its remote (`git push -u origin <branch>`). In PR mode,
    never push to the default branch directly.
 3. **Open or update the PR** with `gh`: a title that states the change, and a body

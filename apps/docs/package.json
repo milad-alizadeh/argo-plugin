@@ -1,0 +1,35 @@
+{
+  "name": "apps-docs",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "node scripts/generate-reference.mjs && astro check && astro build",
+    "generate-reference": "node scripts/generate-reference.mjs",
+    "preview": "astro preview",
+    "astro": "astro",
+    "typecheck": "astro check",
+    "lint": "eslint --cache .",
+    "lint:docs-style": "node scripts/lint-docs-style.mjs",
+    "format": "prettier --write .",
+    "check-links": "node scripts/generate-reference.mjs && astro build && linkinator ./dist --recurse"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.41.3",
+    "astro": "^7.0.2",
+    "playwright": "^1.61.1",
+    "rehype-mermaid": "^3.0.0",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@argohq/toolkit": "workspace:*",
+    "@astrojs/check": "^0.9.9",
+    "eslint": "^10.6.0",
+    "eslint-plugin-astro": "^2.1.1",
+    "linkinator": "^7.6.1",
+    "prettier": "^3.9.4",
+    "prettier-plugin-astro": "^0.14.1",
+    "typescript": "^6.0.3"
+  }
+}

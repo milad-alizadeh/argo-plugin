@@ -1,0 +1,11 @@
+{
+  "apps/docs/src/content/docs/start-here/what-is-argo.md": "2f8ca86544707800b6657bc662984780a1aa7ff89ad9e4cc77c44a089a6c3e9f",
+  "apps/docs/src/content/docs/start-here/install-and-first-run.md": "96d2cd9aa4dd26350845ac76c0465378f3cc36b846312f39b9eb2f40eeea50e9",
+  "apps/docs/src/content/docs/start-here/your-first-gated-build.md": "52f6b39600e1fa11185dd0a3e46904b6871cf767951d748f2b0b23885cb2a1ec",
+  "apps/docs/src/content/docs/how-it-works/the-pipeline.md": "d620715b1c4ed05fbf2ec6ea70989711f0853558bccde266080dd9648d652e43",
+  "apps/docs/src/content/docs/how-it-works/the-gates.md": "f40e4d04f8acc8fcb9de935894f4195dde1bcb136b6aeebada2ed2f548e4b0dc",
+  "apps/docs/src/content/docs/how-it-works/the-trust-model.md": "2d356990bd3f5ff83f3e8daf9b2c87ef9d1d39845606fd825602ddc6493ef2bd",
+  "apps/docs/src/content/docs/guides/set-up-design.md": "6f1539380289c852af8c8938eac63ee49748eff34eceaa1e8c68f7cf94c85abe",
+  "apps/docs/src/content/docs/guides/resolve-figma-comments.md": "c613b528c0cb816e841f0ac1af48a046de79203e14c795046e163b52afb77c24",
+  "apps/docs/src/content/docs/guides/hand-off-a-branch.md": "eef557e54d7449a5a3c8d97f9f284fd61ca76193ffcf02a0e97f6c371a8d8eda"
+}

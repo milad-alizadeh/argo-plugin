@@ -10,6 +10,7 @@ export default defineConfig({
     // logic + tests live under packages/toolkit/src/hooks/.
     include: [
       'packages/**/*.test.{js,mjs,ts}',
+      'apps/**/*.test.{js,mjs,ts}',
       'eval/**/*.test.mjs',
       'evals/**/*.test.mjs',
       'test/**/*.test.mjs'

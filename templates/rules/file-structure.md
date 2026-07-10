@@ -86,6 +86,32 @@ import { recordExchange } from './conversation/log'
 The exception: when only one symbol from a leaf is needed and the barrel would
 re-export a very large surface, a direct leaf import is acceptable.
 
+## Module boundaries — ports and adapters
+
+Modules communicate through explicit contracts, never by reaching into each
+other's internals (information hiding / dependency inversion).
+
+- **A module's barrel IS its API.** Cross-module imports may only target
+  another module's `index.ts` (or an explicitly exported entry file). Anything
+  not re-exported from the barrel is private to the module.
+- **Depend on ports, not implementations.** When module A needs behavior that
+  module B provides, A defines or consumes an interface/registry (the port)
+  and B registers into it (the adapter). A never imports B directly if B is a
+  lower-trust or more specific layer (e.g. a domain pack, a provider adapter).
+- **Layering is one-directional.** Generic/core layers must not import from
+  specific layers (adapters, domain packs, app features). Specific layers may
+  import the generic layer's public API. Two specific layers never import each
+  other's internals; if they must talk, the shared contract moves into the
+  generic layer.
+- **Side-effect imports for registration happen in exactly ONE composition
+  root** (the entry point that wires the app together), never scattered
+  across consumers. Two call sites doing the same registration import is a
+  boundary leak.
+- **Enforce mechanically where the repo has lint infrastructure**: declare the
+  layer rules in a dependency linter (e.g. dependency-cruiser or
+  eslint-plugin-boundaries) so a new leak fails the build instead of relying
+  on review.
+
 ### Apply this rule uniformly
 
 This applies to every module in the codebase — brain/, agents/, ipc/, mcp/,

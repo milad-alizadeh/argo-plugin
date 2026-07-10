@@ -22,28 +22,34 @@ dominate it. Pin `model:` explicitly on every `agent()` call, always.
 | Role | Model | Why |
 |---|---|---|
 | Seats (dimension reviewers) | `sonnet` | needs real judgment to find defensible findings |
-| Verifiers / refuters | `haiku` | narrower task than discovery (attack ONE finding), and this is the call-volume driver |
+| Verifiers / refuters | `sonnet` | a refutation vote is only as good as the voter — a weak refuter kills real findings and passes bogus ones, which defeats the whole verify phase |
 | Synthesis (chair) | `sonnet` | judgment; merges/ranks/writes the verdict |
 
-`--thorough` promotes verifiers to `sonnet`. Default stays haiku. There is no
-frontier tier here — councils are a volume review, not a single hard call;
-if a finding needs frontier-grade judgment, escalate that ONE finding by hand
-after the run, don't upgrade a whole tier.
+`--cheap` demotes verifiers to `haiku` for low-stakes passes. Default stays
+sonnet. There is no frontier tier here — councils are a volume review, not a
+single hard call; if a finding needs frontier-grade judgment, escalate that
+ONE finding by hand after the run, don't upgrade a whole tier.
 
-## Cheap-first-then-escalate
+Note on speed: council wall-clock is dominated by the verify fan-out queuing
+through the per-workflow concurrency cap, not by model choice — demoting
+verifiers to haiku barely speeds it up. To go faster, cut vote count or
+findings volume, not the model tier.
 
-Fan-out (seats) is where the discovery happens and stays cheap by default;
-only findings that survive discovery get sent to verification. Escalate a
-tier by RESULT (a specific finding, a specific project) never blanket ("this
-whole council needs sonnet everywhere" is almost always wrong).
+## Escalate by result, not by tier
+
+Only findings that survive discovery get sent to verification — that funnel
+is the cost control, not model demotion. Escalate beyond the pinned tiers by
+RESULT (a specific finding, a specific project) never blanket ("this whole
+council needs frontier everywhere" is almost always wrong).
 
 ## Budget cap
 
 - `MAX_FINDINGS_PER_SEAT` (default unbounded per seat, but log if any seat
   returns an outlier count — a seat dumping 40 findings is a prompt problem,
   not a real finding count).
-- `VOTES_PER_FINDING` (default 3) and `REFUTATIONS_REQUIRED` (default 2, i.e.
-  majority-refute kills a finding) — these two numbers ARE the budget lever;
+- `VOTES_PER_FINDING` (default 2) and `REFUTATIONS_REQUIRED` (default 2, i.e.
+  unanimous-refute kills a finding; `--thorough` raises votes to 3 for a
+  majority rule) — these two numbers ARE the budget lever;
   council cost is `seats + Σfindings × VOTES_PER_FINDING + 1`. Log the tally
   in the return value.
 - If dimension count or target size would blow the budget (e.g. a whole
@@ -64,14 +70,15 @@ export const meta = {
   description: 'Generic multi-dimension review council with adversarial verification.',
   phases: [
     { title: 'Review', detail: 'one seat per dimension (sonnet)' },
-    { title: 'Verify', detail: 'N-vote adversarial refutation per finding (haiku; --thorough → sonnet)' },
+    { title: 'Verify', detail: 'N-vote adversarial refutation per finding (sonnet; --cheap → haiku)' },
     { title: 'Synthesize', detail: 'chair verdict (sonnet)' },
   ],
 }
 
 const THOROUGH = /--thorough\b/.test(String(args))
-const VERIFY_MODEL = THOROUGH ? 'sonnet' : 'haiku'
-const VOTES_PER_FINDING = 3
+const CHEAP = /--cheap\b/.test(String(args))
+const VERIFY_MODEL = CHEAP ? 'haiku' : 'sonnet'
+const VOTES_PER_FINDING = THOROUGH ? 3 : 2
 const REFUTATIONS_REQUIRED = 2
 
 // Target + dimensions come from args: `<target> [dim1,dim2,...] [--thorough]`.
@@ -143,7 +150,8 @@ a ranked, deduplicated verdict.
 ## Checklist before running
 
 - [ ] Every `agent()` call has an explicit `model:` — no bare fan-out call.
-- [ ] `--thorough` only changes `VERIFY_MODEL`, nothing else.
+- [ ] `--thorough` only raises `VOTES_PER_FINDING`; `--cheap` only demotes
+      `VERIFY_MODEL`. Nothing else changes per flag.
 - [ ] Dimension set matches the target (drop `perf` for a docs-only diff, etc.)
       — don't run all six by reflex if a dimension is inapplicable.
 - [ ] The returned `stats` block reports seats/findings/votes so cost is visible.

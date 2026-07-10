@@ -9,7 +9,8 @@
   "description": "Dev/test harness for the argo plugin — the distributable manifest is .claude-plugin/plugin.json; this carries the trust-gate acid test.",
   "scripts": {
     "test": "vitest run",
-    "eval": "evalite run eval/card-routing.eval.ts"
+    "eval": "evalite run eval/card-routing.eval.ts",
+    "eval:prompts": "evalite run evals/*.eval.ts"
   },
   "devDependencies": {
     "evalite": "^0.16.0",

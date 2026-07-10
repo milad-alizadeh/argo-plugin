@@ -14,7 +14,9 @@
     "build": "tsc",
     "dev": "tsc --watch --preserveWatchOutput",
     "prepare": "bun run build",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "depcruise": "bun run build && depcruise dist --config .dependency-cruiser.cjs",
+    "lint": "bun run depcruise"
   },
   "exports": {
     ".": {
@@ -94,6 +96,7 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@types/node": "^26.1.0",
+    "dependency-cruiser": "16.10.4",
     "typescript": "^6.0.3"
   }
 }

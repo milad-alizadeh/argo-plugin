@@ -30,5 +30,8 @@ jobs:
         run: bun run build
       - name: Test
         run: bun run test
+      - name: Module boundaries (dependency-cruiser)
+        working-directory: packages/toolkit
+        run: bun run depcruise
       - name: Skill wrappers in sync with craft docs
         run: node packages/toolkit/bin/argo.js design assemble-skill --all --check --cwd "$GITHUB_WORKSPACE"

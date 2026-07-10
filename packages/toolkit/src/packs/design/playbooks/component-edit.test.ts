@@ -8,7 +8,7 @@ describe('componentEditSpec', () => {
   })
 
   it('is a flat stage list in the documented order, no branch field anywhere', () => {
-    expect(componentEditSpec.stages.map((s) => s.name)).toEqual(['edit', 'review', 'card-refresh', 'instance-impact-scan'])
+    expect(componentEditSpec.stages.map((s) => s.name)).toEqual(['edit', 'review', 'registry-card', 'instance-impact'])
     for (const stage of componentEditSpec.stages) {
       expect(stage).not.toHaveProperty('branch')
     }
@@ -18,6 +18,6 @@ describe('componentEditSpec', () => {
     const review = componentEditSpec.stages.find((s) => s.name === 'review')
     expect(review?.gate).toBe('fresh-eyes-review')
     expect(review?.allows).toEqual(['figma-read'])
-    expect(componentEditSpec.stages.find((s) => s.name === 'card-refresh')?.requires).toContain('review')
+    expect(componentEditSpec.stages.find((s) => s.name === 'registry-card')?.requires).toContain('review')
   })
 })

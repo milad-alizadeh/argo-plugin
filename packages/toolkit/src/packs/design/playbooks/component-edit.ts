@@ -1,7 +1,7 @@
 /**
  * `component-edit` playbook spec (playbook-engine-phase1.md Slice 11, step
  * 31; design doc "Playbook matrices #3"): `edit` → `review` →
- * `card-refresh` → `instance-impact-scan`.
+ * `registry-card` → `instance-impact`.
  *
  * `review` is the blind fresh-eyes pass every designer output gets (screens
  * had it from day one; components gained it 2026-07-10): a judge that sees
@@ -13,7 +13,11 @@
  * skill (reads the `@code-owned` annotation), not a spec branch — same
  * mechanism as `component-create`'s `build` stage.
  *
- * `instance-impact-scan` is a blind spot-check over screens that consume this
+ * `registry-card` unifies with `component-create`'s stage of the same name:
+ * both write exactly one registry card (create vs refresh-in-place is the
+ * skill's business logic, not distinct spec vocabulary).
+ *
+ * `instance-impact` is a blind spot-check over screens that consume this
  * component (read-only — it never edits, only surfaces impact). Its stage
  * shape (`allows`, no gate) is the one `code-to-design.ts`'s
  * `instance-impact-check` mirrors rather than duplicates.
@@ -41,13 +45,13 @@ export const componentEditSpec = definePlaybook({
       retries: 1
     },
     {
-      name: 'card-refresh',
+      name: 'registry-card',
       requires: ['review'],
       allows: ['registry-write']
     },
     {
-      name: 'instance-impact-scan',
-      requires: ['card-refresh'],
+      name: 'instance-impact',
+      requires: ['registry-card'],
       allows: ['file-read', 'figma-read']
     }
   ]

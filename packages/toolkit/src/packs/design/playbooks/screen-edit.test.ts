@@ -35,4 +35,10 @@ describe('screenEditSpec', () => {
     const impact = screenEditSpec.stages.find((s) => s.name === 'component-impact')
     expect(impact?.allows).toContain('registry-read')
   })
+
+  it('update-brief carries the same skill and produces declaration as screen-create\'s brief stage', () => {
+    const updateBrief = screenEditSpec.stages.find((s) => s.name === 'update-brief')
+    expect(updateBrief?.skill).toBe('design-screen')
+    expect(updateBrief?.produces).toEqual(['design/briefs/<key>.md'])
+  })
 })

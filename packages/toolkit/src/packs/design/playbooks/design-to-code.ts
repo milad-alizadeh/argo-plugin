@@ -21,6 +21,12 @@
  * `playbookStart` exercise of this refusal (and the enabled-pack pass-through
  * case, using a stub `packs.pack-code: true` config entry since pack-code
  * itself doesn't exist to register a real playbook).
+ *
+ * PLAINLY: this spec is unusable end-to-end until a real `pack-code` exists
+ * and registers `screen-implement` — every `playbook start design-to-code`
+ * on today's repo (or any host project without a code pack) is refused at
+ * the start call. It is committed now as the settled soft-seam shape, not as
+ * a runnable playbook.
  */
 import { definePlaybook, registerPlaybook } from '../../../core/index.js'
 

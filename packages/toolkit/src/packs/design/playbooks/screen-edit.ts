@@ -27,6 +27,7 @@ export const screenEditSpec = definePlaybook({
       allows: ['file-edit'],
       produces: ['design/briefs/<key>.md'],
       gate: 'brief-check',
+      skill: 'design-screen',
       session: 'fresh'
     },
     {

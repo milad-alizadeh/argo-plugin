@@ -353,9 +353,9 @@ own JSON output. A receipt submitted without the matching nonce is refused:
 this is what stops a session from hand-writing a "clean" receipt without a
 real bundled audit having run against exactly the components it claims.
 
-## Card refresh
+## Registry card refresh
 
-`component-edit`'s `card-refresh` stage keeps an existing custom component's
+`component-edit`'s `registry-card` stage keeps an existing custom component's
 registry card current after an edit:
 
 ```
@@ -368,9 +368,9 @@ It refuses to create a new entry — a brand-new component's card is written
 once by `component-create`'s `registry-card` stage (the create flow), never
 by `refresh-card`.
 
-## Instance impact scan
+## Instance impact
 
-`component-edit`'s `instance-impact-scan` stage is read-only: after the card
+`component-edit`'s `instance-impact` stage is read-only: after the card
 refresh, enumerate every INSTANCE of the edited component across the file
 (`query('INSTANCE[mainComponent=<id>]')`, or `findAll` filtered to
 `type === 'INSTANCE'` and matching `mainComponent.id`) and report which

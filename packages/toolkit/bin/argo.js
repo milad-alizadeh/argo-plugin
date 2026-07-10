@@ -157,14 +157,12 @@ switch (cmd) {
     const { playbookStart, playbookStatus, playbookAdvance, playbookAdopt, playbookDiagram } = await import(
       '../dist/core/index.js'
     )
-    // Side-effectful: pack playbook modules call registerPlaybook at import
-    // time — without this, start/status/advance can't resolve any pack
-    // playbook by name (only `list` imported it, via playbook-list.js).
-    await import('../dist/packs/design/playbooks/index.js')
-    // Headless gate set (receipt-backed design-rules-check etc.) — without
-    // this, advance threw GateNotFoundError on every audit-gated stage.
-    const { registerCliGates } = await import('../dist/packs/design/gates/register-cli-gates.js')
-    registerCliGates()
+    // Single composition-root loader: registers every pack playbook spec
+    // (start/status/advance can't resolve one by name otherwise) and the
+    // headless gate set (receipt-backed design-rules-check etc. — without
+    // this, advance threw GateNotFoundError on every audit-gated stage).
+    const { registerInstalledPacks } = await import('../dist/register-installed-packs.js')
+    registerInstalledPacks()
     // Production judge (item 2): without this, fresh-eyes-review (and any
     // other ctx.judge(...)-calling gate) throws "no judge available on
     // GateContext" on every advance — nothing ever registered a judge here

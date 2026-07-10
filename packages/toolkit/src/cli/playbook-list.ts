@@ -15,10 +15,10 @@
  * never mistakes it for a per-playbook semver.
  */
 import { readFileSync } from 'node:fs'
-// Side-effectful barrel import: pack-design's playbook modules call
-// `registerPlaybook(...)` at import time (Slice 5's registry model), so this
-// import IS the catalog population step.
-import * as designPlaybooks from '../packs/design/playbooks/index.js'
+// Side-effectful import via the single composition-root loader (never reaches
+// into `packs/design` directly): registers every pack playbook spec, and its
+// `packOfSpec` is the pack-attribution source of truth this module reuses.
+import { packOfSpec } from '../register-installed-packs.js'
 import { listPlaybooks, type PlaybookSpec, type StageSpec } from '../core/index.js'
 
 export interface PlaybookCatalogStage {
@@ -120,22 +120,6 @@ export function buildPlaybookCatalog(
 export function toolkitVersion(): string {
   const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'))
   return pkg.version
-}
-
-/**
- * Identity-based pack attribution: a spec exported by pack-design's playbook
- * barrel belongs to pack `design`. Future packs add their barrel here; a spec
- * registered by no known pack reports `unknown` rather than guessing.
- */
-function packOfSpec(spec: PlaybookSpec): string {
-  // definePlaybook<T> narrows each exported spec to its literal shape, so
-  // membership is checked by identity over `unknown` values.
-  const designSpecs = new Set<unknown>(
-    Object.values(designPlaybooks as Record<string, unknown>).filter(
-      (v) => Boolean(v && typeof v === 'object' && 'name' in v && 'stages' in v)
-    )
-  )
-  return designSpecs.has(spec) ? 'design' : 'unknown'
 }
 
 /** The full catalog for the CLI verb: every registered spec, catalog-shaped. */

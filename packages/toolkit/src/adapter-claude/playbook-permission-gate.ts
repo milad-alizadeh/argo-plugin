@@ -30,10 +30,13 @@
 import { runPermissionHook, type HookInput } from './index.js'
 import { getActiveInstance, readConfig } from '../core/index.js'
 import { resolveRepoRoot } from '../lib/repo-root.js'
-// Side-effectful: registers every pack playbook spec. Without this the hook
-// cannot resolve an active run's spec and (before 0.56.3) fail-closed denied
-// EVERY tool call in the session — including the tools needed to repair it.
-import '../packs/design/playbooks/index.js'
+// Side-effectful: registers every pack playbook spec via the single
+// composition-root loader (never imports `packs/design` directly — the
+// adapter layer may not import packs, see templates/rules/file-structure.md).
+// Without this the hook cannot resolve an active run's spec and (before
+// 0.56.3) fail-closed denied EVERY tool call in the session — including the
+// tools needed to repair it.
+import '../register-installed-packs.js'
 
 function readStdin(): Promise<string> {
   return new Promise((resolvePromise) => {

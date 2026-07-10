@@ -54,15 +54,12 @@ holding many unrelated concepts (`types.ts` accreting every type in the
 module) is the same junk-drawer smell at file granularity; a small
 colocated `types.ts` scoped to its own folder's domain is fine.
 
-### Naming convention — folders vs files
+### Naming convention
 
-| Thing | Case | Example |
-|---|---|---|
-| **Folders** (domain groupings) | `kebab-case` | `agent-detail/`, `mission-control/`, `settings/` |
-| **Component files** | `PascalCase` | `AgentDetailView.tsx`, `FleetView.tsx` |
-| **Non-component files** (hooks, utils, types, machines) | `camelCase` | `useScrollPin.ts`, `chatTimeline.ts`, `types.ts` |
-
-The rule in one sentence: **folders are always lowercase kebab, files are cased by what they export.**
+Folders are named for their domain; files are named for the one concept they
+own. Casing follows the language's own convention — the concrete tables live
+in the per-language rule files (`typescript-style.md` for TS; snake_case
+modules in Python; short lowercase package names in Go).
 
 ### Keep subfolders shallow
 
@@ -70,18 +67,16 @@ One level of nesting covers almost every case. A subfolder that itself has
 a natural cluster gets one more level (e.g. `memory/recall/`). Never go
 deeper than two levels below the module root without a documented reason.
 
-### Barrel exports
+### Public entry per module
 
-Every subfolder exposes a clean barrel via `index.ts`. A caller should never
-need to know the internal leaf path — import from the folder, not the leaf:
+Every module exposes ONE public entry that is its API; callers never import an
+internal leaf. How that maps per language:
 
-```ts
-// good
-import { recordExchange } from './conversation'
-
-// avoid (leaks internal structure)
-import { recordExchange } from './conversation/log'
-```
+| Language | Module public entry | Privacy mechanism |
+|---|---|---|
+| TypeScript | `index.ts` barrel | convention + dependency linter |
+| Python | package `__init__.py` re-exports (+ `__all__`) | `_underscore` names + import-linter |
+| Go | the package itself (exported identifiers) | `internal/` directories (compiler-enforced) |
 
 The exception: when only one symbol from a leaf is needed and the barrel would
 re-export a very large surface, a direct leaf import is acceptable.
@@ -107,10 +102,26 @@ other's internals (information hiding / dependency inversion).
   root** (the entry point that wires the app together), never scattered
   across consumers. Two call sites doing the same registration import is a
   boundary leak.
+- **No god nodes.** A module with extreme fan-in (everything imports it),
+  extreme fan-out (it imports everything), or both is a Single-Responsibility
+  violation at graph scale — split it by responsibility. Sanctioned hubs
+  (composition roots, barrels) are the only exception, and each must be
+  explicitly declared in the boundary-lint allowlist with a one-line
+  justification.
 - **Enforce mechanically where the repo has lint infrastructure**: declare the
-  layer rules in a dependency linter (e.g. dependency-cruiser or
-  eslint-plugin-boundaries) so a new leak fails the build instead of relying
-  on review.
+  layer rules in a dependency linter (dependency-cruiser or
+  eslint-plugin-boundaries for TS, import-linter for Python, `internal/` +
+  depguard for Go) so a new leak fails the build instead of relying on review.
+
+### Per-project waivers, not silent exceptions
+
+Real projects have justified violations (vendored code, a migration in
+flight, a framework-imposed shape). Handle them the same way the design
+gates do: a small, explicit ignorelist next to the lint config — each entry
+scoped to one rule + one path glob, with a one-line reason. Never loosen the
+rule globally, never scatter inline disable comments. An entry with no
+reason, or one whose path no longer exists, is a defect. New projects start
+with an empty list.
 
 ### Apply this rule uniformly
 

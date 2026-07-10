@@ -45,7 +45,7 @@ Rules that fall out of this:
 
 ## Reuse before you build
 
-The general duplication rules live in the `engineering-principles` skill; these
+The general duplication rules live in the `engineering-principles` rule; these
 are their UI-specific consequences for visual shapes (a row, a card, a labelled
 field, a button, a list, a section header, an icon):
 

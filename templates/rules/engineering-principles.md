@@ -1,13 +1,10 @@
----
-name: engineering-principles
-description: SOLID / DRY / KISS / YAGNI as checkable rules with forbidden-lists, so code changes without chain reactions. Use when writing or reviewing non-trivial code, designing a module/interface, or deciding where a value or abstraction lives.
----
-
 # Engineering Principles
 
 Write code that's easy to change **without a chain reaction**. These are rules,
 not aspirations — if a change violates one, it's wrong. Stated as forbidden-lists
-because you can pattern-match a violation, not an abstract virtue.
+because you can pattern-match a violation, not an abstract virtue. They are
+language-agnostic: they bind TypeScript, Python, Go, and anything else in the
+repo equally.
 
 ## One source of truth (DRY + SSOT)
 

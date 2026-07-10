@@ -18,6 +18,10 @@
  *                         source-template hash at install time; `status
  *                         --templates-dir <dir>` diffs recorded hashes against
  *                         the CURRENT templates — advisory only, never a gate
+ *   tooling lsp record  — stamps one language's LSP wiring posture
+ *                         (skills/init/SKILL.md §8c) into `.argo/config.json`'s
+ *                         `tooling.lsp` index: `record <language>
+ *                         <wired|recommended-not-installed>`
  *   status              — read-only posture report over `.argo/config.json`'s
  *                         index (testDiscipline/boundaryLint/packs/provenance),
  *                         flags config-vs-reality mismatches as plain text;
@@ -120,6 +124,7 @@ const USAGE = {
   init: () => 'usage: argo init [--host-root <path>] [--marketplace-repo <owner/repo>]',
   playbook: () => 'usage: argo playbook <list|start|claim|status|advance|adopt|diagram> [...args]',
   rules: () => 'usage: argo rules <record|status> [...args]',
+  tooling: () => 'usage: argo tooling lsp record <language> <wired|recommended-not-installed> [...args]',
   plans: () => 'usage: argo plans [check --plan <path>] [--host-root <path>]',
   graph: () => 'usage: argo graph refresh [--host-root <path>]',
   status: () => 'usage: argo status [--host-root <path>]',
@@ -348,6 +353,23 @@ switch (cmd) {
         process.exit(1)
     }
     break
+  }
+  case 'tooling': {
+    const [surface, verb, ...args] = rest
+    const hostRoot = flagValue(args, '--host-root') ?? process.cwd()
+    if (surface === 'lsp' && verb === 'record') {
+      const [language, posture] = args.filter((a) => !a.startsWith('--'))
+      if (!language || !posture) {
+        process.stderr.write('usage: argo tooling lsp record <language> <wired|recommended-not-installed> [--host-root <path>]\n')
+        process.exit(1)
+      }
+      const { recordLspPosture } = await import('../dist/core/cli/tooling-record.js')
+      recordLspPosture(language, posture, { cwd: hostRoot })
+      console.log(JSON.stringify({ language, posture }))
+      break
+    }
+    process.stderr.write(`argo tooling: unknown surface/verb "${surface ?? ''} ${verb ?? ''}" (known: lsp record)\n`)
+    process.exit(1)
   }
   case 'plans': {
     const { listPlans, assertPlanQueued } = await import('../dist/cli/plans.js')

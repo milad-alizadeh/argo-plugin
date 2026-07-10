@@ -84,7 +84,7 @@ describe('playbook permission gate — kit-side wiring over @argohq/claude-adapt
   })
 
   it('BLOCK: protected path denied with no active instance at all', async () => {
-    const result = await runGate(editInput(join(cwd, 'registry.json')), stateRoot)
+    const result = await runGate(editInput(join(cwd, 'design', 'registry.json')), stateRoot)
     expect(result.code).toBe(2)
     expect(result.stderr).toMatch(/protected path/)
   })
@@ -140,5 +140,42 @@ describe('playbook permission gate — kit-side wiring over @argohq/claude-adapt
   it('PASS: malformed hook stdin → inert (mirrors trust-gate/red-proof-gate\'s convention)', async () => {
     const result = await runGate('}{ not json', stateRoot)
     expect(result.code).toBe(0)
+  })
+
+  it('BLOCK: a falsy caller session_id must NOT collapse an owned pointer to project-wide (release-gating #2)', async () => {
+    const playbookName = 'owned-playbook-fixture'
+    writeInstance(
+      `${playbookName}--fixture`,
+      {
+        playbook: playbookName,
+        target: 'fixture',
+        stage: 'build',
+        status: 'in-progress',
+        attempts: [],
+        history: []
+      },
+      { cwd, stateRoot }
+    )
+    // Owner session recorded on the pointer — a DIFFERENT/absent session_id
+    // must see "no active instance" (inert), never the owner's gated stage.
+    setActiveInstance(`${playbookName}--fixture`, { cwd, stateRoot, sessionId: 'owner-session' })
+    writeConfig('deny-edits')
+
+    const result = await runGate(
+      JSON.stringify({
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Write',
+        tool_input: { file_path: join(cwd, 'src', 'App.tsx') },
+        cwd
+        // no session_id at all — the falsy/missing caller case
+      }),
+      stateRoot
+    )
+
+    // deny-edits with no active instance denies with playbook-start coaching
+    // — the FIX under test is that this does NOT instead silently pass
+    // (or gate) as though the owner's stage/instance applied project-wide.
+    expect(result.code).toBe(2)
+    expect(result.stderr).toMatch(/argo playbook start/)
   })
 })

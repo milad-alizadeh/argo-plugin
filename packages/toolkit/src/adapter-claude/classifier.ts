@@ -75,6 +75,44 @@ const GIT_HISTORY_MUTATION_PATTERNS: RegExp[] = [
 
 const GIT_COMMIT_PATTERN = /\bgit\s+commit\b/
 
+// Write/mutation-shaped Bash constructs whose LAST capture group is the
+// target path — redirection, tee, copy/move destinations, in-place sed, dd's
+// `of=`, and deletion. Deliberately coarse (same heuristic spirit as the git
+// patterns above): a false negative here just falls through to UNCLASSIFIED,
+// which is the classifier's documented safe default; a false positive merely
+// over-classifies a benign command as file-edit, which is a false alarm, not
+// a security hole. This is what closes the "Bash bypasses the protected-path
+// floor" gap (release-gating #1/#3): a bash write is now both (a) checked
+// against `isProtectedPath` and (b) subject to a stage's `allows` list like
+// any other file-edit, instead of sailing through as UNCLASSIFIED.
+const BASH_WRITE_TARGET_PATTERNS: RegExp[] = [
+  />>?\s*([^\s;&|<>]+)/,
+  /\btee\s+(?:-a\s+)?([^\s;&|]+)/,
+  /\bcp\s+(?:-\w+\s+)*\S+\s+([^\s;&|]+)\s*$/,
+  /\bmv\s+(?:-\w+\s+)*\S+\s+([^\s;&|]+)\s*$/,
+  /\bsed\s+-i[^\s]*\s+(?:\S+\s+)*?([^\s;&|]+)\s*$/,
+  /\bdd\s+.*\bof=([^\s;&|]+)/,
+  /\brm\s+(?:-\w+\s+)*([^\s;&|]+)\s*$/
+]
+
+function stripQuotes(value: string): string {
+  return value.replace(/^['"]|['"]$/g, '')
+}
+
+/** Extracts the write-target path(s) a Bash command's redirection/mutation
+ * constructs point at, one per matched subcommand-pattern pair. Returns an
+ * empty array for commands with no recognizable write shape. */
+export function extractBashWriteTargets(command: string): string[] {
+  const targets: string[] = []
+  for (const sub of splitChain(command)) {
+    for (const pattern of BASH_WRITE_TARGET_PATTERNS) {
+      const match = pattern.exec(sub)
+      if (match && match[1]) targets.push(stripQuotes(match[1]))
+    }
+  }
+  return targets
+}
+
 // Deliberately coarse — a heuristic covering the common runners, not an
 // exhaustive registry. False negatives here just fall through to
 // UNCLASSIFIED, which is safe per this module's documented invariant above.
@@ -118,6 +156,13 @@ export function classifyBashCommand(command: string): ActionKind {
   if (subcommands.some((sub) => /\bargo\s+design\s+(pull-registry|refresh-card|register-screen)\b/.test(sub))) {
     return REGISTRY_WRITE
   }
+  // A bash write/mutation must be gated exactly like a FILE_EDIT — both
+  // against the unconditional protected-path floor (checked by the hook
+  // directly off `extractBashWriteTargets`) and against a stage's `allows`
+  // list, rather than falling through to the UNCLASSIFIED pass-through.
+  if (extractBashWriteTargets(command).length > 0) {
+    return FILE_EDIT
+  }
   return UNCLASSIFIED
 }
 
@@ -149,6 +194,35 @@ const FIGMA_WRITE_PATTERNS: RegExp[] = [
   /\b\w+\.(fills|strokes|name|characters|visible|locked|x|y|width|height|opacity|cornerRadius|layoutMode)\s*=/
 ]
 
+// Obfuscation/evasion shapes (Wave A #5): the sniff above only recognizes
+// direct `.method(` / `.prop =` call and assignment shapes. A script that
+// hides its intent behind `eval`/`atob`/`Function`/char-code decoding, an
+// indirect/aliased call, or a computed (bracket-notation) property/method
+// reference is UN-SNIFFABLE by those patterns — and for a stage that
+// forbids figma-write, an un-sniffable script must fail closed to WRITE,
+// not fall through to READ or UNCLASSIFIED (both of which a
+// figma-write-forbidding stage would otherwise let pass).
+const FIGMA_OBFUSCATION_PATTERNS: RegExp[] = [
+  /\beval\s*\(/,
+  /\batob\s*\(/,
+  /\bnew\s+Function\s*\(/,
+  /\bFunction\s*\(\s*['"`]/,
+  /\bunescape\s*\(/,
+  /\bfromCharCode\s*\(/
+]
+
+// Computed-property mutation (`node["name"] = ...`) and bracket-notation
+// indirect calls to a known write method (`node["remove"]()`,
+// `figma["createFrame"]()`) — same write-shaped intent as the dot-notation
+// patterns above, just accessed through a string key instead of an
+// identifier, which the dot-notation regexes don't match.
+const FIGMA_WRITE_METHOD_NAMES =
+  'appendChild|createFrame|createRectangle|createText|createComponent|createPage|remove|removeAll|clone|resize|setPluginData|setRelaunchData'
+const FIGMA_COMPUTED_WRITE_PATTERNS: RegExp[] = [
+  /\[\s*['"`](fills|strokes|name|characters|visible|locked|x|y|width|height|opacity|cornerRadius|layoutMode)['"`]\s*\]\s*=/,
+  new RegExp(`\\[\\s*['"\`](${FIGMA_WRITE_METHOD_NAMES})['"\`]\\s*\\]\\s*\\(`)
+]
+
 const FIGMA_READ_PATTERNS: RegExp[] = [
   /\.getNodeById\s*\(/,
   /\.getNodeByIdAsync\s*\(/,
@@ -165,6 +239,12 @@ const FIGMA_READ_PATTERNS: RegExp[] = [
  * read-only Figma plugin API usage. */
 export function classifyFigmaScript(script: string): ActionKind {
   if (FIGMA_WRITE_PATTERNS.some((p) => p.test(script))) {
+    return FIGMA_WRITE
+  }
+  if (FIGMA_COMPUTED_WRITE_PATTERNS.some((p) => p.test(script))) {
+    return FIGMA_WRITE
+  }
+  if (FIGMA_OBFUSCATION_PATTERNS.some((p) => p.test(script))) {
     return FIGMA_WRITE
   }
   if (FIGMA_READ_PATTERNS.some((p) => p.test(script))) {
@@ -192,6 +272,19 @@ const FIGMA_MCP_WRITE_TOOLS = new Set([
   'mcp__plugin_figma_figma__generate_figma_design',
   'mcp__plugin_figma_figma__generate_diagram'
 ])
+
+// Non-figma MCP tool families (`mcp__<plugin>__<tool>`) have no adapter-owned
+// classification of their own, so a write-shaped one (a tool whose NAME
+// names a mutation) must not silently fall through to UNCLASSIFIED — that
+// sentinel is a pass-through in the hook (Wave A #4). Matched against the
+// tool name only (no argument shape to sniff, unlike Bash/`use_figma`):
+// deliberately broad verb coverage, same fail-closed-for-write-shaped spirit
+// as the Bash/Figma classifiers above. A benign-named tool (get/list/search/
+// query/read/…) still falls through to UNCLASSIFIED, preserving the
+// documented pass-through invariant for genuinely read-only tools.
+const MCP_TOOL_PATTERN = /^mcp__/
+const MCP_WRITE_VERB_PATTERN =
+  /__(write|create|delete|remove|update|set|upload|send|edit|put|append|insert|patch|mutate|modify|apply|execute|run|generate|save|replace)\w*$/
 
 function extractFigmaScript(toolInput: unknown): string | undefined {
   if (toolInput && typeof toolInput === 'object') {
@@ -230,6 +323,9 @@ export function classifyAction(toolName: string, toolInput: unknown): ActionKind
   }
   if (FILE_READ_TOOLS.has(toolName)) {
     return isRegistryPath(toolInput) ? REGISTRY_READ : FILE_READ
+  }
+  if (MCP_TOOL_PATTERN.test(toolName) && MCP_WRITE_VERB_PATTERN.test(toolName)) {
+    return FILE_EDIT
   }
   return UNCLASSIFIED
 }

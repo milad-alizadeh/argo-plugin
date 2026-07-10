@@ -5,7 +5,7 @@ import {
   type ArgoConfig,
   type PlaybookInstance
 } from '../core/index.js'
-import { classifyAction, FIGMA_WRITE, FILE_EDIT, REGISTRY_WRITE, UNCLASSIFIED } from './classifier.js'
+import { classifyAction, extractBashWriteTargets, FIGMA_WRITE, FILE_EDIT, REGISTRY_WRITE, UNCLASSIFIED } from './classifier.js'
 
 // Protected paths are WRITE-protected: reads must pass so sessions can
 // consult config/registry/state; the CLI verbs stay the only writers.
@@ -82,6 +82,19 @@ function extractPath(toolInput: unknown): string | undefined {
   return undefined
 }
 
+/** Bash's write-shaped targets (`>`, `>>`, `tee`, `cp`/`mv` destinations,
+ * `sed -i`, `dd of=`, `rm`) that fall under a protected path — checked
+ * separately from `extractPath` because a Bash tool call carries a command
+ * string, not a `file_path`/`path` field (release-gating #1/#3: without
+ * this, a Bash write to a protected path never surfaces a path for the
+ * unconditional protected-path floor to catch). */
+function extractProtectedBashTarget(toolName: string, toolInput: unknown): string | undefined {
+  if (toolName !== 'Bash' || !toolInput || typeof toolInput !== 'object') return undefined
+  const command = (toolInput as Record<string, unknown>).command
+  if (typeof command !== 'string') return undefined
+  return extractBashWriteTargets(command).find((target) => isProtectedPath(target))
+}
+
 /**
  * The PreToolUse hook body. Order (per the design doc + audit 1.1's fix):
  *
@@ -113,6 +126,13 @@ export function runPermissionHook(
   ) {
     return deny(
       `"${path}" is a protected path (state store / config / registry / manifests) — no stage or config setting may write it`
+    )
+  }
+
+  const bashTarget = extractProtectedBashTarget(input.tool_name, input.tool_input)
+  if (bashTarget !== undefined) {
+    return deny(
+      `"${bashTarget}" is a protected path (state store / config / registry / manifests) — no stage or config setting may write it`
     )
   }
 

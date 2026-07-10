@@ -84,8 +84,15 @@ const config = readConfig(cwd)
 // tool calls see "no active instance" and pass ungated (2026-07-10: a
 // project-wide pointer gated the supervisor and parallel agents alike).
 const callerSessionId = typeof hook?.session_id === 'string' && hook.session_id.length > 0 ? hook.session_id : null
+// A falsy caller session_id must never resolve an owned pointer's instance:
+// `getActiveInstance`'s own affinity filter only rejects a MISMATCHED
+// non-empty session id, so a missing/falsy caller id would otherwise fall
+// through and see the owner's instance again — collapsing back to the
+// project-wide gating the 2026-07-10 deadlock fix eliminated (release-
+// gating #2). Treat "no caller session id" as "no active instance for this
+// caller" outright, without ever consulting the pointer.
 const decision = runPermissionHook(input, config, () =>
-  getActiveInstance({ cwd, stateRoot, forSessionId: callerSessionId })
+  callerSessionId === null ? null : getActiveInstance({ cwd, stateRoot, forSessionId: callerSessionId })
 )
 
 if (decision.decision === 'allow') {

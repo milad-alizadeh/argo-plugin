@@ -1,3 +1,4 @@
+import { homedir } from 'node:os'
 import { describe, expect, it } from 'vitest'
 import { registerPlaybook, type ArgoConfig, type PlaybookInstance } from '../core/index.js'
 import { runPermissionHook } from './hook.js'
@@ -233,6 +234,47 @@ describe('runPermissionHook', () => {
     expect(decision.decision).toBe('allow')
     if (decision.decision === 'allow') {
       expect(decision.advisory).toMatch(/NOT enforcing/)
+    }
+  })
+
+  it('denies a Bash redirect write targeting a protected path (release-gating #1)', () => {
+    const target = `${homedir()}/.argo/state/proj-id/active-playbooks/evil.json`
+    const decision = runPermissionHook(
+      { tool_name: 'Bash', tool_input: { command: `echo '{"key":"evil"}' > ${target}` } },
+      baseConfig(),
+      () => null
+    )
+
+    expect(decision.decision).toBe('deny')
+    if (decision.decision === 'deny') {
+      expect(decision.reason).toMatch(/protected path/i)
+    }
+  })
+
+  it('denies a Bash write targeting a protected path even when the active stage only allows figma-read (release-gating #3)', () => {
+    const playbookName = uniqueName('figma-read-only')
+    registerPlaybook({
+      name: playbookName,
+      stages: [{ name: 'read-context', allows: ['figma-read'] }]
+    })
+    const instance: PlaybookInstance = {
+      playbook: playbookName,
+      target: 't',
+      stage: 'read-context',
+      status: 'in-progress',
+      attempts: [],
+      history: []
+    }
+
+    const decision = runPermissionHook(
+      { tool_name: 'Bash', tool_input: { command: 'echo pwned > apps/desktop/design/registry.json' } },
+      baseConfig(),
+      () => instance
+    )
+
+    expect(decision.decision).toBe('deny')
+    if (decision.decision === 'deny') {
+      expect(decision.reason).toMatch(/protected path/i)
     }
   })
 

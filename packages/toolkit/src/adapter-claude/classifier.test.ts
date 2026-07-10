@@ -100,6 +100,22 @@ describe('classifyFigmaScript', () => {
   it('classifies an unrecognized script as unclassified', () => {
     expect(classifyFigmaScript('console.log("hello")')).toBe(UNCLASSIFIED)
   })
+
+  it('fails closed to figma-write on an eval()-obfuscated script (Wave A #5)', () => {
+    expect(classifyFigmaScript('eval(atob("ZmlnbWEuY3JlYXRlRnJhbWUoKQ=="))')).toBe(FIGMA_WRITE)
+  })
+
+  it('fails closed to figma-write on an atob()-obfuscated script even without eval (Wave A #5)', () => {
+    expect(classifyFigmaScript('const s = atob("bm9kZS5yZW1vdmUoKQ=="); figma.currentPage.selection')).toBe(FIGMA_WRITE)
+  })
+
+  it('fails closed to figma-write on a computed-property mutation shape (Wave A #5)', () => {
+    expect(classifyFigmaScript('node["name"] = "renamed"')).toBe(FIGMA_WRITE)
+  })
+
+  it('fails closed to figma-write on a bracket-notation indirect call to a write method (Wave A #5)', () => {
+    expect(classifyFigmaScript('figma.currentPage["appendChild"](figma["createFrame"]())')).toBe(FIGMA_WRITE)
+  })
 })
 
 describe('classifyAction', () => {
@@ -170,5 +186,16 @@ describe('classifyAction', () => {
   it('classifies a Bash call with a non-string command as unclassified rather than throwing', () => {
     expect(classifyAction('Bash', {})).toBe(UNCLASSIFIED)
     expect(classifyAction('Bash', undefined)).toBe(UNCLASSIFIED)
+  })
+
+  it('classifies a write-shaped non-figma MCP tool by name rather than falling through to unclassified (Wave A #4)', () => {
+    expect(classifyAction('mcp__plugin_other_x__write_file', {})).toBe(FILE_EDIT)
+    expect(classifyAction('mcp__plugin_other_x__delete_resource', {})).toBe(FILE_EDIT)
+    expect(classifyAction('mcp__plugin_other_x__create_thing', {})).toBe(FILE_EDIT)
+  })
+
+  it('leaves a benign-named non-figma MCP tool unclassified (preserves the pass-through invariant)', () => {
+    expect(classifyAction('mcp__plugin_other_x__get_status', {})).toBe(UNCLASSIFIED)
+    expect(classifyAction('mcp__plugin_other_x__list_items', {})).toBe(UNCLASSIFIED)
   })
 })

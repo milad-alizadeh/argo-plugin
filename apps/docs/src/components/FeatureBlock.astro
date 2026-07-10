@@ -1,0 +1,36 @@
+---
+interface Props {
+  label: string
+  description: string
+}
+const { label, description } = Astro.props
+---
+
+<div class="feature-block">
+  <h3 class="feature-label">{label}</h3>
+  <p class="feature-description">{description}</p>
+</div>
+
+<style>
+  .feature-block {
+    border: 1px solid var(--argo-color-border-ui, #2a3346);
+    border-radius: 10px;
+    padding: 1.5rem;
+    background: var(--argo-color-surface, #151c2b);
+  }
+
+  .feature-label {
+    font-family: var(--argo-font-mono, ui-monospace, monospace);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--argo-color-accent, #5b7cfa);
+    margin: 0 0 0.5rem;
+  }
+
+  .feature-description {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--sl-color-gray-2, #b8bfd1);
+    margin: 0;
+  }
+</style>

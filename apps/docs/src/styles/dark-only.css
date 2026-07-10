@@ -1,0 +1,4 @@
+/* Dark-only site: hide the light/dark toggle Starlight renders by default. */
+starlight-theme-select {
+  display: none;
+}

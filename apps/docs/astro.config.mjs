@@ -60,8 +60,17 @@ export default defineConfig({
     starlight({
       title: 'Argo — the way of working',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/milad-alizadeh/argo-plugin' }],
-      customCss: ['./src/styles/mermaid-zoom.css'],
-      head: [{ tag: 'script', attrs: { src: '/mermaid-zoom.js', defer: true } }],
+      customCss: ['./src/styles/mermaid-zoom.css', './src/styles/dark-only.css'],
+      head: [
+        { tag: 'script', attrs: { src: '/mermaid-zoom.js', defer: true } },
+        // Starlight has no config-level "dark only" toggle — pin the theme
+        // pref before ThemeProvider reads localStorage, so it never renders
+        // light even for a first-time visitor with a light OS preference.
+        {
+          tag: 'script',
+          content: "localStorage.setItem('starlight-theme', 'dark')"
+        }
+      ],
       sidebar: [
         { label: 'Start here', items: [{ autogenerate: { directory: 'start-here' } }] },
         { label: 'Guides', items: [{ autogenerate: { directory: 'guides' } }] },

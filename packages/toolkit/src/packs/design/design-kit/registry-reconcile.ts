@@ -15,7 +15,7 @@
  * nothing left to compare and is deleted, not softened.
  */
 
-import { isCoverPageName } from './design-rules.js'
+import { isCoverPageName } from './design-rules/index.js'
 
 type LiveComponent = { name: string; nodeId: string; pageName?: string }
 type RegistryEntry = { name: string; nodeId: string; nodeIdResolves?: boolean }

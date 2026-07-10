@@ -45,77 +45,37 @@ import {
   untracedCopyViolation,
   missingComponentDescriptionViolation,
   unsectionedComponentViolation
-} from './design-rules.js'
+} from './design-rules/index.js'
 
-async function auditNode(
-  node: any,
-  {
-    hard,
-    semanticCollectionName = 'Semantic',
-    primitivesCollectionName = 'Primitives',
-    additionalAllowedCollectionNames = [],
-    insideInstance = false,
-    compositeNames = [],
-    compositeNamingHard = false,
-    runRecipeDesignRulesChecks,
-    viewport,
-    isScreenFrame = false,
-    ancestorSolidFill = null,
-    copyAllowedStrings = null,
-    insideCategoryShelf = false
-  }: {
-    hard: boolean
-    semanticCollectionName?: string
-    primitivesCollectionName?: string
-    additionalAllowedCollectionNames?: string[]
-    insideInstance?: boolean
-    compositeNames?: string[]
-    compositeNamingHard?: boolean
-    runRecipeDesignRulesChecks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean; isScreenFrame?: boolean }) => Promise<any[]>
-    viewport?: { width: number; height: number }
-    isScreenFrame?: boolean
-    ancestorSolidFill?: any
-    copyAllowedStrings?: string[] | null
-    insideCategoryShelf?: boolean
-  }
-) {
-  const violations: any[] = []
+type Reporter = (rule: string, detail: string) => void
 
-  // Fetched early so the false-positive tag below can see it before any violation is reported.
+/**
+ * Fetched early so the false-positive tag can see it before any violation is
+ * reported. `overrides` exists only on INSTANCE nodes — reading it on any
+ * other type throws in the sandbox.
+ */
+async function resolveInstanceContext(node: any) {
   const main = node.type === 'INSTANCE' ? await node.getMainComponentAsync() : null
-  // `overrides` exists only on INSTANCE nodes — reading it on any other type throws in the sandbox.
   const overriddenFields =
     node.type === 'INSTANCE' ? (node.overrides ?? []).flatMap((o: any) => o.overriddenFields ?? []) : []
+  return { main, overriddenFields }
+}
 
-  // A node resolving to a kit main component whose only overrides are
-  // size/fill/stroke is presumptively a gate bug, not a real hygiene defect —
-  // tag every violation reported for it so the reviewer never has to
-  // self-grade that judgment. Never licenses detaching.
-  const falsePositiveTag = possibleGateFalsePositiveTag({
-    isRemoteInstance: Boolean(main?.remote),
-    insideInstance,
-    overriddenFields
-  })
-  const report = (rule: string, detail: string) => {
-    violations.push({
-      severity: hard ? 'hard' : 'advisory',
-      rule,
-      nodeId: node.id,
-      nodeName: node.name,
-      detail,
-      ...(falsePositiveTag ? { tag: 'possible-gate-false-positive — does NOT license detaching' } : {})
-    })
-  }
-
-  // Rule functions that read `node.insideInstance` (the kit-internals
-  // exemption) need it marshaled onto the node — it's an opts-only value the
-  // real Plugin-API node never carries as a property. `nodeCtx` delegates to
-  // the real node so every existing property/getter still works, and adds
-  // `insideInstance` on top.
-  // A get-only Proxy, not Object.create/assign — the sandbox node is itself a
-  // Proxy whose set trap rejects unknown properties even via a derived
-  // object. Rule functions only ever read nodeCtx.
-  const nodeCtx = new Proxy(node, {
+/**
+ * Rule functions that read `node.insideInstance` (the kit-internals
+ * exemption) need it marshaled onto the node — it's an opts-only value the
+ * real Plugin-API node never carries as a property. `nodeCtx` delegates to
+ * the real node so every existing property/getter still works, and adds
+ * `insideInstance` on top.
+ * A get-only Proxy, not Object.create/assign — the sandbox node is itself a
+ * Proxy whose set trap rejects unknown properties even via a derived
+ * object. Rule functions only ever read nodeCtx.
+ */
+function buildNodeCtx(
+  node: any,
+  { insideInstance, ancestorSolidFill, isScreenFrame, insideCategoryShelf }: { insideInstance: boolean; ancestorSolidFill: any; isScreenFrame: boolean; insideCategoryShelf: boolean }
+) {
+  return new Proxy(node, {
     get: (target: any, prop: string) =>
       prop === 'insideInstance'
         ? insideInstance
@@ -127,14 +87,19 @@ async function auditNode(
               ? insideCategoryShelf
               : target[prop]
   })
+}
 
+function runBindingAndTextStyleChecks(nodeCtx: any, report: Reporter) {
   for (const v of unboundFillViolations(nodeCtx)) report(v.rule, v.detail)
   for (const v of unboundStrokeViolations(nodeCtx)) report(v.rule, v.detail)
   const radius = unboundRadiusViolation(nodeCtx)
   if (radius) report(radius.rule, radius.detail)
   const type = textStyleRequiredViolation(nodeCtx)
   if (type) report(type.rule, type.detail)
-  // Universal per-node a11y/overflow checks: no tags, no config.
+}
+
+/** Universal per-node a11y/overflow checks: no tags, no config. */
+function runA11yAndCopyChecks(nodeCtx: any, node: any, report: Reporter, violations: any[], copyAllowedStrings: string[] | null) {
   for (const v of hugOverflowViolations(nodeCtx)) report(v.rule, v.detail)
   const touchTarget = touchTargetViolation(nodeCtx)
   if (touchTarget) report(touchTarget.rule, touchTarget.detail)
@@ -154,7 +119,9 @@ async function auditNode(
   const truncation = textTruncationViolation(nodeCtx)
   if (truncation)
     violations.push({ severity: 'advisory', rule: truncation.rule, nodeId: node.id, nodeName: node.name, detail: truncation.detail })
+}
 
+function runLayoutChecks(nodeCtx: any, node: any, report: Reporter, insideInstance: boolean, isScreenFrame: boolean, viewport: { width: number; height: number } | undefined) {
   const autoLayout = missingAutoLayoutViolation(nodeCtx)
   if (autoLayout) report(autoLayout.rule, autoLayout.detail)
 
@@ -163,48 +130,71 @@ async function auditNode(
 
   const handDrawnIcon = handDrawnIconViolation({ type: node.type, insideInstance })
   if (handDrawnIcon) report(handDrawnIcon.rule, handDrawnIcon.detail)
+}
 
-  if ('layoutMode' in node) {
-    const gapAndPadding = []
-    const fields = node.layoutMode === 'NONE'
-      ? ['paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom']
-      : ['itemSpacing', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom']
-    for (const field of fields) {
-      if (!(field in node)) continue
-      gapAndPadding.push(await marshalGapPaddingField(node, field))
-    }
-    for (const v of gapPaddingSpacingViolations(
-      { type: node.type, layoutMode: node.layoutMode, gapAndPadding, insideInstance },
-      { semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames }
-    )) {
-      report(v.rule, v.detail)
+async function runGapPaddingCheck(
+  node: any,
+  report: Reporter,
+  { insideInstance, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames }: {
+    insideInstance: boolean
+    semanticCollectionName: string
+    primitivesCollectionName: string
+    additionalAllowedCollectionNames: string[]
+  }
+) {
+  if (!('layoutMode' in node)) return
+  const gapAndPadding = []
+  const fields = node.layoutMode === 'NONE'
+    ? ['paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom']
+    : ['itemSpacing', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom']
+  for (const field of fields) {
+    if (!(field in node)) continue
+    gapAndPadding.push(await marshalGapPaddingField(node, field))
+  }
+  for (const v of gapPaddingSpacingViolations(
+    { type: node.type, layoutMode: node.layoutMode, gapAndPadding, insideInstance },
+    { semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames }
+  )) {
+    report(v.rule, v.detail)
+  }
+}
+
+/**
+ * `main`/`overriddenFields` are resolved once up front (`resolveInstanceContext`) so
+ * the false-positive tag can see them before any violation is reported.
+ */
+function runInstanceChecks(node: any, main: any, overriddenFields: string[], insideInstance: boolean, report: Reporter) {
+  if (node.type !== 'INSTANCE') return
+  const detached = detachedInstanceViolation({ type: node.type, hasMainComponent: Boolean(main) })
+  if (detached) report(detached.rule, detached.detail)
+
+  const kitOverride = kitInstanceOverrideViolation({
+    type: node.type,
+    isRemoteInstance: Boolean(main?.remote),
+    overriddenFields
+  })
+  if (kitOverride) report(kitOverride.rule, kitOverride.detail)
+
+  // Any resolvable main, remote or local — gating on remote-only would miss
+  // a duplicated-starter file, where all icon mains are local. Hard on
+  // named audits. Top-level only: nested kit-icon instances re-flag the
+  // same glyph at every nesting level with unreliable native-size readings.
+  if (main && !insideInstance) {
+    const strokeScaleShape = marshalIconStrokeScale(node, main)
+    if (strokeScaleShape) {
+      const strokeScale = strokeScaleViolation(strokeScaleShape)
+      if (strokeScale) report(strokeScale.rule, strokeScale.detail)
     }
   }
+}
 
-  if (node.type === 'INSTANCE') {
-    const detached = detachedInstanceViolation({ type: node.type, hasMainComponent: Boolean(main) })
-    if (detached) report(detached.rule, detached.detail)
-
-    const kitOverride = kitInstanceOverrideViolation({
-      type: node.type,
-      isRemoteInstance: Boolean(main?.remote),
-      overriddenFields
-    })
-    if (kitOverride) report(kitOverride.rule, kitOverride.detail)
-
-    // Any resolvable main, remote or local — gating on remote-only would miss
-    // a duplicated-starter file, where all icon mains are local. Hard on
-    // named audits. Top-level only: nested kit-icon instances re-flag the
-    // same glyph at every nesting level with unreliable native-size readings.
-    if (main && !insideInstance) {
-      const strokeScaleShape = marshalIconStrokeScale(node, main)
-      if (strokeScaleShape) {
-        const strokeScale = strokeScaleViolation(strokeScaleShape)
-        if (strokeScale) report(strokeScale.rule, strokeScale.detail)
-      }
-    }
-  }
-
+function runNamingAndMetadataChecks(
+  node: any,
+  nodeCtx: any,
+  report: Reporter,
+  violations: any[],
+  { hard, compositeNames, compositeNamingHard }: { hard: boolean; compositeNames: string[]; compositeNamingHard: boolean }
+) {
   const nonSemanticName = nonSemanticNameViolation(nodeCtx)
   if (nonSemanticName) report(nonSemanticName.rule, nonSemanticName.detail)
 
@@ -259,24 +249,93 @@ async function auditNode(
   for (const overflow of unclippedOverflowViolations(node)) {
     violations.push({ severity: 'advisory', rule: overflow.rule, nodeId: node.id, nodeName: node.name, detail: overflow.detail })
   }
+}
 
-  // getPluginData/getPluginDataKeys are unavailable in the use_figma sandbox
-  // (private-plugin-only API) — storyUrl lives in shared plugin data, with a
-  // guarded private-data fallback for files stamped by older syncs.
-  if (node.type === 'COMPONENT') {
-    let storyUrl = node.getSharedPluginData('argo', 'storyUrl')
-    if (!storyUrl) {
-      try {
-        storyUrl = node.getPluginDataKeys().includes('storyUrl') ? node.getPluginData('storyUrl') : ''
-      } catch {
-        storyUrl = ''
-      }
-    }
-    if (storyUrl) {
-      const storyScope = storyUrlScopeViolation({ type: node.type, storyUrl })
-      if (storyScope) report(storyScope.rule, storyScope.detail)
+/**
+ * getPluginData/getPluginDataKeys are unavailable in the use_figma sandbox
+ * (private-plugin-only API) — storyUrl lives in shared plugin data, with a
+ * guarded private-data fallback for files stamped by older syncs.
+ */
+function runStoryUrlCheck(node: any, report: Reporter) {
+  if (node.type !== 'COMPONENT') return
+  let storyUrl = node.getSharedPluginData('argo', 'storyUrl')
+  if (!storyUrl) {
+    try {
+      storyUrl = node.getPluginDataKeys().includes('storyUrl') ? node.getPluginData('storyUrl') : ''
+    } catch {
+      storyUrl = ''
     }
   }
+  if (!storyUrl) return
+  const storyScope = storyUrlScopeViolation({ type: node.type, storyUrl })
+  if (storyScope) report(storyScope.rule, storyScope.detail)
+}
+
+async function auditNode(
+  node: any,
+  {
+    hard,
+    semanticCollectionName = 'Semantic',
+    primitivesCollectionName = 'Primitives',
+    additionalAllowedCollectionNames = [],
+    insideInstance = false,
+    compositeNames = [],
+    compositeNamingHard = false,
+    runRecipeDesignRulesChecks,
+    viewport,
+    isScreenFrame = false,
+    ancestorSolidFill = null,
+    copyAllowedStrings = null,
+    insideCategoryShelf = false
+  }: {
+    hard: boolean
+    semanticCollectionName?: string
+    primitivesCollectionName?: string
+    additionalAllowedCollectionNames?: string[]
+    insideInstance?: boolean
+    compositeNames?: string[]
+    compositeNamingHard?: boolean
+    runRecipeDesignRulesChecks?: (node: any, ctx: { hard: boolean; insideInstance?: boolean; isScreenFrame?: boolean }) => Promise<any[]>
+    viewport?: { width: number; height: number }
+    isScreenFrame?: boolean
+    ancestorSolidFill?: any
+    copyAllowedStrings?: string[] | null
+    insideCategoryShelf?: boolean
+  }
+) {
+  const violations: any[] = []
+
+  const { main, overriddenFields } = await resolveInstanceContext(node)
+
+  // A node resolving to a kit main component whose only overrides are
+  // size/fill/stroke is presumptively a gate bug, not a real hygiene defect —
+  // tag every violation reported for it so the reviewer never has to
+  // self-grade that judgment. Never licenses detaching.
+  const falsePositiveTag = possibleGateFalsePositiveTag({
+    isRemoteInstance: Boolean(main?.remote),
+    insideInstance,
+    overriddenFields
+  })
+  const report: Reporter = (rule, detail) => {
+    violations.push({
+      severity: hard ? 'hard' : 'advisory',
+      rule,
+      nodeId: node.id,
+      nodeName: node.name,
+      detail,
+      ...(falsePositiveTag ? { tag: 'possible-gate-false-positive — does NOT license detaching' } : {})
+    })
+  }
+
+  const nodeCtx = buildNodeCtx(node, { insideInstance, ancestorSolidFill, isScreenFrame, insideCategoryShelf })
+
+  runBindingAndTextStyleChecks(nodeCtx, report)
+  runA11yAndCopyChecks(nodeCtx, node, report, violations, copyAllowedStrings)
+  runLayoutChecks(nodeCtx, node, report, insideInstance, isScreenFrame, viewport)
+  await runGapPaddingCheck(node, report, { insideInstance, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames })
+  runInstanceChecks(node, main, overriddenFields, insideInstance, report)
+  runNamingAndMetadataChecks(node, nodeCtx, report, violations, { hard, compositeNames, compositeNamingHard })
+  runStoryUrlCheck(node, report)
 
   // Recipe-owned per-node checks (e.g. non-semantic-binding) — undefined for
   // a recipe with no checks.
@@ -309,7 +368,6 @@ function marshalIconStrokeScale(node: any, main: any) {
   if (typeof main.width !== 'number' || typeof node.width !== 'number') return null
   return { instanceSize: node.width, nativeSize: main.width, resolvedStrokeWeight, baseStrokeWeight }
 }
-
 
 /**
  * Marshals a single Auto Layout gap/padding field. boundVariables for a
@@ -561,4 +619,3 @@ export async function runDesignRulesAudit(
 
   return violations
 }
-

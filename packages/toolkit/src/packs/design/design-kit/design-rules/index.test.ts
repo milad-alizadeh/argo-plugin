@@ -28,7 +28,7 @@ import {
   hugOverflowViolations,
   touchTargetViolation,
   textContrastViolation
-} from './design-rules.js'
+} from './index.js'
 
 describe('unboundFillViolations', () => {
   it('flags a solid fill with no bound color variable', () => {
@@ -882,7 +882,7 @@ describe('textContrastViolation (wcag-contrast package math, deterministic-or-sk
 })
 
 describe('untracedCopyViolation (rule #13, design-phase-quality-plan.md W4)', async () => {
-  const { untracedCopyViolation } = await import('./design-rules.js')
+  const { untracedCopyViolation } = await import('./index.js')
   const allowed = ['Playbook detail', 'Start a playbook', 'Session']
   const text = (characters: string, over: Record<string, unknown> = {}) => ({
     type: 'TEXT', name: 'label', characters, ...over

@@ -16,7 +16,8 @@
     "prepare": "bun run build",
     "prepublishOnly": "bun run build",
     "depcruise": "bun run build && depcruise dist --config .dependency-cruiser.cjs",
-    "lint": "bun run depcruise"
+    "lint": "bun run depcruise",
+    "check:file-size": "bun run build && node dist/cli/check-file-size.js src"
   },
   "exports": {
     ".": {

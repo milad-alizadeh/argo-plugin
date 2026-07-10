@@ -24,6 +24,8 @@ import { writeFileSync, readFileSync, rmSync, existsSync, readdirSync, realpathS
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { issueAuditNonce } from './lib/audit-nonce.js'
+import { resolveRepoRoot } from '../../../lib/repo-root.js'
 
 const RECIPE_ENTRIES: Record<string, { importPath: string }> = {
   'shadcn-tailwind': {
@@ -342,13 +344,30 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   try {
     const { bundled, bundlePath, cached, hash, completionId } = bundleDesignRulesAuditForRecipe({ cwd, recipe, outPath })
 
+    // One-time receipt binding: record-audit-receipt refuses a receipt whose
+    // nonce a bundle emission didn't mint (lib/audit-nonce.ts). Names come
+    // from --componentNames (named audit) or the replay options JSON.
+    let nonceNames: string[] = []
+    const namesFlag = flag('--componentNames')
+    if (namesFlag) {
+      nonceNames = JSON.parse(namesFlag)
+    } else if (optionsLiteral) {
+      try {
+        const parsedOptions = JSON.parse(optionsLiteral)
+        if (Array.isArray(parsedOptions?.componentNames)) nonceNames = parsedOptions.componentNames
+      } catch {
+        /* replay mode surfaces options parse errors below */
+      }
+    }
+    const { nonce } = issueAuditNonce(resolveRepoRoot(cwd), nonceNames)
+
     if (emit === 'prime') {
-      console.log(JSON.stringify({ script: generateDesignRulesPrimeScript(bundled, hash, sessionId), hash, cached }))
+      console.log(JSON.stringify({ script: generateDesignRulesPrimeScript(bundled, hash, sessionId), hash, cached, nonce }))
     } else if (emit === 'replay') {
       if (!optionsLiteral) throw new Error('--emit replay requires --options <json-options-object>')
-      console.log(JSON.stringify({ script: generateDesignRulesReplayScript(completionId, hash, optionsLiteral, sessionId), hash }))
+      console.log(JSON.stringify({ script: generateDesignRulesReplayScript(completionId, hash, optionsLiteral, sessionId), hash, nonce }))
     } else {
-      console.log(JSON.stringify({ bundlePath, chars: bundled.length, cached, hash, completionId }))
+      console.log(JSON.stringify({ bundlePath, chars: bundled.length, cached, hash, completionId, nonce }))
     }
   } catch (err: any) {
     console.error(`bundle-design-rules-audit: ${err.message}`)

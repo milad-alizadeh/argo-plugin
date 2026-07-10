@@ -15,6 +15,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { writeDesignJson } from './lib/write-design-json.js'
+import { consumeAuditNonce } from './lib/audit-nonce.js'
 import { resolveRepoRoot } from '../../../lib/repo-root.js'
 import { appKeyForCwd, readSessionWriteCount, writeSessionReceiptEntry } from '../../../lib/session-guard.js'
 
@@ -91,6 +92,26 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     parsed = JSON.parse(json)
   } catch {
     console.error('record-audit-receipt: --record argument is not valid JSON')
+    process.exit(1)
+  }
+  // Receipt-fabrication guard: the recorded receipt must consume the
+  // one-time nonce the bundle emission minted (lib/audit-nonce.ts) — a
+  // receipt without a fresh, name-matching nonce is refused, so a session
+  // cannot record "clean" without a real bundle having been generated for
+  // exactly the components it claims to have audited.
+  if (typeof parsed?.nonce !== 'string') {
+    console.error(
+      'record-audit-receipt: --record JSON must carry the "nonce" from the bundle-design-rules-audit emission that produced this audit run'
+    )
+    process.exit(1)
+  }
+  const nonceRefusal = consumeAuditNonce(
+    resolveRepoRoot(process.cwd()),
+    parsed.nonce,
+    Array.isArray(parsed.componentNames) ? parsed.componentNames : []
+  )
+  if (nonceRefusal) {
+    console.error(`record-audit-receipt: REFUSED — ${nonceRefusal}`)
     process.exit(1)
   }
   // The record/stop hooks key per-session state by the hook payload's

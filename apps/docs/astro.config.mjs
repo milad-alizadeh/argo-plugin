@@ -60,7 +60,11 @@ export default defineConfig({
     starlight({
       title: 'Argo — the way of working',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/milad-alizadeh/argo-plugin' }],
-      customCss: ['./src/styles/mermaid-zoom.css', './src/styles/dark-only.css'],
+      customCss: [
+        './src/styles/mermaid-zoom.css',
+        './src/styles/dark-only.css',
+        './src/styles/argo-theme.generated.css'
+      ],
       head: [
         { tag: 'script', attrs: { src: '/mermaid-zoom.js', defer: true } },
         // Starlight has no config-level "dark only" toggle — pin the theme

@@ -11,6 +11,7 @@
     "astro": "astro",
     "typecheck": "astro check",
     "lint": "eslint --cache .",
+    "lint:docs-style": "node scripts/lint-docs-style.mjs",
     "format": "prettier --write .",
     "check-links": "node scripts/generate-reference.mjs && astro build && linkinator ./dist --recurse"
   },

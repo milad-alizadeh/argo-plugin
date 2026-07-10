@@ -28,6 +28,9 @@ jobs:
           bun-version: latest
       - name: Install
         run: bun install --frozen-lockfile
+      - name: Lint docs style
+        working-directory: apps/docs
+        run: bun run lint:docs-style
       - name: Build
         working-directory: apps/docs
         run: bun run build

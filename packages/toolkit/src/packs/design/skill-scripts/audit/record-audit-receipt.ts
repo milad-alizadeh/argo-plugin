@@ -14,6 +14,7 @@
 
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { createHash } from 'node:crypto'
 import { writeDesignJson } from '../lib/write-design-json.js'
 import { consumeAuditNonce } from '../session-guard/lib/audit-nonce.js'
 import { resolveRepoRoot } from '../../../../lib/repo-root.js'
@@ -33,10 +34,17 @@ import { appKeyForCwd, readSessionWriteCount, writeSessionReceiptEntry } from '.
  * while `cwd` keeps governing every app-scoped path (design/, etc).
  */
 export function recordAuditReceipt(
-  { componentNames = [], violations = [] }: { componentNames?: string[]; violations?: { severity?: string }[] } = {},
+  { componentNames = [], violations }: { componentNames?: string[]; violations?: { severity?: string }[] } = {},
   { cwd, now = Date.now(), sessionId = null }: { cwd: string; now?: number; sessionId?: string | null }
 ) {
   if (!cwd) throw new Error('recordAuditReceipt: cwd is required')
+  // The nonce (lib/audit-nonce.ts) only ever binds componentNames — nothing
+  // previously stopped a caller from omitting `violations` and silently
+  // recording a clean receipt for an audit that actually found violations.
+  // Requiring a real array (even an intentionally empty one) closes that.
+  if (!Array.isArray(violations)) {
+    throw new Error('recordAuditReceipt: violations is required and must be an array (an omitted field is not a clean audit)')
+  }
 
   const repoRoot = resolveRepoRoot(cwd)
 
@@ -44,6 +52,14 @@ export function recordAuditReceipt(
   // receipt — counting them would block an otherwise-clean run on
   // advisory-only stroke-scale hits.
   const violationCount = violations.filter((v) => v?.severity !== 'advisory').length
+  // Binds the receipt to the actual violations content (not just the
+  // componentNames the nonce checks), so two receipts covering the same
+  // names but different findings are distinguishable on disk. This does NOT
+  // prove the violations were genuinely produced by use_figma running the
+  // audit — that authenticity gap is a documented residual (see
+  // lib/audit-nonce.ts's doc comment); closing it needs the cockpit to run
+  // the audit itself, out of scope here.
+  const violationsDigest = createHash('sha256').update(JSON.stringify(violations)).digest('hex')
 
   // Per-session-design-gate.md: when this run is attributed to a session,
   // record into that session's OWN receipt (`.argo/audit-receipts/<sid>.json`),
@@ -70,7 +86,7 @@ export function recordAuditReceipt(
     }
   }
 
-  const receipt = { timestamp: now, componentNames, violationCount, writeCounterAtAudit }
+  const receipt = { timestamp: now, componentNames, violationCount, violationsDigest, writeCounterAtAudit }
   writeDesignJson(cwd, 'audit-receipt.json', receipt)
   return receipt
 }
@@ -120,6 +136,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   // legacy committed-receipt path.
   const envSession = process.env.CLAUDE_CODE_SESSION_ID
   const sessionId = typeof envSession === 'string' && envSession.length > 0 ? envSession : null
-  const receipt = recordAuditReceipt(parsed, { cwd: process.cwd(), sessionId })
-  console.log(JSON.stringify(receipt))
+  try {
+    const receipt = recordAuditReceipt(parsed, { cwd: process.cwd(), sessionId })
+    console.log(JSON.stringify(receipt))
+  } catch (err: any) {
+    console.error(`record-audit-receipt: REFUSED — ${err.message}`)
+    process.exit(1)
+  }
 }

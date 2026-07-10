@@ -42,6 +42,34 @@ describe('recordAuditReceipt', () => {
     }
   })
 
+  // Forgery guard: the nonce only ever bound componentNames, so a caller
+  // could omit `violations` entirely (silently defaulting to []) and record
+  // a clean receipt for an audit that actually found violations. Requiring
+  // `violations` and binding a digest of its real content closes that.
+  it('refuses to record when violations is missing (prevents silently forging a clean receipt)', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'design-rules-audit-receipt-'))
+    try {
+      expect(() => recordAuditReceipt({ componentNames: ['Button'] } as any, { cwd, now: 123 })).toThrow(/violations/)
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
+  it('binds the receipt to a hash of the actual violations payload', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'design-rules-audit-receipt-'))
+    try {
+      const receiptA = recordAuditReceipt(
+        { componentNames: ['Button'], violations: [{ severity: 'hard', rule: 'unbound-fill' }] },
+        { cwd, now: 123 }
+      )
+      const receiptB = recordAuditReceipt({ componentNames: ['Button'], violations: [] }, { cwd, now: 123 })
+      expect(receiptA.violationsDigest).toMatch(/^[0-9a-f]{64}$/)
+      expect(receiptA.violationsDigest).not.toBe(receiptB.violationsDigest)
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
+  })
+
   // Kit-name-collision counting was removed with the kit-subscription model
   // (starter-file restructure, 2026-07-07): violationCount is hard audit
   // violations ONLY — a stale kit-inventory.json on disk contributes nothing.

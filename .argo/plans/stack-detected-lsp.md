@@ -11,18 +11,24 @@ language-agnostic (table is data), config.json-as-index.
   extensions present).
 
 ## Mechanism
-1. Curated language → LSP table (DATA, not code — so new languages are a table
-   edit, not a code change):
-   - typescript/tsx → typescript-lsp (official plugin)
-   - go → gopls
-   - python → pyright (or pylsp)
-   - rust → rust-analyzer
+1. Curated language → LSP plugin-id table (DATA, not code — so new languages
+   are a table edit, not a code change; `lsp-table.ts`):
+   - typescript/tsx → typescript-lsp, go → gopls-lsp, python → pyright-lsp,
+     rust → rust-analyzer-lsp, c/cpp → clangd-lsp, csharp → csharp-lsp,
+     java → jdtls-lsp, kotlin → kotlin-lsp, lua → lua-lsp, php → php-lsp,
+     ruby → ruby-lsp, swift → swift-lsp
+   - all plugin ids on the official `claude-plugins-official` marketplace
    - (extend as stacks are actually hit)
-2. For each DETECTED language in the table: offer to wire it. Wiring writes the
-   Claude Code native LSP config (`lspServers` surface) — argo does NOT wrap or
-   re-encode it. Consent required per-language before any global binary install
-   (no-auto-install-globals). A server already present is wired without a new
-   install.
+2. For each DETECTED language in the table: verify the table's plugin id
+   still exists on the live marketplace (read the cached manifest, refresh
+   if stale — see SKILL.md §8c step 2) before offering it, then offer to
+   install+enable it. Wiring means enabling the plugin
+   (`<id>@claude-plugins-official` under `enabledPlugins` in
+   `.claude/settings.json`) — the plugin's own manifest carries the
+   `lspServers` entry, argo never writes that surface directly (it doesn't
+   exist as a settings.json field). Consent required per-language before any
+   global binary install (no-auto-install-globals). A server already present
+   is wired without a new install.
 3. For a detected language NOT in the table: `WebSearch` the community LSP and
    SUGGEST it, explicitly flagged "unverified — argo has not validated this."
    Never auto-wire an online-discovered server.

@@ -3,8 +3,8 @@
 | Slice | Status | Commit | Notes |
 |---|---|---|---|
 | 1 (Starlight site) | done | bc2506e | build+check-links verified |
-| A (landing page) | done | (pending commit) | build+check-links verified, visual grep confirms hero/CTAs/toggle-hidden |
-| B (theme sync) | pending | | |
+| A (landing page) | done | 280fbd4 | build+check-links verified, visual grep confirms hero/CTAs/toggle-hidden |
+| B (theme sync) | done | cf00c46, 03360f2 | unit tests green (4/4), real `argo docs sync-theme` run confirmed `--color-slate` present / `--sidebar-primary` absent, apps/docs build green with generated CSS |
 | 2 (reference gen) | pending | | checkpoint review here |
 | 3 (prose) | pending | | |
 | 4 (style rule + lint) | pending | | |

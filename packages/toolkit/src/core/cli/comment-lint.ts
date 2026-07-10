@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { isWaived, type CommentCheckWaiver } from './comment-check-waivers.js'
 
 export interface CommentLintFinding {
-  rule: 'comment-referential' | 'comment-block-length' | 'comment-ratio'
+  rule: 'comment-referential' | 'comment-narrative' | 'comment-ratio'
   file: string
   line: number
   detail: string
@@ -18,10 +18,13 @@ export interface CommentLintOptions {
 
 const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.py', '.go', '.rs', '.java', '.c', '.cpp', '.h', '.hpp', '.sh', '.rb'])
 const SKIP_DIRS = new Set(['node_modules', 'dist', '.git', 'build', 'out', 'coverage'])
-const MAX_BLOCK_LINES = 2
 const MAX_COMMENT_RATIO = 0.5
 
-const REFERENTIAL_TOKEN = /(?:^|[\s"'`(])(?:see\s+)?(?:\.{0,2}\/)?[\w-]+(?:\/[\w.-]+)*\.[A-Za-z]{1,5}\b|\bsee\s+[\w.]+/i
+// A referential token names a real FILE (known source/asset extension) or an
+// explicit path. Restricting to real extensions avoids flagging code symbols
+// mentioned in prose (`core.judge`, `e.g.`), which are not file references.
+const FILE_EXT = 'ts|tsx|js|jsx|mjs|cjs|json|md|mdx|css|scss|html|ya?ml|sh|py|go|rs|toml|txt'
+const REFERENTIAL_TOKEN = new RegExp(`(?:^|[\\s"'\`(])(?:\\.{0,2}\\/)?[\\w-]+(?:\\/[\\w.-]+)*\\.(?:${FILE_EXT})\\b`, 'i')
 
 function listSourceFiles(cwd: string, entryPath: string): string[] {
   const abs = join(cwd, entryPath)
@@ -53,9 +56,31 @@ interface CommentBlock {
   startLine: number
   lineCount: number
   text: string
+  paragraphs: number
+  isJsDoc: boolean
 }
 
-/** Extracts `//`, `#`, and block comments line by line, with no per-language string-literal awareness, since the check is deliberately language-agnostic. */
+/** Paragraphs = maximal runs of non-blank content lines. A blank line inside a
+ * comment separates paragraphs; two paragraphs is the narrative smell the rule
+ * targets, so a single dense multi-line WHY (one paragraph) is not flagged. */
+function countParagraphs(contentLines: string[]): number {
+  let paragraphs = 0
+  let inParagraph = false
+  for (const l of contentLines) {
+    if (l.trim().length > 0) {
+      if (!inParagraph) paragraphs++
+      inParagraph = true
+    } else {
+      inParagraph = false
+    }
+  }
+  return paragraphs
+}
+
+/** Extracts `//`/`#` runs (consecutive line comments coalesced into one block)
+ * and `/* *​/` blocks, with no per-language string-literal awareness since the
+ * check is deliberately language-agnostic. JSDoc (`/**`) is marked so it can be
+ * exempted: it is contract documentation on exports, not narrative rationale. */
 function extractCommentBlocks(source: string): CommentBlock[] {
   const lines = source.split('\n')
   const blocks: CommentBlock[] = []
@@ -63,7 +88,6 @@ function extractCommentBlocks(source: string): CommentBlock[] {
   while (i < lines.length) {
     const line = lines[i]
     const blockStart = line.indexOf('/*')
-    const lineStart = line.match(/(^|\s)(\/\/|#)/)
 
     if (blockStart !== -1 && !line.slice(0, blockStart).match(/['"`]/)) {
       let text = line.slice(blockStart)
@@ -73,15 +97,35 @@ function extractCommentBlocks(source: string): CommentBlock[] {
         j++
         text += '\n' + lines[j]
       }
-      blocks.push({ startLine, lineCount: j - i + 1, text })
+      const inner = text.split('\n').map((l) => l.replace(/^\s*\/?\*+/, '').replace(/\*\/\s*$/, ''))
+      blocks.push({
+        startLine,
+        lineCount: j - i + 1,
+        text,
+        paragraphs: countParagraphs(inner),
+        isJsDoc: text.trimStart().startsWith('/**')
+      })
       i = j + 1
       continue
     }
 
-    if (lineStart) {
-      const marker = lineStart[2]
-      const idx = line.indexOf(marker, lineStart.index)
-      blocks.push({ startLine: i + 1, lineCount: 1, text: line.slice(idx) })
+    if (line.match(/(^|\s)(\/\/|#)/)) {
+      const startLine = i + 1
+      const contentLines: string[] = []
+      let text = ''
+      let j = i
+      while (j < lines.length) {
+        const m = lines[j].match(/(^|\s)(\/\/|#)/)
+        if (!m) break
+        const marker = m[2]
+        const idx = lines[j].indexOf(marker, m.index)
+        contentLines.push(lines[j].slice(idx + marker.length))
+        text += (text ? '\n' : '') + lines[j].slice(idx)
+        j++
+      }
+      blocks.push({ startLine, lineCount: j - i, text, paragraphs: countParagraphs(contentLines), isJsDoc: false })
+      i = j
+      continue
     }
     i++
   }
@@ -94,7 +138,7 @@ function checkFile(cwd: string, file: string, waivers: CommentCheckWaiver[]): Co
   const findings: CommentLintFinding[] = []
 
   for (const block of blocks) {
-    if (!isWaived(waivers, 'comment-referential', file) && REFERENTIAL_TOKEN.test(block.text)) {
+    if (!block.isJsDoc && !isWaived(waivers, 'comment-referential', file) && REFERENTIAL_TOKEN.test(block.text)) {
       findings.push({
         rule: 'comment-referential',
         file,
@@ -102,12 +146,12 @@ function checkFile(cwd: string, file: string, waivers: CommentCheckWaiver[]): Co
         detail: 'comment names a file/path/"see X" reference — fix the naming instead of pointing at it'
       })
     }
-    if (!isWaived(waivers, 'comment-block-length', file) && block.lineCount > MAX_BLOCK_LINES) {
+    if (!block.isJsDoc && !isWaived(waivers, 'comment-narrative', file) && block.paragraphs >= 2) {
       findings.push({
-        rule: 'comment-block-length',
+        rule: 'comment-narrative',
         file,
         line: block.startLine,
-        detail: `comment block spans ${block.lineCount} lines (max ${MAX_BLOCK_LINES}) — move rationale to the commit message`
+        detail: `comment spans ${block.paragraphs} paragraphs — multi-paragraph rationale belongs in the commit message`
       })
     }
   }

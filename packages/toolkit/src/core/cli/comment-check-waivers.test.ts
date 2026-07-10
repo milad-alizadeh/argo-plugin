@@ -9,7 +9,7 @@ describe('isWaived', () => {
 
   it('does not match a different rule at the same path', () => {
     const waivers = [{ rule: 'comment-referential', glob: 'src/legacy.ts', reason: 'x' }]
-    expect(isWaived(waivers, 'comment-block-length', 'src/legacy.ts')).toBe(false)
+    expect(isWaived(waivers, 'comment-narrative', 'src/legacy.ts')).toBe(false)
   })
 
   it('matches a ** glob across directories', () => {

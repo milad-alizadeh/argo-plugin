@@ -33,12 +33,12 @@ describe('runCommentLint', () => {
     expect(findings).toContainEqual(expect.objectContaining({ rule: 'comment-referential', file: 'b.py' }))
   })
 
-  it('flags a multi-line comment block as a rationale smell', () => {
+  it('flags a multi-paragraph comment block as a narrative smell', () => {
     const content = [
       '/*',
-      ' * This explains at length why we chose this approach over the other',
-      ' * approach, including the history of the decision and prior attempts',
-      ' * that failed for various reasons over the past few months.',
+      ' * Why we chose this approach over the other one.',
+      ' *',
+      ' * The history: prior attempts failed for various reasons over months.',
       ' */',
       'export const y = 1'
     ].join('\n')
@@ -46,7 +46,7 @@ describe('runCommentLint', () => {
 
     const { findings } = runCommentLint({ cwd: root, paths: ['c.ts'] })
 
-    expect(findings).toContainEqual(expect.objectContaining({ rule: 'comment-block-length', file: 'c.ts' }))
+    expect(findings).toContainEqual(expect.objectContaining({ rule: 'comment-narrative', file: 'c.ts' }))
   })
 
   it('does not flag a short WHY comment with no referential tokens', () => {
@@ -55,6 +55,39 @@ describe('runCommentLint', () => {
     const { findings } = runCommentLint({ cwd: root, paths: ['d.ts'] })
 
     expect(findings).toEqual([])
+  })
+
+  it('does not flag a dense single-paragraph multi-line WHY (the rule sanctions it)', () => {
+    const content = [
+      '/*',
+      ' * Fails closed: a missing config must block, not pass, because this runs',
+      ' * in a PreToolUse gate where a silent default would let an unguarded edit',
+      ' * through — the one failure mode this whole check exists to prevent.',
+      ' */',
+      'export const guard = 1'
+    ].join('\n')
+    writeFileSync(join(root, 'why.ts'), content)
+
+    const { findings } = runCommentLint({ cwd: root, paths: ['why.ts'] })
+
+    expect(findings.filter((f) => f.rule === 'comment-narrative')).toEqual([])
+  })
+
+  it('does not flag a multi-line JSDoc contract block on an export', () => {
+    const content = [
+      '/**',
+      ' * Resolves the active instance for a session.',
+      ' *',
+      ' * @param key the instance key',
+      ' * @returns the instance, or null when none is active',
+      ' */',
+      'export function resolve(key: string) { return key }'
+    ].join('\n')
+    writeFileSync(join(root, 'doc.ts'), content)
+
+    const { findings } = runCommentLint({ cwd: root, paths: ['doc.ts'] })
+
+    expect(findings.filter((f) => f.rule === 'comment-narrative')).toEqual([])
   })
 
   it('flags a high comment-to-code ratio in a file', () => {

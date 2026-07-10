@@ -36,10 +36,11 @@ adds information is now drift risk, not documentation.
   ... new: ...`, dated notes, commented-out code kept "just in case." Git
   history is the changelog. Delete cleanly; put the rationale in the commit
   message.
-- **Multi-paragraph rationale:** a comment block that runs past a couple of
-  lines is a design doc that leaked into the source file. Move it to the
-  commit message, a plan doc, or an ADR; leave at most a one-line pointer to
-  WHY, not the whole argument.
+- **Multi-paragraph rationale:** a comment that spans two or more paragraphs is
+  a design doc that leaked into the source file. Move it to the commit message,
+  a plan doc, or an ADR; leave at most a single dense paragraph stating WHY, not
+  the whole argument. A long single-paragraph WHY is fine; the smell is the
+  paragraph break, not the line count.
 
 ## The one exception: the interface surface
 

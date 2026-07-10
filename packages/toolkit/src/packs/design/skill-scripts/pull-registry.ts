@@ -8,45 +8,22 @@
  * session required, runnable standalone after designers touch the file
  * directly, or as part of a full sync.
  *
- * Token handling reuses the exact convention already used by
- * `skills/resolve-comments/scripts/figma-comments.ts` (the repo's only other
- * Figma REST consumer): `FIGMA_TOKEN` env, falling back to a gitignored
- * `<repo-root>/.argo/figma-token` file, `X-Figma-Token` header. Duplicated,
- * not shared (see the plan's Risks section) — a few lines of near-identical
- * token() logic, extracting a shared helper is a reasonable follow-up once a
- * THIRD REST consumer exists, not before (YAGNI).
+ * Token handling and the raw REST fetch live in `../figma-rest/client.js`,
+ * shared with `refresh-card.ts`; re-exported here (`token`/`fetchFile`) so
+ * existing importers (this file's own tests, `registry/index.ts`) keep
+ * working unchanged.
  */
 
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { resolveRepoRoot } from '../../../lib/repo-root.js'
 import { findDesignBlock } from './prepare-design-rules-audit-options.js'
 import { registryComponentNames } from '../design-kit/component-names.js'
 import { kitPageIndices, buildKitRegistryEntries, detectChangedKitComponents, buildCodeOwnedEntries, buildScreenEntries, hasScreenAnnotation, resolveCodeOwnedPath, parseCodeOwnedPath, parseCodeOwnedFromAnnotations } from '../design-kit/registry-reconcile.js'
 import { readDesignJsonOrRebuild, writeDesignJson } from './lib/write-design-json.js'
+import { token, fetchFile as fetchFileRaw } from '../figma-rest/client.js'
 
-const API = 'https://api.figma.com/v1'
-
-export function token(cwd: string): string {
-  const env = process.env.FIGMA_TOKEN
-  if (env && env.trim()) return env.trim()
-  try {
-    return readFileSync(join(resolveRepoRoot(cwd), '.argo', 'figma-token'), 'utf8').trim()
-  } catch {
-    throw new Error(
-      'pull-registry: No Figma token. Set FIGMA_TOKEN (needs the files:read scope) or write it to a\n' +
-        'gitignored .argo/figma-token at the repo root. Never commit the token.'
-    )
-  }
-}
+export { token }
 
 export async function fetchFile(fileKey: string, figmaToken: string): Promise<RestDocument> {
-  const res = await fetch(`${API}/files/${fileKey}`, { headers: { 'X-Figma-Token': figmaToken } })
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new Error(`pull-registry: GET /files/${fileKey} → ${res.status} ${res.statusText}\n${body}`)
-  }
-  return (await res.json()) as RestDocument
+  return fetchFileRaw<RestDocument>(fileKey, figmaToken)
 }
 
 type RestNode = {

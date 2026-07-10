@@ -13,13 +13,14 @@
  * named entry — it never creates a new entry (that stays design-component's
  * job) and never touches any other component.
  *
- * REST fetch + token() convention are reused directly from `pull-registry.ts`
- * (the file's own doc comment already earmarks a shared helper once a THIRD
- * REST consumer exists — this is the second, so straight reuse, no new
- * extraction needed).
+ * token() comes from the shared `figma-rest/client.js` (extracted out of
+ * `pull-registry.ts` once this became the second in-toolkit consumer);
+ * `fetchFile`/`marshalRestDocument`/`MarshaledComponent` still come from
+ * `pull-registry.ts`, which owns the REST-document-shape marshaling.
  */
 
-import { fetchFile, marshalRestDocument, token, type MarshaledComponent } from './pull-registry.js'
+import { fetchFile, marshalRestDocument, type MarshaledComponent } from './pull-registry.js'
+import { token } from '../figma-rest/client.js'
 import { findDesignBlock } from './prepare-design-rules-audit-options.js'
 import { extractVariantMatrix, resolveWhenToUse } from '../design-kit/registry-reconcile.js'
 import { readDesignJsonOrRebuild, writeDesignJson } from './lib/write-design-json.js'

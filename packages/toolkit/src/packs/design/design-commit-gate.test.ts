@@ -4,6 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { workingTreeDriftDigest } from './skill-scripts/session-guard/record-spec-diff-receipt.js'
 
 // Spawned as a real subprocess, so it must run compiled JS — dist, not the
 // sibling .ts source (Node has no TS loader here). Requires `bun run build`
@@ -60,10 +61,27 @@ describe('design-commit-gate — armed per-app by .argo/config.json design block
 
   it('PASS: staged file under componentsPath with a fresh, passing spec-diff receipt', async () => {
     writeArgoJson(cwd, { '.': { root: '.', componentsPath: 'src/components' } })
-    mkdirSync(join(cwd, 'design'), { recursive: true })
-    writeFileSync(join(cwd, 'design', 'spec-diff-receipt.json'), JSON.stringify({ recordedAt: Date.now(), exitCode: 0 }))
     stageComponent(cwd, '.')
+    mkdirSync(join(cwd, 'design'), { recursive: true })
+    const stagedDigest = workingTreeDriftDigest(cwd)
+    writeFileSync(join(cwd, 'design', 'spec-diff-receipt.json'), JSON.stringify({ recordedAt: Date.now(), exitCode: 0, stagedDigest }))
     expect((await runGate(commitInput(cwd))).code).toBe(0)
+  })
+
+  it('BLOCK: receipt is fresh and passing but staged content changed after it was recorded (stale-but-timely reuse)', async () => {
+    writeArgoJson(cwd, { '.': { root: '.', componentsPath: 'src/components' } })
+    stageComponent(cwd, '.')
+    mkdirSync(join(cwd, 'design'), { recursive: true })
+    const stagedDigest = workingTreeDriftDigest(cwd)
+    writeFileSync(join(cwd, 'design', 'spec-diff-receipt.json'), JSON.stringify({ recordedAt: Date.now(), exitCode: 0, stagedDigest }))
+
+    // Further edit after the receipt was recorded, re-staged before commit.
+    writeFileSync(join(cwd, 'src', 'components', 'Button.tsx'), 'export const Button = () => <div />')
+    execFileSync('git', ['-C', cwd, 'add', '.'])
+
+    const r = await runGate(commitInput(cwd))
+    expect(r.code).toBe(2)
+    expect(r.stderr).toMatch(/staged diff has changed/)
   })
 
   it('BLOCK: spec-diff receipt exists but exitCode is non-zero (drift found)', async () => {
@@ -104,7 +122,8 @@ describe('design-commit-gate — armed per-app by .argo/config.json design block
 
     // fresh passing receipt in apps/a/design/ → passes
     mkdirSync(join(cwd, 'apps/a', 'design'), { recursive: true })
-    writeFileSync(join(cwd, 'apps/a', 'design', 'spec-diff-receipt.json'), JSON.stringify({ recordedAt: Date.now(), exitCode: 0 }))
+    const stagedDigest = workingTreeDriftDigest(join(cwd, 'apps/a'))
+    writeFileSync(join(cwd, 'apps/a', 'design', 'spec-diff-receipt.json'), JSON.stringify({ recordedAt: Date.now(), exitCode: 0, stagedDigest }))
     expect((await runGate(commitInput(cwd))).code).toBe(0)
   })
 

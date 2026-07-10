@@ -15,10 +15,11 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { makeBlock } from '../../lib/hook-lib/gate-block.js'
 import { findArgoJson, armedDesignApps, codeOwnedCodePaths, gatedComponentFiles } from '../../config/argo-json.js'
+import { workingTreeDriftDigest } from './skill-scripts/session-guard/record-spec-diff-receipt.js'
 
 function readStdin(): Promise<string> {
   return new Promise((resolvePromise) => {
@@ -84,6 +85,15 @@ for (const app of armed) {
 
   const age = Date.now() - receipt.recordedAt
   if (age > 10 * 60 * 1000) block(`spec-diff receipt timestamp out of range (${Math.round(age / 1000)}s) — re-run required`)
+
+  // Freshness-by-timestamp alone lets a stale-but-timely receipt be reused
+  // after further edits (record the receipt, edit more, commit within the
+  // 10-minute window). Binding to the repo's total drift-from-HEAD digest
+  // (computed identically by record-spec-diff-receipt) catches any content
+  // change since the walker actually ran, staged or not.
+  const currentDigest = workingTreeDriftDigest(dirname(app.designDir))
+  if (receipt.stagedDigest !== currentDigest)
+    block('staged diff has changed since the spec-diff receipt was recorded — re-run the walker (argo design record-spec-diff-receipt)')
 }
 
 process.exit(0)

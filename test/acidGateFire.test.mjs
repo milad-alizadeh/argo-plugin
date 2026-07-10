@@ -8,6 +8,7 @@ import {
   execFileSync,
   join,
 } from './acidHelpers.mjs'
+import { workingTreeDriftDigest } from '../packages/toolkit/dist/packs/design/skill-scripts/session-guard/record-spec-diff-receipt.js'
 
 /**
  * Acid test, gate half (Slice 6): after `argo init`, a real hook fire through
@@ -43,7 +44,8 @@ function satisfyDesignGates(host, appRoot, screen = 'cockpit') {
   const designDir = join(host, appRoot, 'design')
   mkdirSync(join(designDir, 'contracts'), { recursive: true })
   writeFileSync(join(designDir, 'contracts', `${screen}.json`), JSON.stringify({ screen, figmaFileVersion: '42', regions: [] }))
-  writeFileSync(join(designDir, 'spec-diff-receipt.json'), JSON.stringify({ recordedAt: Date.now(), exitCode: 0 }))
+  const stagedDigest = workingTreeDriftDigest(join(host, appRoot))
+  writeFileSync(join(designDir, 'spec-diff-receipt.json'), JSON.stringify({ recordedAt: Date.now(), exitCode: 0, stagedDigest }))
   writeFileSync(
     join(designDir, `coverage-receipt-${screen}.json`),
     JSON.stringify({ screen, producedBy: 'design-verifier', figmaFileVersion: '42', timestamp: Date.now(), clean: true }),

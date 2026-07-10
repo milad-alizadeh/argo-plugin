@@ -39,10 +39,6 @@
       "types": "./dist/packs/design/walkers/index.d.ts",
       "default": "./dist/packs/design/walkers/index.js"
     },
-    "./reporters/playwright": {
-      "types": "./dist/packs/code/reporters/playwright/index.d.ts",
-      "default": "./dist/packs/code/reporters/playwright/index.js"
-    },
     "./design-kit": {
       "types": "./dist/packs/design/design-kit/index.d.ts",
       "default": "./dist/packs/design/design-kit/index.js"
@@ -78,7 +74,6 @@
   },
   "dependencies": {
     "zod": "^3.23.8",
-    "tdd-guard": "^1.7.0",
     "wcag-contrast": "^3.0.0"
   },
   "peerDependencies": {

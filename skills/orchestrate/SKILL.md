@@ -15,15 +15,14 @@ and is written so any main session can play the role.
 - **Root the builder session in its worktree.** Use true worktree isolation at
   spawn (the Agent tool's worktree isolation, or `claude -w` / EnterWorktree).
   NEVER "create a worktree and tell the builder to cd into it": cd does not
-  move the session root, so hooks (tdd-guard's evidence reads, commit gates)
-  resolve against the parent checkout, and two such builds clobber each
-  other's evidence and false-block (observed repeatedly).
+  move the session root, so hooks (commit gates, CLAUDE_PROJECT_DIR-relative
+  paths) resolve against the parent checkout. Probity itself reads the
+  session transcript rather than a per-worktree data dir, so it no longer
+  clobbers across concurrent builds — but mis-rooted hooks still misfire.
 - **Spawn the builder agent directly** (the builder agent invoking the
   build-plan skill). Do not wrap it in a generic agent that forks a worker:
   the relay layer idles, emits false "completed" notifications, and swallows
   messages.
-- **One build per parent root at a time** if worktree-rooting is unavailable;
-  the degraded evidence-bridge in build-plan §1 is single-build-only.
 
 ## 2. Monitor, proactively, not on request
 
@@ -52,11 +51,12 @@ stale progress doc usually means bookkeeping slipped, not work lost.
 - On a stall: first check the worktree passively (recent files, last commit).
   If genuinely idle, resume with a message that restates: where its state
   lives (worktree/branch), that committed work is safe, what remains, and any
-  protocol it must re-establish (tdd-guard evidence clears on session start -
-  it must re-run the current test directly before its next guarded edit).
+  protocol it must re-establish (a fresh session has no test history in its
+  transcript — Probity needs the current test re-run in-session before the
+  next guarded edit).
 - On guard-block churn (3+ blocks on one edit): read the actual block text
   from the transcript before intervening, blocks are usually legitimate; the
-  fix is protocol coaching (see build-plan's tdd-guard rules), not loosening.
+  fix is protocol coaching (see build-plan's Probity protocol), not loosening.
 
 ## 4. Recover from rate limits, work on disk survives
 
@@ -68,7 +68,7 @@ running agent with "Rate limited", it is not a usage limit and not fatal:
   flight; serialize eval spawns (concurrency 1, sequential repeats).
 - On a throttle kill: wait minutes (schedule a wakeup rather than hammering),
   then resume each agent from its worktree/branch state, commits and working
-  trees are intact; only the session context is gone. Include the tdd-guard
+  trees are intact; only the session context is gone. Include the Probity
   re-establish step in the resume message.
 - Tell resumed builders: "if rate-limited again, wait 120s between retries
   rather than dying."

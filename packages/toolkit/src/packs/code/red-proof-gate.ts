@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Red-proof gate (PreToolUse on Bash, `git commit` only). tdd-guard enforces ORDER
+ * Red-proof gate (PreToolUse on Bash, `git commit` only). Probity enforces ORDER
  * (no implementation before a failing test); this gate enforces the RECEIPT — a slice
  * may only land with machine-checkable proof that its test failed before the
  * implementation existed and passes now. It reads exit codes a real test run wrote,

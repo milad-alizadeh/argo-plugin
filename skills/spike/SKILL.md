@@ -26,10 +26,12 @@ the shape. Identify it from the prompt, the surrounding code, or by asking.
 4. **Surface the state** after every action or variant switch.
 5. **Delete or absorb when done.** Keep only the *answer* — capture it in a
    design doc or decision record, then delete the prototype.
-6. **Disable TDD enforcement for the session.** A spike's "no tests, throwaway"
-   contract is incompatible with tdd-guard by design — if the project has
-   tdd-guard installed, toggle it off for this session (`tdd-guard off` /
-   its session toggle) before spiking, and say you did. Re-enable (or just end
-   the session) when the spike is deleted or absorbed.
+6. **Keep spikes outside Probity's enforced globs.** A spike's "no tests,
+   throwaway" contract is incompatible with TDD enforcement by design.
+   Probity is configured per-file-glob in `probity.config.ts` (no runtime
+   session toggle) — locate the spike outside the globs `enforceTdd()` is
+   scoped to (e.g. a `spikes/` directory, or wherever the project's config
+   excludes), and say so. If the spike must live inside an enforced path,
+   flag that to the user before writing any code there.
 
 <!-- Adapted from mattpocock/skills (MIT). -->

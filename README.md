@@ -159,7 +159,11 @@ Supporting cast: `/argo:scaffold` (greenfield), `/argo:spike` (throwaway
 prototypes), `/argo:orchestrate` (babysit background builds),
 `/argo:session-handoff` (compact context for a fresh session),
 `/argo:finish-branch`, `/argo:design-upgrade`, `/argo:author-skill`,
-`argo:auditor` (whole-codebase health).
+`argo:auditor` (whole-codebase health). Design-side audit/maintenance:
+`/argo:figma-audit` (design-rules hygiene sweep, hard gate on named components
+or an advisory pass over the whole file), `/argo:resolve-comments` (address
+open Figma comment threads as an explicit amendment pass, per-surface
+conventions).
 
 ## Editing what already exists — re-enter at the ALTITUDE of the change
 

@@ -123,7 +123,7 @@ this project already ran that skill.
 
 ## 2. shadcn init via the shadcn MCP (D16) — default-on where possible
 
-Mirrors the tdd-guard default-on pattern (`skills/init/SKILL.md`
+Mirrors the Probity default-on pattern (`skills/init/SKILL.md`
 §6c: detect → install default-on with a stated skip path, never silently
 required):
 
@@ -153,39 +153,32 @@ triad, that's a `design-upgrade`-style gated bump in the HOST project, not a
 plugin-repo change (this skill does not build upgrade detection, see plan
 §6 risk 2).
 
-## 3a. Ignore `design/` in tdd-guard's config — with consent, before copying templates
+## 3a. Keep `design/` outside Probity's enforced globs — with consent, before copying templates
 
-If the host project has `.claude/tdd-guard/data/` (tdd-guard installed by
-`init`), add `design/**` to tdd-guard's `ignorePatterns` in
-`.claude/tdd-guard/data/config.json` — with consent, showing the diff, never
-silently editing a file another skill already owns. Do this BEFORE §4's
-template copy: without it, tdd-guard blocks every design-pack template file
-this skill (and `figma-sync`/`design-component`/`design-upgrade`) copies or
-assembles into `design/` as "premature implementation" — those files are
+If the host project has `probity.config.ts` (Probity installed by `init`),
+confirm `design/**` is NOT covered by any `files` glob passed to
+`enforceTdd()` — with consent, showing the diff if a narrowing edit is
+needed, never silently editing a file another skill already owns. Do this
+BEFORE §4's template copy: Probity's `files` list is an ALLOWLIST (a rule
+only fires on files it matches), so the safe default is that a rule scoped to
+e.g. `apps/*/src/**` never touches `design/**` in the first place and no edit
+is needed. Only if an existing rule's glob is broad enough to also match
+`design/**` (e.g. a bare `**/*.ts`) does it need narrowing — those files are
 Figma Plugin-API scripts that run only inside Figma via `use_figma` and can
 never be exercised by this project's own test runner, so no failing test can
-ever precede them (observed: this blocked template installation entirely in
-a real host project run).
+ever precede them (observed under tdd-guard: this blocked template
+installation entirely in a real host project run; the same gap applies to
+any TDD enforcer whose scope is misconfigured to reach `design/`).
 
-`ignorePatterns` is a deterministic glob skip evaluated before tdd-guard's
-LLM validation call — not an instruction the guard's model could
-misjudge or override — so it is the correct mechanism here, not tdd-guard's
-free-text custom-instructions file (that file shapes *how* the model judges
-a change; this is a hard bypass for files that were never meant to be judged
-at all). **Custom `ignorePatterns` REPLACE tdd-guard's defaults entirely**
-(per tdd-guard's own docs) — so:
-- If `config.json` doesn't exist yet: create it with tdd-guard's documented
-  defaults (`*.md`, `*.txt`, `*.log`, `*.json`, `*.yml`, `*.yaml`, `*.xml`,
-  `*.html`, `*.css`, `*.erb`, `*.rst`) plus `design/**` appended, and
-  `guardEnabled: true`.
-- If `config.json` already exists: read it, and if `design/**` (or an
-  equivalent pattern already covering it, e.g. `design/**/*`) isn't already
-  in `ignorePatterns`, append it — preserve every other field and pattern
-  verbatim, never regenerate the file from scratch.
+- If `probity.config.ts` doesn't exist yet: nothing to do here, `init`
+  installs it scoped to source globs that already exclude `design/`.
+- If it exists and a rule's `files` glob already reaches `design/**`: propose
+  narrowing that glob (or adding a sibling rule that explicitly excludes it,
+  per Probity's config docs) and show the diff before applying.
 
-If tdd-guard isn't installed yet, or the user declines, skip silently —
-there's nothing to gate yet; the same offer recurs harmlessly on a future
-`setup-design` run once tdd-guard exists.
+If Probity isn't installed yet, or the user declines, skip silently — there's
+nothing to gate yet; the same check recurs harmlessly on a future
+`setup-design` run once Probity exists.
 
 ## 4. Copy and fill design-pack templates
 
@@ -387,8 +380,8 @@ static suggestions, not artifacts reconciled against a plugin version.
 
 List exactly what was written/installed where (mirrors `init` §9): shadcn init
 result, Storybook/Vitest versions recorded, every template copied + its fill
-values, whether the testing.md amendment landed, whether tdd-guard's
-`ignorePatterns` was updated, the `design/` scaffolding created, and (on a
+values, whether the testing.md amendment landed, whether Probity's config was
+narrowed to keep `design/**` out of scope, the `design/` scaffolding created, and (on a
 re-run) the design block's `addedKeys` from `mergeConfigShape`. Verified by
 manual dry-run against a scratch project only — no host project lives in this
 repo to install into for real.

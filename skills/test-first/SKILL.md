@@ -36,9 +36,9 @@ RIGHT (vertical):    RED→GREEN t1→i1, then t2→i2, ...
    minimal code to pass (GREEN). Proves the path end-to-end.
 3. **Incremental.** For each remaining behaviour: RED → GREEN. One test at a
    time, only enough code to pass it, no speculative features.
-   (Where tdd-guard is installed, the fail-first ORDER is enforced mechanically
-   by its hook — this skill's job is the part a hook can't check: slicing
-   vertically and writing tests worth having.)
+   (Where Probity is active, the fail-first ORDER is enforced mechanically by
+   reading the session transcript — this skill's job is the part a transcript
+   can't check: slicing vertically and writing tests worth having.)
 4. **Refactor — only while GREEN.** Never refactor while RED. Extract
    duplication, deepen modules, re-run the suite after each step.
 

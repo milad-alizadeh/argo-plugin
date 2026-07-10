@@ -41,16 +41,12 @@ single-slice TDD, use `/argo:test-first`.
 - **Session rooting is a HARD requirement, not a preference**: the build session
   must be rooted in the worktree being built (EnterWorktree re-roots; an
   orchestrator spawning a builder agent must use true worktree isolation, never
-  "create a worktree and cd into it" — cd does not move the session root). A
-  session rooted elsewhere splits tdd-guard's evidence paths (the guard reads the
-  SESSION ROOT's data dir; test runs write the CHECKOUT's), and with two or more
-  concurrent builds rooted at the same parent, their evidence overwrites each
-  other and the guard false-blocks on the other build's test output (observed in
-  dogfooding). Degraded fallback if re-rooting is impossible: immediately before
-  every guarded edit, in one compound command, run the exact relevant spec
-  directly AND `cp <worktree>/.claude/tdd-guard/data/test.json
-  <session-root>/.claude/tdd-guard/data/test.json`, then edit in the very next
-  round — and never run two builds this way at once.
+  "create a worktree and cd into it" — cd does not move the session root).
+  Probity reads the SESSION TRANSCRIPT itself, not a per-worktree data dir, so
+  it is parallel-session safe by construction — concurrent builds no longer
+  overwrite each other's evidence. Root the session correctly anyway: it is
+  still how the build's own tooling (CLAUDE_PROJECT_DIR-relative paths, gate
+  markers under `.argo/`) resolves to the right checkout.
 
 No clean-tree check is needed: the build runs in a separate worktree, so the user's main
 checkout (dirty or not) is untouched.
@@ -165,12 +161,14 @@ If the session compacts or a fresh session takes over: read the plan doc, the pr
 doc, and `git log --oneline` on the branch; the next unchecked plan step is the next
 action. Never re-do a committed step.
 
-**tdd-guard clears on every session start** — if tdd-guard is installed, its
-`test.json` resets when a new session boots, so red/green evidence must be
-re-established by running tests *within the resumed session*, as a **direct runner
-invocation** (a turbo cache hit doesn't spawn the runner and leaves `test.json`
-stale). `.argo/evidence/red-proof.json` — not tdd-guard's live file — is the durable
-cross-session proof the commit gate actually checks.
+**A resumed session has no test history** — Probity watches the session
+transcript, so its red/green evidence is whatever tests THIS session actually
+ran; a fresh session (resume, compaction, new agent taking over) starts with an
+empty transcript and must re-run the current slice's failing (or passing) test
+in-session before the next guarded edit, as a **direct runner invocation** (a
+turbo cache hit doesn't spawn the runner and leaves no transcript trace).
+`.argo/evidence/red-proof.json` is the durable cross-session proof the commit
+gate itself checks.
 
 **When the plan edits this plugin's own hooks:** the session runs the INSTALLED
 plugin cache's hooks, not the branch's freshly edited copies. Expect gate

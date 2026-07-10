@@ -26,15 +26,14 @@ reads at call time, never as source it imports.
 | `testing-rule-amendment.md` | a `.claude/rules/testing.md` already exists (installed by `init`) | `{{SPEC_DIFF_WALKER_DIR}}`/`{{VRT_WALKER_DIR}}`/`{{EXT}}` as above — **append** to the existing file, with consent; never silently edit |
 | `config.example.json` | always (first install) — NOT copied to its own file: it is the shape reference for the app's `design.<app>` block in `.argo/config.json` | merge its keys into the app's existing block (init's `root`/`componentsPath` are preserved), filling every `{{…}}` slot from setup-design's detection/AskUserQuestion wizard, including the `recipe` field (the chosen recipe's id, `shadcn-tailwind`) — this block is the ONE place every other template's substitutions are sourced from. `figma.projectFileKey` (§0c-i) ← the bare file key of the project's design file, the duplicate of the starter file the user creates manually (parse it out of the pasted `figma.com/file/<KEY>/…` or `figma.com/design/<KEY>/…` URL). `figma.starterFileKey` (§0c-i, optional) ← the starter file the duplicate came from — provenance for `design-upgrade`'s starter refresh only. `componentsPath` ← the project's real generated-component output directory (a plain path prefix relative to the app root, e.g. `src/components`, not a glob — distinct from `{{COMPONENTS_GLOB}}` used by the lint template) — the kit's design-commit gate reads it to decide whether a commit touches generated component code and needs a fresh spec-diff receipt, and `argo design emit-shims` derives the default stories glob from it. `walkers.*` ← optional per-app overrides for emit-shims. There is no `_meta` lifecycle block — the files this pack writes are static suggestions, never reconciled against a plugin version |
 
-**tdd-guard `ignorePatterns` (not a template — see §3a):** if the host
-project has tdd-guard installed, `setup-design` adds `design/**` to
-`.claude/tdd-guard/data/config.json`'s `ignorePatterns`, with consent,
-BEFORE copying any template into `design/`. Without this, tdd-guard blocks
-every design-pack template file as "premature implementation" (they're
-Figma Plugin-API scripts, never exercised by this project's own test
-runner) — `ignorePatterns` is a deterministic glob skip, not an
-LLM-judged instruction, so it's the correct mechanism here rather than
-tdd-guard's free-text custom-instructions file.
+**Probity scope (not a template — see §3a):** if the host project has
+`probity.config.ts` installed, `setup-design` confirms (and narrows if
+needed, with consent) that no `enforceTdd()` rule's `files` glob reaches
+`design/**`, BEFORE copying any template into `design/`. Without this,
+Probity blocks every design-pack template file as "premature implementation"
+(they're Figma Plugin-API scripts, never exercised by this project's own
+test runner) — the `files` allowlist is a deterministic glob scope, not an
+LLM-judged instruction, so narrowing it is the correct mechanism here.
 
 ### Recipe templates — `templates/design/recipes/<recipe-dir>/`
 
@@ -55,8 +54,7 @@ keyed off that recipe's declared design source/`codeTarget` (its
 **Package dependencies (see §5):** nothing to vendor — the design-kit modules
 ship inside `@argohq/toolkit` (the dep `/argo:init` placed), imported via its
 subpath exports (`@argohq/toolkit/design-kit`, `…/design-kit/design-rules`,
-`…/design-kit/shadcn-tailwind/design-rules`); the tdd-guard Playwright reporter
-is `@argohq/toolkit/reporters/playwright` the same way. Never an absolute
+`…/design-kit/shadcn-tailwind/design-rules`). Never an absolute
 `${CLAUDE_PLUGIN_ROOT}`/plugin-cache path (machine-specific, version-pinned,
 breaks for other clones and on the next plugin update), and never a vendored
 copy.
@@ -71,7 +69,7 @@ overwriting a hand-edit:
 |---|---|---|
 | (a) Regenerated template | `vrt-walker/*`, `spec-diff` walker, `testing.md` amendment | Re-derive current content, diff vs disk, ask per batch (≤4/AskUserQuestion). A file whose on-disk content ≠ last-derived is hand-edited → conflict prompt (keep/overwrite/merge), never auto-overwrite. |
 | (b) Structured user-config | the `design.<app>` block in `.argo/config.json` | `mergeConfigShape` (from `@argohq/toolkit`) against the app's block: add missing shape keys, preserve every existing value, never delete on-disk-only keys; write `merged` via `JSON.stringify`, report `addedKeys`. |
-| (d) Foreign-file managed edit | `package.json` deps, tdd-guard `config.json` `ignorePatterns` | Idempotent re-apply of only the managed portion. |
+| (d) Foreign-file managed edit | `package.json` deps, `probity.config.ts` rule globs | Idempotent re-apply of only the managed portion. |
 | (e) External Figma state | Semantic-layer seeding | Out of scope — handled by §4a / `design-upgrade`; printed as a pointer, not silently skipped. |
 
 **No migrations** (owner no-legacy ruling): nothing detects or converts

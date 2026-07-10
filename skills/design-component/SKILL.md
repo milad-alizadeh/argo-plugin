@@ -168,13 +168,13 @@ Before assembling any composite/tree-like region:
 ## Component-first screen path (the screen brief is a required input)
 
 A screen is built from its brief, not traced from a layout sketch. The PRD's
-ASCII wireframe is layout *intent*; the brief is the spec that names which
+HTML wireframe is layout *intent*; the brief is the spec that names which
 regions are reusable components. Read it before touching the screen — no
 brief, stop and say so, never infer the decomposition from the sketch's boxes
 alone (that IS the reskin-the-wireframe failure this path exists to kill).
 
 **Reference image (optional-but-strongly-recommended brief input).** The
-brief should carry a reference image — normally the PRD's ASCII wireframe
+brief should carry a reference image — normally the PRD's HTML wireframe
 (cited or embedded), an annotated sibling screenshot, or the original design.
 If the brief has none and the screen isn't a sibling-clone patch, stop and
 ask for one — or for explicit permission to proceed prose-only. Never

@@ -1,6 +1,6 @@
 # Design a Screen (hi-fi in Figma, single-session, component-first, PRD-driven)
 
-Build a screen whose intent already exists (a PRD, carrying its ASCII
+Build a screen whose intent already exists (a PRD, carrying its HTML
 wireframe + flow) into hi-fi Figma, component-first, so it turns cleanly into
 code. One long-lived session works a build-order wave component-first,
 straight to hi-fi from the PRD — like `build-plan`'s code analog: a wave's
@@ -14,7 +14,7 @@ produce `design/briefs/<key>.md`, gated by `brief-check`. Copy
 `templates/design/screen-brief.md`'s sections verbatim: Reference image,
 Purpose, Regions → component map, Flow / IA, Component sub-parts, Stage
 arrangement. Derive the content, don't invent it — the PRD's feature→screen
-matrix says what this screen must do, the PRD's ASCII wireframe + flow says
+matrix says what this screen must do, the PRD's HTML wireframe + flow says
 roughly where things sit; the brief turns both into the region list and the
 composite/layout tagging the build stage reads.
 
@@ -45,12 +45,12 @@ stay scoped.
   arrangement lives on the frame.** The binding manifest declares which
   registry component realizes each requirement (the decision) — never
   coordinates or arrangement.
-- **The PRD's ASCII wireframe + flow is the layout reference** — intent,
-  never frozen or verified against. A hand-drawn Figma wireframe is not an
-  argo-owned artifact; a human may still produce one out-of-band as an extra
-  reference image.
+- **The PRD's HTML wireframe + flow (`design/wireframes/<feature>.html`) is
+  the layout reference** — intent, never frozen or verified against. A
+  hand-drawn Figma wireframe is not an argo-owned artifact; a human may still
+  produce one out-of-band as an extra reference image.
 - **A reference image is optional-but-strongly-recommended** on every screen
-  brief (the PRD's ASCII wireframe, an annotated sibling screenshot, or the
+  brief (the PRD's HTML wireframe, an annotated sibling screenshot, or the
   original design). If a brief has no reference image and the screen is not a
   sibling-clone patch, stop and ask for one — or for explicit permission to
   proceed prose-only — rather than silently interpreting prose alone. The

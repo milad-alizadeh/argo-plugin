@@ -13,12 +13,11 @@
     },
     "packages/toolkit": {
       "name": "@argohq/toolkit",
-      "version": "0.22.7",
+      "version": "0.22.8",
       "bin": {
         "argo": "bin/argo.js",
       },
       "dependencies": {
-        "tdd-guard": "^1.7.0",
         "wcag-contrast": "^3.0.0",
         "zod": "^3.23.8",
       },

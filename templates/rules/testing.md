@@ -5,22 +5,24 @@
 Fail-first is what makes a test evidence rather than decoration: run the new test
 before writing the code and watch it fail for the RIGHT reason (the missing
 behaviour, not a typo). A test that has never been seen red proves nothing about
-the code it guards. (Where tdd-guard is installed this order is enforced
-mechanically; the rule stands regardless.)
+the code it guards. (Where Probity is installed this order is enforced
+mechanically by reading the session transcript directly; the rule stands
+regardless.)
 
-### Working under tdd-guard — follow the protocol, don't get taught by blocks
+### Working under Probity — follow the protocol, don't get taught by blocks
 
-Where tdd-guard is active it validates every Write/Edit against live test
-evidence. Know its rules up front:
+Probity validates every Write/Edit against live test evidence. Know its rules
+up front:
 
 1. Test file first, **ONE new test per edit** — two tests in one edit is a
    violation, as is a new implementation file with no failing test on record.
    Parameterized tests count per ROW: an `it.each`/`test.each` with N rows is N
    tests — introduce it with one row and add rows one edit at a time.
-2. Run that exact failing test **immediately before** the implementation edit.
-   The guard only trusts fresh in-session runner output — its state clears at
-   session start, and cached (e.g. turbo-cached) runs write nothing, so invoke
-   the test runner directly.
+2. Run that exact failing test **immediately before** the implementation edit,
+   via a **direct runner invocation** — Probity only trusts fresh in-session
+   runner output read from the transcript; a resumed session's fresh
+   transcript has no test history, and a cached (e.g. turbo-cached) run writes
+   nothing, so invoke the test runner directly in-session.
 3. Match the failure stage: import/symbol failure → minimal stub only;
    assertion failure → just enough logic to pass that assertion.
 4. Refactor only on green; don't add behaviour in a refactor edit.
@@ -68,8 +70,8 @@ with no logic change. For these:
   next legitimate restyle, and prove nothing a human glance doesn't.
 - Verification IS looking at it: run the app (or a screenshot) and confirm
   existing suites stay green. That's the whole requirement.
-- Where tdd-guard is installed, these edits are refactor-class: allowed on
-  green, no new failing test required.
+- These edits are refactor-class under Probity: allowed on green, no new
+  failing test required.
 - The exemption ends where behavior begins: enabled/disabled, shown/hidden
   content, handlers, conditional rendering ARE behavior — normal TDD applies.
   A styling bug that broke a functional invariant (control unreachable,

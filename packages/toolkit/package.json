@@ -1,6 +1,6 @@
 {
   "name": "@argohq/toolkit",
-  "version": "0.22.6",
+  "version": "0.22.7",
   "type": "module",
   "description": "The argo npm package — playbook engine (core/), design + code packs (packs/), Claude adapter (adapter-claude/), and the argo CLI. Single install for host projects; the plugin repo's skills/agents are the LLM half.",
   "bin": {

@@ -31,9 +31,28 @@ import churn for existing importers.
 
 ### Group by domain, not by file type
 
-Subfolders are named by **what they do** (domain), not by what they are
-(type). `conversation/` (log, switch, persist, title) beats `utils/` or
-`helpers/`.
+Folders are named by **what the code is for** (feature/domain), never by what
+the files syntactically are (kind). `conversation/` (log, switch, persist,
+title) beats `utils/` or `helpers/`.
+
+**Kind-folders are banned:** never create `schemas/`, `types/`, `utils/`,
+`helpers/`, `constants/`, `interfaces/`, `validators/`, `handlers/` as
+grouping folders. They become junk drawers: touching one feature means
+hopping across five kind-buckets, and deleting a feature leaves orphans in
+each. A feature's schema, types, and validation live INSIDE that feature's
+folder (as `registry/schema.ts`, not `schemas/registry.ts`).
+
+The one sanctioned exception is a single small `lib/` (or `shared/`) folder
+per module root for genuinely cross-cutting helpers used by 3+ sibling
+domains. If a "shared" file has one consumer domain, it belongs in that
+domain's folder instead.
+
+The complementary file rule: **folder = domain, file = concept.** A file is
+named after the one concept it owns (`gate.ts` = the gate contract,
+`spec.ts` = the spec registry). A file named after a syntactic category
+holding many unrelated concepts (`types.ts` accreting every type in the
+module) is the same junk-drawer smell at file granularity; a small
+colocated `types.ts` scoped to its own folder's domain is fine.
 
 ### Naming convention — folders vs files
 

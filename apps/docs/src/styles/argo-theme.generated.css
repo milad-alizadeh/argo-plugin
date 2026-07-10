@@ -1,0 +1,114 @@
+/* GENERATED — do not edit; regenerate via `argo docs sync-theme`.
+   Source: milad-alizadeh/argo-v2's apps/desktop/src/renderer/src/assets/base.css (@theme static block). */
+
+:root {
+/* Board A / 01: panel + card surfaces */
+  --color-slate: #151c2b; /* panel background */
+  --color-graphite: #1b2432; /* card background */
+  --color-border-ui: #263244; /* hairline border / divider */
+
+  /* Argo text shorthands — cloud = brightest readable, mist = secondary, steel = muted */
+  --color-cloud: #b8cfe8;
+  --color-mist: #94b9e1;
+  --color-steel: #7d97ba;
+
+  /* Board A / 08: radius scale */
+  --radius-lg-xl: 10px; /* panel / card medium-large */
+
+  /* Session status colors — mapped from v1's semantic status ramp onto v2's
+   * SessionStatus union (src/main/domains/session/types.ts). needs-input and
+   * orphaned both read as "needs attention" so they share v1's attention
+   * amber; done reuses running's green per v1's own completed->running rule. */
+  --color-status-running: #38a050;
+  --color-status-needs-input: #d08c28;
+  --color-status-done: #38a050;
+  --color-status-error: #cc4444;
+  --color-status-orphaned: #d08c28;
+  --color-status-failed: #d6473a;
+  --color-status-cancelled: #7d97ba;
+
+  /* Board A / 02: status text tones — v1's semantic ramp, used as the coloured
+   * label + glowing dot (StatusText), not a filled pill. */
+  --color-running: #38a050;
+  --color-attention: #d08c28;
+  --color-error-ui: #cc4444;
+  --color-idle: #7eb796;
+
+  /* Board A / 03: glass surfaces — white-tint fills that LIFT over the backdrop
+   * (translucent; the app background + backdrop-blur do the glass work). */
+  --color-surface-panel: rgba(255, 255, 255, 0.06);
+  --color-surface-card: rgba(255, 255, 255, 0.05);
+  --color-surface-card-hover: rgba(255, 255, 255, 0.08);
+
+  /* Board A / 05: micro type scale — floor is 14px app-wide (readability); the
+   * 2xs/3xs/xs names are kept so existing call sites don't need renaming, but
+   * they no longer produce anything smaller than 14px. */
+  --text-3xs: 0.875rem; /* 14px (was 10px) */
+  --text-2xs: 0.875rem; /* 14px (was 12px) */
+  --text-xs: 0.875rem; /* 14px (was Tailwind's 12px default) */
+
+  --radius-2xl: 16px; /* panel */
+
+  /* Board A / 03: status dot size and glow (v1). */
+  --size-status-dot: 7px;
+  /* activity-tab-ui plan §3 — the StepChain/PhaseRail connector width. */
+  --size-step-connector: 10px;
+  --shadow-dot-glow: 0 0 6px currentColor;
+  --backdrop-glass: blur(20px) saturate(120%);
+
+  /* Board A / 04: fleet panel chrome — ported verbatim from v1's tokens.css
+   * (width-fleet-panel, shadow-glass-elevated, glow-inner-top, tracking-label)
+   * so the roster panel matches the v1 fleet panel's size and glass styling. */
+  --width-fleet-panel: 440px;
+  /* Board A / dock: stacking context for the bottom-center DockBar, which
+   * must sit above both side panels. */
+  --z-overlay: 100;
+  /* Left-side focus/detail panel (session details) — shares GlassPanel's
+   * chrome with the fleet panel but is wider to hold richer content. */
+  --width-focus-panel: 740px;
+  --tracking-label: 0.05em;
+  --shadow-glass-elevated:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65), inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 14px 42px rgba(0, 0, 0, 0.46);
+  --glow-inner-top: radial-gradient(
+    ellipse 70% 45% at 50% 0%,
+    rgba(230, 240, 255, 0.13) 0%,
+    rgba(180, 210, 255, 0.04) 55%,
+    transparent 100%
+  );
+
+  /* xterm.js terminal theme (session-details-panel plan §6/step 8) — ported
+   * verbatim from v1's tokens.css (Argo brand palette), read via
+   * getComputedStyle at terminal-construction time (xterm's theme option is
+   * plain JS, not CSS — this is the one legitimate escape valve for a
+   * non-Tailwind consumer per design-system.md's "non-token surfaces" note). */
+  --terminal-font-size: 13;
+  /* Line-height multiplier (xterm's ITerminalOptions.lineHeight is a bare
+   * multiplier, not px/rem) and a system monospace font stack; Warp's
+   * documented defaults (13pt, ~1.4 line height). No bundled font asset
+   * exists in this app, so this is a pure system-stack token, not a new
+   * dependency. */
+  --terminal-line-height: 1.4;
+  --terminal-font-family:
+    'SF Mono', Menlo, Monaco, 'Cascadia Code', Consolas, 'Liberation Mono', monospace;
+  --terminal-bg: #05070b;
+  --terminal-fg: #b8cfe8;
+  --terminal-cursor: #e6f0ff;
+  --terminal-selection-bg: rgba(182, 207, 232, 0.25);
+  --terminal-black: #0f141d;
+  --terminal-red: #d6473a;
+  --terminal-green: #56cf8c;
+  --terminal-yellow: #e0a82e;
+  --terminal-blue: #94b9e1;
+  --terminal-magenta: #a98bff;
+  --terminal-cyan: #46c7d4;
+  --terminal-white: #94b9e1;
+  --terminal-bright-black: #2f3846;
+  --terminal-bright-red: #ff6a4d;
+  --terminal-bright-green: #7eb796;
+  --terminal-bright-yellow: #e8a33d;
+  --terminal-bright-blue: #b8cfe8;
+  --terminal-bright-magenta: #c4acff;
+  --terminal-bright-cyan: #72d9e4;
+  --terminal-bright-white: #e6f0ff;
+}

@@ -4,12 +4,12 @@
 - cluster-only mode — file stats not available
 
 ## Summary
-- 2069 nodes · 3145 edges · 258 communities (213 shown, 45 thin omitted)
+- 2068 nodes · 3147 edges · 253 communities (208 shown, 45 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 8 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1b7fc433`
+- Built from commit: `304b5bb3`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -190,19 +190,18 @@
 - [[_COMMUNITY_Button Story Example|Button Story Example]]
 - [[_COMMUNITY_Spec-Diff Walker Stories|Spec-Diff Walker Stories]]
 - [[_COMMUNITY_Walker Template Shims Test|Walker Template Shims Test]]
+- [[_COMMUNITY_FeatureBlock Component|FeatureBlock Component]]
+- [[_COMMUNITY_FeatureGrid Component|FeatureGrid Component]]
 - [[_COMMUNITY_Sidebar Badge Schema|Sidebar Badge Schema]]
 - [[_COMMUNITY_Argo CLI Reference|Argo CLI Reference]]
 - [[_COMMUNITY_Link and Tag Schema|Link and Tag Schema]]
-- [[_COMMUNITY_Design JSON Client|Design JSON Client]]
 - [[_COMMUNITY_Hero Section Schema|Hero Section Schema]]
 - [[_COMMUNITY_Boundary Lint Rules|Boundary Lint Rules]]
 - [[_COMMUNITY_Documentation Content Rules|Documentation Content Rules]]
-- [[_COMMUNITY_Design Token Manifest|Design Token Manifest]]
 - [[_COMMUNITY_Attributes Schema|Attributes Schema]]
 - [[_COMMUNITY_Banner Content Schema|Banner Content Schema]]
 - [[_COMMUNITY_Template Enum Schema|Template Enum Schema]]
 - [[_COMMUNITY_Empty Page Check|Empty Page Check]]
-- [[_COMMUNITY_Playbook Permission Gate|Playbook Permission Gate]]
 - [[_COMMUNITY_Edit URL Schema|Edit URL Schema]]
 - [[_COMMUNITY_Head Config Schema|Head Config Schema]]
 - [[_COMMUNITY_Pagefind Config Schema|Pagefind Config Schema]]
@@ -228,17 +227,17 @@
   packages/toolkit/src/cli/graph-refresh.ts → packages/toolkit/bin/argo-dx.test.ts
 - `discoverWorkspaces()` --calls--> `walk()`  [INFERRED]
   packages/toolkit/src/cli/graph-refresh.ts → packages/toolkit/src/packs/design/design-kit/design-rules-audit.ts
-- `auditNode()` --calls--> `runRecipeDesignRulesChecks()`  [INFERRED]
-  packages/toolkit/src/packs/design/design-kit/design-rules-audit.ts → packages/toolkit/src/packs/design/recipes/shadcn-tailwind/design-rules-walker.ts
+- `PlaybookStatusFound` --references--> `GateVerdict`  [EXTRACTED]
+  packages/toolkit/src/core/cli/playbook-status.ts → packages/toolkit/src/core/gate.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (258 total, 45 thin omitted)
+## Communities (253 total, 45 thin omitted)
 
 ### Community 0 - "Registry Reconciliation"
-Cohesion: 0.11
-Nodes (39): buildCodeOwnedEntries(), buildKitRegistryEntries(), buildScreenEntries(), ChangedKitComponent, CodeOwnedEntry, DEFAULT_NON_KIT_PAGE_PATTERNS, detectChangedKitComponents(), extractVariantMatrix() (+31 more)
+Cohesion: 0.06
+Nodes (60): buildCodeOwnedEntries(), buildKitRegistryEntries(), buildScreenEntries(), ChangedKitComponent, CodeOwnedEntry, DEFAULT_NON_KIT_PAGE_PATTERNS, deriveAdoption(), detectChangedKitComponents() (+52 more)
 
 ### Community 1 - "Accessibility Auditing"
 Cohesion: 0.10
@@ -246,7 +245,7 @@ Nodes (55): textContrastViolation(), to255(), touchTargetViolation(), auditNode(
 
 ### Community 2 - "Repo Root & Session Guard"
 Cohesion: 0.07
-Nodes (49): resolveRepoRoot(), appKeyForCwd(), appKeyForRoot(), bumpSessionWriteCount(), canonical(), COMPLETENESS_SUBDIR, CompletenessState, completenessStatePath() (+41 more)
+Nodes (51): resolveRepoRoot(), appKeyForCwd(), appKeyForRoot(), bumpSessionWriteCount(), canonical(), COMPLETENESS_SUBDIR, CompletenessState, completenessStatePath() (+43 more)
 
 ### Community 3 - "Design Rules Engine"
 Cohesion: 0.08
@@ -254,23 +253,23 @@ Nodes (31): AnyNode, DENIED_KIT_INSTANCE_OVERRIDE_FIELDS, detachedInstanceViolat
 
 ### Community 4 - "Status & Posture Reporting"
 Cohesion: 0.09
-Nodes (25): rulesStatus(), computeStatus(), probityPluginEnabled(), resolveStatusSnapshot(), runStatus(), StatusReport, StatusSnapshot, baseConfig() (+17 more)
+Nodes (24): rulesStatus(), computeStatus(), probityPluginEnabled(), resolveStatusSnapshot(), runStatus(), StatusReport, StatusSnapshot, baseConfig() (+16 more)
 
 ### Community 5 - "Eval Harness Scenarios"
 Cohesion: 0.11
 Nodes (28): scenarios, spawnClaude, SYSTEM_PROMPT, scenarios, spawnClaude, SYSTEM_PROMPT, scenarios, spawnClaude (+20 more)
 
 ### Community 6 - "Design Rules Check Gate"
-Cohesion: 0.33
-Nodes (5): nonSemanticBindingViolation(), TW_COLLECTION_FAMILY, Variable, runRecipeDesignRulesChecks(), SPACING_FIELDS
+Cohesion: 0.17
+Nodes (15): PlaybookNotFoundError, playbookDiagram(), playbookStart(), PlaybookStartInput, assertPackAvailable(), nodeId(), nodeLabel(), renderPlaybookDiagram() (+7 more)
 
 ### Community 7 - "Component Presence Resolution"
-Cohesion: 0.26
-Nodes (9): BuiltInstance, PresenceResult, PresenceStatus, RegistryLookupEntry, resolveInstancePresence(), summarizeInstancePresence(), checkInstancePresence(), readOptionalJson() (+1 more)
+Cohesion: 0.07
+Nodes (31): normalizeComponentName(), Registry, registryComponentNames(), BuiltInstance, PresenceResult, PresenceStatus, RegistryLookupEntry, resolveInstancePresence() (+23 more)
 
 ### Community 8 - "Gate Registry Core"
-Cohesion: 0.08
-Nodes (26): PlaybookStatusFound, PlaybookStatusNotFound, PlaybookStatusReport, Finding, Gate, GateInput, gates, GateVerdict (+18 more)
+Cohesion: 0.09
+Nodes (24): Finding, Gate, GateInput, gates, GateVerdict, getGate(), registerGate(), BriefCheckOptions (+16 more)
 
 ### Community 9 - "Design Commit Gate"
 Cohesion: 0.10
@@ -281,12 +280,12 @@ Cohesion: 0.06
 Nodes (30): dependencies, astro, @astrojs/starlight, playwright, rehype-mermaid, sharp, devDependencies, @argohq/toolkit (+22 more)
 
 ### Community 11 - "Playbook Permission & State Gates"
-Cohesion: 0.13
-Nodes (28): playbookAdopt(), PlaybookAdoptInput, advanceToNextStage(), playbookAdvance(), playbookStart(), playbookStatus(), [key, round, stateRoot, cwd], activePointerPath() (+20 more)
+Cohesion: 0.09
+Nodes (31): GATE, assertPlanQueued(), git(), isLanded(), listPlans(), ListPlansOptions, LiveRun, liveRuns() (+23 more)
 
 ### Community 12 - "Playbook Status & Diagram"
 Cohesion: 0.13
-Nodes (18): GateNotFoundError, InstanceNotFoundError, PlaybookNotFoundError, StageNotFoundError, PlaybookAdoptOptions, deriveArtifactsFromProduces(), PlaybookAdvanceOptions, PlaybookAdvanceResult (+10 more)
+Nodes (15): InstanceNotFoundError, StageNotFoundError, makeGate(), registerTwoStage(), advanceToNextStage(), deriveArtifactsFromProduces(), playbookAdvance(), PlaybookAdvanceResult (+7 more)
 
 ### Community 13 - "Comment Lint & Waivers"
 Cohesion: 0.11
@@ -294,11 +293,11 @@ Nodes (20): CommentCheckWaiver, isWaived(), checkFile(), CommentBlock, CommentLi
 
 ### Community 14 - "Playbook Definitions Registry"
 Cohesion: 0.21
-Nodes (7): definePlaybook(), codeToDesignSpec, componentCreateSpec, componentEditSpec, designToCodeSpec, screenCreateSpec, screenEditSpec
+Nodes (8): definePlaybook(), registerPlaybook(), codeToDesignSpec, componentCreateSpec, componentEditSpec, designToCodeSpec, screenCreateSpec, screenEditSpec
 
 ### Community 15 - "Playbook Advance Logic"
-Cohesion: 0.19
-Nodes (5): makeGate(), registerTwoStage(), currentDir, registerGate(), registerPlaybook()
+Cohesion: 0.21
+Nodes (10): GateNotFoundError, playbookAdopt(), PlaybookAdoptInput, PlaybookAdoptOptions, PlaybookAdvanceOptions, GateContext, JudgeFn, deriveInstanceKey() (+2 more)
 
 ### Community 16 - "Bash Safety Guards"
 Cohesion: 0.14
@@ -345,16 +344,16 @@ Cohesion: 0.20
 Nodes (12): ARGO_CONFIG_RELPATH, buildModePath(), designDocsDir(), evidenceDir(), GITIGNORE_BLOCK, launchReceiptPath(), plansDir(), redProofPath() (+4 more)
 
 ### Community 27 - "Playbook Catalog Listing"
-Cohesion: 0.12
-Nodes (20): buildPlaybookCatalog(), packOf(), PlaybookCatalogEntry, PlaybookCatalogStage, runPlaybookList(), toolkitVersion(), nodeId(), nodeLabel() (+12 more)
+Cohesion: 0.23
+Nodes (10): buildPlaybookCatalog(), packOf(), PlaybookCatalogEntry, PlaybookCatalogStage, runPlaybookList(), toolkitVersion(), getPlaybookPack(), listPlaybooks() (+2 more)
 
 ### Community 28 - "Color Comparator Utils"
-Cohesion: 0.13
-Nodes (22): clamp01(), compareColor(), compareHugDimension(), comparePxInteger(), linearToSrgb(), Oklch, OKLCH_PATTERN, oklchToSrgb() (+14 more)
+Cohesion: 0.21
+Nodes (15): clamp01(), compareColor(), compareHugDimension(), comparePxInteger(), linearToSrgb(), Oklch, OKLCH_PATTERN, oklchToSrgb() (+7 more)
 
 ### Community 29 - "Component Categories & Copy Deck"
-Cohesion: 0.14
-Nodes (12): DEFAULT_COMPONENT_CATEGORIES, resolveComponentCategories(), validateComponentCategories(), CopyDeck, CopyDeckEntrySchema, CopyDeckSchema, copyDeckStrings(), deck (+4 more)
+Cohesion: 0.22
+Nodes (8): DEFAULT_COMPONENT_CATEGORIES, resolveComponentCategories(), validateComponentCategories(), CopyDeck, CopyDeckEntrySchema, CopyDeckSchema, copyDeckStrings(), deck
 
 ### Community 30 - "Figma Comments CLI"
 Cohesion: 0.18
@@ -365,8 +364,8 @@ Cohesion: 0.13
 Nodes (14): bin, argo, description, engines, node, files, name, peerDependencies (+6 more)
 
 ### Community 32 - "Plan Frontmatter Parsing"
-Cohesion: 0.21
-Nodes (11): assertPlanQueued(), git(), isLanded(), listPlans(), ListPlansOptions, LiveRun, liveRuns(), parsePlanFrontmatter() (+3 more)
+Cohesion: 0.33
+Nodes (8): ChecklistEntry, coversScreen(), normalize(), parseMatrix(), parseRequirements(), Requirement, selectChecklistForScreen(), tableCells()
 
 ### Community 33 - "Design Staleness Detection"
 Cohesion: 0.21
@@ -397,8 +396,8 @@ Cohesion: 0.15
 Nodes (12): Authoring the brief, Building component-first, then composing, Completeness is layered, and a screen is never done on the first pass, Cost discipline (hard rules), Deciding first: the binding manifest + copy deck, Design a Screen (hi-fi in Figma, single-session, component-first, PRD-driven), Hygiene expectations, Missing components / component impact (+4 more)
 
 ### Community 40 - "Permission Hook Logic"
-Cohesion: 0.26
-Nodes (11): ActiveInstanceReader, allow(), deny(), EDIT_SHAPED_KINDS, extractPath(), extractProtectedBashTarget(), HookDecision, runPermissionHook() (+3 more)
+Cohesion: 0.22
+Nodes (9): ActiveInstanceReader, allow(), deny(), EDIT_SHAPED_KINDS, extractPath(), extractProtectedBashTarget(), HookDecision, runPermissionHook() (+1 more)
 
 ### Community 41 - "Session Spawn API"
 Cohesion: 0.27
@@ -413,8 +412,8 @@ Cohesion: 0.27
 Nodes (10): findArgoJson(), composePrelude(), GENERATED_BANNER(), renderSpecDiffShim(), renderVrtShim(), runEmitShims(), SHIM_FILES, shimOptions() (+2 more)
 
 ### Community 44 - "Binding Manifest Schema"
-Cohesion: 0.09
-Nodes (23): BindingManifestRowSchema, BindingManifestSchema, ConfusablePairSchema, ConfusablePairsSchema, ManifestRowTier, ManifestValidationResult, confusablePairs, registry (+15 more)
+Cohesion: 0.12
+Nodes (15): BindingManifestRowSchema, BindingManifestSchema, ConfusablePairSchema, ConfusablePairsSchema, ManifestRowTier, ManifestValidationResult, confusablePairs, registry (+7 more)
 
 ### Community 45 - "Design Screen Skill Doc"
 Cohesion: 0.15
@@ -437,8 +436,8 @@ Cohesion: 0.08
 Nodes (24): AllValuesOf, CollectionEntry, CollectionKey, ContentConfig, DataEntryMap, ExtractCollectionFilterType, ExtractDataType, ExtractEntryFilterType (+16 more)
 
 ### Community 50 - "Spec Diff & VRT Walkers"
-Cohesion: 0.67
-Nodes (3): default, type, draft
+Cohesion: 0.32
+Nodes (7): convertLetterSpacing(), convertLineHeight(), resolveBoxModel(), ComposeStories, runSpecDiffWalker(), StoryModule, runVrtWalker()
 
 ### Community 51 - "File Structure Rules Doc"
 Cohesion: 0.14
@@ -453,7 +452,7 @@ Cohesion: 0.18
 Nodes (10): Author a Skill, Checklist, Conventions, Frontmatter description — the only thing the agent sees, Invocation control, Match the form to the failure, Process, Structure (+2 more)
 
 ### Community 54 - "Playbook Lifecycle Contract"
-Cohesion: 0.31
+Cohesion: 0.27
 Nodes (7): FanOutToolName, LIFECYCLE_STATUSES, LifecycleStatus, RUN_STATES, RunState, TOOL_NAMES, PlaybookLifecycleEvent
 
 ### Community 55 - "Skill Assembly Tooling"
@@ -465,12 +464,12 @@ Cohesion: 0.33
 Nodes (6): argoConfigPath(), recordProvenance(), safeParse(), LSP_POSTURES, recordLspPosture(), safeParse()
 
 ### Community 57 - "Path Permission Matching"
-Cohesion: 0.33
-Nodes (4): parsePattern(), PROTECTED_PATTERNS, ProtectedPattern, toSegments()
+Cohesion: 0.29
+Nodes (6): isActionAllowed(), isProtectedPath(), parsePattern(), PROTECTED_PATTERNS, ProtectedPattern, toSegments()
 
 ### Community 58 - "Binding Manifest Validation CLI"
-Cohesion: 0.12
-Nodes (16): type, anyOf, anyOf, anyOf, properties, description, lastUpdated, next (+8 more)
+Cohesion: 0.10
+Nodes (19): type, default, type, anyOf, anyOf, anyOf, properties, description (+11 more)
 
 ### Community 59 - "Registry Lookup CLI"
 Cohesion: 0.29
@@ -533,8 +532,8 @@ Cohesion: 0.25
 Nodes (7): Code-owned components are never generated here, figma-to-code — generating from a synced design, Presentation-regen seam, Read what was synced, not what you remember, Self-checks are advisory, not proof, Verification, Why the acceptance order matters
 
 ### Community 74 - "Playbook Adopt Errors"
-Cohesion: 0.16
-Nodes (15): RegistryEntrySchema, RegistryHeaderSchema, StoryMapEntrySchema, pullRegistry(), PullRegistryInput, registerScreen(), RegisterScreenInput, RegisterScreenResult (+7 more)
+Cohesion: 0.70
+Nodes (3): RegistryEntrySchema, RegistryHeaderSchema, StoryMapEntrySchema
 
 ### Community 75 - "Figma-to-Code Skill Doc"
 Cohesion: 0.25
@@ -565,7 +564,7 @@ Cohesion: 0.29
 Nodes (6): Cannot be tested outside Figma, figma-audit — what "hygiene-clean" means, Procedure (the verbs a session needs, in order), Read discipline, Two modes, one philosophy, What it checks
 
 ### Community 82 - "Playbook Permission Gate Impl"
-Cohesion: 0.25
+Cohesion: 0.29
 Nodes (5): HookInput, config, cwd, decision, input
 
 ### Community 83 - "Test Smell Detection"
@@ -609,8 +608,8 @@ Cohesion: 0.53
 Nodes (4): findOversizedFiles(), listTsFiles(), main(), OversizedFile
 
 ### Community 96 - "Variant Shape Diffing"
-Cohesion: 0.25
-Nodes (10): normalizeComponentName(), Registry, registryComponentNames(), deriveDesignRulesAuditOptions(), findDesignBlock(), parseCliArgs(), readOptionalJson(), RECIPE_ADDITIONAL_ALLOWED_COLLECTION_NAMES (+2 more)
+Cohesion: 0.40
+Nodes (4): playbookStatus(), PlaybookStatusFound, PlaybookStatusNotFound, PlaybookStatusReport
 
 ### Community 97 - "Argo Pipeline Overview"
 Cohesion: 0.33
@@ -768,6 +767,10 @@ Nodes (3): default, types, ./design-kit/shadcn-tailwind/design-rules
 Cohesion: 0.67
 Nodes (3): peerDependenciesMeta, @playwright/test, optional
 
+### Community 189 - "FeatureBlock Component"
+Cohesion: 0.40
+Nodes (3): diffVariantShape(), VariantMatrix, VariantShapeDiff
+
 ### Community 198 - "Sidebar Badge Schema"
 Cohesion: 0.15
 Nodes (13): anyOf, default, type, type, type, badge, hidden, label (+5 more)
@@ -780,10 +783,6 @@ Nodes (12): `argo argo-hook`, `argo comment-lint`, `argo comment-refs-check`, `a
 Cohesion: 0.20
 Nodes (12): items, items, properties, required, type, icon, link, tag (+4 more)
 
-### Community 201 - "Design JSON Client"
-Cohesion: 0.18
-Nodes (10): fetchFile(), token(), readDesignJsonOrRebuild(), MarshaledComponent, buildRefreshedEntry(), CliArgs, findLiveComponent(), parseCliArgs() (+2 more)
-
 ### Community 202 - "Hero Section Schema"
 Cohesion: 0.18
 Nodes (11): type, properties, type, anyOf, actions, hero, image, tagline (+3 more)
@@ -795,10 +794,6 @@ Nodes (8): assertValidRoleMap(), BoundaryForbiddenRule, BoundaryRole, BoundaryRo
 ### Community 204 - "Documentation Content Rules"
 Cohesion: 0.20
 Nodes (9): Documentation Content, Ground before you write (the facts inventory), Guides derive from journeys, not the feature list, N similar items: index first, page only when earned, Requirements & supported matrix (one page, one place), Self-check before you finish a docs change, The entry-point page, Two tiers, hard wall (IA) (+1 more)
-
-### Community 205 - "Design Token Manifest"
-Cohesion: 0.31
-Nodes (7): defaultModeValue(), generateTokenManifest(), isAlias(), tokens, TokenCollection, TokensDump, TokenVariable
 
 ### Community 206 - "Attributes Schema"
 Cohesion: 0.29
@@ -825,7 +820,7 @@ Cohesion: 0.67
 Nodes (3): default, type, pagefind
 
 ## Knowledge Gaps
-- **883 isolated node(s):** `$schema`, `type`, `type`, `type`, `default` (+878 more)
+- **885 isolated node(s):** `$schema`, `type`, `type`, `type`, `default` (+880 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **45 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -836,13 +831,13 @@ _Questions this graph is uniquely positioned to answer:_
   _High betweenness centrality (0.019) - this node is a cross-community bridge._
 - **Why does `runPureDesignRulesAudit()` connect `Design Rules Engine` to `Accessibility Auditing`?**
   _High betweenness centrality (0.014) - this node is a cross-community bridge._
-- **Why does `findArgoJson()` connect `Shim Emission` to `Rules/Tooling Provenance Recording`, `Argo Config JSON Model`, `Variant Shape Diffing`?**
+- **Why does `findArgoJson()` connect `Shim Emission` to `Rules/Tooling Provenance Recording`, `Argo Config JSON Model`, `Component Presence Resolution`?**
   _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **What connects `$schema`, `type`, `type` to the rest of the system?**
-  _883 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _885 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Registry Reconciliation` be split into smaller, more focused modules?**
-  _Cohesion score 0.10963455149501661 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.061828952239911146 - nodes in this community are weakly interconnected._
 - **Should `Accessibility Auditing` be split into smaller, more focused modules?**
   _Cohesion score 0.09920983318700614 - nodes in this community are weakly interconnected._
 - **Should `Repo Root & Session Guard` be split into smaller, more focused modules?**
-  _Cohesion score 0.06874717322478517 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0650103519668737 - nodes in this community are weakly interconnected._

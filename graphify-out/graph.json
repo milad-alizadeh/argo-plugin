@@ -845,10 +845,10 @@
       "source_file": "apps/docs/.astro/collections/docs.schema.json",
       "source_location": "L632",
       "_origin": "ast",
-      "community": 50,
+      "community": 58,
       "norm_label": "draft",
       "id": "apps_docs_astro_collections_docs_schema_properties_draft",
-      "community_name": "Spec Diff & VRT Walkers"
+      "community_name": "Binding Manifest Validation CLI"
     },
     {
       "label": "default",
@@ -856,10 +856,10 @@
       "source_file": "apps/docs/.astro/collections/docs.schema.json",
       "source_location": "L633",
       "_origin": "ast",
-      "community": 50,
+      "community": 58,
       "norm_label": "default",
       "id": "apps_docs_astro_collections_docs_schema_draft_default",
-      "community_name": "Spec Diff & VRT Walkers"
+      "community_name": "Binding Manifest Validation CLI"
     },
     {
       "label": "type",
@@ -867,10 +867,10 @@
       "source_file": "apps/docs/.astro/collections/docs.schema.json",
       "source_location": "L634",
       "_origin": "ast",
-      "community": 50,
+      "community": 58,
       "norm_label": "type",
       "id": "apps_docs_astro_collections_docs_schema_draft_type",
-      "community_name": "Spec Diff & VRT Walkers"
+      "community_name": "Binding Manifest Validation CLI"
     },
     {
       "label": "$schema",
@@ -2061,39 +2061,6 @@
       "community_name": "Lint Docs Style Test"
     },
     {
-      "label": "FeatureBlock.astro",
-      "file_type": "code",
-      "source_file": "apps/docs/src/components/FeatureBlock.astro",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 189,
-      "norm_label": "featureblock.astro",
-      "id": "apps_docs_src_components_featureblock",
-      "community_name": "FeatureBlock Component"
-    },
-    {
-      "label": "FeatureGrid.astro",
-      "file_type": "code",
-      "source_file": "apps/docs/src/components/FeatureGrid.astro",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 190,
-      "norm_label": "featuregrid.astro",
-      "id": "apps_docs_src_components_featuregrid",
-      "community_name": "FeatureGrid Component"
-    },
-    {
-      "label": "Hero.astro",
-      "file_type": "code",
-      "source_file": "apps/docs/src/components/Hero.astro",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 191,
-      "norm_label": "hero.astro",
-      "id": "apps_docs_src_components_hero",
-      "community_name": "Hero Component"
-    },
-    {
       "label": "content.config.ts",
       "file_type": "code",
       "source_file": "apps/docs/src/content.config.ts",
@@ -2114,6 +2081,39 @@
       "norm_label": "collections",
       "id": "apps_docs_src_content_config_collections",
       "community_name": "Astro Content Collections Config"
+    },
+    {
+      "label": "index.astro",
+      "file_type": "code",
+      "source_file": "apps/docs/src/pages/index.astro",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 190,
+      "norm_label": "index.astro",
+      "id": "apps_docs_src_pages_index",
+      "community_name": "FeatureGrid Component"
+    },
+    {
+      "label": "stages",
+      "file_type": "code",
+      "source_file": "apps/docs/src/pages/index.astro",
+      "source_location": "L6",
+      "_origin": "ast",
+      "community": 190,
+      "norm_label": "stages",
+      "id": "apps_docs_src_pages_index_stages",
+      "community_name": "FeatureGrid Component"
+    },
+    {
+      "label": "gates",
+      "file_type": "code",
+      "source_file": "apps/docs/src/pages/index.astro",
+      "source_location": "L14",
+      "_origin": "ast",
+      "community": 190,
+      "norm_label": "gates",
+      "id": "apps_docs_src_pages_index_gates",
+      "community_name": "FeatureGrid Component"
     },
     {
       "label": "tsconfig.json",
@@ -4293,10 +4293,10 @@
       "source_file": "packages/toolkit/src/adapter-claude/hook.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 15,
+      "community": 40,
       "norm_label": "hook.test.ts",
       "id": "packages_toolkit_src_adapter_claude_hook_test",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Permission Hook Logic"
     },
     {
       "label": "baseConfig()",
@@ -4304,10 +4304,10 @@
       "source_file": "packages/toolkit/src/adapter-claude/hook.test.ts",
       "source_location": "L6",
       "_origin": "ast",
-      "community": 15,
+      "community": 40,
       "norm_label": "baseconfig()",
       "id": "packages_toolkit_src_adapter_claude_hook_test_baseconfig",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Permission Hook Logic"
     },
     {
       "label": "uniqueName()",
@@ -4315,10 +4315,10 @@
       "source_file": "packages/toolkit/src/adapter-claude/hook.test.ts",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 15,
+      "community": 40,
       "norm_label": "uniquename()",
       "id": "packages_toolkit_src_adapter_claude_hook_test_uniquename",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Permission Hook Logic"
     },
     {
       "label": "hook.ts",
@@ -4447,10 +4447,10 @@
       "source_file": "packages/toolkit/src/adapter-claude/index.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 82,
+      "community": 54,
       "norm_label": "index.ts",
       "id": "packages_toolkit_src_adapter_claude_index",
-      "community_name": "Playbook Permission Gate Impl"
+      "community_name": "Playbook Lifecycle Contract"
     },
     {
       "label": "judge-impl.test.ts",
@@ -4590,10 +4590,10 @@
       "source_file": "packages/toolkit/src/adapter-claude/playbook-permission-gate.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 210,
+      "community": 11,
       "norm_label": "playbook-permission-gate.test.ts",
       "id": "packages_toolkit_src_adapter_claude_playbook_permission_gate_test",
-      "community_name": "Playbook Permission Gate"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "GATE",
@@ -4601,10 +4601,10 @@
       "source_file": "packages/toolkit/src/adapter-claude/playbook-permission-gate.test.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 210,
+      "community": 11,
       "norm_label": "gate",
       "id": "packages_toolkit_src_adapter_claude_playbook_permission_gate_test_gate",
-      "community_name": "Playbook Permission Gate"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "runGate()",
@@ -4612,10 +4612,10 @@
       "source_file": "packages/toolkit/src/adapter-claude/playbook-permission-gate.test.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 210,
+      "community": 11,
       "norm_label": "rungate()",
       "id": "packages_toolkit_src_adapter_claude_playbook_permission_gate_test_rungate",
-      "community_name": "Playbook Permission Gate"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "writeConfig()",
@@ -4623,10 +4623,10 @@
       "source_file": "packages/toolkit/src/adapter-claude/playbook-permission-gate.test.ts",
       "source_location": "L46",
       "_origin": "ast",
-      "community": 210,
+      "community": 11,
       "norm_label": "writeconfig()",
       "id": "packages_toolkit_src_adapter_claude_playbook_permission_gate_test_writeconfig",
-      "community_name": "Playbook Permission Gate"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "playbook-permission-gate.ts",
@@ -5261,10 +5261,10 @@
       "source_file": "packages/toolkit/src/cli/plans.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "plans.test.ts",
       "id": "packages_toolkit_src_cli_plans_test",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "git()",
@@ -5272,10 +5272,10 @@
       "source_file": "packages/toolkit/src/cli/plans.test.ts",
       "source_location": "L9",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "git()",
       "id": "packages_toolkit_src_cli_plans_test_git",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "writePlan()",
@@ -5283,10 +5283,10 @@
       "source_file": "packages/toolkit/src/cli/plans.test.ts",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "writeplan()",
       "id": "packages_toolkit_src_cli_plans_test_writeplan",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "plans.ts",
@@ -5294,10 +5294,10 @@
       "source_file": "packages/toolkit/src/cli/plans.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "plans.ts",
       "id": "packages_toolkit_src_cli_plans",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "PlanFrontmatterStatus",
@@ -5305,10 +5305,10 @@
       "source_file": "packages/toolkit/src/cli/plans.ts",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "planfrontmatterstatus",
       "id": "packages_toolkit_src_cli_plans_planfrontmatterstatus",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "PlanFrontmatter",
@@ -5316,10 +5316,10 @@
       "source_file": "packages/toolkit/src/cli/plans.ts",
       "source_location": "L27",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "planfrontmatter",
       "id": "packages_toolkit_src_cli_plans_planfrontmatter",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "parsePlanFrontmatter()",
@@ -5327,10 +5327,10 @@
       "source_file": "packages/toolkit/src/cli/plans.ts",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "parseplanfrontmatter()",
       "id": "packages_toolkit_src_cli_plans_parseplanfrontmatter",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "LiveRun",
@@ -5338,10 +5338,10 @@
       "source_file": "packages/toolkit/src/cli/plans.ts",
       "source_location": "L49",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "liverun",
       "id": "packages_toolkit_src_cli_plans_liverun",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "PlanEntry",
@@ -5349,10 +5349,10 @@
       "source_file": "packages/toolkit/src/cli/plans.ts",
       "source_location": "L56",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "planentry",
       "id": "packages_toolkit_src_cli_plans_planentry",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "ListPlansOptions",
@@ -5360,10 +5360,10 @@
       "source_file": "packages/toolkit/src/cli/plans.ts",
       "source_location": "L69",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "listplansoptions",
       "id": "packages_toolkit_src_cli_plans_listplansoptions",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "git()",
@@ -5371,10 +5371,10 @@
       "source_file": "packages/toolkit/src/cli/plans.ts",
       "source_location": "L75",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "git()",
       "id": "packages_toolkit_src_cli_plans_git",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "isLanded()",
@@ -5382,10 +5382,10 @@
       "source_file": "packages/toolkit/src/cli/plans.ts",
       "source_location": "L85",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "islanded()",
       "id": "packages_toolkit_src_cli_plans_islanded",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "liveRuns()",
@@ -5393,10 +5393,10 @@
       "source_file": "packages/toolkit/src/cli/plans.ts",
       "source_location": "L99",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "liveruns()",
       "id": "packages_toolkit_src_cli_plans_liveruns",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "listPlans()",
@@ -5404,10 +5404,10 @@
       "source_file": "packages/toolkit/src/cli/plans.ts",
       "source_location": "L123",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "listplans()",
       "id": "packages_toolkit_src_cli_plans_listplans",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "assertPlanQueued()",
@@ -5415,10 +5415,10 @@
       "source_file": "packages/toolkit/src/cli/plans.ts",
       "source_location": "L149",
       "_origin": "ast",
-      "community": 32,
+      "community": 11,
       "norm_label": "assertplanqueued()",
       "id": "packages_toolkit_src_cli_plans_assertplanqueued",
-      "community_name": "Plan Frontmatter Parsing"
+      "community_name": "Playbook Permission & State Gates"
     },
     {
       "label": "argo-json.test.ts",
@@ -6229,10 +6229,10 @@
       "source_file": "packages/toolkit/src/core/cli/errors.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 12,
+      "community": 6,
       "norm_label": "errors.ts",
       "id": "packages_toolkit_src_core_cli_errors",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "PlaybookNotFoundError",
@@ -6240,10 +6240,10 @@
       "source_file": "packages/toolkit/src/core/cli/errors.ts",
       "source_location": "L2",
       "_origin": "ast",
-      "community": 12,
+      "community": 6,
       "norm_label": "playbooknotfounderror",
       "id": "packages_toolkit_src_core_cli_errors_playbooknotfounderror",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": ".constructor()",
@@ -6251,10 +6251,10 @@
       "source_file": "packages/toolkit/src/core/cli/errors.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 12,
+      "community": 6,
       "norm_label": ".constructor()",
       "id": "packages_toolkit_src_core_cli_errors_playbooknotfounderror_constructor",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "InstanceNotFoundError",
@@ -6306,10 +6306,10 @@
       "source_file": "packages/toolkit/src/core/cli/errors.ts",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 12,
+      "community": 15,
       "norm_label": "gatenotfounderror",
       "id": "packages_toolkit_src_core_cli_errors_gatenotfounderror",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": ".constructor()",
@@ -6317,10 +6317,10 @@
       "source_file": "packages/toolkit/src/core/cli/errors.ts",
       "source_location": "L27",
       "_origin": "ast",
-      "community": 12,
+      "community": 15,
       "norm_label": ".constructor()",
       "id": "packages_toolkit_src_core_cli_errors_gatenotfounderror_constructor",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "lifecycle-events.test.ts",
@@ -6328,10 +6328,10 @@
       "source_file": "packages/toolkit/src/core/cli/lifecycle-events.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 15,
+      "community": 12,
       "norm_label": "lifecycle-events.test.ts",
       "id": "packages_toolkit_src_core_cli_lifecycle_events_test",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Status & Diagram"
     },
     {
       "label": "makeGate()",
@@ -6339,10 +6339,10 @@
       "source_file": "packages/toolkit/src/core/cli/lifecycle-events.test.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 15,
+      "community": 12,
       "norm_label": "makegate()",
       "id": "packages_toolkit_src_core_cli_lifecycle_events_test_makegate",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Status & Diagram"
     },
     {
       "label": "registerTwoStage()",
@@ -6350,10 +6350,10 @@
       "source_file": "packages/toolkit/src/core/cli/lifecycle-events.test.ts",
       "source_location": "L30",
       "_origin": "ast",
-      "community": 15,
+      "community": 12,
       "norm_label": "registertwostage()",
       "id": "packages_toolkit_src_core_cli_lifecycle_events_test_registertwostage",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Status & Diagram"
     },
     {
       "label": "playbook-adopt.test.ts",
@@ -6361,10 +6361,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-adopt.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 11,
+      "community": 15,
       "norm_label": "playbook-adopt.test.ts",
       "id": "packages_toolkit_src_core_cli_playbook_adopt_test",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "makeGate()",
@@ -6372,10 +6372,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-adopt.test.ts",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 11,
+      "community": 15,
       "norm_label": "makegate()",
       "id": "packages_toolkit_src_core_cli_playbook_adopt_test_makegate",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "playbook-adopt.ts",
@@ -6383,10 +6383,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-adopt.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 11,
+      "community": 15,
       "norm_label": "playbook-adopt.ts",
       "id": "packages_toolkit_src_core_cli_playbook_adopt",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "PlaybookAdoptInput",
@@ -6394,10 +6394,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-adopt.ts",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 11,
+      "community": 15,
       "norm_label": "playbookadoptinput",
       "id": "packages_toolkit_src_core_cli_playbook_adopt_playbookadoptinput",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "PlaybookAdoptOptions",
@@ -6405,10 +6405,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-adopt.ts",
       "source_location": "L19",
       "_origin": "ast",
-      "community": 12,
+      "community": 15,
       "norm_label": "playbookadoptoptions",
       "id": "packages_toolkit_src_core_cli_playbook_adopt_playbookadoptoptions",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "playbookAdopt()",
@@ -6416,10 +6416,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-adopt.ts",
       "source_location": "L41",
       "_origin": "ast",
-      "community": 11,
+      "community": 15,
       "norm_label": "playbookadopt()",
       "id": "packages_toolkit_src_core_cli_playbook_adopt_playbookadopt",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "playbook-advance.test.ts",
@@ -6427,10 +6427,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-advance.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 15,
+      "community": 12,
       "norm_label": "playbook-advance.test.ts",
       "id": "packages_toolkit_src_core_cli_playbook_advance_test",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Status & Diagram"
     },
     {
       "label": "currentDir",
@@ -6438,10 +6438,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-advance.test.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 15,
+      "community": 12,
       "norm_label": "currentdir",
       "id": "packages_toolkit_src_core_cli_playbook_advance_test_currentdir",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Status & Diagram"
     },
     {
       "label": "spawnAdvanceWorker()",
@@ -6449,10 +6449,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-advance.test.ts",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 15,
+      "community": 12,
       "norm_label": "spawnadvanceworker()",
       "id": "packages_toolkit_src_core_cli_playbook_advance_test_spawnadvanceworker",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Status & Diagram"
     },
     {
       "label": "makeGate()",
@@ -6460,10 +6460,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-advance.test.ts",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 15,
+      "community": 12,
       "norm_label": "makegate()",
       "id": "packages_toolkit_src_core_cli_playbook_advance_test_makegate",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Status & Diagram"
     },
     {
       "label": "makeInstance()",
@@ -6471,10 +6471,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-advance.test.ts",
       "source_location": "L30",
       "_origin": "ast",
-      "community": 15,
+      "community": 12,
       "norm_label": "makeinstance()",
       "id": "packages_toolkit_src_core_cli_playbook_advance_test_makeinstance",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Status & Diagram"
     },
     {
       "label": "check()",
@@ -6482,10 +6482,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-advance.test.ts",
       "source_location": "L224",
       "_origin": "ast",
-      "community": 15,
+      "community": 12,
       "norm_label": "check()",
       "id": "packages_toolkit_src_core_cli_playbook_advance_test_check",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Status & Diagram"
     },
     {
       "label": "playbook-advance.ts",
@@ -6504,10 +6504,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-advance.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 12,
+      "community": 15,
       "norm_label": "playbookadvanceoptions",
       "id": "packages_toolkit_src_core_cli_playbook_advance_playbookadvanceoptions",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "deriveArtifactsFromProduces()",
@@ -6548,10 +6548,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-advance.ts",
       "source_location": "L83",
       "_origin": "ast",
-      "community": 11,
+      "community": 12,
       "norm_label": "playbookadvance()",
       "id": "packages_toolkit_src_core_cli_playbook_advance_playbookadvance",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Playbook Status & Diagram"
     },
     {
       "label": "advanceToNextStage()",
@@ -6559,10 +6559,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-advance.ts",
       "source_location": "L143",
       "_origin": "ast",
-      "community": 11,
+      "community": 12,
       "norm_label": "advancetonextstage()",
       "id": "packages_toolkit_src_core_cli_playbook_advance_advancetonextstage",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Playbook Status & Diagram"
     },
     {
       "label": "playbook-diagram.test.ts",
@@ -6570,10 +6570,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-diagram.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 12,
+      "community": 6,
       "norm_label": "playbook-diagram.test.ts",
       "id": "packages_toolkit_src_core_cli_playbook_diagram_test",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "playbook-diagram.ts",
@@ -6581,10 +6581,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-diagram.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 12,
+      "community": 6,
       "norm_label": "playbook-diagram.ts",
       "id": "packages_toolkit_src_core_cli_playbook_diagram",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "playbookDiagram()",
@@ -6592,10 +6592,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-diagram.ts",
       "source_location": "L7",
       "_origin": "ast",
-      "community": 12,
+      "community": 6,
       "norm_label": "playbookdiagram()",
       "id": "packages_toolkit_src_core_cli_playbook_diagram_playbookdiagram",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "playbook-list.test.ts",
@@ -6713,10 +6713,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-start.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 11,
+      "community": 6,
       "norm_label": "playbook-start.test.ts",
       "id": "packages_toolkit_src_core_cli_playbook_start_test",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "playbook-start.ts",
@@ -6724,10 +6724,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-start.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 12,
+      "community": 6,
       "norm_label": "playbook-start.ts",
       "id": "packages_toolkit_src_core_cli_playbook_start",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "PlaybookStartInput",
@@ -6735,10 +6735,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-start.ts",
       "source_location": "L7",
       "_origin": "ast",
-      "community": 12,
+      "community": 6,
       "norm_label": "playbookstartinput",
       "id": "packages_toolkit_src_core_cli_playbook_start_playbookstartinput",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "PlaybookStartResult",
@@ -6757,10 +6757,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-start.ts",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 11,
+      "community": 6,
       "norm_label": "playbookstart()",
       "id": "packages_toolkit_src_core_cli_playbook_start_playbookstart",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "playbook-status.test.ts",
@@ -6768,10 +6768,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-status.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 11,
+      "community": 96,
       "norm_label": "playbook-status.test.ts",
       "id": "packages_toolkit_src_core_cli_playbook_status_test",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Variant Shape Diffing"
     },
     {
       "label": "playbook-status.ts",
@@ -6779,10 +6779,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-status.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 8,
+      "community": 96,
       "norm_label": "playbook-status.ts",
       "id": "packages_toolkit_src_core_cli_playbook_status",
-      "community_name": "Gate Registry Core"
+      "community_name": "Variant Shape Diffing"
     },
     {
       "label": "PlaybookStatusFound",
@@ -6790,10 +6790,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-status.ts",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 8,
+      "community": 96,
       "norm_label": "playbookstatusfound",
       "id": "packages_toolkit_src_core_cli_playbook_status_playbookstatusfound",
-      "community_name": "Gate Registry Core"
+      "community_name": "Variant Shape Diffing"
     },
     {
       "label": "PlaybookStatusNotFound",
@@ -6801,10 +6801,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-status.ts",
       "source_location": "L27",
       "_origin": "ast",
-      "community": 8,
+      "community": 96,
       "norm_label": "playbookstatusnotfound",
       "id": "packages_toolkit_src_core_cli_playbook_status_playbookstatusnotfound",
-      "community_name": "Gate Registry Core"
+      "community_name": "Variant Shape Diffing"
     },
     {
       "label": "PlaybookStatusReport",
@@ -6812,10 +6812,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-status.ts",
       "source_location": "L32",
       "_origin": "ast",
-      "community": 8,
+      "community": 96,
       "norm_label": "playbookstatusreport",
       "id": "packages_toolkit_src_core_cli_playbook_status_playbookstatusreport",
-      "community_name": "Gate Registry Core"
+      "community_name": "Variant Shape Diffing"
     },
     {
       "label": "playbookStatus()",
@@ -6823,10 +6823,10 @@
       "source_file": "packages/toolkit/src/core/cli/playbook-status.ts",
       "source_location": "L38",
       "_origin": "ast",
-      "community": 11,
+      "community": 96,
       "norm_label": "playbookstatus()",
       "id": "packages_toolkit_src_core_cli_playbook_status_playbookstatus",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Variant Shape Diffing"
     },
     {
       "label": "rules-record.test.ts",
@@ -7252,10 +7252,10 @@
       "source_file": "packages/toolkit/src/core/config.ts",
       "source_location": "L161",
       "_origin": "ast",
-      "community": 4,
+      "community": 6,
       "norm_label": "assertpackavailable()",
       "id": "packages_toolkit_src_core_config_assertpackavailable",
-      "community_name": "Status & Posture Reporting"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "diagram.test.ts",
@@ -7263,10 +7263,10 @@
       "source_file": "packages/toolkit/src/core/diagram.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 27,
+      "community": 6,
       "norm_label": "diagram.test.ts",
       "id": "packages_toolkit_src_core_diagram_test",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "diagram.ts",
@@ -7274,10 +7274,10 @@
       "source_file": "packages/toolkit/src/core/diagram.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 27,
+      "community": 6,
       "norm_label": "diagram.ts",
       "id": "packages_toolkit_src_core_diagram",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "nodeId()",
@@ -7285,10 +7285,10 @@
       "source_file": "packages/toolkit/src/core/diagram.ts",
       "source_location": "L9",
       "_origin": "ast",
-      "community": 27,
+      "community": 6,
       "norm_label": "nodeid()",
       "id": "packages_toolkit_src_core_diagram_nodeid",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "nodeLabel()",
@@ -7296,10 +7296,10 @@
       "source_file": "packages/toolkit/src/core/diagram.ts",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 27,
+      "community": 6,
       "norm_label": "nodelabel()",
       "id": "packages_toolkit_src_core_diagram_nodelabel",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "renderPlaybookDiagram()",
@@ -7307,10 +7307,10 @@
       "source_file": "packages/toolkit/src/core/diagram.ts",
       "source_location": "L19",
       "_origin": "ast",
-      "community": 27,
+      "community": 6,
       "norm_label": "renderplaybookdiagram()",
       "id": "packages_toolkit_src_core_diagram_renderplaybookdiagram",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "events.ts",
@@ -7483,10 +7483,10 @@
       "source_file": "packages/toolkit/src/core/gate.ts",
       "source_location": "L42",
       "_origin": "ast",
-      "community": 12,
+      "community": 15,
       "norm_label": "gatecontext",
       "id": "packages_toolkit_src_core_gate_gatecontext",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "Gate",
@@ -7516,10 +7516,10 @@
       "source_file": "packages/toolkit/src/core/gate.ts",
       "source_location": "L54",
       "_origin": "ast",
-      "community": 15,
+      "community": 8,
       "norm_label": "registergate()",
       "id": "packages_toolkit_src_core_gate_registergate",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Gate Registry Core"
     },
     {
       "label": "getGate()",
@@ -7582,10 +7582,10 @@
       "source_file": "packages/toolkit/src/core/judge.ts",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 8,
+      "community": 15,
       "norm_label": "judgefn",
       "id": "packages_toolkit_src_core_judge_judgefn",
-      "community_name": "Gate Registry Core"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "registerJudge()",
@@ -7659,10 +7659,10 @@
       "source_file": "packages/toolkit/src/core/permissions.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 40,
+      "community": 57,
       "norm_label": "permissions.test.ts",
       "id": "packages_toolkit_src_core_permissions_test",
-      "community_name": "Permission Hook Logic"
+      "community_name": "Path Permission Matching"
     },
     {
       "label": "permissions.ts",
@@ -7681,10 +7681,10 @@
       "source_file": "packages/toolkit/src/core/permissions.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 40,
+      "community": 57,
       "norm_label": "isactionallowed()",
       "id": "packages_toolkit_src_core_permissions_isactionallowed",
-      "community_name": "Permission Hook Logic"
+      "community_name": "Path Permission Matching"
     },
     {
       "label": "ProtectedPattern",
@@ -7758,10 +7758,10 @@
       "source_file": "packages/toolkit/src/core/permissions.ts",
       "source_location": "L77",
       "_origin": "ast",
-      "community": 40,
+      "community": 57,
       "norm_label": "isprotectedpath()",
       "id": "packages_toolkit_src_core_permissions_isprotectedpath",
-      "community_name": "Permission Hook Logic"
+      "community_name": "Path Permission Matching"
     },
     {
       "label": "provenance.test.ts",
@@ -7835,10 +7835,10 @@
       "source_file": "packages/toolkit/src/core/spec.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 27,
+      "community": 14,
       "norm_label": "spec.test.ts",
       "id": "packages_toolkit_src_core_spec_test",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Playbook Definitions Registry"
     },
     {
       "label": "spec.ts",
@@ -7846,10 +7846,10 @@
       "source_file": "packages/toolkit/src/core/spec.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 27,
+      "community": 6,
       "norm_label": "spec.ts",
       "id": "packages_toolkit_src_core_spec",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "SessionModeSchema",
@@ -7857,10 +7857,10 @@
       "source_file": "packages/toolkit/src/core/spec.ts",
       "source_location": "L7",
       "_origin": "ast",
-      "community": 27,
+      "community": 6,
       "norm_label": "sessionmodeschema",
       "id": "packages_toolkit_src_core_spec_sessionmodeschema",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "StageSpecSchema",
@@ -7868,10 +7868,10 @@
       "source_file": "packages/toolkit/src/core/spec.ts",
       "source_location": "L9",
       "_origin": "ast",
-      "community": 27,
+      "community": 6,
       "norm_label": "stagespecschema",
       "id": "packages_toolkit_src_core_spec_stagespecschema",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "PlaybookSpecSchema",
@@ -7879,10 +7879,10 @@
       "source_file": "packages/toolkit/src/core/spec.ts",
       "source_location": "L41",
       "_origin": "ast",
-      "community": 27,
+      "community": 6,
       "norm_label": "playbookspecschema",
       "id": "packages_toolkit_src_core_spec_playbookspecschema",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "SessionMode",
@@ -7890,10 +7890,10 @@
       "source_file": "packages/toolkit/src/core/spec.ts",
       "source_location": "L49",
       "_origin": "ast",
-      "community": 27,
+      "community": 6,
       "norm_label": "sessionmode",
       "id": "packages_toolkit_src_core_spec_sessionmode",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "StageSpec",
@@ -7934,10 +7934,10 @@
       "source_file": "packages/toolkit/src/core/spec.ts",
       "source_location": "L69",
       "_origin": "ast",
-      "community": 27,
+      "community": 6,
       "norm_label": "playbooks",
       "id": "packages_toolkit_src_core_spec_playbooks",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "playbookPacks",
@@ -7945,10 +7945,10 @@
       "source_file": "packages/toolkit/src/core/spec.ts",
       "source_location": "L76",
       "_origin": "ast",
-      "community": 27,
+      "community": 6,
       "norm_label": "playbookpacks",
       "id": "packages_toolkit_src_core_spec_playbookpacks",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "registerPlaybook()",
@@ -7956,10 +7956,10 @@
       "source_file": "packages/toolkit/src/core/spec.ts",
       "source_location": "L79",
       "_origin": "ast",
-      "community": 15,
+      "community": 14,
       "norm_label": "registerplaybook()",
       "id": "packages_toolkit_src_core_spec_registerplaybook",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Definitions Registry"
     },
     {
       "label": "getPlaybook()",
@@ -7967,10 +7967,10 @@
       "source_file": "packages/toolkit/src/core/spec.ts",
       "source_location": "L87",
       "_origin": "ast",
-      "community": 12,
+      "community": 6,
       "norm_label": "getplaybook()",
       "id": "packages_toolkit_src_core_spec_getplaybook",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Design Rules Check Gate"
     },
     {
       "label": "getPlaybookPack()",
@@ -8099,10 +8099,10 @@
       "source_file": "packages/toolkit/src/core/state.ts",
       "source_location": "L58",
       "_origin": "ast",
-      "community": 11,
+      "community": 15,
       "norm_label": "historyentry",
       "id": "packages_toolkit_src_core_state_historyentry",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "PlaybookInstance",
@@ -8121,10 +8121,10 @@
       "source_file": "packages/toolkit/src/core/state.ts",
       "source_location": "L83",
       "_origin": "ast",
-      "community": 12,
+      "community": 15,
       "norm_label": "stateoptions",
       "id": "packages_toolkit_src_core_state_stateoptions",
-      "community_name": "Playbook Status & Diagram"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "defaultStateRoot()",
@@ -8143,10 +8143,10 @@
       "source_file": "packages/toolkit/src/core/state.ts",
       "source_location": "L98",
       "_origin": "ast",
-      "community": 11,
+      "community": 15,
       "norm_label": "deriveinstancekey()",
       "id": "packages_toolkit_src_core_state_deriveinstancekey",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "instancePath()",
@@ -8231,10 +8231,10 @@
       "source_file": "packages/toolkit/src/core/state.ts",
       "source_location": "L212",
       "_origin": "ast",
-      "community": 11,
+      "community": 12,
       "norm_label": "mutateinstance()",
       "id": "packages_toolkit_src_core_state_mutateinstance",
-      "community_name": "Playbook Permission & State Gates"
+      "community_name": "Playbook Status & Diagram"
     },
     {
       "label": "worktreeId()",
@@ -10068,10 +10068,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/completeness-checklist.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 44,
+      "community": 32,
       "norm_label": "completeness-checklist.test.ts",
       "id": "packages_toolkit_src_packs_design_design_kit_completeness_checklist_test",
-      "community_name": "Binding Manifest Schema"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "completeness-checklist.ts",
@@ -10079,10 +10079,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/completeness-checklist.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 44,
+      "community": 32,
       "norm_label": "completeness-checklist.ts",
       "id": "packages_toolkit_src_packs_design_design_kit_completeness_checklist",
-      "community_name": "Binding Manifest Schema"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "Requirement",
@@ -10090,10 +10090,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/completeness-checklist.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 44,
+      "community": 32,
       "norm_label": "requirement",
       "id": "packages_toolkit_src_packs_design_design_kit_completeness_checklist_requirement",
-      "community_name": "Binding Manifest Schema"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "ChecklistEntry",
@@ -10101,10 +10101,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/completeness-checklist.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 44,
+      "community": 32,
       "norm_label": "checklistentry",
       "id": "packages_toolkit_src_packs_design_design_kit_completeness_checklist_checklistentry",
-      "community_name": "Binding Manifest Schema"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "tableCells()",
@@ -10112,10 +10112,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/completeness-checklist.ts",
       "source_location": "L19",
       "_origin": "ast",
-      "community": 44,
+      "community": 32,
       "norm_label": "tablecells()",
       "id": "packages_toolkit_src_packs_design_design_kit_completeness_checklist_tablecells",
-      "community_name": "Binding Manifest Schema"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "normalize()",
@@ -10123,10 +10123,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/completeness-checklist.ts",
       "source_location": "L27",
       "_origin": "ast",
-      "community": 44,
+      "community": 32,
       "norm_label": "normalize()",
       "id": "packages_toolkit_src_packs_design_design_kit_completeness_checklist_normalize",
-      "community_name": "Binding Manifest Schema"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "parseRequirements()",
@@ -10134,10 +10134,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/completeness-checklist.ts",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 44,
+      "community": 32,
       "norm_label": "parserequirements()",
       "id": "packages_toolkit_src_packs_design_design_kit_completeness_checklist_parserequirements",
-      "community_name": "Binding Manifest Schema"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "parseMatrix()",
@@ -10145,10 +10145,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/completeness-checklist.ts",
       "source_location": "L76",
       "_origin": "ast",
-      "community": 44,
+      "community": 32,
       "norm_label": "parsematrix()",
       "id": "packages_toolkit_src_packs_design_design_kit_completeness_checklist_parsematrix",
-      "community_name": "Binding Manifest Schema"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "coversScreen()",
@@ -10156,10 +10156,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/completeness-checklist.ts",
       "source_location": "L103",
       "_origin": "ast",
-      "community": 44,
+      "community": 32,
       "norm_label": "coversscreen()",
       "id": "packages_toolkit_src_packs_design_design_kit_completeness_checklist_coversscreen",
-      "community_name": "Binding Manifest Schema"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "selectChecklistForScreen()",
@@ -10167,10 +10167,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/completeness-checklist.ts",
       "source_location": "L118",
       "_origin": "ast",
-      "community": 44,
+      "community": 32,
       "norm_label": "selectchecklistforscreen()",
       "id": "packages_toolkit_src_packs_design_design_kit_completeness_checklist_selectchecklistforscreen",
-      "community_name": "Binding Manifest Schema"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "component-categories.test.ts",
@@ -10244,10 +10244,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/component-names.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "component-names.test.ts",
       "id": "packages_toolkit_src_packs_design_design_kit_component_names_test",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "component-names.ts",
@@ -10255,10 +10255,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/component-names.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "component-names.ts",
       "id": "packages_toolkit_src_packs_design_design_kit_component_names",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "Registry",
@@ -10266,10 +10266,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/component-names.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "registry",
       "id": "packages_toolkit_src_packs_design_design_kit_component_names_registry",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "normalizeComponentName()",
@@ -10277,10 +10277,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/component-names.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "normalizecomponentname()",
       "id": "packages_toolkit_src_packs_design_design_kit_component_names_normalizecomponentname",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "registryComponentNames()",
@@ -10288,10 +10288,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/component-names.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "registrycomponentnames()",
       "id": "packages_toolkit_src_packs_design_design_kit_component_names_registrycomponentnames",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "conversion-table.test.ts",
@@ -10299,10 +10299,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/conversion-table.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 28,
+      "community": 50,
       "norm_label": "conversion-table.test.ts",
       "id": "packages_toolkit_src_packs_design_design_kit_conversion_table_test",
-      "community_name": "Color Comparator Utils"
+      "community_name": "Spec Diff & VRT Walkers"
     },
     {
       "label": "conversion-table.ts",
@@ -10310,10 +10310,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/conversion-table.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 28,
+      "community": 50,
       "norm_label": "conversion-table.ts",
       "id": "packages_toolkit_src_packs_design_design_kit_conversion_table",
-      "community_name": "Color Comparator Utils"
+      "community_name": "Spec Diff & VRT Walkers"
     },
     {
       "label": "convertLineHeight()",
@@ -10321,10 +10321,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/conversion-table.ts",
       "source_location": "L4",
       "_origin": "ast",
-      "community": 28,
+      "community": 50,
       "norm_label": "convertlineheight()",
       "id": "packages_toolkit_src_packs_design_design_kit_conversion_table_convertlineheight",
-      "community_name": "Color Comparator Utils"
+      "community_name": "Spec Diff & VRT Walkers"
     },
     {
       "label": "convertLetterSpacing()",
@@ -10332,10 +10332,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/conversion-table.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 28,
+      "community": 50,
       "norm_label": "convertletterspacing()",
       "id": "packages_toolkit_src_packs_design_design_kit_conversion_table_convertletterspacing",
-      "community_name": "Color Comparator Utils"
+      "community_name": "Spec Diff & VRT Walkers"
     },
     {
       "label": "resolveBoxModel()",
@@ -10343,10 +10343,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/conversion-table.ts",
       "source_location": "L24",
       "_origin": "ast",
-      "community": 28,
+      "community": 50,
       "norm_label": "resolveboxmodel()",
       "id": "packages_toolkit_src_packs_design_design_kit_conversion_table_resolveboxmodel",
-      "community_name": "Color Comparator Utils"
+      "community_name": "Spec Diff & VRT Walkers"
     },
     {
       "label": "copy-deck.test.ts",
@@ -12136,10 +12136,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/registry-reconcile.ts",
       "source_location": "L496",
       "_origin": "ast",
-      "community": 29,
+      "community": 0,
       "norm_label": "deriveadoption()",
       "id": "packages_toolkit_src_packs_design_design_kit_registry_reconcile_deriveadoption",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "toPascalCase()",
@@ -12301,10 +12301,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/variant-shape-diff.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 29,
+      "community": 189,
       "norm_label": "variant-shape-diff.test.ts",
       "id": "packages_toolkit_src_packs_design_design_kit_variant_shape_diff_test",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "FeatureBlock Component"
     },
     {
       "label": "variant-shape-diff.ts",
@@ -12312,10 +12312,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/variant-shape-diff.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 29,
+      "community": 189,
       "norm_label": "variant-shape-diff.ts",
       "id": "packages_toolkit_src_packs_design_design_kit_variant_shape_diff",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "FeatureBlock Component"
     },
     {
       "label": "VariantMatrix",
@@ -12323,10 +12323,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/variant-shape-diff.ts",
       "source_location": "L6",
       "_origin": "ast",
-      "community": 29,
+      "community": 189,
       "norm_label": "variantmatrix",
       "id": "packages_toolkit_src_packs_design_design_kit_variant_shape_diff_variantmatrix",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "FeatureBlock Component"
     },
     {
       "label": "VariantShapeDiff",
@@ -12334,10 +12334,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/variant-shape-diff.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 29,
+      "community": 189,
       "norm_label": "variantshapediff",
       "id": "packages_toolkit_src_packs_design_design_kit_variant_shape_diff_variantshapediff",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "FeatureBlock Component"
     },
     {
       "label": "sameValueSet()",
@@ -12345,10 +12345,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/variant-shape-diff.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 29,
+      "community": 189,
       "norm_label": "samevalueset()",
       "id": "packages_toolkit_src_packs_design_design_kit_variant_shape_diff_samevalueset",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "FeatureBlock Component"
     },
     {
       "label": "diffVariantShape()",
@@ -12356,10 +12356,10 @@
       "source_file": "packages/toolkit/src/packs/design/design-kit/variant-shape-diff.ts",
       "source_location": "L22",
       "_origin": "ast",
-      "community": 29,
+      "community": 189,
       "norm_label": "diffvariantshape()",
       "id": "packages_toolkit_src_packs_design_design_kit_variant_shape_diff_diffvariantshape",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "FeatureBlock Component"
     },
     {
       "label": "client.ts",
@@ -12367,10 +12367,10 @@
       "source_file": "packages/toolkit/src/packs/design/figma-rest/client.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 201,
+      "community": 2,
       "norm_label": "client.ts",
       "id": "packages_toolkit_src_packs_design_figma_rest_client",
-      "community_name": "Design JSON Client"
+      "community_name": "Repo Root & Session Guard"
     },
     {
       "label": "token()",
@@ -12378,10 +12378,10 @@
       "source_file": "packages/toolkit/src/packs/design/figma-rest/client.ts",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 201,
+      "community": 2,
       "norm_label": "token()",
       "id": "packages_toolkit_src_packs_design_figma_rest_client_token",
-      "community_name": "Design JSON Client"
+      "community_name": "Repo Root & Session Guard"
     },
     {
       "label": "fetchFile()",
@@ -12389,10 +12389,10 @@
       "source_file": "packages/toolkit/src/packs/design/figma-rest/client.ts",
       "source_location": "L30",
       "_origin": "ast",
-      "community": 201,
+      "community": 2,
       "norm_label": "fetchfile()",
       "id": "packages_toolkit_src_packs_design_figma_rest_client_fetchfile",
-      "community_name": "Design JSON Client"
+      "community_name": "Repo Root & Session Guard"
     },
     {
       "label": "brief-check.test.ts",
@@ -12763,10 +12763,10 @@
       "source_file": "packages/toolkit/src/packs/design/index.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 14,
+      "community": 8,
       "norm_label": "index.ts",
       "id": "packages_toolkit_src_packs_design_index",
-      "community_name": "Playbook Definitions Registry"
+      "community_name": "Gate Registry Core"
     },
     {
       "label": "code-to-design.test.ts",
@@ -12994,10 +12994,10 @@
       "source_file": "packages/toolkit/src/packs/design/recipes/shadcn-tailwind/design-rules-walker.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 6,
+      "community": 7,
       "norm_label": "design-rules-walker.ts",
       "id": "packages_toolkit_src_packs_design_recipes_shadcn_tailwind_design_rules_walker",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "SPACING_FIELDS",
@@ -13005,10 +13005,10 @@
       "source_file": "packages/toolkit/src/packs/design/recipes/shadcn-tailwind/design-rules-walker.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 6,
+      "community": 7,
       "norm_label": "spacing_fields",
       "id": "packages_toolkit_src_packs_design_recipes_shadcn_tailwind_design_rules_walker_spacing_fields",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "runRecipeDesignRulesChecks()",
@@ -13016,10 +13016,10 @@
       "source_file": "packages/toolkit/src/packs/design/recipes/shadcn-tailwind/design-rules-walker.ts",
       "source_location": "L18",
       "_origin": "ast",
-      "community": 6,
+      "community": 7,
       "norm_label": "runrecipedesignruleschecks()",
       "id": "packages_toolkit_src_packs_design_recipes_shadcn_tailwind_design_rules_walker_runrecipedesignruleschecks",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "design-rules.test.ts",
@@ -13027,10 +13027,10 @@
       "source_file": "packages/toolkit/src/packs/design/recipes/shadcn-tailwind/design-rules.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 6,
+      "community": 7,
       "norm_label": "design-rules.test.ts",
       "id": "packages_toolkit_src_packs_design_recipes_shadcn_tailwind_design_rules_test",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "design-rules.ts",
@@ -13038,10 +13038,10 @@
       "source_file": "packages/toolkit/src/packs/design/recipes/shadcn-tailwind/design-rules.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 6,
+      "community": 7,
       "norm_label": "design-rules.ts",
       "id": "packages_toolkit_src_packs_design_recipes_shadcn_tailwind_design_rules",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "Variable",
@@ -13049,10 +13049,10 @@
       "source_file": "packages/toolkit/src/packs/design/recipes/shadcn-tailwind/design-rules.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 6,
+      "community": 7,
       "norm_label": "variable",
       "id": "packages_toolkit_src_packs_design_recipes_shadcn_tailwind_design_rules_variable",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "TW_COLLECTION_FAMILY",
@@ -13060,10 +13060,10 @@
       "source_file": "packages/toolkit/src/packs/design/recipes/shadcn-tailwind/design-rules.ts",
       "source_location": "L18",
       "_origin": "ast",
-      "community": 6,
+      "community": 7,
       "norm_label": "tw_collection_family",
       "id": "packages_toolkit_src_packs_design_recipes_shadcn_tailwind_design_rules_tw_collection_family",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "nonSemanticBindingViolation()",
@@ -13071,10 +13071,10 @@
       "source_file": "packages/toolkit/src/packs/design/recipes/shadcn-tailwind/design-rules.ts",
       "source_location": "L32",
       "_origin": "ast",
-      "community": 6,
+      "community": 7,
       "norm_label": "nonsemanticbindingviolation()",
       "id": "packages_toolkit_src_packs_design_recipes_shadcn_tailwind_design_rules_nonsemanticbindingviolation",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "index.ts",
@@ -13082,10 +13082,10 @@
       "source_file": "packages/toolkit/src/packs/design/recipes/shadcn-tailwind/index.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 6,
+      "community": 7,
       "norm_label": "index.ts",
       "id": "packages_toolkit_src_packs_design_recipes_shadcn_tailwind_index",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "index.test.ts",
@@ -13093,10 +13093,10 @@
       "source_file": "packages/toolkit/src/packs/design/registry/index.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "index.test.ts",
       "id": "packages_toolkit_src_packs_design_registry_index_test",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "fakeDoc",
@@ -13104,10 +13104,10 @@
       "source_file": "packages/toolkit/src/packs/design/registry/index.test.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "fakedoc",
       "id": "packages_toolkit_src_packs_design_registry_index_test_fakedoc",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "index.ts",
@@ -13115,10 +13115,10 @@
       "source_file": "packages/toolkit/src/packs/design/registry/index.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "index.ts",
       "id": "packages_toolkit_src_packs_design_registry_index",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "RegistryCard",
@@ -13126,10 +13126,10 @@
       "source_file": "packages/toolkit/src/packs/design/registry/index.ts",
       "source_location": "L21",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "registrycard",
       "id": "packages_toolkit_src_packs_design_registry_index_registrycard",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "RegistryDoc",
@@ -13137,10 +13137,10 @@
       "source_file": "packages/toolkit/src/packs/design/registry/index.ts",
       "source_location": "L23",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "registrydoc",
       "id": "packages_toolkit_src_packs_design_registry_index_registrydoc",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "RegisterScreenInput",
@@ -13148,10 +13148,10 @@
       "source_file": "packages/toolkit/src/packs/design/registry/index.ts",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "registerscreeninput",
       "id": "packages_toolkit_src_packs_design_registry_index_registerscreeninput",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "RegisterScreenResult",
@@ -13159,10 +13159,10 @@
       "source_file": "packages/toolkit/src/packs/design/registry/index.ts",
       "source_location": "L35",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "registerscreenresult",
       "id": "packages_toolkit_src_packs_design_registry_index_registerscreenresult",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "registerScreen()",
@@ -13170,10 +13170,10 @@
       "source_file": "packages/toolkit/src/packs/design/registry/index.ts",
       "source_location": "L48",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "registerscreen()",
       "id": "packages_toolkit_src_packs_design_registry_index_registerscreen",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "PullRegistryInput",
@@ -13181,10 +13181,10 @@
       "source_file": "packages/toolkit/src/packs/design/registry/index.ts",
       "source_location": "L66",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "pullregistryinput",
       "id": "packages_toolkit_src_packs_design_registry_index_pullregistryinput",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "pullRegistry()",
@@ -13192,10 +13192,10 @@
       "source_file": "packages/toolkit/src/packs/design/registry/index.ts",
       "source_location": "L84",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "pullregistry()",
       "id": "packages_toolkit_src_packs_design_registry_index_pullregistry",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "emit-shims.test.ts",
@@ -13335,10 +13335,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/assembly/generate-token-manifest.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 205,
+      "community": 7,
       "norm_label": "generate-token-manifest.test.ts",
       "id": "packages_toolkit_src_packs_design_skill_scripts_assembly_generate_token_manifest_test",
-      "community_name": "Design Token Manifest"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "tokens",
@@ -13346,10 +13346,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/assembly/generate-token-manifest.test.ts",
       "source_location": "L4",
       "_origin": "ast",
-      "community": 205,
+      "community": 7,
       "norm_label": "tokens",
       "id": "packages_toolkit_src_packs_design_skill_scripts_assembly_generate_token_manifest_test_tokens",
-      "community_name": "Design Token Manifest"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "generate-token-manifest.ts",
@@ -13357,10 +13357,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 205,
+      "community": 7,
       "norm_label": "generate-token-manifest.ts",
       "id": "packages_toolkit_src_packs_design_skill_scripts_assembly_generate_token_manifest",
-      "community_name": "Design Token Manifest"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "TokenVariable",
@@ -13368,10 +13368,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L7",
       "_origin": "ast",
-      "community": 205,
+      "community": 7,
       "norm_label": "tokenvariable",
       "id": "packages_toolkit_src_packs_design_skill_scripts_assembly_generate_token_manifest_tokenvariable",
-      "community_name": "Design Token Manifest"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "TokenCollection",
@@ -13379,10 +13379,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 205,
+      "community": 7,
       "norm_label": "tokencollection",
       "id": "packages_toolkit_src_packs_design_skill_scripts_assembly_generate_token_manifest_tokencollection",
-      "community_name": "Design Token Manifest"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "TokensDump",
@@ -13390,10 +13390,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L21",
       "_origin": "ast",
-      "community": 205,
+      "community": 7,
       "norm_label": "tokensdump",
       "id": "packages_toolkit_src_packs_design_skill_scripts_assembly_generate_token_manifest_tokensdump",
-      "community_name": "Design Token Manifest"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "isAlias()",
@@ -13401,10 +13401,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L23",
       "_origin": "ast",
-      "community": 205,
+      "community": 7,
       "norm_label": "isalias()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_assembly_generate_token_manifest_isalias",
-      "community_name": "Design Token Manifest"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "defaultModeValue()",
@@ -13412,10 +13412,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 205,
+      "community": 7,
       "norm_label": "defaultmodevalue()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_assembly_generate_token_manifest_defaultmodevalue",
-      "community_name": "Design Token Manifest"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "generateTokenManifest()",
@@ -13423,10 +13423,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L42",
       "_origin": "ast",
-      "community": 205,
+      "community": 7,
       "norm_label": "generatetokenmanifest()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_assembly_generate_token_manifest_generatetokenmanifest",
-      "community_name": "Design Token Manifest"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "assemble-fidelity-rubric.test.ts",
@@ -13764,10 +13764,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/audit/prepare-design-rules-audit-options.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "prepare-design-rules-audit-options.test.ts",
       "id": "packages_toolkit_src_packs_design_skill_scripts_audit_prepare_design_rules_audit_options_test",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "CLI",
@@ -13775,10 +13775,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/audit/prepare-design-rules-audit-options.test.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "cli",
       "id": "packages_toolkit_src_packs_design_skill_scripts_audit_prepare_design_rules_audit_options_test_cli",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "prepare-design-rules-audit-options.ts",
@@ -13786,10 +13786,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "prepare-design-rules-audit-options.ts",
       "id": "packages_toolkit_src_packs_design_skill_scripts_audit_prepare_design_rules_audit_options",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "RECIPE_ADDITIONAL_ALLOWED_COLLECTION_NAMES",
@@ -13797,10 +13797,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "recipe_additional_allowed_collection_names",
       "id": "packages_toolkit_src_packs_design_skill_scripts_audit_prepare_design_rules_audit_options_recipe_additional_allowed_collection_names",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "resolveComponentNodeIds()",
@@ -13808,10 +13808,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L24",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "resolvecomponentnodeids()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_audit_prepare_design_rules_audit_options_resolvecomponentnodeids",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "readOptionalJson()",
@@ -13819,10 +13819,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L57",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "readoptionaljson()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_audit_prepare_design_rules_audit_options_readoptionaljson",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "findDesignBlock()",
@@ -13830,10 +13830,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L69",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "finddesignblock()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_audit_prepare_design_rules_audit_options_finddesignblock",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "deriveDesignRulesAuditOptions()",
@@ -13841,10 +13841,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L91",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "derivedesignrulesauditoptions()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_audit_prepare_design_rules_audit_options_derivedesignrulesauditoptions",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "parseCliArgs()",
@@ -13852,10 +13852,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L184",
       "_origin": "ast",
-      "community": 96,
+      "community": 7,
       "norm_label": "parsecliargs()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_audit_prepare_design_rules_audit_options_parsecliargs",
-      "community_name": "Variant Shape Diffing"
+      "community_name": "Component Presence Resolution"
     },
     {
       "label": "record-audit-receipt.test.ts",
@@ -14072,10 +14072,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/lib/read-design-json.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "read-design-json.test.ts",
       "id": "packages_toolkit_src_packs_design_skill_scripts_lib_read_design_json_test",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "write-design-json.test.ts",
@@ -14094,10 +14094,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/lib/write-design-json.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "write-design-json.ts",
       "id": "packages_toolkit_src_packs_design_skill_scripts_lib_write_design_json",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "writeDesignJson()",
@@ -14116,10 +14116,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/lib/write-design-json.ts",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "readdesignjsonorrebuild()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_lib_write_design_json_readdesignjsonorrebuild",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "completeness-checklist.ts",
@@ -14127,10 +14127,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/completeness-checklist.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 44,
+      "community": 32,
       "norm_label": "completeness-checklist.ts",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_completeness_checklist",
-      "community_name": "Binding Manifest Schema"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "flagValue()",
@@ -14138,10 +14138,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/completeness-checklist.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 44,
+      "community": 32,
       "norm_label": "flagvalue()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_completeness_checklist_flagvalue",
-      "community_name": "Binding Manifest Schema"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "pull-registry.test.ts",
@@ -14149,10 +14149,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/pull-registry.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "pull-registry.test.ts",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_pull_registry_test",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "pull-registry.ts",
@@ -14171,10 +14171,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/pull-registry.ts",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "fetchfile()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_pull_registry_fetchfile",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "RestNode",
@@ -14226,10 +14226,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/pull-registry.ts",
       "source_location": "L50",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "marshaledcomponent",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_pull_registry_marshaledcomponent",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "COMPONENT_NODE_TYPES",
@@ -14259,10 +14259,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/pull-registry.ts",
       "source_location": "L73",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "marshalrestdocument()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_pull_registry_marshalrestdocument",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "collect()",
@@ -14281,10 +14281,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/pull-registry.ts",
       "source_location": "L112",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "marshalscreenframes()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_pull_registry_marshalscreenframes",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "buildPullRegistryResult()",
@@ -14325,10 +14325,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/refresh-card.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "refresh-card.test.ts",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_refresh_card_test",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "liveSessionCard",
@@ -14336,10 +14336,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/refresh-card.test.ts",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "livesessioncard",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_refresh_card_test_livesessioncard",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "refresh-card.ts",
@@ -14347,10 +14347,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/refresh-card.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "refresh-card.ts",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_refresh_card",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "findLiveComponent()",
@@ -14358,10 +14358,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/refresh-card.ts",
       "source_location": "L29",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "findlivecomponent()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_refresh_card_findlivecomponent",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "buildRefreshedEntry()",
@@ -14369,10 +14369,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/refresh-card.ts",
       "source_location": "L45",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "buildrefreshedentry()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_refresh_card_buildrefreshedentry",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "CliArgs",
@@ -14380,10 +14380,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/refresh-card.ts",
       "source_location": "L75",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "cliargs",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_refresh_card_cliargs",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "parseCliArgs()",
@@ -14391,10 +14391,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/refresh-card.ts",
       "source_location": "L80",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "parsecliargs()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_refresh_card_parsecliargs",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "register-screen.test.ts",
@@ -14402,10 +14402,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/register-screen.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "register-screen.test.ts",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_register_screen_test",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "register-screen.ts",
@@ -14413,10 +14413,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/register-screen.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "register-screen.ts",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_register_screen",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "ScreenEntry",
@@ -14424,10 +14424,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/register-screen.ts",
       "source_location": "L23",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "screenentry",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_register_screen_screenentry",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "upsertScreenEntry()",
@@ -14435,10 +14435,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/register-screen.ts",
       "source_location": "L35",
       "_origin": "ast",
-      "community": 74,
+      "community": 0,
       "norm_label": "upsertscreenentry()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_register_screen_upsertscreenentry",
-      "community_name": "Playbook Adopt Errors"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "flagValue()",
@@ -14446,10 +14446,10 @@
       "source_file": "packages/toolkit/src/packs/design/skill-scripts/registry/register-screen.ts",
       "source_location": "L50",
       "_origin": "ast",
-      "community": 201,
+      "community": 0,
       "norm_label": "flagvalue()",
       "id": "packages_toolkit_src_packs_design_skill_scripts_registry_register_screen_flagvalue",
-      "community_name": "Design JSON Client"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "registry-lookup.test.ts",
@@ -14754,10 +14754,10 @@
       "source_file": "packages/toolkit/src/packs/design/walkers/index.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 28,
+      "community": 50,
       "norm_label": "index.ts",
       "id": "packages_toolkit_src_packs_design_walkers_index",
-      "community_name": "Color Comparator Utils"
+      "community_name": "Spec Diff & VRT Walkers"
     },
     {
       "label": "spec-diff.ts",
@@ -14765,10 +14765,10 @@
       "source_file": "packages/toolkit/src/packs/design/walkers/spec-diff.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 28,
+      "community": 50,
       "norm_label": "spec-diff.ts",
       "id": "packages_toolkit_src_packs_design_walkers_spec_diff",
-      "community_name": "Color Comparator Utils"
+      "community_name": "Spec Diff & VRT Walkers"
     },
     {
       "label": "StoryModule",
@@ -14776,10 +14776,10 @@
       "source_file": "packages/toolkit/src/packs/design/walkers/spec-diff.ts",
       "source_location": "L29",
       "_origin": "ast",
-      "community": 28,
+      "community": 50,
       "norm_label": "storymodule",
       "id": "packages_toolkit_src_packs_design_walkers_spec_diff_storymodule",
-      "community_name": "Color Comparator Utils"
+      "community_name": "Spec Diff & VRT Walkers"
     },
     {
       "label": "ComposeStories",
@@ -14787,10 +14787,10 @@
       "source_file": "packages/toolkit/src/packs/design/walkers/spec-diff.ts",
       "source_location": "L30",
       "_origin": "ast",
-      "community": 28,
+      "community": 50,
       "norm_label": "composestories",
       "id": "packages_toolkit_src_packs_design_walkers_spec_diff_composestories",
-      "community_name": "Color Comparator Utils"
+      "community_name": "Spec Diff & VRT Walkers"
     },
     {
       "label": "runSpecDiffWalker()",
@@ -14798,10 +14798,10 @@
       "source_file": "packages/toolkit/src/packs/design/walkers/spec-diff.ts",
       "source_location": "L32",
       "_origin": "ast",
-      "community": 28,
+      "community": 50,
       "norm_label": "runspecdiffwalker()",
       "id": "packages_toolkit_src_packs_design_walkers_spec_diff_runspecdiffwalker",
-      "community_name": "Color Comparator Utils"
+      "community_name": "Spec Diff & VRT Walkers"
     },
     {
       "label": "vrt.ts",
@@ -14809,10 +14809,10 @@
       "source_file": "packages/toolkit/src/packs/design/walkers/vrt.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 28,
+      "community": 50,
       "norm_label": "vrt.ts",
       "id": "packages_toolkit_src_packs_design_walkers_vrt",
-      "community_name": "Color Comparator Utils"
+      "community_name": "Spec Diff & VRT Walkers"
     },
     {
       "label": "runVrtWalker()",
@@ -14820,10 +14820,10 @@
       "source_file": "packages/toolkit/src/packs/design/walkers/vrt.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 28,
+      "community": 50,
       "norm_label": "runvrtwalker()",
       "id": "packages_toolkit_src_packs_design_walkers_vrt_runvrtwalker",
-      "community_name": "Color Comparator Utils"
+      "community_name": "Spec Diff & VRT Walkers"
     },
     {
       "label": "register-installed-packs.test.ts",
@@ -14831,10 +14831,10 @@
       "source_file": "packages/toolkit/src/register-installed-packs.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 27,
+      "community": 8,
       "norm_label": "register-installed-packs.test.ts",
       "id": "packages_toolkit_src_register_installed_packs_test",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Gate Registry Core"
     },
     {
       "label": "register-installed-packs.ts",
@@ -14842,10 +14842,10 @@
       "source_file": "packages/toolkit/src/register-installed-packs.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 27,
+      "community": 8,
       "norm_label": "register-installed-packs.ts",
       "id": "packages_toolkit_src_register_installed_packs",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Gate Registry Core"
     },
     {
       "label": "registerInstalledPacks()",
@@ -14853,10 +14853,10 @@
       "source_file": "packages/toolkit/src/register-installed-packs.ts",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 27,
+      "community": 8,
       "norm_label": "registerinstalledpacks()",
       "id": "packages_toolkit_src_register_installed_packs_registerinstalledpacks",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Gate Registry Core"
     },
     {
       "label": "wcag-contrast.d.ts",
@@ -17200,17 +17200,6 @@
       "norm_label": "what this buys a maintainer",
       "id": "apps_docs_src_content_docs_how_it_works_the_trust_model_what_this_buys_a_maintainer",
       "community_name": "Trust Model Principles"
-    },
-    {
-      "label": "index.mdx",
-      "file_type": "document",
-      "source_file": "apps/docs/src/content/docs/index.mdx",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 192,
-      "norm_label": "index.mdx",
-      "id": "apps_docs_src_content_docs_index",
-      "community_name": "MDX Index Page"
     },
     {
       "label": "auditor.md",
@@ -24756,6 +24745,26 @@
       "confidence_score": 1.0,
       "source": "apps_docs_src_content_config",
       "target": "apps_docs_src_content_config_collections"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "apps/docs/src/pages/index.astro",
+      "source_location": "L14",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "apps_docs_src_pages_index",
+      "target": "apps_docs_src_pages_index_gates"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "apps/docs/src/pages/index.astro",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "apps_docs_src_pages_index",
+      "target": "apps_docs_src_pages_index_stages"
     },
     {
       "relation": "contains",
@@ -55733,5 +55742,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "1b7fc433112fc85977ca8d566bd92b27b6b5a451"
+  "built_at_commit": "304b5bb3101984ab390b2c7da6e2094fa69df3a0"
 }

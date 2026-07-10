@@ -2,10 +2,10 @@ import { resolve } from 'node:path'
 import { getGate, type GateContext } from '../gate.js'
 import { getPlaybook, type PlaybookSpec } from '../spec.js'
 import {
+  mutateInstance,
   readInstance,
   recordAttempt,
   recordHistory,
-  writeInstance,
   type StateOptions,
   type PlaybookInstance
 } from '../state.js'
@@ -55,6 +55,31 @@ export function deriveArtifactsFromProduces(
   return artifacts
 }
 
+/**
+ * Validates caller-supplied `--artifacts` against the stage's `produces`-
+ * derived set (finding #3): a caller could otherwise substitute a doctored
+ * path for any artifact key and point the gate at an arbitrary file. Every
+ * supplied key must be one `deriveArtifactsFromProduces` would itself
+ * produce, AND its path must match that derived path exactly — the artifact
+ * locations are a filesystem convention, not caller-choosable input.
+ */
+export function validateArtifacts(
+  supplied: Record<string, string>,
+  derived: Record<string, string>
+): Record<string, string> {
+  for (const [key, path] of Object.entries(supplied)) {
+    if (!(key in derived)) {
+      throw new Error(`playbook advance: --artifacts key "${key}" is not declared in this stage's produces`)
+    }
+    if (resolve(path) !== derived[key]) {
+      throw new Error(
+        `playbook advance: --artifacts path for "${key}" does not match the produces-derived location (expected "${derived[key]}")`
+      )
+    }
+  }
+  return supplied
+}
+
 /** The persisted instance plus the lifecycle transitions THIS call caused. */
 export type PlaybookAdvanceResult = PlaybookInstance & { events: PlaybookLifecycleEventRecord[] }
 
@@ -89,10 +114,8 @@ export async function playbookAdvance(key: string, opts: PlaybookAdvanceOptions 
   if (!gate) throw new GateNotFoundError(stageSpec.gate)
 
   const cwd = (opts.settings?.cwd as string | undefined) ?? opts.cwd ?? process.cwd()
-  const artifacts =
-    opts.artifacts && Object.keys(opts.artifacts).length > 0
-      ? opts.artifacts
-      : deriveArtifactsFromProduces(stageSpec.produces, key, cwd)
+  const derived = deriveArtifactsFromProduces(stageSpec.produces, key, cwd)
+  const artifacts = opts.artifacts && Object.keys(opts.artifacts).length > 0 ? validateArtifacts(opts.artifacts, derived) : derived
 
   const verdict = await gate.check(
     {
@@ -122,10 +145,15 @@ export async function playbookAdvance(key: string, opts: PlaybookAdvanceOptions 
   )
 
   const budget = stageSpec.retries ?? 0
-  const updated = readInstance(key, opts)
-  if (!updated) throw new InstanceNotFoundError(key) // unreachable: we just wrote it
-  updated.status = round >= budget ? 'stuck' : 'in-progress'
-  writeInstance(key, updated, opts)
+  // Guarded read-modify-write (audit finding — was a bare read+write here,
+  // unlike recordAttempt/recordHistory above): a concurrent advance from two
+  // sessions must not read the same pre-mutation instance and have one
+  // writer's status transition silently overwrite the other's.
+  const updated = mutateInstance(
+    key,
+    (current) => ({ ...current, status: round >= budget ? 'stuck' : 'in-progress' }),
+    opts
+  )
   return { ...updated, events: [] }
 }
 
@@ -135,9 +163,6 @@ function advanceToNextStage(
   stageIndex: number,
   opts: StateOptions
 ): PlaybookAdvanceResult {
-  const instance = readInstance(key, opts)
-  if (!instance) throw new InstanceNotFoundError(key)
-
   const at = new Date().toISOString()
   const finishedStage = spec.stages[stageIndex].name
   const events: PlaybookLifecycleEventRecord[] = [
@@ -146,14 +171,22 @@ function advanceToNextStage(
 
   const nextStage = spec.stages[stageIndex + 1]
   if (nextStage) {
-    instance.stage = nextStage.name
-    instance.status = 'in-progress'
     events.push({ event: PLAYBOOK_LIFECYCLE_EVENTS.STAGE_STARTED, playbook: spec.name, stage: nextStage.name, at })
   } else {
-    instance.status = 'done'
     events.push({ event: PLAYBOOK_LIFECYCLE_EVENTS.PLAYBOOK_FINISHED, playbook: spec.name, at })
   }
-  writeInstance(key, instance, opts)
+
+  // Guarded read-modify-write — same lost-update risk as the fail path above:
+  // a concurrent advance must mutate the freshly-locked-read instance, not a
+  // copy read before the lock was acquired.
+  mutateInstance(
+    key,
+    (instance) =>
+      nextStage
+        ? { ...instance, stage: nextStage.name, status: 'in-progress' }
+        : { ...instance, status: 'done' },
+    opts
+  )
 
   // Measurement (item 4): every stage transition — gated or gateless auto-
   // advance alike — stamps a `{ stage, at }` history entry for the newly

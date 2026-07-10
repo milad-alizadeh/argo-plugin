@@ -1,11 +1,29 @@
+import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { registerGate, type Gate, type GateVerdict } from '../gate.js'
 import { definePlaybook, registerPlaybook } from '../spec.js'
 import { readInstance, writeInstance, type PlaybookInstance } from '../state.js'
 import { playbookAdvance } from './playbook-advance.js'
+
+const currentDir = dirname(fileURLToPath(import.meta.url))
+
+/** Runs a REAL child process that calls `playbookAdvance` against a shared,
+ * always-failing gate — two OS processes racing the same instance's
+ * stage/status read-modify-write is the only way to actually exercise the
+ * lost-update window (synchronous fs calls in one process never yield, so
+ * two in-process calls can never race each other). Resolves on exit 0. */
+function spawnAdvanceWorker(key: string, playbookName: string, gateName: string, stateRoot: string, cwd: string): Promise<void> {
+  const workerPath = join(currentDir, '..', 'fixtures', 'playbook-advance-worker.mjs')
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(process.execPath, [workerPath, key, playbookName, gateName, stateRoot, cwd], { stdio: 'inherit' })
+    child.on('error', reject)
+    child.on('exit', (code) => (code === 0 ? resolvePromise() : reject(new Error(`worker exited ${code}`))))
+  })
+}
 
 function makeGate(name: string, verdict: GateVerdict): Gate {
   return { name, async check() { return verdict } }
@@ -153,6 +171,30 @@ describe('playbookAdvance', () => {
     expect(result.history[0].verdict).toBeUndefined()
   })
 
+  it('rejects a caller-supplied --artifacts path that is not derivable from the stage\'s produces (doctored artifact)', async () => {
+    const gateName = `advance-doctored-gate-${Math.random()}`
+    registerGate(makeGate(gateName, { passed: true, findings: [], evidence: [] }))
+    const playbookName = `advance-doctored-artifacts-playbook-${Math.random()}`
+    registerPlaybook(
+      definePlaybook({
+        name: playbookName,
+        stages: [{ name: 'brief', allows: ['file-edit'], gate: gateName, produces: ['brief:brief.md'] }]
+      })
+    )
+    writeInstance('advance-doctored-artifacts', makeInstance({ playbook: playbookName, stage: 'brief' }), { cwd, stateRoot })
+
+    // A doctored file elsewhere on disk the caller wants the gate to read
+    // instead of the produces-derived path.
+    await expect(
+      playbookAdvance('advance-doctored-artifacts', {
+        cwd,
+        stateRoot,
+        settings: { cwd },
+        artifacts: { brief: join(cwd, 'doctored.md') }
+      })
+    ).rejects.toThrow(/produces/)
+  })
+
   it("auto-derives artifacts from the stage spec's `produces` entries when none are passed", async () => {
     const { createBriefCheckGate } = await import('../../packs/design/gates/brief-check.js')
     const { writeFileSync } = await import('node:fs')
@@ -194,5 +236,24 @@ describe('playbookAdvance', () => {
     await playbookAdvance('advance-ctx-judge', { cwd, stateRoot, ctx: { judge } })
 
     expect(receivedCtx).toEqual({ judge })
+  })
+
+  it('two interleaved advances from separate processes both land their attempt — no lost stage/status update', async () => {
+    const key = `advance-race-${Math.random()}`
+    const playbookName = `advance-race-playbook-${Math.random()}`
+    const gateName = `advance-race-gate-${Math.random()}`
+    writeInstance(key, makeInstance({ playbook: playbookName, stage: 'build' }), { cwd, stateRoot })
+
+    await Promise.all([
+      spawnAdvanceWorker(key, playbookName, gateName, stateRoot, cwd),
+      spawnAdvanceWorker(key, playbookName, gateName, stateRoot, cwd)
+    ])
+
+    const result = readInstance(key, { cwd, stateRoot })
+    // Bare read+write here (pre-fix) let one process's status transition
+    // silently clobber the other's — both concurrent failures must land as
+    // two distinct attempts, and status must reflect the guarded outcome.
+    expect(result?.attempts).toHaveLength(2)
+    expect(result?.status).toBe('in-progress')
   })
 })

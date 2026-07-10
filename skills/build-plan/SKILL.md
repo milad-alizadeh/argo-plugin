@@ -19,11 +19,31 @@ Reach for this **when a plan doc already exists**. For interactive, human-driven
 single-slice TDD, use `/argo:test-first`.
 
 ## 1. Preconditions — check all, fail loudly
+
+**NEVER `git checkout` / `git switch` / `git reset` the primary checkout to
+satisfy any precondition below.** The build lives entirely in a worktree forked
+from the base ref (§2); the primary checkout's branch and working tree must be
+left exactly as the user had them. Switching it corrupts every parallel session
+rooted there — this is the single most damaging thing this skill can do. The
+plan living on the default branch but NOT on the branch the user currently has
+checked out is the EXPECTED, correct state — never "fix" it by moving the
+primary checkout.
+
 - **A plan doc** (any size — even ten lines): path from the user. If none, ask; don't
   invent one. A minimal hand-written plan is fine; `argo:planner` is encouraged for
-  non-trivial work but not required. The plan must be reachable from the branch the
-  worktree derives from (commit it to the default branch first).
-- **The plan is cleared for build**: run `argo plans check --plan <path>` — it refuses
+  non-trivial work but not required. The plan must be committed to the base ref the
+  worktree derives from (the default branch). **Validate it against that base ref,
+  not the current working tree** — the current checkout may be on an unrelated
+  branch that never carried the plan. Resolve the base ref (`git symbolic-ref
+  refs/remotes/origin/HEAD` → e.g. `origin/main`, matching what `worktree.baseRef`
+  forks from) and check the plan there: `git cat-file -e <baseRef>:<path>` for
+  existence, `git show <baseRef>:<path>` to read it. If it is missing from the base
+  ref, STOP and ask the user to commit it to the default branch — do not go hunting
+  for it by switching branches. (Equivalently, defer this whole check until after
+  §2's worktree exists and validate inside the worktree, which forks from the base
+  ref and therefore carries the plan.)
+- **The plan is cleared for build**: run `argo plans check --plan <path>` **against
+  the base-ref copy or the worktree copy** (never the primary checkout) — it refuses
   any plan whose frontmatter is not `status: queued` (a `draft` plan is still being
   written; missing/invalid frontmatter also refuses). Never build a draft; ask the
   user to flip the plan to `queued` on the default branch instead of editing it

@@ -240,10 +240,10 @@
       "source_file": "adapter-claude/contract.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 2,
+      "community": 26,
       "norm_label": "contract.test.ts",
       "id": "adapter_claude_contract_test",
-      "community_name": "Action Classifier"
+      "community_name": "Playbook Start & Lifecycle Events"
     },
     {
       "label": "contract.ts",
@@ -251,10 +251,10 @@
       "source_file": "adapter-claude/contract.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 2,
+      "community": 26,
       "norm_label": "contract.ts",
       "id": "adapter_claude_contract",
-      "community_name": "Action Classifier"
+      "community_name": "Playbook Start & Lifecycle Events"
     },
     {
       "label": "RUN_STATES",
@@ -262,10 +262,10 @@
       "source_file": "adapter-claude/contract.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 2,
+      "community": 26,
       "norm_label": "run_states",
       "id": "adapter_claude_contract_run_states",
-      "community_name": "Action Classifier"
+      "community_name": "Playbook Start & Lifecycle Events"
     },
     {
       "label": "RunState",
@@ -273,10 +273,10 @@
       "source_file": "adapter-claude/contract.ts",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 2,
+      "community": 26,
       "norm_label": "runstate",
       "id": "adapter_claude_contract_runstate",
-      "community_name": "Action Classifier"
+      "community_name": "Playbook Start & Lifecycle Events"
     },
     {
       "label": "TOOL_NAMES",
@@ -284,10 +284,10 @@
       "source_file": "adapter-claude/contract.ts",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 2,
+      "community": 26,
       "norm_label": "tool_names",
       "id": "adapter_claude_contract_tool_names",
-      "community_name": "Action Classifier"
+      "community_name": "Playbook Start & Lifecycle Events"
     },
     {
       "label": "FanOutToolName",
@@ -295,10 +295,10 @@
       "source_file": "adapter-claude/contract.ts",
       "source_location": "L31",
       "_origin": "ast",
-      "community": 2,
+      "community": 26,
       "norm_label": "fanouttoolname",
       "id": "adapter_claude_contract_fanouttoolname",
-      "community_name": "Action Classifier"
+      "community_name": "Playbook Start & Lifecycle Events"
     },
     {
       "label": "LIFECYCLE_STATUSES",
@@ -306,10 +306,10 @@
       "source_file": "adapter-claude/contract.ts",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 2,
+      "community": 26,
       "norm_label": "lifecycle_statuses",
       "id": "adapter_claude_contract_lifecycle_statuses",
-      "community_name": "Action Classifier"
+      "community_name": "Playbook Start & Lifecycle Events"
     },
     {
       "label": "LifecycleStatus",
@@ -317,10 +317,10 @@
       "source_file": "adapter-claude/contract.ts",
       "source_location": "L40",
       "_origin": "ast",
-      "community": 2,
+      "community": 26,
       "norm_label": "lifecyclestatus",
       "id": "adapter_claude_contract_lifecyclestatus",
-      "community_name": "Action Classifier"
+      "community_name": "Playbook Start & Lifecycle Events"
     },
     {
       "label": "hook.test.ts",
@@ -625,10 +625,10 @@
       "source_file": "adapter-claude/playbook-permission-gate.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 14,
+      "community": 30,
       "norm_label": "playbook-permission-gate.test.ts",
       "id": "adapter_claude_playbook_permission_gate_test",
-      "community_name": "Playbook Adopt & Permission Gate"
+      "community_name": "Playbook Diagram Rendering"
     },
     {
       "label": "GATE",
@@ -636,10 +636,10 @@
       "source_file": "adapter-claude/playbook-permission-gate.test.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 14,
+      "community": 30,
       "norm_label": "gate",
       "id": "adapter_claude_playbook_permission_gate_test_gate",
-      "community_name": "Playbook Adopt & Permission Gate"
+      "community_name": "Playbook Diagram Rendering"
     },
     {
       "label": "runGate()",
@@ -647,10 +647,10 @@
       "source_file": "adapter-claude/playbook-permission-gate.test.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 14,
+      "community": 30,
       "norm_label": "rungate()",
       "id": "adapter_claude_playbook_permission_gate_test_rungate",
-      "community_name": "Playbook Adopt & Permission Gate"
+      "community_name": "Playbook Diagram Rendering"
     },
     {
       "label": "writeConfig()",
@@ -658,10 +658,10 @@
       "source_file": "adapter-claude/playbook-permission-gate.test.ts",
       "source_location": "L46",
       "_origin": "ast",
-      "community": 14,
+      "community": 30,
       "norm_label": "writeconfig()",
       "id": "adapter_claude_playbook_permission_gate_test_writeconfig",
-      "community_name": "Playbook Adopt & Permission Gate"
+      "community_name": "Playbook Diagram Rendering"
     },
     {
       "label": "playbook-permission-gate.ts",
@@ -735,10 +735,10 @@
       "source_file": "adapter-claude/session.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "session.test.ts",
       "id": "adapter_claude_session_test",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "fakeApi()",
@@ -746,10 +746,10 @@
       "source_file": "adapter-claude/session.test.ts",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "fakeapi()",
       "id": "adapter_claude_session_test_fakeapi",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "session.ts",
@@ -757,10 +757,10 @@
       "source_file": "adapter-claude/session.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "session.ts",
       "id": "adapter_claude_session",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "SessionHandle",
@@ -768,10 +768,10 @@
       "source_file": "adapter-claude/session.ts",
       "source_location": "L18",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "sessionhandle",
       "id": "adapter_claude_session_sessionhandle",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "FreshSpawnPayload",
@@ -779,10 +779,10 @@
       "source_file": "adapter-claude/session.ts",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "freshspawnpayload",
       "id": "adapter_claude_session_freshspawnpayload",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "RetrySpawnPayload",
@@ -790,10 +790,10 @@
       "source_file": "adapter-claude/session.ts",
       "source_location": "L35",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "retryspawnpayload",
       "id": "adapter_claude_session_retryspawnpayload",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "SpawnPayload",
@@ -801,10 +801,10 @@
       "source_file": "adapter-claude/session.ts",
       "source_location": "L44",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "spawnpayload",
       "id": "adapter_claude_session_spawnpayload",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "WarmUnitPayload",
@@ -812,10 +812,10 @@
       "source_file": "adapter-claude/session.ts",
       "source_location": "L48",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "warmunitpayload",
       "id": "adapter_claude_session_warmunitpayload",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "SessionApi",
@@ -823,10 +823,10 @@
       "source_file": "adapter-claude/session.ts",
       "source_location": "L58",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "sessionapi",
       "id": "adapter_claude_session_sessionapi",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "spawnFresh()",
@@ -834,10 +834,10 @@
       "source_file": "adapter-claude/session.ts",
       "source_location": "L65",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "spawnfresh()",
       "id": "adapter_claude_session_spawnfresh",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "spawnWarm()",
@@ -845,10 +845,10 @@
       "source_file": "adapter-claude/session.ts",
       "source_location": "L79",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "spawnwarm()",
       "id": "adapter_claude_session_spawnwarm",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "spawnRetry()",
@@ -856,10 +856,10 @@
       "source_file": "adapter-claude/session.ts",
       "source_location": "L94",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "spawnretry()",
       "id": "adapter_claude_session_spawnretry",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "agent-operator-protocol.test.ts",
@@ -1797,6 +1797,116 @@
       "community_name": "Init & Config Merge"
     },
     {
+      "label": "boundary-rules.test.ts",
+      "file_type": "code",
+      "source_file": "core/boundary-rules.test.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 16,
+      "norm_label": "boundary-rules.test.ts",
+      "id": "core_boundary_rules_test",
+      "community_name": "Gate Registration & Verdicts"
+    },
+    {
+      "label": "argoV2RoleMap",
+      "file_type": "code",
+      "source_file": "core/boundary-rules.test.ts",
+      "source_location": "L4",
+      "_origin": "ast",
+      "community": 16,
+      "norm_label": "argov2rolemap",
+      "id": "core_boundary_rules_test_argov2rolemap",
+      "community_name": "Gate Registration & Verdicts"
+    },
+    {
+      "label": "boundary-rules.ts",
+      "file_type": "code",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 16,
+      "norm_label": "boundary-rules.ts",
+      "id": "core_boundary_rules",
+      "community_name": "Gate Registration & Verdicts"
+    },
+    {
+      "label": "BoundaryRole",
+      "file_type": "code",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L7",
+      "_origin": "ast",
+      "community": 16,
+      "norm_label": "boundaryrole",
+      "id": "core_boundary_rules_boundaryrole",
+      "community_name": "Gate Registration & Verdicts"
+    },
+    {
+      "label": "BoundaryRoleMap",
+      "file_type": "code",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L9",
+      "_origin": "ast",
+      "community": 16,
+      "norm_label": "boundaryrolemap",
+      "id": "core_boundary_rules_boundaryrolemap",
+      "community_name": "Gate Registration & Verdicts"
+    },
+    {
+      "label": "BoundaryRulesOptions",
+      "file_type": "code",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L13",
+      "_origin": "ast",
+      "community": 16,
+      "norm_label": "boundaryrulesoptions",
+      "id": "core_boundary_rules_boundaryrulesoptions",
+      "community_name": "Gate Registration & Verdicts"
+    },
+    {
+      "label": "BoundaryForbiddenRule",
+      "file_type": "code",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L17",
+      "_origin": "ast",
+      "community": 16,
+      "norm_label": "boundaryforbiddenrule",
+      "id": "core_boundary_rules_boundaryforbiddenrule",
+      "community_name": "Gate Registration & Verdicts"
+    },
+    {
+      "label": "KNOWN_ROLES",
+      "file_type": "code",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L25",
+      "_origin": "ast",
+      "community": 16,
+      "norm_label": "known_roles",
+      "id": "core_boundary_rules_known_roles",
+      "community_name": "Gate Registration & Verdicts"
+    },
+    {
+      "label": "assertValidRoleMap()",
+      "file_type": "code",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L27",
+      "_origin": "ast",
+      "community": 16,
+      "norm_label": "assertvalidrolemap()",
+      "id": "core_boundary_rules_assertvalidrolemap",
+      "community_name": "Gate Registration & Verdicts"
+    },
+    {
+      "label": "boundaryRules()",
+      "file_type": "code",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L37",
+      "_origin": "ast",
+      "community": 16,
+      "norm_label": "boundaryrules()",
+      "id": "core_boundary_rules_boundaryrules",
+      "community_name": "Gate Registration & Verdicts"
+    },
+    {
       "label": "comment-check-waivers.test.ts",
       "file_type": "code",
       "source_file": "core/cli/comment-check-waivers.test.ts",
@@ -2209,10 +2319,10 @@
       "source_file": "core/cli/errors.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 18,
+      "community": 10,
       "norm_label": "stagenotfounderror",
       "id": "core_cli_errors_stagenotfounderror",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Status/Diagram Read"
     },
     {
       "label": ".constructor()",
@@ -2220,10 +2330,10 @@
       "source_file": "core/cli/errors.ts",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 18,
+      "community": 10,
       "norm_label": ".constructor()",
       "id": "core_cli_errors_stagenotfounderror_constructor",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Status/Diagram Read"
     },
     {
       "label": "GateNotFoundError",
@@ -2253,10 +2363,10 @@
       "source_file": "core/cli/lifecycle-events.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 36,
+      "community": 12,
       "norm_label": "lifecycle-events.test.ts",
       "id": "core_cli_lifecycle_events_test",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Playbook Definitions"
     },
     {
       "label": "makeGate()",
@@ -2264,10 +2374,10 @@
       "source_file": "core/cli/lifecycle-events.test.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 36,
+      "community": 12,
       "norm_label": "makegate()",
       "id": "core_cli_lifecycle_events_test_makegate",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Playbook Definitions"
     },
     {
       "label": "registerTwoStage()",
@@ -2275,10 +2385,10 @@
       "source_file": "core/cli/lifecycle-events.test.ts",
       "source_location": "L30",
       "_origin": "ast",
-      "community": 36,
+      "community": 12,
       "norm_label": "registertwostage()",
       "id": "core_cli_lifecycle_events_test_registertwostage",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Playbook Definitions"
     },
     {
       "label": "playbook-adopt.test.ts",
@@ -2330,10 +2440,10 @@
       "source_file": "core/cli/playbook-adopt.ts",
       "source_location": "L19",
       "_origin": "ast",
-      "community": 18,
+      "community": 14,
       "norm_label": "playbookadoptoptions",
       "id": "core_cli_playbook_adopt_playbookadoptoptions",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Adopt & Permission Gate"
     },
     {
       "label": "playbookAdopt()",
@@ -2352,10 +2462,10 @@
       "source_file": "core/cli/playbook-advance.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 36,
+      "community": 18,
       "norm_label": "playbook-advance.test.ts",
       "id": "core_cli_playbook_advance_test",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "currentDir",
@@ -2363,10 +2473,10 @@
       "source_file": "core/cli/playbook-advance.test.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 36,
+      "community": 18,
       "norm_label": "currentdir",
       "id": "core_cli_playbook_advance_test_currentdir",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "spawnAdvanceWorker()",
@@ -2374,10 +2484,10 @@
       "source_file": "core/cli/playbook-advance.test.ts",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 36,
+      "community": 18,
       "norm_label": "spawnadvanceworker()",
       "id": "core_cli_playbook_advance_test_spawnadvanceworker",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "makeGate()",
@@ -2385,10 +2495,10 @@
       "source_file": "core/cli/playbook-advance.test.ts",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 36,
+      "community": 18,
       "norm_label": "makegate()",
       "id": "core_cli_playbook_advance_test_makegate",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "makeInstance()",
@@ -2396,10 +2506,10 @@
       "source_file": "core/cli/playbook-advance.test.ts",
       "source_location": "L30",
       "_origin": "ast",
-      "community": 36,
+      "community": 18,
       "norm_label": "makeinstance()",
       "id": "core_cli_playbook_advance_test_makeinstance",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "check()",
@@ -2407,10 +2517,10 @@
       "source_file": "core/cli/playbook-advance.test.ts",
       "source_location": "L224",
       "_origin": "ast",
-      "community": 36,
+      "community": 18,
       "norm_label": "check()",
       "id": "core_cli_playbook_advance_test_check",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "playbook-advance.ts",
@@ -2429,10 +2539,10 @@
       "source_file": "core/cli/playbook-advance.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 18,
+      "community": 14,
       "norm_label": "playbookadvanceoptions",
       "id": "core_cli_playbook_advance_playbookadvanceoptions",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Adopt & Permission Gate"
     },
     {
       "label": "deriveArtifactsFromProduces()",
@@ -2484,10 +2594,10 @@
       "source_file": "core/cli/playbook-advance.ts",
       "source_location": "L143",
       "_origin": "ast",
-      "community": 20,
+      "community": 18,
       "norm_label": "advancetonextstage()",
       "id": "core_cli_playbook_advance_advancetonextstage",
-      "community_name": "Attempt State Tracking"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "playbook-diagram.test.ts",
@@ -2682,10 +2792,10 @@
       "source_file": "core/cli/playbook-start.ts",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 26,
+      "community": 14,
       "norm_label": "playbookstart()",
       "id": "core_cli_playbook_start_playbookstart",
-      "community_name": "Playbook Start & Lifecycle Events"
+      "community_name": "Playbook Adopt & Permission Gate"
     },
     {
       "label": "playbook-status.test.ts",
@@ -2693,10 +2803,10 @@
       "source_file": "core/cli/playbook-status.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 10,
+      "community": 14,
       "norm_label": "playbook-status.test.ts",
       "id": "core_cli_playbook_status_test",
-      "community_name": "Playbook Status/Diagram Read"
+      "community_name": "Playbook Adopt & Permission Gate"
     },
     {
       "label": "playbook-status.ts",
@@ -2704,10 +2814,10 @@
       "source_file": "core/cli/playbook-status.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 10,
+      "community": 14,
       "norm_label": "playbook-status.ts",
       "id": "core_cli_playbook_status",
-      "community_name": "Playbook Status/Diagram Read"
+      "community_name": "Playbook Adopt & Permission Gate"
     },
     {
       "label": "PlaybookStatusFound",
@@ -2715,10 +2825,10 @@
       "source_file": "core/cli/playbook-status.ts",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "playbookstatusfound",
       "id": "core_cli_playbook_status_playbookstatusfound",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "PlaybookStatusNotFound",
@@ -2726,10 +2836,10 @@
       "source_file": "core/cli/playbook-status.ts",
       "source_location": "L27",
       "_origin": "ast",
-      "community": 10,
+      "community": 14,
       "norm_label": "playbookstatusnotfound",
       "id": "core_cli_playbook_status_playbookstatusnotfound",
-      "community_name": "Playbook Status/Diagram Read"
+      "community_name": "Playbook Adopt & Permission Gate"
     },
     {
       "label": "PlaybookStatusReport",
@@ -2737,10 +2847,10 @@
       "source_file": "core/cli/playbook-status.ts",
       "source_location": "L32",
       "_origin": "ast",
-      "community": 10,
+      "community": 14,
       "norm_label": "playbookstatusreport",
       "id": "core_cli_playbook_status_playbookstatusreport",
-      "community_name": "Playbook Status/Diagram Read"
+      "community_name": "Playbook Adopt & Permission Gate"
     },
     {
       "label": "playbookStatus()",
@@ -2748,10 +2858,10 @@
       "source_file": "core/cli/playbook-status.ts",
       "source_location": "L38",
       "_origin": "ast",
-      "community": 10,
+      "community": 14,
       "norm_label": "playbookstatus()",
       "id": "core_cli_playbook_status_playbookstatus",
-      "community_name": "Playbook Status/Diagram Read"
+      "community_name": "Playbook Adopt & Permission Gate"
     },
     {
       "label": "rules-record.test.ts",
@@ -3188,10 +3298,10 @@
       "source_file": "core/diagram.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 30,
+      "community": 10,
       "norm_label": "diagram.test.ts",
       "id": "core_diagram_test",
-      "community_name": "Playbook Diagram Rendering"
+      "community_name": "Playbook Status/Diagram Read"
     },
     {
       "label": "diagram.ts",
@@ -3199,10 +3309,10 @@
       "source_file": "core/diagram.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 30,
+      "community": 10,
       "norm_label": "diagram.ts",
       "id": "core_diagram",
-      "community_name": "Playbook Diagram Rendering"
+      "community_name": "Playbook Status/Diagram Read"
     },
     {
       "label": "nodeId()",
@@ -3210,10 +3320,10 @@
       "source_file": "core/diagram.ts",
       "source_location": "L9",
       "_origin": "ast",
-      "community": 30,
+      "community": 10,
       "norm_label": "nodeid()",
       "id": "core_diagram_nodeid",
-      "community_name": "Playbook Diagram Rendering"
+      "community_name": "Playbook Status/Diagram Read"
     },
     {
       "label": "nodeLabel()",
@@ -3221,10 +3331,10 @@
       "source_file": "core/diagram.ts",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 30,
+      "community": 10,
       "norm_label": "nodelabel()",
       "id": "core_diagram_nodelabel",
-      "community_name": "Playbook Diagram Rendering"
+      "community_name": "Playbook Status/Diagram Read"
     },
     {
       "label": "renderPlaybookDiagram()",
@@ -3232,10 +3342,10 @@
       "source_file": "core/diagram.ts",
       "source_location": "L19",
       "_origin": "ast",
-      "community": 30,
+      "community": 10,
       "norm_label": "renderplaybookdiagram()",
       "id": "core_diagram_renderplaybookdiagram",
-      "community_name": "Playbook Diagram Rendering"
+      "community_name": "Playbook Status/Diagram Read"
     },
     {
       "label": "events.ts",
@@ -3342,10 +3452,10 @@
       "source_file": "core/gate.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 36,
+      "community": 15,
       "norm_label": "gate.test.ts",
       "id": "core_gate_test",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "makeGate()",
@@ -3353,10 +3463,10 @@
       "source_file": "core/gate.test.ts",
       "source_location": "L4",
       "_origin": "ast",
-      "community": 36,
+      "community": 15,
       "norm_label": "makegate()",
       "id": "core_gate_test_makegate",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "gate.ts",
@@ -3364,10 +3474,10 @@
       "source_file": "core/gate.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 36,
+      "community": 15,
       "norm_label": "gate.ts",
       "id": "core_gate",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "Finding",
@@ -3375,10 +3485,10 @@
       "source_file": "core/gate.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "finding",
       "id": "core_gate_finding",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "GateInput",
@@ -3386,10 +3496,10 @@
       "source_file": "core/gate.ts",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "gateinput",
       "id": "core_gate_gateinput",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "GateVerdict",
@@ -3397,10 +3507,10 @@
       "source_file": "core/gate.ts",
       "source_location": "L23",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "gateverdict",
       "id": "core_gate_gateverdict",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "GateContext",
@@ -3408,10 +3518,10 @@
       "source_file": "core/gate.ts",
       "source_location": "L42",
       "_origin": "ast",
-      "community": 18,
+      "community": 15,
       "norm_label": "gatecontext",
       "id": "core_gate_gatecontext",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "Gate",
@@ -3419,10 +3529,10 @@
       "source_file": "core/gate.ts",
       "source_location": "L46",
       "_origin": "ast",
-      "community": 36,
+      "community": 15,
       "norm_label": "gate",
       "id": "core_gate_gate",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "gates",
@@ -3430,10 +3540,10 @@
       "source_file": "core/gate.ts",
       "source_location": "L51",
       "_origin": "ast",
-      "community": 36,
+      "community": 15,
       "norm_label": "gates",
       "id": "core_gate_gates",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "registerGate()",
@@ -3441,10 +3551,10 @@
       "source_file": "core/gate.ts",
       "source_location": "L54",
       "_origin": "ast",
-      "community": 36,
+      "community": 15,
       "norm_label": "registergate()",
       "id": "core_gate_registergate",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "getGate()",
@@ -3452,10 +3562,10 @@
       "source_file": "core/gate.ts",
       "source_location": "L61",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "getgate()",
       "id": "core_gate_getgate",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "index.ts",
@@ -3760,10 +3870,10 @@
       "source_file": "core/spec.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 21,
+      "community": 10,
       "norm_label": "spec.test.ts",
       "id": "core_spec_test",
-      "community_name": "Playbook Catalog Listing"
+      "community_name": "Playbook Status/Diagram Read"
     },
     {
       "label": "spec.ts",
@@ -3826,10 +3936,10 @@
       "source_file": "core/spec.ts",
       "source_location": "L50",
       "_origin": "ast",
-      "community": 30,
+      "community": 21,
       "norm_label": "stagespec",
       "id": "core_spec_stagespec",
-      "community_name": "Playbook Diagram Rendering"
+      "community_name": "Playbook Catalog Listing"
     },
     {
       "label": "PlaybookSpec",
@@ -3881,10 +3991,10 @@
       "source_file": "core/spec.ts",
       "source_location": "L79",
       "_origin": "ast",
-      "community": 36,
+      "community": 12,
       "norm_label": "registerplaybook()",
       "id": "core_spec_registerplaybook",
-      "community_name": "Playbook Gate Lifecycle Tests"
+      "community_name": "Playbook Definitions"
     },
     {
       "label": "getPlaybook()",
@@ -3892,10 +4002,10 @@
       "source_file": "core/spec.ts",
       "source_location": "L87",
       "_origin": "ast",
-      "community": 10,
+      "community": 14,
       "norm_label": "getplaybook()",
       "id": "core_spec_getplaybook",
-      "community_name": "Playbook Status/Diagram Read"
+      "community_name": "Playbook Adopt & Permission Gate"
     },
     {
       "label": "getPlaybookPack()",
@@ -3991,10 +4101,10 @@
       "source_file": "core/state.ts",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 20,
+      "community": 19,
       "norm_label": "resolveprojectid()",
       "id": "core_state_resolveprojectid",
-      "community_name": "Attempt State Tracking"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "gitCommonDirIdentity()",
@@ -4002,10 +4112,10 @@
       "source_file": "core/state.ts",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 20,
+      "community": 19,
       "norm_label": "gitcommondiridentity()",
       "id": "core_state_gitcommondiridentity",
-      "community_name": "Attempt State Tracking"
+      "community_name": "Plan Frontmatter Parsing"
     },
     {
       "label": "Attempt",
@@ -4013,10 +4123,10 @@
       "source_file": "core/state.ts",
       "source_location": "L46",
       "_origin": "ast",
-      "community": 23,
+      "community": 15,
       "norm_label": "attempt",
       "id": "core_state_attempt",
-      "community_name": "Session Spawn API"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "HistoryEntry",
@@ -4046,10 +4156,10 @@
       "source_file": "core/state.ts",
       "source_location": "L83",
       "_origin": "ast",
-      "community": 18,
+      "community": 14,
       "norm_label": "stateoptions",
       "id": "core_state_stateoptions",
-      "community_name": "Playbook Advance Logic"
+      "community_name": "Playbook Adopt & Permission Gate"
     },
     {
       "label": "defaultStateRoot()",
@@ -4079,10 +4189,10 @@
       "source_file": "core/state.ts",
       "source_location": "L107",
       "_origin": "ast",
-      "community": 20,
+      "community": 18,
       "norm_label": "instancepath()",
       "id": "core_state_instancepath",
-      "community_name": "Attempt State Tracking"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "readInstance()",
@@ -4090,10 +4200,10 @@
       "source_file": "core/state.ts",
       "source_location": "L116",
       "_origin": "ast",
-      "community": 10,
+      "community": 18,
       "norm_label": "readinstance()",
       "id": "core_state_readinstance",
-      "community_name": "Playbook Status/Diagram Read"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "atomicWriteJson()",
@@ -4112,10 +4222,10 @@
       "source_file": "core/state.ts",
       "source_location": "L144",
       "_origin": "ast",
-      "community": 20,
+      "community": 18,
       "norm_label": "withadvisorylock()",
       "id": "core_state_withadvisorylock",
-      "community_name": "Attempt State Tracking"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "writeInstance()",
@@ -4134,10 +4244,10 @@
       "source_file": "core/state.ts",
       "source_location": "L184",
       "_origin": "ast",
-      "community": 20,
+      "community": 18,
       "norm_label": "recordattempt()",
       "id": "core_state_recordattempt",
-      "community_name": "Attempt State Tracking"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "recordHistory()",
@@ -4145,10 +4255,10 @@
       "source_file": "core/state.ts",
       "source_location": "L196",
       "_origin": "ast",
-      "community": 20,
+      "community": 18,
       "norm_label": "recordhistory()",
       "id": "core_state_recordhistory",
-      "community_name": "Attempt State Tracking"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "mutateInstance()",
@@ -4156,10 +4266,10 @@
       "source_file": "core/state.ts",
       "source_location": "L212",
       "_origin": "ast",
-      "community": 20,
+      "community": 18,
       "norm_label": "mutateinstance()",
       "id": "core_state_mutateinstance",
-      "community_name": "Attempt State Tracking"
+      "community_name": "Playbook Advance Logic"
     },
     {
       "label": "worktreeId()",
@@ -4671,7 +4781,7 @@
       "label": "setupNudge()",
       "file_type": "code",
       "source_file": "hooks/session-context.ts",
-      "source_location": "L47",
+      "source_location": "L54",
       "_origin": "ast",
       "community": 11,
       "norm_label": "setupnudge()",
@@ -4682,7 +4792,7 @@
       "label": "main()",
       "file_type": "code",
       "source_file": "hooks/session-context.ts",
-      "source_location": "L56",
+      "source_location": "L63",
       "_origin": "ast",
       "community": 11,
       "norm_label": "main()",
@@ -6169,10 +6279,10 @@
       "source_file": "packs/design/design-kit/component-names.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "component-names.test.ts",
       "id": "packs_design_design_kit_component_names_test",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "component-names.ts",
@@ -6180,10 +6290,10 @@
       "source_file": "packs/design/design-kit/component-names.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "component-names.ts",
       "id": "packs_design_design_kit_component_names",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "Registry",
@@ -6191,10 +6301,10 @@
       "source_file": "packs/design/design-kit/component-names.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "registry",
       "id": "packs_design_design_kit_component_names_registry",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "normalizeComponentName()",
@@ -6202,10 +6312,10 @@
       "source_file": "packs/design/design-kit/component-names.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "normalizecomponentname()",
       "id": "packs_design_design_kit_component_names_normalizecomponentname",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "registryComponentNames()",
@@ -6213,10 +6323,10 @@
       "source_file": "packs/design/design-kit/component-names.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "registrycomponentnames()",
       "id": "packs_design_design_kit_component_names_registrycomponentnames",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "conversion-table.test.ts",
@@ -6224,10 +6334,10 @@
       "source_file": "packs/design/design-kit/conversion-table.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 8,
+      "community": 5,
       "norm_label": "conversion-table.test.ts",
       "id": "packs_design_design_kit_conversion_table_test",
-      "community_name": "Color Comparator"
+      "community_name": "Staleness & Sync Check"
     },
     {
       "label": "conversion-table.ts",
@@ -6235,10 +6345,10 @@
       "source_file": "packs/design/design-kit/conversion-table.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 8,
+      "community": 5,
       "norm_label": "conversion-table.ts",
       "id": "packs_design_design_kit_conversion_table",
-      "community_name": "Color Comparator"
+      "community_name": "Staleness & Sync Check"
     },
     {
       "label": "convertLineHeight()",
@@ -6246,10 +6356,10 @@
       "source_file": "packs/design/design-kit/conversion-table.ts",
       "source_location": "L4",
       "_origin": "ast",
-      "community": 8,
+      "community": 5,
       "norm_label": "convertlineheight()",
       "id": "packs_design_design_kit_conversion_table_convertlineheight",
-      "community_name": "Color Comparator"
+      "community_name": "Staleness & Sync Check"
     },
     {
       "label": "convertLetterSpacing()",
@@ -6257,10 +6367,10 @@
       "source_file": "packs/design/design-kit/conversion-table.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 8,
+      "community": 5,
       "norm_label": "convertletterspacing()",
       "id": "packs_design_design_kit_conversion_table_convertletterspacing",
-      "community_name": "Color Comparator"
+      "community_name": "Staleness & Sync Check"
     },
     {
       "label": "resolveBoxModel()",
@@ -6268,10 +6378,10 @@
       "source_file": "packs/design/design-kit/conversion-table.ts",
       "source_location": "L24",
       "_origin": "ast",
-      "community": 8,
+      "community": 5,
       "norm_label": "resolveboxmodel()",
       "id": "packs_design_design_kit_conversion_table_resolveboxmodel",
-      "community_name": "Color Comparator"
+      "community_name": "Staleness & Sync Check"
     },
     {
       "label": "copy-deck.test.ts",
@@ -6279,10 +6389,10 @@
       "source_file": "packs/design/design-kit/copy-deck.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 52,
+      "community": 23,
       "norm_label": "copy-deck.test.ts",
       "id": "packs_design_design_kit_copy_deck_test",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "Session Spawn API"
     },
     {
       "label": "deck",
@@ -6290,10 +6400,10 @@
       "source_file": "packs/design/design-kit/copy-deck.test.ts",
       "source_location": "L4",
       "_origin": "ast",
-      "community": 52,
+      "community": 23,
       "norm_label": "deck",
       "id": "packs_design_design_kit_copy_deck_test_deck",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "Session Spawn API"
     },
     {
       "label": "copy-deck.ts",
@@ -6301,10 +6411,10 @@
       "source_file": "packs/design/design-kit/copy-deck.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 52,
+      "community": 23,
       "norm_label": "copy-deck.ts",
       "id": "packs_design_design_kit_copy_deck",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "Session Spawn API"
     },
     {
       "label": "CopyDeckEntrySchema",
@@ -6312,10 +6422,10 @@
       "source_file": "packs/design/design-kit/copy-deck.ts",
       "source_location": "L7",
       "_origin": "ast",
-      "community": 52,
+      "community": 23,
       "norm_label": "copydeckentryschema",
       "id": "packs_design_design_kit_copy_deck_copydeckentryschema",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "Session Spawn API"
     },
     {
       "label": "CopyDeckSchema",
@@ -6323,10 +6433,10 @@
       "source_file": "packs/design/design-kit/copy-deck.ts",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 52,
+      "community": 23,
       "norm_label": "copydeckschema",
       "id": "packs_design_design_kit_copy_deck_copydeckschema",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "Session Spawn API"
     },
     {
       "label": "CopyDeck",
@@ -6334,10 +6444,10 @@
       "source_file": "packs/design/design-kit/copy-deck.ts",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 52,
+      "community": 23,
       "norm_label": "copydeck",
       "id": "packs_design_design_kit_copy_deck_copydeck",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "Session Spawn API"
     },
     {
       "label": "copyDeckStrings()",
@@ -6345,10 +6455,10 @@
       "source_file": "packs/design/design-kit/copy-deck.ts",
       "source_location": "L34",
       "_origin": "ast",
-      "community": 52,
+      "community": 23,
       "norm_label": "copydeckstrings()",
       "id": "packs_design_design_kit_copy_deck_copydeckstrings",
-      "community_name": "Component Categories & Copy Deck"
+      "community_name": "Session Spawn API"
     },
     {
       "label": "design-rules-audit.ts",
@@ -8138,10 +8248,10 @@
       "source_file": "packs/design/design-kit/staleness.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 5,
+      "community": 52,
       "norm_label": "staleness.test.ts",
       "id": "packs_design_design_kit_staleness_test",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Component Categories & Copy Deck"
     },
     {
       "label": "staleness.ts",
@@ -8149,10 +8259,10 @@
       "source_file": "packs/design/design-kit/staleness.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 5,
+      "community": 52,
       "norm_label": "staleness.ts",
       "id": "packs_design_design_kit_staleness",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Component Categories & Copy Deck"
     },
     {
       "label": "diffVariableDefs()",
@@ -8160,10 +8270,10 @@
       "source_file": "packs/design/design-kit/staleness.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 5,
+      "community": 52,
       "norm_label": "diffvariabledefs()",
       "id": "packs_design_design_kit_staleness_diffvariabledefs",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Component Categories & Copy Deck"
     },
     {
       "label": "classifyNodeDrift()",
@@ -8171,10 +8281,10 @@
       "source_file": "packs/design/design-kit/staleness.ts",
       "source_location": "L24",
       "_origin": "ast",
-      "community": 5,
+      "community": 52,
       "norm_label": "classifynodedrift()",
       "id": "packs_design_design_kit_staleness_classifynodedrift",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Component Categories & Copy Deck"
     },
     {
       "label": "StalenessClassification",
@@ -8182,10 +8292,10 @@
       "source_file": "packs/design/design-kit/staleness.ts",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 5,
+      "community": 52,
       "norm_label": "stalenessclassification",
       "id": "packs_design_design_kit_staleness_stalenessclassification",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Component Categories & Copy Deck"
     },
     {
       "label": "stalenessActionability()",
@@ -8193,10 +8303,10 @@
       "source_file": "packs/design/design-kit/staleness.ts",
       "source_location": "L46",
       "_origin": "ast",
-      "community": 5,
+      "community": 52,
       "norm_label": "stalenessactionability()",
       "id": "packs_design_design_kit_staleness_stalenessactionability",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Component Categories & Copy Deck"
     },
     {
       "label": "isRawUnadoptedKit()",
@@ -8204,10 +8314,10 @@
       "source_file": "packs/design/design-kit/staleness.ts",
       "source_location": "L63",
       "_origin": "ast",
-      "community": 5,
+      "community": 22,
       "norm_label": "israwunadoptedkit()",
       "id": "packs_design_design_kit_staleness_israwunadoptedkit",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "classifyStaleness()",
@@ -8215,10 +8325,10 @@
       "source_file": "packs/design/design-kit/staleness.ts",
       "source_location": "L67",
       "_origin": "ast",
-      "community": 5,
+      "community": 52,
       "norm_label": "classifystaleness()",
       "id": "packs_design_design_kit_staleness_classifystaleness",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Component Categories & Copy Deck"
     },
     {
       "label": "variant-shape-diff.test.ts",
@@ -8303,10 +8413,10 @@
       "source_file": "packs/design/figma-rest/client.ts",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 3,
+      "community": 0,
       "norm_label": "token()",
       "id": "packs_design_figma_rest_client_token",
-      "community_name": "Session Guard & Repo Root"
+      "community_name": "Registry Reconciliation"
     },
     {
       "label": "fetchFile()",
@@ -8325,10 +8435,10 @@
       "source_file": "packs/design/gates/brief-check.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "brief-check.test.ts",
       "id": "packs_design_gates_brief_check_test",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "mktempOrExplode()",
@@ -8336,10 +8446,10 @@
       "source_file": "packs/design/gates/brief-check.test.ts",
       "source_location": "L19",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "mktemporexplode()",
       "id": "packs_design_gates_brief_check_test_mktemporexplode",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "brief-check.ts",
@@ -8347,10 +8457,10 @@
       "source_file": "packs/design/gates/brief-check.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "brief-check.ts",
       "id": "packs_design_gates_brief_check",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "BriefCheckOptions",
@@ -8358,10 +8468,10 @@
       "source_file": "packs/design/gates/brief-check.ts",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "briefcheckoptions",
       "id": "packs_design_gates_brief_check_briefcheckoptions",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "DEFAULT_REQUIRED_SECTIONS",
@@ -8369,10 +8479,10 @@
       "source_file": "packs/design/gates/brief-check.ts",
       "source_location": "L19",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "default_required_sections",
       "id": "packs_design_gates_brief_check_default_required_sections",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "extractReferencedPaths()",
@@ -8380,10 +8490,10 @@
       "source_file": "packs/design/gates/brief-check.ts",
       "source_location": "L22",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "extractreferencedpaths()",
       "id": "packs_design_gates_brief_check_extractreferencedpaths",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "createBriefCheckGate()",
@@ -8391,10 +8501,10 @@
       "source_file": "packs/design/gates/brief-check.ts",
       "source_location": "L27",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "createbriefcheckgate()",
       "id": "packs_design_gates_brief_check_createbriefcheckgate",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "design-matches-code.test.ts",
@@ -8402,10 +8512,10 @@
       "source_file": "packs/design/gates/design-matches-code.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "design-matches-code.test.ts",
       "id": "packs_design_gates_design_matches_code_test",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "design-matches-code.ts",
@@ -8413,10 +8523,10 @@
       "source_file": "packs/design/gates/design-matches-code.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "design-matches-code.ts",
       "id": "packs_design_gates_design_matches_code",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "FigmaRgba",
@@ -8424,10 +8534,10 @@
       "source_file": "packs/design/gates/design-matches-code.ts",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "figmargba",
       "id": "packs_design_gates_design_matches_code_figmargba",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "CapturedRender",
@@ -8435,10 +8545,10 @@
       "source_file": "packs/design/gates/design-matches-code.ts",
       "source_location": "L18",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "capturedrender",
       "id": "packs_design_gates_design_matches_code_capturedrender",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "CaptureScreenshotFn",
@@ -8446,10 +8556,10 @@
       "source_file": "packs/design/gates/design-matches-code.ts",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "capturescreenshotfn",
       "id": "packs_design_gates_design_matches_code_capturescreenshotfn",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "DesignMatchesCodeOptions",
@@ -8457,10 +8567,10 @@
       "source_file": "packs/design/gates/design-matches-code.ts",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "designmatchescodeoptions",
       "id": "packs_design_gates_design_matches_code_designmatchescodeoptions",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "createDesignMatchesCodeGate()",
@@ -8468,10 +8578,10 @@
       "source_file": "packs/design/gates/design-matches-code.ts",
       "source_location": "L33",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "createdesignmatchescodegate()",
       "id": "packs_design_gates_design_matches_code_createdesignmatchescodegate",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "design-rules-check.test.ts",
@@ -8479,10 +8589,10 @@
       "source_file": "packs/design/gates/design-rules-check.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 57,
+      "community": 15,
       "norm_label": "design-rules-check.test.ts",
       "id": "packs_design_gates_design_rules_check_test",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "makeInput()",
@@ -8490,10 +8600,10 @@
       "source_file": "packs/design/gates/design-rules-check.test.ts",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 57,
+      "community": 15,
       "norm_label": "makeinput()",
       "id": "packs_design_gates_design_rules_check_test_makeinput",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "design-rules-check.ts",
@@ -8501,10 +8611,10 @@
       "source_file": "packs/design/gates/design-rules-check.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 57,
+      "community": 15,
       "norm_label": "design-rules-check.ts",
       "id": "packs_design_gates_design_rules_check",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "FigmaVariableBinding",
@@ -8512,10 +8622,10 @@
       "source_file": "packs/design/gates/design-rules-check.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 57,
+      "community": 15,
       "norm_label": "figmavariablebinding",
       "id": "packs_design_gates_design_rules_check_figmavariablebinding",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "FigmaAuditReading",
@@ -8523,10 +8633,10 @@
       "source_file": "packs/design/gates/design-rules-check.ts",
       "source_location": "L21",
       "_origin": "ast",
-      "community": 57,
+      "community": 15,
       "norm_label": "figmaauditreading",
       "id": "packs_design_gates_design_rules_check_figmaauditreading",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "ReadFigmaFn",
@@ -8534,10 +8644,10 @@
       "source_file": "packs/design/gates/design-rules-check.ts",
       "source_location": "L31",
       "_origin": "ast",
-      "community": 57,
+      "community": 15,
       "norm_label": "readfigmafn",
       "id": "packs_design_gates_design_rules_check_readfigmafn",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "DesignRulesCheckOptions",
@@ -8545,10 +8655,10 @@
       "source_file": "packs/design/gates/design-rules-check.ts",
       "source_location": "L33",
       "_origin": "ast",
-      "community": 57,
+      "community": 15,
       "norm_label": "designrulescheckoptions",
       "id": "packs_design_gates_design_rules_check_designrulescheckoptions",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "createDesignRulesCheckGate()",
@@ -8556,10 +8666,10 @@
       "source_file": "packs/design/gates/design-rules-check.ts",
       "source_location": "L43",
       "_origin": "ast",
-      "community": 57,
+      "community": 15,
       "norm_label": "createdesignrulescheckgate()",
       "id": "packs_design_gates_design_rules_check_createdesignrulescheckgate",
-      "community_name": "Design Rules Check Gate"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "fresh-eyes-review.test.ts",
@@ -8567,10 +8677,10 @@
       "source_file": "packs/design/gates/fresh-eyes-review.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "fresh-eyes-review.test.ts",
       "id": "packs_design_gates_fresh_eyes_review_test",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "makeInput()",
@@ -8578,10 +8688,10 @@
       "source_file": "packs/design/gates/fresh-eyes-review.test.ts",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "makeinput()",
       "id": "packs_design_gates_fresh_eyes_review_test_makeinput",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "fresh-eyes-review.ts",
@@ -8589,10 +8699,10 @@
       "source_file": "packs/design/gates/fresh-eyes-review.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "fresh-eyes-review.ts",
       "id": "packs_design_gates_fresh_eyes_review",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "createFreshEyesReviewGate()",
@@ -8600,10 +8710,10 @@
       "source_file": "packs/design/gates/fresh-eyes-review.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "createfresheyesreviewgate()",
       "id": "packs_design_gates_fresh_eyes_review_createfresheyesreviewgate",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "register-cli-gates.test.ts",
@@ -8611,10 +8721,10 @@
       "source_file": "packs/design/gates/register-cli-gates.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "register-cli-gates.test.ts",
       "id": "packs_design_gates_register_cli_gates_test",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "scratchWithReceipt()",
@@ -8622,10 +8732,10 @@
       "source_file": "packs/design/gates/register-cli-gates.test.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "scratchwithreceipt()",
       "id": "packs_design_gates_register_cli_gates_test_scratchwithreceipt",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "register-cli-gates.ts",
@@ -8633,10 +8743,10 @@
       "source_file": "packs/design/gates/register-cli-gates.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "register-cli-gates.ts",
       "id": "packs_design_gates_register_cli_gates",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "fail()",
@@ -8644,10 +8754,10 @@
       "source_file": "packs/design/gates/register-cli-gates.ts",
       "source_location": "L14",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "fail()",
       "id": "packs_design_gates_register_cli_gates_fail",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "candidateReceipts()",
@@ -8666,10 +8776,10 @@
       "source_file": "packs/design/gates/register-cli-gates.ts",
       "source_location": "L52",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "createreceiptbackeddesignrulescheckgate()",
       "id": "packs_design_gates_register_cli_gates_createreceiptbackeddesignrulescheckgate",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "registerCliGates()",
@@ -8677,10 +8787,10 @@
       "source_file": "packs/design/gates/register-cli-gates.ts",
       "source_location": "L82",
       "_origin": "ast",
-      "community": 16,
+      "community": 15,
       "norm_label": "registercligates()",
       "id": "packs_design_gates_register_cli_gates_registercligates",
-      "community_name": "Gate Registration & Verdicts"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "index.ts",
@@ -8688,10 +8798,10 @@
       "source_file": "packs/design/index.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 34,
+      "community": 15,
       "norm_label": "index.ts",
       "id": "packs_design_index",
-      "community_name": "Brief & Design-Match Gates"
+      "community_name": "Claude Judge Implementation"
     },
     {
       "label": "code-to-design.test.ts",
@@ -8919,10 +9029,10 @@
       "source_file": "packs/design/recipes/shadcn-tailwind/design-rules-walker.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 55,
+      "community": 22,
       "norm_label": "design-rules-walker.ts",
       "id": "packs_design_recipes_shadcn_tailwind_design_rules_walker",
-      "community_name": "Recipe Design Rules Walker"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "SPACING_FIELDS",
@@ -8930,10 +9040,10 @@
       "source_file": "packs/design/recipes/shadcn-tailwind/design-rules-walker.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 55,
+      "community": 22,
       "norm_label": "spacing_fields",
       "id": "packs_design_recipes_shadcn_tailwind_design_rules_walker_spacing_fields",
-      "community_name": "Recipe Design Rules Walker"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "runRecipeDesignRulesChecks()",
@@ -8941,10 +9051,10 @@
       "source_file": "packs/design/recipes/shadcn-tailwind/design-rules-walker.ts",
       "source_location": "L18",
       "_origin": "ast",
-      "community": 55,
+      "community": 22,
       "norm_label": "runrecipedesignruleschecks()",
       "id": "packs_design_recipes_shadcn_tailwind_design_rules_walker_runrecipedesignruleschecks",
-      "community_name": "Recipe Design Rules Walker"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "design-rules.test.ts",
@@ -8952,10 +9062,10 @@
       "source_file": "packs/design/recipes/shadcn-tailwind/design-rules.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 55,
+      "community": 22,
       "norm_label": "design-rules.test.ts",
       "id": "packs_design_recipes_shadcn_tailwind_design_rules_test",
-      "community_name": "Recipe Design Rules Walker"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "design-rules.ts",
@@ -8963,10 +9073,10 @@
       "source_file": "packs/design/recipes/shadcn-tailwind/design-rules.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 55,
+      "community": 22,
       "norm_label": "design-rules.ts",
       "id": "packs_design_recipes_shadcn_tailwind_design_rules",
-      "community_name": "Recipe Design Rules Walker"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "Variable",
@@ -8974,10 +9084,10 @@
       "source_file": "packs/design/recipes/shadcn-tailwind/design-rules.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 55,
+      "community": 22,
       "norm_label": "variable",
       "id": "packs_design_recipes_shadcn_tailwind_design_rules_variable",
-      "community_name": "Recipe Design Rules Walker"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "TW_COLLECTION_FAMILY",
@@ -8985,10 +9095,10 @@
       "source_file": "packs/design/recipes/shadcn-tailwind/design-rules.ts",
       "source_location": "L18",
       "_origin": "ast",
-      "community": 55,
+      "community": 22,
       "norm_label": "tw_collection_family",
       "id": "packs_design_recipes_shadcn_tailwind_design_rules_tw_collection_family",
-      "community_name": "Recipe Design Rules Walker"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "nonSemanticBindingViolation()",
@@ -8996,10 +9106,10 @@
       "source_file": "packs/design/recipes/shadcn-tailwind/design-rules.ts",
       "source_location": "L32",
       "_origin": "ast",
-      "community": 55,
+      "community": 22,
       "norm_label": "nonsemanticbindingviolation()",
       "id": "packs_design_recipes_shadcn_tailwind_design_rules_nonsemanticbindingviolation",
-      "community_name": "Recipe Design Rules Walker"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "index.ts",
@@ -9007,10 +9117,10 @@
       "source_file": "packs/design/recipes/shadcn-tailwind/index.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 55,
+      "community": 22,
       "norm_label": "index.ts",
       "id": "packs_design_recipes_shadcn_tailwind_index",
-      "community_name": "Recipe Design Rules Walker"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "index.test.ts",
@@ -9260,10 +9370,10 @@
       "source_file": "packs/design/skill-scripts/assembly/generate-token-manifest.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 56,
+      "community": 22,
       "norm_label": "generate-token-manifest.test.ts",
       "id": "packs_design_skill_scripts_assembly_generate_token_manifest_test",
-      "community_name": "Token Manifest Generation"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "tokens",
@@ -9271,10 +9381,10 @@
       "source_file": "packs/design/skill-scripts/assembly/generate-token-manifest.test.ts",
       "source_location": "L4",
       "_origin": "ast",
-      "community": 56,
+      "community": 22,
       "norm_label": "tokens",
       "id": "packs_design_skill_scripts_assembly_generate_token_manifest_test_tokens",
-      "community_name": "Token Manifest Generation"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "generate-token-manifest.ts",
@@ -9282,10 +9392,10 @@
       "source_file": "packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 56,
+      "community": 22,
       "norm_label": "generate-token-manifest.ts",
       "id": "packs_design_skill_scripts_assembly_generate_token_manifest",
-      "community_name": "Token Manifest Generation"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "TokenVariable",
@@ -9293,10 +9403,10 @@
       "source_file": "packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L7",
       "_origin": "ast",
-      "community": 56,
+      "community": 22,
       "norm_label": "tokenvariable",
       "id": "packs_design_skill_scripts_assembly_generate_token_manifest_tokenvariable",
-      "community_name": "Token Manifest Generation"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "TokenCollection",
@@ -9304,10 +9414,10 @@
       "source_file": "packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 56,
+      "community": 22,
       "norm_label": "tokencollection",
       "id": "packs_design_skill_scripts_assembly_generate_token_manifest_tokencollection",
-      "community_name": "Token Manifest Generation"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "TokensDump",
@@ -9315,10 +9425,10 @@
       "source_file": "packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L21",
       "_origin": "ast",
-      "community": 56,
+      "community": 22,
       "norm_label": "tokensdump",
       "id": "packs_design_skill_scripts_assembly_generate_token_manifest_tokensdump",
-      "community_name": "Token Manifest Generation"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "isAlias()",
@@ -9326,10 +9436,10 @@
       "source_file": "packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L23",
       "_origin": "ast",
-      "community": 56,
+      "community": 22,
       "norm_label": "isalias()",
       "id": "packs_design_skill_scripts_assembly_generate_token_manifest_isalias",
-      "community_name": "Token Manifest Generation"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "defaultModeValue()",
@@ -9337,10 +9447,10 @@
       "source_file": "packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 56,
+      "community": 22,
       "norm_label": "defaultmodevalue()",
       "id": "packs_design_skill_scripts_assembly_generate_token_manifest_defaultmodevalue",
-      "community_name": "Token Manifest Generation"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "generateTokenManifest()",
@@ -9348,10 +9458,10 @@
       "source_file": "packs/design/skill-scripts/assembly/generate-token-manifest.ts",
       "source_location": "L42",
       "_origin": "ast",
-      "community": 56,
+      "community": 22,
       "norm_label": "generatetokenmanifest()",
       "id": "packs_design_skill_scripts_assembly_generate_token_manifest_generatetokenmanifest",
-      "community_name": "Token Manifest Generation"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "assemble-fidelity-rubric.test.ts",
@@ -9689,10 +9799,10 @@
       "source_file": "packs/design/skill-scripts/audit/prepare-design-rules-audit-options.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "prepare-design-rules-audit-options.test.ts",
       "id": "packs_design_skill_scripts_audit_prepare_design_rules_audit_options_test",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "CLI",
@@ -9700,10 +9810,10 @@
       "source_file": "packs/design/skill-scripts/audit/prepare-design-rules-audit-options.test.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "cli",
       "id": "packs_design_skill_scripts_audit_prepare_design_rules_audit_options_test_cli",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "prepare-design-rules-audit-options.ts",
@@ -9711,10 +9821,10 @@
       "source_file": "packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "prepare-design-rules-audit-options.ts",
       "id": "packs_design_skill_scripts_audit_prepare_design_rules_audit_options",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "RECIPE_ADDITIONAL_ALLOWED_COLLECTION_NAMES",
@@ -9722,10 +9832,10 @@
       "source_file": "packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "recipe_additional_allowed_collection_names",
       "id": "packs_design_skill_scripts_audit_prepare_design_rules_audit_options_recipe_additional_allowed_collection_names",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "resolveComponentNodeIds()",
@@ -9733,10 +9843,10 @@
       "source_file": "packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L24",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "resolvecomponentnodeids()",
       "id": "packs_design_skill_scripts_audit_prepare_design_rules_audit_options_resolvecomponentnodeids",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "readOptionalJson()",
@@ -9744,10 +9854,10 @@
       "source_file": "packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L57",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "readoptionaljson()",
       "id": "packs_design_skill_scripts_audit_prepare_design_rules_audit_options_readoptionaljson",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "findDesignBlock()",
@@ -9755,10 +9865,10 @@
       "source_file": "packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L69",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "finddesignblock()",
       "id": "packs_design_skill_scripts_audit_prepare_design_rules_audit_options_finddesignblock",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "deriveDesignRulesAuditOptions()",
@@ -9766,10 +9876,10 @@
       "source_file": "packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L91",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "derivedesignrulesauditoptions()",
       "id": "packs_design_skill_scripts_audit_prepare_design_rules_audit_options_derivedesignrulesauditoptions",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "parseCliArgs()",
@@ -9777,10 +9887,10 @@
       "source_file": "packs/design/skill-scripts/audit/prepare-design-rules-audit-options.ts",
       "source_location": "L184",
       "_origin": "ast",
-      "community": 53,
+      "community": 22,
       "norm_label": "parsecliargs()",
       "id": "packs_design_skill_scripts_audit_prepare_design_rules_audit_options_parsecliargs",
-      "community_name": "Component Name Resolution"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "record-audit-receipt.test.ts",
@@ -9821,10 +9931,10 @@
       "source_file": "packs/design/skill-scripts/audit/sync-check.test.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 5,
+      "community": 22,
       "norm_label": "sync-check.test.ts",
       "id": "packs_design_skill_scripts_audit_sync_check_test",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "entry()",
@@ -9832,10 +9942,10 @@
       "source_file": "packs/design/skill-scripts/audit/sync-check.test.ts",
       "source_location": "L4",
       "_origin": "ast",
-      "community": 5,
+      "community": 22,
       "norm_label": "entry()",
       "id": "packs_design_skill_scripts_audit_sync_check_test_entry",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "cleanReceipt",
@@ -9843,10 +9953,10 @@
       "source_file": "packs/design/skill-scripts/audit/sync-check.test.ts",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 5,
+      "community": 22,
       "norm_label": "cleanreceipt",
       "id": "packs_design_skill_scripts_audit_sync_check_test_cleanreceipt",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "sync-check.ts",
@@ -9854,10 +9964,10 @@
       "source_file": "packs/design/skill-scripts/audit/sync-check.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 5,
+      "community": 22,
       "norm_label": "sync-check.ts",
       "id": "packs_design_skill_scripts_audit_sync_check",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "SyncCheckFinding",
@@ -9865,10 +9975,10 @@
       "source_file": "packs/design/skill-scripts/audit/sync-check.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 5,
+      "community": 22,
       "norm_label": "synccheckfinding",
       "id": "packs_design_skill_scripts_audit_sync_check_synccheckfinding",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "SyncCheckReport",
@@ -9876,10 +9986,10 @@
       "source_file": "packs/design/skill-scripts/audit/sync-check.ts",
       "source_location": "L14",
       "_origin": "ast",
-      "community": 5,
+      "community": 22,
       "norm_label": "synccheckreport",
       "id": "packs_design_skill_scripts_audit_sync_check_synccheckreport",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "runSyncCheck()",
@@ -9887,10 +9997,10 @@
       "source_file": "packs/design/skill-scripts/audit/sync-check.ts",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 5,
+      "community": 22,
       "norm_label": "runsynccheck()",
       "id": "packs_design_skill_scripts_audit_sync_check_runsynccheck",
-      "community_name": "Staleness & Sync Check"
+      "community_name": "Instance Presence Check"
     },
     {
       "label": "validate-manifest.test.ts",
@@ -10679,10 +10789,10 @@
       "source_file": "packs/design/walkers/index.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 8,
+      "community": 5,
       "norm_label": "index.ts",
       "id": "packs_design_walkers_index",
-      "community_name": "Color Comparator"
+      "community_name": "Staleness & Sync Check"
     },
     {
       "label": "spec-diff.ts",
@@ -10690,10 +10800,10 @@
       "source_file": "packs/design/walkers/spec-diff.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 8,
+      "community": 5,
       "norm_label": "spec-diff.ts",
       "id": "packs_design_walkers_spec_diff",
-      "community_name": "Color Comparator"
+      "community_name": "Staleness & Sync Check"
     },
     {
       "label": "StoryModule",
@@ -10701,10 +10811,10 @@
       "source_file": "packs/design/walkers/spec-diff.ts",
       "source_location": "L29",
       "_origin": "ast",
-      "community": 8,
+      "community": 5,
       "norm_label": "storymodule",
       "id": "packs_design_walkers_spec_diff_storymodule",
-      "community_name": "Color Comparator"
+      "community_name": "Staleness & Sync Check"
     },
     {
       "label": "ComposeStories",
@@ -10712,10 +10822,10 @@
       "source_file": "packs/design/walkers/spec-diff.ts",
       "source_location": "L30",
       "_origin": "ast",
-      "community": 8,
+      "community": 5,
       "norm_label": "composestories",
       "id": "packs_design_walkers_spec_diff_composestories",
-      "community_name": "Color Comparator"
+      "community_name": "Staleness & Sync Check"
     },
     {
       "label": "runSpecDiffWalker()",
@@ -10723,10 +10833,10 @@
       "source_file": "packs/design/walkers/spec-diff.ts",
       "source_location": "L32",
       "_origin": "ast",
-      "community": 8,
+      "community": 5,
       "norm_label": "runspecdiffwalker()",
       "id": "packs_design_walkers_spec_diff_runspecdiffwalker",
-      "community_name": "Color Comparator"
+      "community_name": "Staleness & Sync Check"
     },
     {
       "label": "vrt.ts",
@@ -10734,10 +10844,10 @@
       "source_file": "packs/design/walkers/vrt.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 8,
+      "community": 5,
       "norm_label": "vrt.ts",
       "id": "packs_design_walkers_vrt",
-      "community_name": "Color Comparator"
+      "community_name": "Staleness & Sync Check"
     },
     {
       "label": "runVrtWalker()",
@@ -10745,10 +10855,10 @@
       "source_file": "packs/design/walkers/vrt.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 8,
+      "community": 5,
       "norm_label": "runvrtwalker()",
       "id": "packs_design_walkers_vrt_runvrtwalker",
-      "community_name": "Color Comparator"
+      "community_name": "Staleness & Sync Check"
     },
     {
       "label": "register-installed-packs.test.ts",
@@ -14420,6 +14530,130 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "core/boundary-rules.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_boundary_rules_test",
+      "target": "core_boundary_rules"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "core/boundary-rules.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_boundary_rules_test",
+      "target": "core_boundary_rules_boundaryrules"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core/boundary-rules.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_boundary_rules_test",
+      "target": "core_boundary_rules_test_argov2rolemap"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_boundary_rules",
+      "target": "core_boundary_rules_assertvalidrolemap"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_boundary_rules",
+      "target": "core_boundary_rules_boundaryforbiddenrule"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_boundary_rules",
+      "target": "core_boundary_rules_boundaryrole"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_boundary_rules",
+      "target": "core_boundary_rules_boundaryrolemap"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_boundary_rules",
+      "target": "core_boundary_rules_boundaryrules"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_boundary_rules",
+      "target": "core_boundary_rules_boundaryrulesoptions"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_boundary_rules",
+      "target": "core_boundary_rules_known_roles"
+    },
+    {
+      "relation": "re_exports",
+      "context": "export",
+      "confidence": "EXTRACTED",
+      "source_file": "core/index.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_index",
+      "target": "core_boundary_rules"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "core/boundary-rules.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "core_boundary_rules_boundaryrules",
+      "target": "core_boundary_rules_assertvalidrolemap"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "core/cli/comment-check-waivers.test.ts",
       "source_location": "L2",
       "weight": 1.0,
@@ -14998,7 +15232,7 @@
       "context": "export",
       "confidence": "EXTRACTED",
       "source_file": "core/index.ts",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "core_index",
@@ -15703,7 +15937,7 @@
       "context": "export",
       "confidence": "EXTRACTED",
       "source_file": "core/index.ts",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "core_index",
@@ -16220,7 +16454,7 @@
       "context": "export",
       "confidence": "EXTRACTED",
       "source_file": "core/index.ts",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "core_index",
@@ -16483,7 +16717,7 @@
       "context": "export",
       "confidence": "EXTRACTED",
       "source_file": "core/index.ts",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "core_index",
@@ -17055,7 +17289,7 @@
       "context": "export",
       "confidence": "EXTRACTED",
       "source_file": "core/index.ts",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "core_index",
@@ -17370,7 +17604,7 @@
       "context": "export",
       "confidence": "EXTRACTED",
       "source_file": "core/index.ts",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "core_index",
@@ -21250,7 +21484,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "hooks/session-context.ts",
-      "source_location": "L56",
+      "source_location": "L63",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "hooks_session_context",
@@ -21260,7 +21494,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "hooks/session-context.ts",
-      "source_location": "L47",
+      "source_location": "L54",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "hooks_session_context",
@@ -21271,7 +21505,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "hooks/session-context.ts",
-      "source_location": "L75",
+      "source_location": "L82",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "hooks_session_context_main",
@@ -33110,5 +33344,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "f4b038ccf940a23b2cf2cd8fbe062dc44231357e"
+  "built_at_commit": "1b7fc433112fc85977ca8d566bd92b27b6b5a451"
 }

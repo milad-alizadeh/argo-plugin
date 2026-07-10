@@ -5,13 +5,14 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro check && astro build",
+    "build": "node scripts/generate-reference.mjs && astro check && astro build",
+    "generate-reference": "node scripts/generate-reference.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "typecheck": "astro check",
     "lint": "eslint --cache .",
     "format": "prettier --write .",
-    "check-links": "astro build && linkinator ./dist --recurse"
+    "check-links": "node scripts/generate-reference.mjs && astro build && linkinator ./dist --recurse"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.41.3",

@@ -3,6 +3,13 @@ dist/
 # generated types
 .astro/
 
+# regenerated pre-build by scripts/generate-reference.mjs — never hand-edited
+src/content/docs/reference/playbooks/
+src/content/docs/reference/skills/
+src/content/docs/reference/agents/
+src/content/docs/reference/cli.md
+src/content/docs/reference/config-schema.md
+
 # dependencies
 node_modules/
 

@@ -49,7 +49,7 @@ describe('argo-hook playbook-permission — HOOK_CHAINS wiring', () => {
     const envelope = JSON.stringify({
       hook_event_name: 'PreToolUse',
       tool_name: 'Write',
-      tool_input: { file_path: join(cwd, 'registry.json') },
+      tool_input: { file_path: join(cwd, 'design', 'registry.json') },
       cwd
     })
 

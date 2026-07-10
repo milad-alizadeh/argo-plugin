@@ -48,13 +48,24 @@ function parsePattern(pattern: string): ProtectedPattern {
  * generic tool path, regardless of stage `allows` — evaluated *before* the
  * stage's own allow-list (audit 1.1). `probity.config.ts` sits at repo root,
  * OUTSIDE `.argo/`, so it's listed as its own pattern rather than folded
- * into a `.argo/`-prefix rule that would miss it. */
+ * into a `.argo/`-prefix rule that would miss it.
+ *
+ * `registry.json`/`manifests/**` are anchored under a `design/` ancestor
+ * segment (Wave A #6) rather than matched as bare basenames/dirs anywhere in
+ * the tree: the machine-written registry and manifests this rule protects
+ * always live at `<designDir>/registry.json` / `<designDir>/manifests/**`
+ * (`<designDir>` is `apps/<name>/design` or `design` at repo root — see
+ * `config/argo-json.ts`'s `designDir`), so requiring a `design/` ancestor
+ * still matches every real one while no longer matching a host project's own
+ * unrelated `registry.json` or `manifests/` directory that happens to share
+ * the name (a real false-positive found in the wild — permanently blocked a
+ * host's own files). */
 const PROTECTED_PATTERNS: ProtectedPattern[] = [
   parsePattern('~/.argo/state/**'),
   parsePattern('.argo/config.json'),
   parsePattern('probity.config.ts'),
-  parsePattern('registry.json'),
-  parsePattern('manifests/**')
+  parsePattern('design/registry.json'),
+  parsePattern('design/manifests/**')
 ]
 
 function matchesFixed(pathSegments: string[], patternSegments: string[]): boolean {

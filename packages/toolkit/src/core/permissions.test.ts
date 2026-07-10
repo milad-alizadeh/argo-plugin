@@ -37,14 +37,25 @@ describe('isProtectedPath', () => {
     expect(isProtectedPath('/repo/root/probity.config.ts')).toBe(true)
   })
 
-  it('matches registry.json', () => {
-    expect(isProtectedPath('registry.json')).toBe(true)
-    expect(isProtectedPath('workspaces/my-workspace/registry.json')).toBe(true)
+  it('matches design/registry.json (argo-owned location)', () => {
+    expect(isProtectedPath('design/registry.json')).toBe(true)
+    expect(isProtectedPath('apps/desktop/design/registry.json')).toBe(true)
   })
 
-  it('matches manifests/**', () => {
-    expect(isProtectedPath('manifests/some-manifest.json')).toBe(true)
-    expect(isProtectedPath('/repo/root/manifests/nested/some-manifest.json')).toBe(true)
+  it('matches design/manifests/**', () => {
+    expect(isProtectedPath('design/manifests/some-manifest.json')).toBe(true)
+    expect(isProtectedPath('/repo/root/apps/desktop/design/manifests/nested/some-manifest.json')).toBe(true)
+  })
+
+  it('does NOT match a host project\'s own unrelated registry.json (Wave A #6)', () => {
+    expect(isProtectedPath('registry.json')).toBe(false)
+    expect(isProtectedPath('src/registry.json')).toBe(false)
+    expect(isProtectedPath('workspaces/my-workspace/registry.json')).toBe(false)
+  })
+
+  it('does NOT match a host project\'s own unrelated manifests/ directory (Wave A #6)', () => {
+    expect(isProtectedPath('manifests/some-manifest.json')).toBe(false)
+    expect(isProtectedPath('/repo/root/manifests/nested/some-manifest.json')).toBe(false)
   })
 
   it('does not match an adjacent non-protected path', () => {

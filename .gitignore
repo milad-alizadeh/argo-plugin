@@ -7,6 +7,7 @@ node_modules/
 !/.argo/config.json
 !/.argo/plans/
 !/.argo/design/
+!/.argo/docs-manifest.json
 # Acid-suite fixtures get an .argo/ written by runInit at test time — never committed.
 test/fixtures/*/.argo/
 

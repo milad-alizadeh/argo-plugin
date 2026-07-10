@@ -59,4 +59,4 @@ export const componentCreateSpec = definePlaybook({
   ]
 })
 
-registerPlaybook(componentCreateSpec)
+registerPlaybook(componentCreateSpec, 'design')

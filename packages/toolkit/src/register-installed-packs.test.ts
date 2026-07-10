@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { getGate, listPlaybooks } from './core/index.js'
-import { registerInstalledPacks, packOfSpec } from './register-installed-packs.js'
+import { getGate, getPlaybookPack, listPlaybooks } from './core/index.js'
+import { registerInstalledPacks } from './register-installed-packs.js'
 
 describe('registerInstalledPacks', () => {
   it('is idempotent and registers pack-design playbooks plus the headless CLI gate set', () => {
@@ -11,16 +11,9 @@ describe('registerInstalledPacks', () => {
     expect(getGate('brief-check')).toBeTruthy()
     expect(getGate('fresh-eyes-review')).toBeTruthy()
   })
-})
 
-describe('packOfSpec', () => {
-  it('attributes every registered pack-design spec to pack "design"', () => {
+  it('attributes every registered pack-design spec to pack "design" via core\'s own registry', () => {
     registerInstalledPacks()
-    const screenCreate = listPlaybooks().find((s) => s.name === 'screen-create')!
-    expect(packOfSpec(screenCreate)).toBe('design')
-  })
-
-  it('reports "unknown" for a spec that belongs to no known pack', () => {
-    expect(packOfSpec({ name: 'not-a-real-spec', stages: [] })).toBe('unknown')
+    expect(getPlaybookPack('screen-create')).toBe('design')
   })
 })

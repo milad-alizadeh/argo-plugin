@@ -59,10 +59,6 @@
       "types": "./dist/packs/design/design-kit/*.d.ts",
       "default": "./dist/packs/design/design-kit/*.js"
     },
-    "./skill-scripts/*": {
-      "types": "./dist/packs/design/skill-scripts/*.d.ts",
-      "default": "./dist/packs/design/skill-scripts/*.js"
-    },
     "./design-kit/design-rules": {
       "types": "./dist/packs/design/design-kit/design-rules.d.ts",
       "default": "./dist/packs/design/design-kit/design-rules.js"

@@ -82,16 +82,31 @@ export function definePlaybook<T extends PlaybookSpec>(spec: T): T {
  */
 const playbooks = new Map<string, PlaybookSpec>()
 
+/**
+ * Pack attribution, recorded at registration time (core-owned port pattern:
+ * a pack tells core "this spec is mine" by passing its name to
+ * `registerPlaybook`, rather than core or a caller reaching back into the
+ * pack to identify it). `argo playbook list --json`'s `pack` field reads
+ * this via `getPlaybookPack`.
+ */
+const playbookPacks = new Map<string, string>()
+
 /** Throws if a playbook with the same `name` is already registered. */
-export function registerPlaybook(spec: PlaybookSpec): void {
+export function registerPlaybook(spec: PlaybookSpec, pack?: string): void {
   if (playbooks.has(spec.name)) {
     throw new Error(`Playbook "${spec.name}" is already registered`)
   }
   playbooks.set(spec.name, spec)
+  playbookPacks.set(spec.name, pack ?? 'unknown')
 }
 
 export function getPlaybook(name: string): PlaybookSpec | undefined {
   return playbooks.get(name)
+}
+
+/** The pack that registered `name`, or `"unknown"` if none did (or it was never registered). */
+export function getPlaybookPack(name: string): string {
+  return playbookPacks.get(name) ?? 'unknown'
 }
 
 /**

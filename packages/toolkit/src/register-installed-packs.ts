@@ -7,16 +7,20 @@
  * under `adapter-claude/` (adapter-claude may not import packs either) without
  * tripping the dependency-cruiser boundary rules. Every process-level caller
  * that needs pack playbooks/gates registered — `bin/argo.js`'s `playbook`
- * case, the `playbook-permission` hook, `cli/playbook-list.ts` — imports THIS
- * module instead of reaching into `packs/design` themselves.
+ * case, the `playbook-permission` hook — imports THIS module instead of
+ * reaching into `packs/design` themselves.
+ *
+ * Pack attribution (which pack a registered spec belongs to) is core-owned,
+ * not this module's job: each playbook module calls `registerPlaybook(spec,
+ * 'design')` at import time (Slice 5's registry model), and core's own
+ * `getPlaybookPack` answers the lookup — see `core/cli/playbook-list.ts`.
+ * `cli/playbook-list.ts` therefore imports only core, never this hub.
  */
 import { registerCliGates } from './packs/design/gates/register-cli-gates.js'
 // Side-effectful: pack-design's playbook modules call `registerPlaybook` at
 // import time (Slice 5's registry model) — importing this namespace IS the
-// catalog population step, and is also the source of truth for `packOfSpec`'s
-// identity check below.
-import * as designPlaybooks from './packs/design/playbooks/index.js'
-import type { PlaybookSpec } from './core/index.js'
+// catalog population step.
+import './packs/design/playbooks/index.js'
 
 let gatesRegistered = false
 
@@ -25,18 +29,4 @@ export function registerInstalledPacks(): void {
   if (gatesRegistered) return
   gatesRegistered = true
   registerCliGates()
-}
-
-/**
- * Identity-based pack attribution: a spec exported by pack-design's playbook
- * barrel belongs to pack `design`. Future packs add their barrel here; a spec
- * registered by no known pack reports `unknown` rather than guessing.
- */
-export function packOfSpec(spec: PlaybookSpec): string {
-  const designSpecs = new Set<unknown>(
-    Object.values(designPlaybooks as Record<string, unknown>).filter(
-      (v) => Boolean(v && typeof v === 'object' && 'name' in v && 'stages' in v)
-    )
-  )
-  return designSpecs.has(spec) ? 'design' : 'unknown'
 }

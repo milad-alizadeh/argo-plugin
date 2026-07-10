@@ -15,11 +15,7 @@
  * never mistakes it for a per-playbook semver.
  */
 import { readFileSync } from 'node:fs'
-// Side-effectful import via the single composition-root loader (never reaches
-// into `packs/design` directly): registers every pack playbook spec, and its
-// `packOfSpec` is the pack-attribution source of truth this module reuses.
-import { packOfSpec } from '../../register-installed-packs.js'
-import { listPlaybooks, type PlaybookSpec, type StageSpec } from '../index.js'
+import { getPlaybookPack, listPlaybooks, type PlaybookSpec, type StageSpec } from '../index.js'
 
 export interface PlaybookCatalogStage {
   name: string
@@ -122,7 +118,17 @@ export function toolkitVersion(): string {
   return pkg.version
 }
 
+/**
+ * Pack attribution by name lookup against core's own registry (populated by
+ * whichever composition root called `registerPlaybook(spec, packName)` — see
+ * `register-installed-packs.ts`). Core never imports the pack-loading hub to
+ * get this; the hub tells core the attribution at registration time instead.
+ */
+function packOf(spec: PlaybookSpec): string {
+  return getPlaybookPack(spec.name)
+}
+
 /** The full catalog for the CLI verb: every registered spec, catalog-shaped. */
 export function runPlaybookList(): PlaybookCatalogEntry[] {
-  return buildPlaybookCatalog(listPlaybooks(), { version: toolkitVersion(), packOf: packOfSpec })
+  return buildPlaybookCatalog(listPlaybooks(), { version: toolkitVersion(), packOf })
 }

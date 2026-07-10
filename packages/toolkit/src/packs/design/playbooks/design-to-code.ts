@@ -54,4 +54,4 @@ export const designToCodeSpec = definePlaybook({
   ]
 })
 
-registerPlaybook(designToCodeSpec)
+registerPlaybook(designToCodeSpec, 'design')

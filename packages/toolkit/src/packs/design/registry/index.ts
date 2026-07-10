@@ -2,9 +2,9 @@
  * `@argohq/pack-design`'s registry module (playbook-engine-phase1.md Slice 10,
  * step 28) — a thin wrapper over the existing kit modules that already own
  * screen registration and registry enumeration:
- *   - `@argohq/toolkit/skill-scripts/register-screen` — `upsertScreenEntry`, the
+ *   - `@argohq/toolkit/skill-scripts/registry/register-screen` — `upsertScreenEntry`, the
  *     pure `kind:"screen"` upsert.
- *   - `@argohq/toolkit/skill-scripts/pull-registry` — `fetchFile` (Figma REST),
+ *   - `@argohq/toolkit/skill-scripts/registry/pull-registry` — `fetchFile` (Figma REST),
  *     `marshalRestDocument`/`marshalScreenFrames`, and `buildPullRegistryResult`
  *     (the pure classify-and-diff step).
  *   - `@argohq/toolkit/design-kit/schemas` — `RegistryEntrySchema`, reused

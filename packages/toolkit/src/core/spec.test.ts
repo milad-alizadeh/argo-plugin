@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { definePlaybook, getPlaybook, registerPlaybook } from './spec.js'
+import { definePlaybook, getPlaybook, getPlaybookPack, registerPlaybook } from './spec.js'
 
 describe('definePlaybook', () => {
   it('round-trips a valid spec unchanged', () => {
@@ -84,5 +84,25 @@ describe('registerPlaybook / getPlaybook', () => {
     expect(() =>
       registerPlaybook(definePlaybook({ name, stages: [{ name: 's', allows: ['file-edit'] }] }))
     ).toThrow(/already registered/)
+  })
+})
+
+describe('registerPlaybook / getPlaybookPack', () => {
+  it('attributes a spec to the pack name passed at registration', () => {
+    const name = `playbook-pack-${Math.random()}`
+    registerPlaybook(definePlaybook({ name, stages: [{ name: 's', allows: ['file-edit'] }] }), 'design')
+
+    expect(getPlaybookPack(name)).toBe('design')
+  })
+
+  it('reports "unknown" when no pack was passed at registration', () => {
+    const name = `playbook-no-pack-${Math.random()}`
+    registerPlaybook(definePlaybook({ name, stages: [{ name: 's', allows: ['file-edit'] }] }))
+
+    expect(getPlaybookPack(name)).toBe('unknown')
+  })
+
+  it('reports "unknown" for a name that was never registered', () => {
+    expect(getPlaybookPack(`nonexistent-${Math.random()}`)).toBe('unknown')
   })
 })

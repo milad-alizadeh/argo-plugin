@@ -71,4 +71,4 @@ export const screenCreateSpec = definePlaybook({
   ]
 })
 
-registerPlaybook(screenCreateSpec)
+registerPlaybook(screenCreateSpec, 'design')

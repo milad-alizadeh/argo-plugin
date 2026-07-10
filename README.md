@@ -127,7 +127,8 @@ actually keeps:
 - `.claude/rules/*.md` — opinionated rules **adapted** to your stack (inert
   templates until then; see below)
 - the `@argohq/toolkit` dependency + `.claude/settings.json` enablement
-- optional: probity wiring, lefthook, graphify
+- optional: probity wiring, lefthook, graphify, human-facing docs (an existing
+  Starlight/markdown site kept in sync, a fresh scaffold, or none)
 
 Everything executable stays in the kit — updating argo never re-copies code into
 your repo. `/argo:setup-design` (optional, per app) wires the Figma-to-code design

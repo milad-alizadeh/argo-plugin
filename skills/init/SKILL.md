@@ -313,6 +313,44 @@ before execution: the agent gets compact output without calling `rtk` explicitly
 - **Opt-out / uninstall:** `rtk init -g --uninstall` removes the hook (and any
   RTK.md / CLAUDE.md reference); `--no-rtk`, or declining the offer, skips it.
 
+## 6f. Human-facing docs opt-in
+
+**Detect first.** An existing docs site (`astro.config.*` plus the
+`@astrojs/starlight` dependency) or a `docs/` directory tree with markdown
+content means someone already made this decision: offer **keep-up-to-date
+mode**, write `.argo/config.json`'s `"docs"` field pointing at what's there
+(`{ "mode": "starlight" | "markdown", "path": "<detected-path>" }`), and stop —
+don't scaffold anything, and don't seed a manifest against content this skill
+didn't generate (the manifest starts empty; nothing is flagged as AI-owned
+until a future generation pass explicitly writes to it).
+
+**Otherwise, one AskUserQuestion** (batched per §0's UX rules,
+recommended-first): "Human-facing docs for this project? Starlight site
+(recommended for a UI-facing product) / plain markdown / none."
+
+- **Starlight** → scaffold via the same canonical generator this plugin's own
+  docs site uses (`bunx create-astro@latest --template starlight`) into
+  `apps/docs` (monorepo — reuse this project's own §2 monorepo detection) or
+  `docs/` (single package).
+- **Markdown** → seed a `docs/` tree with four empty Diátaxis folders
+  (`tutorials/`, `how-to/`, `explanation/`, `reference/`) plus one placeholder
+  `docs/README.md` explaining the structure. No prose generation on this
+  path — "prose generated once" applies to this plugin's own docs site and to
+  Starlight-mode projects that later run the generator, not to markdown mode's
+  initial scaffold.
+- **None** → no scaffold; record `"docs": { "mode": "none" }` so later stages
+  skip silently.
+
+**Always, regardless of mode chosen (except "none"):** drop a "Working with
+argo" pointer stub — one short markdown file at the chosen docs tree's most
+visible entry point (`index.mdx`/`index.md` for Starlight, `docs/README.md`
+for markdown) linking to this plugin's own `apps/docs` site for argo concepts.
+Argo concepts never get copied into a project's own docs.
+
+Mention `/argo:docs-refresh` in the wizard's closing report whenever Starlight
+or markdown mode is chosen — it's the command a human runs later to resolve a
+hand-edited generated page.
+
 ## 7. graphify (conditional) — treat the graph as local build cache
 Only if the `graphify` CLI is present: run `graphify install --platform claude`
 (graphify installs its **own** maintained skill — don't vendor one) and copy
@@ -446,7 +484,8 @@ ride the SAME `.argo/config.json` — there is no separate config file):
 {
   "landing": "merge",
   "noPlaybook": "coach",
-  "design": { "…": {} }
+  "design": { "…": {} },
+  "docs": { "mode": "starlight", "path": "apps/docs" }
 }
 ```
 
@@ -455,6 +494,8 @@ ride the SAME `.argo/config.json` — there is no separate config file):
   the key if the question went unanswered (missing key reads as `allow`).
 - `design` — leave the CLI-seeded inert keys alone; `/argo:setup-design` owns
   their contents.
+- `docs` — from §6f's answer (`starlight` | `markdown` | `none`, plus the
+  detected or scaffolded `path`).
 
 There is NO `setupVersion`/`managedFiles` lifecycle state — the installed rules
 are static suggestions, never reconciled against a plugin version.

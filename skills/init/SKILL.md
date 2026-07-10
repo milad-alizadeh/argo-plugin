@@ -398,13 +398,19 @@ After the rules land, one short recommendation pass from the §2 stack evidence:
   default extension list may need `.claude/argo-source-extensions.json` for
   this stack) — so the adopter sees exactly what is active vs dormant here.
 
-## 8c. Stack-detected LSP wiring — detect, offer, wire (never wrap)
+## 8c. Stack-detected LSP wiring — detect, offer, install-the-plugin (never wrap)
 Go-to-definition, find-references, and live diagnostics beat grep-and-guess for
 every agent. Argo detects the project's languages and offers to wire the
-matching LSP servers into Claude Code's OWN native LSP config surface (the
-`lspServers` key on builds that expose it — version-gated, see the wire step) —
-argo never wraps or re-encodes that surface, it only records which languages are
-wired as an index row in `.argo/config.json` (see `.argo/plans/stack-detected-lsp.md`).
+matching LSP server the same way any other Claude Code capability is wired: by
+enabling a **plugin** that declares an `lspServers` entry in its own manifest.
+`lspServers` is NOT a `.claude/settings.json` field — it only exists inside a
+plugin's `.claude-plugin/plugin.json` (or a `.lsp.json` in the plugin root);
+Claude Code's LSP manager loads it from there. Confirmed by inspecting the
+2.1.206 binary: writing `lspServers` directly into `.claude/settings.json`
+fails schema validation ("Unrecognized field") — there is no project-level
+LSP-config surface to write into. `.argo/config.json`'s job stays the same:
+record which languages are wired as an index row, never the LSP config itself
+(see `.argo/plans/stack-detected-lsp.md`).
 
 1. **Detect languages** from §2's evidence: manifests (`package.json`
    `"typescript"` dep → `typescript`/`tsx`, `go.mod` → `go`, `pyproject.toml`/
@@ -412,33 +418,49 @@ wired as an index row in `.argo/config.json` (see `.argo/plans/stack-detected-ls
    sweep (`.ts`/`.tsx`, `.go`, `.py`, `.rs`) for repos without a matching
    manifest.
 2. **For each detected language found in the curated table**
-   (`@argohq/toolkit`'s `lsp-table.ts`: `typescript`/`tsx` → `typescript-lsp`,
-   `go` → `gopls`, `python` → `pyright`, `rust` → `rust-analyzer`) — offer to
-   wire it via AskUserQuestion, per-language, batched with §0's other
-   questions where it fits. On accept:
-   - Precheck whether the server binary is already on PATH/installed; if not,
+   (`@argohq/toolkit`'s `lsp-table.ts`: currently `typescript`/`tsx` →
+   `typescript-lsp`, `go` → `gopls-lsp`, `python` → `pyright-lsp`, `rust` →
+   `rust-analyzer-lsp`, plus `c`/`cpp`/`csharp`/`java`/`kotlin`/`lua`/`php`/
+   `ruby`/`swift`) — the table values are **plugin ids on the official
+   marketplace** (`claude-plugins-official`), not settings keys or raw binary
+   names.
+   - **Verify the id against the live marketplace before offering it** — the
+     table is a cached hint and plugin ids can be renamed upstream (this is
+     exactly how the table went stale before: `go`/`python`/`rust` pointed at
+     bare binary names for a release cycle). Read the cached manifest at
+     `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/marketplace.json`
+     (refresh first with `claude plugin marketplace update
+     claude-plugins-official` if it looks stale or the table's id isn't
+     found) and confirm the table's id is present in its `plugins[].name`
+     list. If it isn't, search that same manifest for a plugin whose name
+     contains the language (e.g. `python` → any `*-lsp` entry mentioning
+     Python in its description) and use that instead. If nothing matches at
+     all, fall through to step 3 (WebSearch, unverified).
+   - Offer to install+enable the verified id via AskUserQuestion, per-language,
+     batched with §0's other questions where it fits. On accept:
+   - Precheck whether the server binary the plugin wraps (e.g.
+     `typescript-language-server`) is already on PATH/installed; if not,
      **ask explicit consent before any global-binary install** (no-auto-install-globals)
      and print the one-line global install command (e.g. `npm i -g
      typescript-language-server typescript`) rather than running it silently.
-   - **Confirm the running Claude Code build actually supports the LSP config
-     key BEFORE writing it** — this surface is version-gated and older/other
-     builds don't have it (observed: 2.1.206 has no `lspServers` key, so writing
-     it is a no-op at best and a schema error at worst). Probe the live build
-     (`claude config` capabilities / the settings schema) for the key. If it is
-     absent, DO NOT write it: fall through to the same lane as decline/defer
-     below and note in the report which key was missing (name it explicitly, so
-     a future run on a newer build can re-check). Never let an unsupported
-     settings key error the whole init.
-   - If the key IS supported: write the matching entry into Claude Code's native
-     LSP config surface (`.claude/settings.json`) — this is the ONLY place the
-     actual LSP server config lives; argo never duplicates it.
+   - Enable the plugin: add `"<language>-lsp@claude-plugins-official": true` (or
+     the table's exact plugin id) to `enabledPlugins` in `.claude/settings.json`
+     — the same field and mechanism this repo already uses for `argo@argo` and
+     `probity@probity`. `claude-plugins-official` needs no
+     `extraKnownMarketplaces` entry (it is the built-in official marketplace).
+   - **Known upstream caveat (disclose in the report, don't silently work around
+     it):** as of 2026-07, `claude-plugins-official`'s LSP plugins have a
+     reported packaging bug where the installed plugin ships only a README with
+     no functional LSP wiring (anthropics/claude-code#15544, #15359). Enable it
+     anyway (harmless, and it self-heals when Anthropic ships the fix), but tell
+     the user the plugin may not provide live diagnostics yet and to re-check
+     after a Claude Code update.
    - Record `tooling.lsp.<language>: "wired"` in `.argo/config.json` (an index
      pointer, same convention as `testDiscipline`/`boundaryLint` —
      `packages/toolkit/src/core/config.ts`).
-   - On decline/defer, OR when the build has no LSP config key: record
-     `tooling.lsp.<language>: "recommended-not-installed"` instead, so
-     `argo status` still surfaces the recommendation later without re-asking
-     every run.
+   - On decline/defer: record `tooling.lsp.<language>: "recommended-not-installed"`
+     instead, so `argo status` still surfaces the recommendation later without
+     re-asking every run.
 3. **For a detected language NOT in the curated table**: `WebSearch` for its
    community-standard LSP server and SUGGEST it in the report, explicitly
    flagged `"unverified — argo has not validated this"`. Never wire an
@@ -447,7 +469,7 @@ wired as an index row in `.argo/config.json` (see `.argo/plans/stack-detected-ls
    init time is enough (YAGNI; see the plan's ship gate).
 4. `argo status` (`cli/status.ts`) reports the `tooling.lsp` posture read-only,
    alongside testDiscipline/boundaryLint/packs — it flags a `"wired"` language
-   whose `lspServers` entry can't be confirmed on disk, but never fixes it.
+   whose LSP plugin isn't present in `enabledPlugins`, but never fixes it.
 
 ## 9. Finalize `.argo/config.json`, report + one-step revert
 `argo init` (§6d) seeded the skeleton; before reporting, complete it (these fields

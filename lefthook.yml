@@ -1,0 +1,25 @@
+# Hook templates (installed by /argo:init). init fills the {{…}}
+# slots from the project's detected lint/typecheck commands. Formatting is NOT
+# gated in any hook — it's an auto-fix concern (see the format-on-write hook).
+
+# PATH shim for hooks spawned by GUI git clients (VS Code etc.), which inherit
+# launchd's minimal PATH with no bun/node. Installed alongside as .lefthookrc
+# (from templates/lefthookrc).
+rc: .lefthookrc
+
+# Fast pre-commit gate — lint + typecheck only (no tests), so it catches breakage
+# at commit time without slowing the loop. With a caching runner (turbo/nx) and
+# declared task inputs this is near-instant on unchanged packages.
+pre-commit:
+  jobs:
+    - name: lint+typecheck
+      run: cd packages/toolkit && bun run lint && bunx tsc --noEmit
+
+# Single touchpoint, single writer: graphify refreshes only when main integrates commits
+# (post-merge ONLY — a per-commit trigger is pure labeling latency). Guarded so projects
+# without the kit installed skip it silently; `argo graph refresh` also self-guards
+# (graphify-missing, main-only, skips worktrees).
+post-merge:
+  jobs:
+    - name: graphify-refresh
+      run: sh -c 'test -x node_modules/.bin/argo || exit 0; node_modules/.bin/argo graph refresh'

@@ -1,4 +1,5 @@
 node_modules/
+.claude/settings.local.json
 # Deny-by-default .argo/ block (same shape runInit seeds into host projects —
 # see GITIGNORE_BLOCK in packages/toolkit/src/config/argo-paths.ts): .argo/
 # also holds secrets/session-local files, so only the committed surfaces are

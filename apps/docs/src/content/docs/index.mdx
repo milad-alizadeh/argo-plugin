@@ -11,7 +11,7 @@ import FeatureGrid from '../../components/FeatureGrid.astro'
 <Hero
   headline="Claude Code, batteries included"
   subhead="A gated pipeline from PRD to shipped code, every stage owned by a skill or agent, every seam guarded by a mechanical gate, so quality is enforced, not requested."
-  primaryCta={{ text: 'Get started', href: '/start-here/what-is-argo/' }}
+  primaryCta={{ text: 'Get started', href: `${import.meta.env.BASE_URL.replace(/\/$/, '')}/start-here/what-is-argo/` }}
   secondaryCta={{ text: 'GitHub', href: 'https://github.com/milad-alizadeh/argo-plugin' }}
 />
 

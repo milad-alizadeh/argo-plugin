@@ -5,6 +5,11 @@ import rehypeMermaid from 'rehype-mermaid'
 
 // https://astro.build/config
 export default defineConfig({
+  // GitHub Pages PROJECT site (not a root <user>.github.io site) — every
+  // internal link/asset must be prefixed with the repo path, or they 404 once
+  // served from this subpath instead of domain root.
+  site: 'https://milad-alizadeh.github.io',
+  base: '/argo-plugin',
   markdown: {
     // Renders ```mermaid fences to static inline <svg> at build time (headless
     // Playwright) so diagrams need no client JS. Dark theme + htmlLabels:false
@@ -66,7 +71,7 @@ export default defineConfig({
         './src/styles/argo-theme.generated.css'
       ],
       head: [
-        { tag: 'script', attrs: { src: '/mermaid-zoom.js', defer: true } },
+        { tag: 'script', attrs: { src: '/argo-plugin/mermaid-zoom.js', defer: true } },
         // Starlight has no config-level "dark only" toggle — pin the theme
         // pref before ThemeProvider reads localStorage, so it never renders
         // light even for a first-time visitor with a light OS preference.

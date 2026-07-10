@@ -42,15 +42,16 @@ hand-edit a lockfile or version — use the package manager.
 and follow its loop for every behaviour change — do not improvise a compressed
 version of it.
 
-**TDD-GUARD PROTOCOL.** Where tdd-guard is active, every Write/Edit is validated
-against live test evidence. Follow its protocol up front — don't discover it by
-being blocked:
+**GUARD PROTOCOL (probity).** Where probity is active, every Write/Edit is
+validated against the session transcript's test evidence. Follow its protocol
+up front — don't discover it by being blocked:
 
 1. Test file first, **ONE new test per edit**. Two tests in one edit is a
    violation; so is any new implementation file with no failing test on record.
 2. Run that exact failing test **immediately before** the implementation edit —
-   the guard only trusts fresh in-session evidence (its state clears at session
-   start, and cached/turbo runs write nothing; invoke the runner directly).
+   the guard reads the session transcript, so only tests actually run in THIS
+   session count (a resumed session has no history; cached/turbo runs don't
+   show the runner output — invoke the runner directly).
 3. Match the implementation to the failure stage: import/symbol failure → minimal
    stub only; assertion failure → just enough logic to pass that assertion.
 4. Refactor only on green, without adding behaviour in the same edit.

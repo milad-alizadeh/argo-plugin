@@ -51,7 +51,7 @@ flowchart LR
     subgraph C [CODE LOOP]
         plan["planner<br/>read-only plan from real code"]:::stage
         build["build-plan · hands-off<br/>test-first · interactive"]:::stage
-        tdd{"tdd-guard<br/>red-first evidence per edit<br/>deterministic + LLM validator"}:::det
+        tdd{"probity<br/>red-first evidence per edit<br/>transcript-based validator"}:::det
         commitg{"red-proof + trust gates<br/>per commit, receipt-based"}:::det
     end
     tiers --> plan --> build
@@ -90,7 +90,7 @@ design→code **handoff**) — lives in **[PIPELINE.md](PIPELINE.md)**.
 | Gate | Fires when | Kind | What it blocks |
 |---|---|---|---|
 | safety guardrails (dangerous-git, pipe-to-shell, lockfile-edit, bash-source-write, designer-spawn) | every matching tool call, always on | deterministic, plugin-side | destructive/unsafe actions, edits that dodge the guards |
-| tdd-guard | every Write/Edit while enabled | deterministic evidence + LLM validator | implementation without a fresh failing test |
+| probity | every Write/Edit while enabled | transcript-based TDD validator | implementation without a fresh failing test |
 | red-proof + trust gates | every commit during a `/argo:build-plan` run | deterministic (receipts) | commits without fail→pass test evidence / launch proof |
 | design-phase decision gate | before a hi-fi build starts | deterministic (binding manifest vs registry + confusable-pairs table) | building against components/tokens that don't exist; known-confusable name swaps |
 | design-rules audit + design coverage | design-pack commits & Figma sessions | deterministic (receipts) | hi-fi drift from conventions; under-built regions; TEXT nodes with copy that traces to no deck/defaultStrings entry |
@@ -123,7 +123,7 @@ actually keeps:
 - `.claude/rules/*.md` — opinionated rules **adapted** to your stack (inert
   templates until then; see below)
 - the `@argohq/toolkit` dependency + `.claude/settings.json` enablement
-- optional: tdd-guard wiring, lefthook, graphify
+- optional: probity wiring, lefthook, graphify
 
 Everything executable stays in the kit — updating argo never re-copies code into
 your repo. `/argo:setup-design` (optional, per app) wires the Figma-to-code design
@@ -197,7 +197,7 @@ structural change smuggled into hi-fi shows up as a PRD mismatch and gets
 forced back through the sketch → user re-agreement. You edit hi-fi freely for
 style; the gate only bites when the change was actually structural. Same
 principle in code: any edit to a generated component goes back through
-spec-diff, and any behavior change through tdd-guard's red-first loop —
+spec-diff, and any behavior change through probity's red-first loop —
 whether it's day 1 or a year later. Full rationale in
 [PIPELINE.md](PIPELINE.md#change-management--re-enter-at-the-altitude-of-the-change).
 
@@ -230,7 +230,6 @@ One package, bin `argo`:
 | `argo graph refresh` | graphify refresh (replaces the old copied script) |
 | `@argohq/toolkit/design-kit` (+ zod-free `/design-rules-subset` subpaths) | comparator, conversion table, schemas, waivers |
 | `@argohq/toolkit/walkers` | VRT / spec-diff / base-congruence factories — host repos keep only ~6-line shims |
-| `@argohq/toolkit/reporters/playwright` | tdd-guard Playwright reporter |
 
 **Dev phase:** unpublished — consumed via `bun link` (`"@argohq/toolkit": "link:@argohq/toolkit"`).
 **Release:** published to npm with provenance (OIDC workflow, wired); consumers

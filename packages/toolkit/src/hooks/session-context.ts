@@ -32,6 +32,13 @@ TDD here is enforced mechanically (edit-time guard where installed; commit
 gates during gated builds). Cosmetic/styling-only changes are refactor-class:
 no new tests required, never geometry assertions — verify by looking.
 
+Output discipline (binds every reply in this session, including the main
+chat): Lead with the outcome in the first sentence. Match length to the
+question — a quick fact gets a sentence. Forbidden: no preamble ("I'll
+now…"), no restating the question, no narrating completed steps,
+no closing summary repeating anything said above it, no walls of text. Findings and
+verification evidence are exempt — brevity forbids padding, not substance.
+
 Anti-spiral rule: after 3 failed attempts at the same tool/framework/
 environment problem, STOP guessing and research online (WebSearch — issue
 trackers, docs, prior art) before attempt 4. Someone has hit it before.

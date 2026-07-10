@@ -43,6 +43,15 @@ describe('session-context — SessionStart way-of-working card', () => {
     }
   })
 
+  it('carries the output-discipline contract so every session defaults to terse replies', async () => {
+    const r = await runHook(sessionStartInput())
+    const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext
+    expect(context).toContain('Output discipline')
+    for (const phrase of ['Lead with the outcome', 'no preamble', 'no closing summary']) {
+      expect(context).toContain(phrase)
+    }
+  })
+
   it('is inert on malformed stdin and on non-SessionStart events (exit 0, no output)', async () => {
     for (const stdin of ['not json', '', JSON.stringify({ hook_event_name: 'PreToolUse' })]) {
       const r = await runHook(stdin)

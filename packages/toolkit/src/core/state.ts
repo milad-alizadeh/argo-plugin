@@ -214,6 +214,28 @@ export function recordHistory(key: string, entry: HistoryEntry, opts: StateOptio
   })
 }
 
+/** Guarded read-modify-write for arbitrary instance fields (stage/status),
+ * under the same advisory per-key lock `recordAttempt`/`recordHistory` use.
+ * `playbookAdvance`'s stage/status transitions previously read-modified-wrote
+ * WITHOUT this lock — a concurrent advance from two sessions could read the
+ * same pre-mutation instance and one writer's transition would silently
+ * overwrite the other's. `mutate` receives the freshly-read instance (never
+ * a stale copy from before the lock was acquired) and returns the instance to
+ * persist. Throws if no instance exists yet at `key`. */
+export function mutateInstance(
+  key: string,
+  mutate: (instance: PlaybookInstance) => PlaybookInstance,
+  opts: StateOptions = {}
+): PlaybookInstance {
+  return withAdvisoryLock(instancePath(key, opts), () => {
+    const instance = readInstance(key, opts)
+    if (!instance) throw new Error(`no instance for key "${key}" — writeInstance first`)
+    const updated = mutate(instance)
+    writeInstance(key, updated, opts)
+    return updated
+  })
+}
+
 /**
  * "Active instance" pointer — `<stateRoot>/<projectId>/active-playbooks/
  * <worktreeId>.json` containing `{ key, worktree }`. There is no other
@@ -267,9 +289,25 @@ function activePointerPath(opts: StateOptions = {}): string {
  * session executing it, never the whole project (2026-07-10 lesson — a
  * project-wide pointer gated the supervisor and parallel agents alike).
  * Without a sessionId the pointer stays worktree-wide (legacy behavior).
+ *
+ * GUARDED BY DEFAULT: when an existing pointer already records a DIFFERENT
+ * owning sessionId, a second session's `start`/`adopt` (both non-`claim`
+ * callers) must not silently evict it — the pointer's slot is single, so an
+ * unguarded overwrite let session B's start steal session A's still-gated
+ * run out from under it. The write is skipped (a no-op, not a throw — the
+ * calling instance still exists and runs, it's just not "the" active one for
+ * this worktree) unless `opts.claim` is `true`, which is the explicit
+ * takeover the `argo playbook claim` verb performs.
  */
-export function setActiveInstance(key: string, opts: StateOptions & { sessionId?: string | null } = {}): void {
+export function setActiveInstance(
+  key: string,
+  opts: StateOptions & { sessionId?: string | null; claim?: boolean } = {}
+): void {
   const sessionId = opts.sessionId ?? null
+  if (!opts.claim) {
+    const existing = getActiveInstancePointer(opts)
+    if (existing?.sessionId && sessionId && existing.sessionId !== sessionId) return
+  }
   atomicWriteJson(activePointerPath(opts), sessionId ? { key, sessionId } : { key })
 }
 

@@ -1,7 +1,9 @@
+import { spawn } from 'node:child_process'
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   getActiveInstance,
@@ -14,6 +16,24 @@ import {
   writeInstance,
   type PlaybookInstance
 } from './state.js'
+
+const currentDir = dirname(fileURLToPath(import.meta.url))
+
+/** Runs a REAL child process that appends one attempt via `recordAttempt`
+ * against `key` — unlike calling `recordAttempt` twice in-process
+ * (synchronous fs calls never yield, so two in-process calls can never
+ * actually race), two OS processes genuinely contend for the advisory lock
+ * and the instance file. Resolves once the process exits. */
+function spawnRecordAttemptWorker(key: string, round: number, stateRoot: string, cwd: string): Promise<void> {
+  const workerPath = join(currentDir, 'fixtures', 'record-attempt-worker.ts')
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(process.execPath, ['--experimental-strip-types', workerPath, key, String(round), stateRoot, cwd], {
+      stdio: 'inherit'
+    })
+    child.on('error', reject)
+    child.on('exit', (code) => (code === 0 ? resolvePromise() : reject(new Error(`worker exited ${code}`))))
+  })
+}
 
 function git(cwd: string, args: string[]): string {
   return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim()
@@ -199,6 +219,32 @@ describe('setActiveInstance / getActiveInstance', () => {
 
     expect(getActiveInstance({ stateRoot, cwd, forSessionId: 'any-session' })).toEqual(instance)
   })
+
+  it('a second session claiming a fresh key does NOT silently evict the first session\'s owned pointer', () => {
+    const ownedByA = makeInstance({ target: 'run-a' })
+    const ownedByB = makeInstance({ target: 'run-b' })
+    writeInstance('owned-by-a', ownedByA, { stateRoot, cwd })
+    writeInstance('owned-by-b', ownedByB, { stateRoot, cwd })
+    setActiveInstance('owned-by-a', { stateRoot, cwd, sessionId: 'session-A' })
+
+    // Session B's non-claim start attempt must not steal the pointer.
+    setActiveInstance('owned-by-b', { stateRoot, cwd, sessionId: 'session-B' })
+
+    expect(getActiveInstanceKey({ stateRoot, cwd })).toBe('owned-by-a')
+    expect(getActiveInstance({ stateRoot, cwd, forSessionId: 'session-A' })).toEqual(ownedByA)
+  })
+
+  it('an explicit claim IS allowed to evict a different session\'s pointer', () => {
+    const ownedByA = makeInstance({ target: 'run-a' })
+    const ownedByB = makeInstance({ target: 'run-b' })
+    writeInstance('claim-a', ownedByA, { stateRoot, cwd })
+    writeInstance('claim-b', ownedByB, { stateRoot, cwd })
+    setActiveInstance('claim-a', { stateRoot, cwd, sessionId: 'session-A' })
+
+    setActiveInstance('claim-b', { stateRoot, cwd, sessionId: 'session-B', claim: true })
+
+    expect(getActiveInstanceKey({ stateRoot, cwd })).toBe('claim-b')
+  })
 })
 
 describe('durability: atomic writes, advisory lock', () => {
@@ -282,5 +328,30 @@ describe('active pointer worktree affinity', () => {
     const nested = join(worktreeDir, 'src')
     execFileSync('mkdir', ['-p', nested])
     expect(getActiveInstanceKey({ stateRoot, cwd: nested })).toBe('run-wt')
+  })
+})
+
+describe('genuine concurrency: two live writers, not two sequential calls', () => {
+  let stateRoot: string
+  let cwd: string
+  const key = 'genuine-concurrency-fixture'
+
+  beforeEach(() => {
+    stateRoot = mkdtempSync(join(tmpdir(), 'argo-state-root-'))
+    cwd = mkdtempSync(join(tmpdir(), 'argo-state-cwd-'))
+    writeInstance(key, makeInstance(), { stateRoot, cwd })
+  })
+
+  afterEach(() => {
+    rmSync(stateRoot, { recursive: true, force: true })
+    rmSync(cwd, { recursive: true, force: true })
+  })
+
+  it('two OS processes racing recordAttempt against the same key both land — no lost update', async () => {
+    await Promise.all([spawnRecordAttemptWorker(key, 1, stateRoot, cwd), spawnRecordAttemptWorker(key, 2, stateRoot, cwd)])
+
+    const result = readInstance(key, { stateRoot, cwd })
+    expect(result?.attempts).toHaveLength(2)
+    expect(result?.attempts.map((a) => a.whatWasTried).sort()).toEqual(['writer-1', 'writer-2'])
   })
 })

@@ -6,7 +6,7 @@
  * verb that moved or never existed. Advisory: always returns findings,
  * never throws.
  */
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { isWaived, type CommentCheckWaiver } from './comment-check-waivers.js'
 
@@ -56,9 +56,28 @@ function checkFile(cwd: string, file: string, knownVerbs: string[] | undefined, 
   return findings
 }
 
+const DOC_EXTENSIONS = new Set(['.md', '.mdx'])
+const SKIP_DIRS = new Set(['node_modules', 'dist', '.git', 'build', 'out', 'coverage'])
+
+function listDocFiles(cwd: string, entryPath: string): string[] {
+  const st = statSync(join(cwd, entryPath))
+  if (st.isFile()) return [entryPath]
+  if (!st.isDirectory()) return []
+  const out: string[] = []
+  for (const name of readdirSync(join(cwd, entryPath))) {
+    if (SKIP_DIRS.has(name)) continue
+    const childRel = entryPath === '.' ? name : `${entryPath}/${name}`
+    const childSt = statSync(join(cwd, childRel))
+    if (childSt.isDirectory()) out.push(...listDocFiles(cwd, childRel))
+    else if (DOC_EXTENSIONS.has(name.slice(name.lastIndexOf('.')))) out.push(childRel)
+  }
+  return out
+}
+
 export function runCommentRefsCheck(opts: CommentRefsCheckOptions): { findings: CommentRefsFinding[] } {
   const cwd = opts.cwd ?? process.cwd()
   const waivers = opts.waivers ?? []
-  const findings = opts.paths.flatMap((f) => checkFile(cwd, f, opts.knownVerbs, waivers))
+  const files = opts.paths.flatMap((p) => listDocFiles(cwd, p))
+  const findings = files.flatMap((f) => checkFile(cwd, f, opts.knownVerbs, waivers))
   return { findings }
 }

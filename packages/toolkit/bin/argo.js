@@ -122,7 +122,9 @@ const USAGE = {
   rules: () => 'usage: argo rules <record|status> [...args]',
   plans: () => 'usage: argo plans [check --plan <path>] [--host-root <path>]',
   graph: () => 'usage: argo graph refresh [--host-root <path>]',
-  status: () => 'usage: argo status [--host-root <path>]'
+  status: () => 'usage: argo status [--host-root <path>]',
+  'comment-lint': () => 'usage: argo comment-lint [paths...] [--host-root <path>]',
+  'comment-refs-check': () => 'usage: argo comment-refs-check [paths...] [--verbs a,b,c] [--host-root <path>]'
 }
 
 const TOP_LEVEL_USAGE = `usage: argo <${Object.keys(USAGE).join('|')}> ...`
@@ -374,6 +376,28 @@ switch (cmd) {
   case 'status': {
     const { runStatus } = await import('../dist/core/cli/status.js')
     console.log(JSON.stringify(runStatus(flagValue(rest, '--host-root') ?? process.cwd()), null, 2))
+    break
+  }
+  case 'comment-lint': {
+    const { runCommentLint } = await import('../dist/core/cli/comment-lint.js')
+    const paths = rest.filter((a) => !a.startsWith('--'))
+    const report = runCommentLint({
+      cwd: flagValue(rest, '--host-root') ?? process.cwd(),
+      paths: paths.length ? paths : ['.'],
+    })
+    console.log(JSON.stringify(report, null, 2))
+    break
+  }
+  case 'comment-refs-check': {
+    const { runCommentRefsCheck } = await import('../dist/core/cli/comment-refs-check.js')
+    const paths = rest.filter((a) => !a.startsWith('--'))
+    const verbs = flagValue(rest, '--verbs')
+    const report = runCommentRefsCheck({
+      cwd: flagValue(rest, '--host-root') ?? process.cwd(),
+      paths: paths.length ? paths : ['.'],
+      knownVerbs: verbs ? verbs.split(',') : undefined,
+    })
+    console.log(JSON.stringify(report, null, 2))
     break
   }
   case 'graph': {

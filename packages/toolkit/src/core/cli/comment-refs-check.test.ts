@@ -89,4 +89,15 @@ describe('runCommentRefsCheck', () => {
 
     expect(result.findings.length).toBeGreaterThan(0)
   })
+
+  it('walks a directory path and checks every doc file under it', () => {
+    mkdirSync(join(root, 'rules', 'nested'), { recursive: true })
+    writeFileSync(join(root, 'rules', 'a.md'), 'See `gone.ts`.\n')
+    writeFileSync(join(root, 'rules', 'nested', 'b.md'), 'See `alsogone.ts`.\n')
+    writeFileSync(join(root, 'rules', 'ignore.txt'), 'See `gone.ts`.\n')
+
+    const { findings } = runCommentRefsCheck({ cwd: root, paths: ['rules'] })
+
+    expect(findings.map((f) => f.token).sort()).toEqual(['alsogone.ts', 'gone.ts'])
+  })
 })

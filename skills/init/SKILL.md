@@ -40,9 +40,14 @@ Read `.argo/config.json` first; it decides the mode:
 - **Present → re-run offer**: "argo is already set up here — re-run detection
   anyway (re-derive the rules/config), or exit?" via AskUserQuestion. There is
   no version-comparison / migration mode: the plugin's real logic lives in the
-  versioned `@argohq/toolkit`, so the installed `.claude/rules/*.md` and config are
-  static suggestions written once here, not artifacts reconciled against a plugin
-  version. If the on-disk shape predates a breaking change, rip-and-re-init.
+  versioned `@argohq/toolkit`, so `.argo/config.json` and the pack wiring it
+  controls are static suggestions written once here, not artifacts reconciled
+  against a plugin version. If the on-disk shape predates a breaking change,
+  rip-and-re-init. This "no handshake" stance is scoped to init/config —
+  installed `.claude/rules/*.md` content is expected to be hand-adapted per
+  project and can silently drift from its source template, which is a
+  distinct problem `argo rules status` addresses (advisory hash-drift check,
+  never a gate, never run automatically).
 
 Never overwrite a hand-authored file in any mode.
 
@@ -78,6 +83,17 @@ it. Flag conflicts concretely and get **explicit per-rule consent**.
 For each accepted template, instantiate it with detected values and a correct
 `paths:` glob — see `templates-reference.md` for the per-template mapping. Optionally
 install convention hooks into the project's own `.claude/` (also per the reference).
+For each installed file, run `argo rules record .claude/rules/<installed-filename> <sha1-of-the-SOURCE-template-content>`
+(installed path as the key; hash the template file's raw content BEFORE placeholder
+substitution). This is deliberately an "upstream moved on" signal, not an "installed
+file diverged from a fresh regeneration" signal — it stamps `.argo/config.json`'s
+`provenance` (covers any file argo installs from a template, not just rules) with
+the template's hash AT ADOPTION TIME; `argo rules status --templates-dir
+<plugin>/templates/rules` recomputes the hash of the plugin's CURRENT template and
+flags a mismatch. A project's own `{{…}}` fills and later hand-edits never register
+as drift (the comparison never touches the installed file's content at all) — only
+"the template you adopted from has since changed upstream" does. A rule installed
+by hand (not from a template) has no entry and is never flagged.
 
 **Placeholders:** templates carry explicit `{{…}}` slots (`{{TYPECHECK_CMD}}`,
 `{{LINT_CMD}}`, `{{TEST_CMD}}`, `{{LOCKFILE}}`, …) wherever a project-specific value

@@ -39,13 +39,23 @@ export interface ArgoConfig {
   /** Reserved for the `land` playbook's settings (`land.mode`) — phase 2.
    * Default: `undefined` (no land config; the playbook doesn't exist yet). */
   land?: unknown
+  /** Repo-relative installed path (e.g. `.claude/rules/testing.md`) ->
+   * source template hash, recorded by `argo init` at install time
+   * (skills/init/SKILL.md §5). Covers any file argo installs from a
+   * template — rules today, lefthook/probity/depcruise starters later. Read
+   * by `argo rules status` (`provenance.ts`'s `diffProvenance`) to flag
+   * drift against the plugin's CURRENT template — advisory only, never a
+   * gate. A file absent from this map (hand-installed, or predates
+   * provenance tracking) is never flagged. Default: `{}`. */
+  provenance: Record<string, string>
 }
 
 const DEFAULT_CONFIG: ArgoConfig = {
   packs: {},
   noPlaybook: 'allow',
   testDiscipline: undefined,
-  land: undefined
+  land: undefined,
+  provenance: {}
 }
 
 /** Walk up from `cwd` to the nearest `.argo/config.json`, returning its
@@ -80,7 +90,11 @@ export function readConfig(cwd: string = process.cwd()): ArgoConfig {
           ? parsed.noPlaybook
           : DEFAULT_CONFIG.noPlaybook,
       testDiscipline: 'testDiscipline' in parsed ? parsed.testDiscipline : DEFAULT_CONFIG.testDiscipline,
-      land: 'land' in parsed ? parsed.land : DEFAULT_CONFIG.land
+      land: 'land' in parsed ? parsed.land : DEFAULT_CONFIG.land,
+      provenance:
+        typeof parsed.provenance === 'object' && parsed.provenance !== null
+          ? parsed.provenance
+          : DEFAULT_CONFIG.provenance
     }
   } catch {
     return { ...DEFAULT_CONFIG } // malformed config — inert, never a crash inside a hook

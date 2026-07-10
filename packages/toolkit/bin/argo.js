@@ -11,6 +11,12 @@
  *                         landed derived from git, live-run overlay from the home
  *                         store); `plans check --plan <path>` is build-plan's
  *                         refuse-a-draft gate
+ *   rules <record|status> — installed-file template-drift provenance
+ *                         (skills/init/SKILL.md §1, §5): `record <installed-path>
+ *                         <hash>` stamps one installed template-derived file's
+ *                         source-template hash at install time; `status
+ *                         --templates-dir <dir>` diffs recorded hashes against
+ *                         the CURRENT templates — advisory only, never a gate
  *
  * Hook dispatch model: each hook module stays a standalone fail-closed script
  * (stdin JSON in, exit code out) — the dispatcher reads stdin ONCE and replays
@@ -219,6 +225,45 @@ switch (cmd) {
         process.stderr.write(
           `argo playbook: unknown verb "${verb ?? ''}" (known: list|start|status|advance|adopt|diagram)\n`
         )
+        process.exit(1)
+    }
+    break
+  }
+  case 'rules': {
+    const verb = rest[0]
+    const args = rest.slice(1)
+    const hostRoot = flagValue(args, '--host-root') ?? process.cwd()
+    switch (verb) {
+      case 'record': {
+        const [installedPath, hash] = args.filter((a) => !a.startsWith('--'))
+        if (!installedPath || !hash) {
+          process.stderr.write('usage: argo rules record <installed-path> <hash> [--host-root <path>]\n')
+          process.exit(1)
+        }
+        const { recordProvenance } = await import('../dist/core/cli/rules-record.js')
+        recordProvenance(installedPath, hash, { cwd: hostRoot })
+        console.log(JSON.stringify({ file: installedPath, hash }))
+        break
+      }
+      case 'status': {
+        const { readdirSync, readFileSync } = await import('node:fs')
+        const { join } = await import('node:path')
+        const templatesDir = flagValue(args, '--templates-dir')
+        if (!templatesDir) {
+          process.stderr.write('usage: argo rules status --templates-dir <path> [--host-root <path>]\n')
+          process.exit(1)
+        }
+        const templates = Object.fromEntries(
+          readdirSync(templatesDir)
+            .filter((f) => f.endsWith('.md'))
+            .map((f) => [f, readFileSync(join(templatesDir, f), 'utf8')])
+        )
+        const { rulesStatus } = await import('../dist/core/cli/rules-status.js')
+        console.log(JSON.stringify(rulesStatus({ cwd: hostRoot, templates })))
+        break
+      }
+      default:
+        process.stderr.write(`argo rules: unknown verb "${verb ?? ''}" (known: record|status)\n`)
         process.exit(1)
     }
     break

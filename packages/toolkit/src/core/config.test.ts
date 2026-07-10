@@ -20,8 +20,20 @@ describe('readConfig', () => {
       packs: {},
       noPlaybook: 'allow',
       testDiscipline: undefined,
-      land: undefined
+      land: undefined,
+      provenance: {}
     })
+  })
+
+  it('reads provenance verbatim from a present file', () => {
+    const argoDir = join(cwd, '.argo')
+    mkdirSync(argoDir, { recursive: true })
+    writeFileSync(
+      join(argoDir, 'config.json'),
+      JSON.stringify({ provenance: { '.claude/rules/testing.md': 'abc123' } })
+    )
+
+    expect(readConfig(cwd).provenance).toEqual({ '.claude/rules/testing.md': 'abc123' })
   })
 
   it('reads values verbatim from a present file, walking up from a nested cwd', () => {
@@ -44,7 +56,8 @@ describe('readConfig', () => {
       packs: { 'pack-design': true, 'pack-code': false },
       noPlaybook: 'deny-edits',
       testDiscipline: { mode: 'test-first' },
-      land: { mode: 'squash' }
+      land: { mode: 'squash' },
+      provenance: {}
     })
   })
 
@@ -57,7 +70,8 @@ describe('readConfig', () => {
       packs: {},
       noPlaybook: 'deny-edits',
       testDiscipline: undefined,
-      land: undefined
+      land: undefined,
+      provenance: {}
     })
   })
 
@@ -71,7 +85,8 @@ describe('readConfig', () => {
       packs: {},
       noPlaybook: 'allow',
       testDiscipline: undefined,
-      land: undefined
+      land: undefined,
+      provenance: {}
     })
   })
 
@@ -100,7 +115,7 @@ describe('readConfig', () => {
 
 describe('assertPackAvailable', () => {
   function makeConfig(packs: Record<string, boolean>): ArgoConfig {
-    return { packs, noPlaybook: 'allow', testDiscipline: undefined, land: undefined }
+    return { packs, noPlaybook: 'allow', testDiscipline: undefined, land: undefined, provenance: {} }
   }
 
   it('throws PackUnavailableError naming the disabled pack (design-to-code -> pack-code)', () => {

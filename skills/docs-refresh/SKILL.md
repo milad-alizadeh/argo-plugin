@@ -26,15 +26,18 @@ edited pages?" — per the design's page-granularity: a human may want to keep o
 page's edits while refreshing another in the same run.
 
 > `<page path>` was edited since it was last AI-generated. Refresh it with AI? It
-> will be regenerated under the project's documentation-style rule, and your edits
-> will be overwritten.
+> will be regenerated under the project's documentation-style and
+> documentation-content rules, and your edits will be overwritten.
 
-- **Yes** → regenerate that one page's prose. Re-source from the same real
-  surfaces the original generation used (README, PIPELINE, the relevant
-  skill/agent files) — **never regenerate from the previous, possibly stale,
-  version of the page itself**; that would drift the same way a from-scratch
-  draft could. Write the file, then call `recordGenerated` to re-hash and
-  re-record it as AI-owned in the manifest.
+- **Yes** → regenerate that one page's prose, grounded in the facts
+  inventory (`.argo/design/docs-facts.md`) per the project's
+  `documentation-content.md` rule. If the inventory is missing or predates
+  HEAD by enough that its facts may have drifted, refresh the relevant
+  inventory sections from source FIRST — **never regenerate from the
+  previous, possibly stale, version of the page itself, and never from
+  surface artifacts (README, frontmatter) alone**; both drift the same way a
+  from-scratch draft could. Write the file, then call `recordGenerated` to
+  re-hash and re-record it as AI-owned in the manifest.
 - **No** → leave the file untouched. Call `markHumanOwned(path, manifest)` so
   routine doc-sync (the integrator, and this skill's own next run) stops
   surfacing it.

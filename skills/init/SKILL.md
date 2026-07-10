@@ -332,20 +332,36 @@ recommended-first): "Human-facing docs for this project? Starlight site
   docs site uses (`bunx create-astro@latest --template starlight`) into
   `apps/docs` (monorepo — reuse this project's own §2 monorepo detection) or
   `docs/` (single package).
-- **Markdown** → seed a `docs/` tree with four empty Diátaxis folders
-  (`tutorials/`, `how-to/`, `explanation/`, `reference/`) plus one placeholder
-  `docs/README.md` explaining the structure. No prose generation on this
-  path — "prose generated once" applies to this plugin's own docs site and to
-  Starlight-mode projects that later run the generator, not to markdown mode's
-  initial scaffold.
+- **Markdown** → seed a `docs/` tree with the two-tier IA
+  `documentation-content.md` prescribes: `guides/` and `reference/` folders
+  plus one placeholder `docs/README.md` explaining the structure (explanation
+  lives inside guides, never as its own top-level quadrant). No prose
+  generation on this path — "prose generated once" applies to this plugin's
+  own docs site and to Starlight-mode projects that later run the generator,
+  not to markdown mode's initial scaffold.
 - **None** → no scaffold; record `"docs": { "mode": "none" }` so later stages
   skip silently.
 
-**Always, regardless of mode chosen (except "none"):** drop a "Working with
-argo" pointer stub — one short markdown file at the chosen docs tree's most
-visible entry point (`index.mdx`/`index.md` for Starlight, `docs/README.md`
-for markdown) linking to this plugin's own `apps/docs` site for argo concepts.
-Argo concepts never get copied into a project's own docs.
+**Always, regardless of mode chosen (except "none"):**
+- Install BOTH docs rules — `documentation-style.md` (sentence level) and
+  `documentation-content.md` (grounding, IA, page-vs-table threshold,
+  requirements matrix) — via the same §5 consent + `argo rules record` flow
+  as every other rule.
+- Drop a "Working with argo" pointer stub — one short markdown file at the
+  chosen docs tree's most visible entry point (`index.mdx`/`index.md` for
+  Starlight, `docs/README.md` for markdown) linking to this plugin's own
+  `apps/docs` site for argo concepts. Argo concepts never get copied into a
+  project's own docs.
+
+**Any docs prose generation — now or later — is gated on the facts
+inventory.** Per `documentation-content.md`'s grounding rule: before writing
+prose, build `.argo/design/docs-facts.md` from a deep read of the actual
+source (command/skill bodies, config schemas, implementations — never just
+READMEs and frontmatter), covering the supported matrix, requirements and
+prerequisites, journey traces, and boundary declarations, every fact with a
+source reference. Docs claims must trace to inventory lines. A generation
+pass that skips this ships plausible, hollow docs — the exact failure this
+stage exists to prevent.
 
 Mention `/argo:docs-refresh` in the wizard's closing report whenever Starlight
 or markdown mode is chosen — it's the command a human runs later to resolve a

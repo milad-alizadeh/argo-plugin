@@ -5,15 +5,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runInit } from './init.js'
 
-/**
- * Deterministic half of /argo:init (plan step 14, amended): dep placement is
- * the dev-phase link protocol ("link:@argohq/toolkit"), settings.json gets
- * enabledPlugins (+ extraKnownMarketplaces when a source is supplied), and
- * .argo/config.json is seeded per mode with INERT design keys (no
- * componentsPath — gates must not arm until setup-design fills them), and
- * .gitignore gets the deny-by-default .argo/ block.
- */
-
+// .argo/config.json design keys are seeded INERT (no componentsPath) —
+// gates must not arm until setup-design fills them.
 let host: string
 
 beforeEach(() => {

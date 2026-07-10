@@ -1,15 +1,9 @@
 import type { StageSpec, PlaybookSpec } from './spec.js'
 
 /**
- * Mermaid renderer for a playbook spec, per the design doc's "Because specs
- * are data, core ships `argo playbook diagram`" section and audit 1.5's
- * resolution: this is the phase-1-expressible skeleton ONLY — stage nodes
- * labeled FRESH/WARM (from `session`), gates on the forward edges, retry/
- * fix-round loops from `retries`/`maxRounds`, `repeat` annotated on the node.
- * It deliberately NEVER renders a runtime-decision diamond: same-convergence
- * forks ("Code-owned?", "Exists?") resolve inside a stage's skill, not as
- * branch nodes in this diagram (audit 1.5 — the historical hand-drawn
- * fixtures with decision diamonds are NOT what this generator round-trips).
+ * Mermaid renderer for a playbook spec. Deliberately never renders a
+ * runtime-decision diamond: convergence forks resolve inside a stage's
+ * skill, not as branch nodes in this diagram.
  */
 
 function nodeId(stageName: string): string {

@@ -1,26 +1,15 @@
 /**
- * `screen-create` playbook spec (playbook-engine-phase1.md Slice 11, step 29;
- * design doc "Playbook matrices #1"): PRD+grill+ASCII wireframe happen
- * upstream of this spec (interactive, not stage-tracked) — the spec starts at
- * the per-screen brief.
+ * `screen-create` playbook spec: `brief` -> `missing-components` -> `build`
+ * -> `review` -> `registry-sync`. PRD+grill+ASCII wireframe happen upstream,
+ * interactive and not stage-tracked; the spec starts at the per-screen brief.
  *
- * `brief` → `missing-components` → `build` → `review` → `registry-sync`.
+ * `missing-components` is a plain stage whose skill triggers `component-create`
+ * for any component the brief references without a registry card yet, not
+ * spec-level branching.
  *
- * `missing-components` is cross-playbook dependency resolution ("Missing
- * components?"), not a branch: per the settled "no branch field" ruling, this
- * is a plain stage whose skill triggers `component-create` for any component
- * the brief references that the registry doesn't already carry a card for —
- * core has no spawn-playbook spec field in phase 1, so this is ordinary
- * stage/skill business logic, not new spec vocabulary.
- *
- * `build` is "fresh start, warm across sections+fix-rounds" (step 29): one
- * designer session (`session: 'warm'`) iterates per-section (`repeat:
- * 'section'`) and absorbs `design-rules-check` fix rounds in-session
- * (`maxRounds`) before falling back to a fresh retry (`retries`) if the fix
- * budget is exhausted — the doc's retry-then-fresh-session escalation.
- *
- * `review` is `fresh-eyes-review` vs the brief, `maxRounds: 1` then
- * `retries: 1` per step 29's "maxRounds: 1, then retries".
+ * `build` uses one warm session across sections, absorbing fix rounds
+ * in-session (`maxRounds`) before falling back to a fresh retry (`retries`)
+ * once the fix budget is exhausted.
  */
 import { definePlaybook, registerPlaybook } from '../../../core/index.js'
 

@@ -12,13 +12,8 @@ import {
   gatedComponentFiles,
 } from './argo-json.js'
 
-/**
- * Decision 8's dual-mode hook resolution: gates arm per-app from
- * `.argo/config.json`'s `design.<app>` blocks, matched repo-root-relative —
- * fixing the "design/config.json presence silently no-ops per-app in
- * monorepos" bug the design doc names.
- */
-
+// Dual-mode hook resolution: gates arm per-app from `.argo/config.json`'s
+// `design.<app>` blocks, matched repo-root-relative.
 let repo: string
 
 function writeArgoJson(config: unknown) {

@@ -1,18 +1,12 @@
 /**
- * `component-create` playbook spec (playbook-engine-phase1.md Slice 11, step
- * 30; design doc "Playbook matrices #2"): `exists-check` → `build` →
- * `annotate` → `registry-card`.
+ * `component-create` playbook spec: `exists-check` -> `build` -> `annotate`
+ * -> `registry-card`.
  *
- * `exists-check` is a guard (registry lookup + `search_design_system`; "no
- * card = doesn't exist") with an early-`done` exit when it finds the
- * component already has a registry card — per the settled ruling this is a
- * guard, not stage branching, so it is modeled as an ordinary first stage;
- * the early-exit itself is engine/runtime behavior (a stage's gate/skill
- * concluding there is nothing left to do), not a spec-level field.
+ * `exists-check` is a guard (registry lookup; early exit if a card already
+ * exists), modeled as an ordinary stage, not spec-level branching.
  *
- * `build` resolves "code-owned? code-first-then-mirror : figma-build" inside
- * the stage's skill by reading the `@code-owned` annotation / registry
- * metadata — never a spec branch field, per the "no branch field" ruling.
+ * `build` resolves code-owned vs figma-build inside the stage's skill by
+ * reading the `@code-owned` annotation, never a spec branch field.
  */
 import { definePlaybook, registerPlaybook } from '../../../core/index.js'
 
@@ -41,9 +35,7 @@ export const componentCreateSpec = definePlaybook({
       retries: 2
     },
     {
-      // Blind fresh-eyes pass — every designer output gets one (components
-      // gained it 2026-07-10, matching screens): judge sees only the built
-      // component + the ask, never the transcript.
+      // Judge sees only the built component and the ask, never the transcript.
       name: 'review',
       requires: ['annotate'],
       allows: ['figma-read'],

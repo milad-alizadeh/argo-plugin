@@ -1,11 +1,3 @@
-/**
- * `comment-refs-check` (council-hardening.md Wave E): INTERFACE-surface
- * checker for templates/rules/comments.md. Docs/SKILL.md/rules are the one
- * place referential naming is the contract — this asserts every reference
- * they make actually resolves, so documentation never points at a file or
- * verb that moved or never existed. Advisory: always returns findings,
- * never throws.
- */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { isWaived, type CommentCheckWaiver } from './comment-check-waivers.js'
@@ -18,7 +10,7 @@ export interface CommentRefsFinding {
 
 export interface CommentRefsCheckOptions {
   cwd?: string
-  /** Docs/SKILL.md/rule files, relative to `cwd`. */
+  /** Doc and rule files, relative to `cwd`. */
   paths: string[]
   /** Known `argo <verb>` set. Omit to skip verb resolution entirely (advisory scope: don't guess). */
   knownVerbs?: string[]

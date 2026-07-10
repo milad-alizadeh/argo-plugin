@@ -1,16 +1,6 @@
 #!/usr/bin/env node
-/**
- * Writes `design/audit-receipt.json` — the deterministic proof
- * design-guard-stop.js checks before it lets a session end. Derived, never
- * hand-authored: this is the ONE place that turns a `use_figma`-returned
- * design-rules-audit result (the `runDesignRulesAudit` completion value, an array of
- * `{ severity, rule, nodeId, nodeName, detail }`) into the receipt shape.
- *
- * A sibling of bundle-design-rules-audit.js (figma-audit/SKILL.md's procedure
- * documents this as its final step, run right after `use_figma` returns the
- * audit's violations array): `argo design record-audit-receipt --record
- * '<json>'`, where `<json>` is `{ componentNames, violations }`.
- */
+// Writes the receipt the stop gate checks before ending a session. Derived, never
+// hand-authored — the one place a use_figma audit result becomes the receipt shape.
 
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -20,28 +10,18 @@ import { consumeAuditNonce } from '../session-guard/lib/audit-nonce.js'
 import { resolveRepoRoot } from '../../../../lib/repo-root.js'
 import { appKeyForCwd, readSessionWriteCount, writeSessionReceiptEntry } from '../../../../lib/session-guard.js'
 
-/**
- * `writeCounterAtAudit` is read from `.argo/design-guard.json`'s current
- * `writeCount` (0 if no Figma writes have ever been recorded) so
- * design-guard-stop.js can detect a write that happened after this audit
- * ran, and demand a re-audit. `.argo/design-guard.json` is repo-global and
- * lives at the git toplevel — NOT necessarily `cwd`, which in a monorepo is
- * the app root (e.g. `apps/web`, per figma-audit/SKILL.md's documented
- * cwd, matching where `design/audit-receipt.json` itself must land for
- * design-guard-stop.js to find it). Reading both off the same `cwd` silently
- * missed the guard state in that layout, defaulting `writeCounterAtAudit`
- * to 0 forever — resolveRepoRoot finds the real repo root for this one read
- * while `cwd` keeps governing every app-scoped path (design/, etc).
- */
+// writeCounterAtAudit lets the stop gate detect a write after this audit ran and
+// demand a re-audit. .argo/design-guard.json is repo-global (git toplevel), NOT
+// necessarily cwd (a monorepo app root) — reading both off the same cwd silently
+// missed the guard state in that layout, so this reads it via resolveRepoRoot
+// while cwd keeps governing app-scoped paths.
 export function recordAuditReceipt(
   { componentNames = [], violations }: { componentNames?: string[]; violations?: { severity?: string }[] } = {},
   { cwd, now = Date.now(), sessionId = null }: { cwd: string; now?: number; sessionId?: string | null }
 ) {
   if (!cwd) throw new Error('recordAuditReceipt: cwd is required')
-  // The nonce (lib/audit-nonce.ts) only ever binds componentNames — nothing
-  // previously stopped a caller from omitting `violations` and silently
-  // recording a clean receipt for an audit that actually found violations.
-  // Requiring a real array (even an intentionally empty one) closes that.
+  // The nonce only binds componentNames — requiring a real violations array (even
+  // empty) closes the gap where a caller could omit it and record a false-clean receipt.
   if (!Array.isArray(violations)) {
     throw new Error('recordAuditReceipt: violations is required and must be an array (an omitted field is not a clean audit)')
   }
@@ -52,21 +32,14 @@ export function recordAuditReceipt(
   // receipt — counting them would block an otherwise-clean run on
   // advisory-only stroke-scale hits.
   const violationCount = violations.filter((v) => v?.severity !== 'advisory').length
-  // Binds the receipt to the actual violations content (not just the
-  // componentNames the nonce checks), so two receipts covering the same
-  // names but different findings are distinguishable on disk. This does NOT
-  // prove the violations were genuinely produced by use_figma running the
-  // audit — that authenticity gap is a documented residual (see
-  // lib/audit-nonce.ts's doc comment); closing it needs the cockpit to run
-  // the audit itself, out of scope here.
+  // Binds the receipt to the actual violations content so two receipts covering the
+  // same names but different findings are distinguishable on disk. Does NOT prove
+  // the violations came from a real use_figma run — that residual gap needs the
+  // cockpit to run the audit itself.
   const violationsDigest = createHash('sha256').update(JSON.stringify(violations)).digest('hex')
 
-  // Per-session-design-gate.md: when this run is attributed to a session,
-  // record into that session's OWN receipt (`.argo/audit-receipts/<sid>.json`),
-  // keyed per app, stamped with the session's live write count. Nothing shared
-  // is touched, so a concurrent design session can neither clobber this receipt
-  // nor be blocked by it. `writeCountAtAudit` reads THIS session's per-session
-  // write-count file (0 if the record hook never saw a write for it).
+  // Attributed to a session: record into that session's own per-app receipt so a
+  // concurrent design session can neither clobber nor be blocked by this one.
   if (sessionId) {
     const liveWriteCount = readSessionWriteCount(repoRoot, sessionId) ?? 0
     const appKey = appKeyForCwd(repoRoot, cwd)
@@ -110,11 +83,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.error('record-audit-receipt: --record argument is not valid JSON')
     process.exit(1)
   }
-  // Receipt-fabrication guard: the recorded receipt must consume the
-  // one-time nonce the bundle emission minted (lib/audit-nonce.ts) — a
-  // receipt without a fresh, name-matching nonce is refused, so a session
-  // cannot record "clean" without a real bundle having been generated for
-  // exactly the components it claims to have audited.
+  // Receipt-fabrication guard: refuses a receipt without a fresh, name-matching
+  // nonce, so a session can't record "clean" without a real bundle having run.
   if (typeof parsed?.nonce !== 'string') {
     console.error(
       'record-audit-receipt: --record JSON must carry the "nonce" from the bundle-design-rules-audit emission that produced this audit run'

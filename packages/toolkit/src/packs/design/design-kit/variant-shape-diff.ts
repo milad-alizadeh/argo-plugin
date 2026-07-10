@@ -1,8 +1,7 @@
 /**
- * design doc decision 1's presentation-regen seam: a component's API shape
- * (variant props + enum values) changing routes to owner review instead of
- * silent regen. `VariantMatrix` is the same shape the slim
- * `RegistryEntrySchema.variantMatrix` field stores.
+ * A component's API shape (variant props + enum values) changing routes to
+ * owner review instead of silent regen. `VariantMatrix` is the same shape
+ * the slim `RegistryEntrySchema.variantMatrix` field stores.
  */
 export type VariantMatrix = Record<string, string[]>
 

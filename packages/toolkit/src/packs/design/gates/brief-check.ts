@@ -1,18 +1,7 @@
 /**
- * `brief-check` gate — structural lint for prose-artifact briefs (screen-create
- * step 29 / screen-edit step 32), per the design doc's "Prose-artifact gates
- * (`plan-check`, `brief-check`) are structural lint ONLY in phase 1: required
- * sections present, every slice/section names its files and test criteria,
- * every referenced path exists in the repo (catches hallucinated plans). No
- * AI quality judge — that's where gate false positives come from; quality is
- * covered upstream by grilling."
- *
- * This is deliberately NOT one of Slice 9's three gates (`design-rules-check`/
- * `fresh-eyes-review`/`design-matches-code`) — it is new, minimal plumbing
- * added here because `screen-create`/`screen-edit` reference it by name and
- * phase 1 has no gate registered under that name yet. Kept intentionally
- * small: markdown heading presence + referenced-path existence, nothing that
- * judges prose quality.
+ * `brief-check` gate — structural lint only for prose-artifact briefs: required
+ * sections present, referenced paths exist. No AI quality judge; that's covered
+ * upstream by grilling, to avoid gate false positives on prose quality.
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'

@@ -1,11 +1,3 @@
-/**
- * `comment-lint` (council-hardening.md Wave E): CODE-surface checker for
- * templates/rules/comments.md. In code, a hit IS the defect — flags
- * referential tokens inside comments, over-long comment blocks (multi-
- * paragraph rationale smell), and a per-file comment-to-code ratio ceiling.
- * Advisory: always returns findings, never throws, exit code stays 0 at the
- * bin layer.
- */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { isWaived, type CommentCheckWaiver } from './comment-check-waivers.js'
@@ -63,7 +55,7 @@ interface CommentBlock {
   text: string
 }
 
-/** Extracts `//`, `#`, and `/* *\/` comment blocks generically, line by line — no per-language string-literal awareness, matching the rule's language-agnostic scope. */
+/** Extracts `//`, `#`, and block comments line by line, with no per-language string-literal awareness, since the check is deliberately language-agnostic. */
 function extractCommentBlocks(source: string): CommentBlock[] {
   const lines = source.split('\n')
   const blocks: CommentBlock[] = []

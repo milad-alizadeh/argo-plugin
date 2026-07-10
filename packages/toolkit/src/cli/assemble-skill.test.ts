@@ -57,14 +57,9 @@ describe('assembleSkill', () => {
         const craftPath = join(REPO_ROOT, 'packages', 'toolkit', 'packs', 'design', 'craft', `${craftName}.md`)
         const craftContent = readFileSync(craftPath, 'utf8')
 
-        // The committed wrapper carries the craft content inline (the
-        // installed plugin loads SKILL.md verbatim; there is no packaging
-        // step), delimited by the INCLUDE block markers...
         const committed = readFileSync(skillPath, 'utf8')
         expect(committed).toContain(craftContent.replace(/\n$/, ''))
 
-        // ...and re-assembling in place is a no-op, i.e. the committed copy
-        // has not drifted from the craft doc.
         const { changed } = assembleSkillInPlace({ skillPath, cwd: REPO_ROOT })
         expect(changed).toBe(false)
       })
@@ -88,7 +83,6 @@ describe('assembleSkill', () => {
     const second = assembleSkillInPlace({ skillPath: wrapperPath, cwd: dir })
     expect(second.changed).toBe(false)
 
-    // After the craft doc changes, re-assembly picks up the new content.
     writeFileSync(join(dir, 'craft', 'example.md'), '# Craft body v2\n')
     const third = assembleSkillInPlace({ skillPath: wrapperPath, cwd: dir })
     expect(third.changed).toBe(true)

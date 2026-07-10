@@ -1,8 +1,6 @@
 /**
  * `.argo/` — argo's ONLY per-project directory — resolved in ONE place so a
- * future move is a single edit (the old `.claude/argo.json` location was
- * inlined at emit-shims, argo-json and init independently; consolidation
- * plan: `.argo/plans/playbook-rename-phase2.md` item 5).
+ * future move is a single edit.
  *
  * Layout:
  *   .argo/config.json   — the consolidated per-project config (committed)
@@ -58,8 +56,7 @@ export function launchReceiptPath(root: string): string {
 /**
  * Deny-by-default gitignore block for `.argo/` — NEVER a blanket narrow.
  * `.argo/` also holds secrets and session-local files (a live `figma-token`
- * PAT, `design-guard.json`, `audit-receipts/`); narrowing the ignore to one
- * subdir would stage the token on the next `git add -A`. Only the three
- * committed surfaces are re-included.
+ * PAT); narrowing the ignore to one subdir would stage the token on the next
+ * `git add -A`. Only the three committed surfaces are re-included.
  */
 export const GITIGNORE_BLOCK = ['/.argo/*', '!/.argo/config.json', '!/.argo/plans/', '!/.argo/design/']

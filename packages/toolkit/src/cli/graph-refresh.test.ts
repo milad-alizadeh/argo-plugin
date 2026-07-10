@@ -6,16 +6,12 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runGraphRefresh } from './graph-refresh.js'
 
-/**
- * `argo graph refresh` — the ported templates/graphify/refresh-graph.sh:
- * SINGLE WRITER (main only, never a linked worktree, on-device), workspace
- * auto-discovery via graphify-out/ dirs, deterministic update
- * (PYTHONHASHSEED=0), degradable labeling, dated-backup pruning, and a
- * pathspec-scoped commit that never sweeps in an unrelated dirty index.
- */
+// Single writer (main only, never a linked worktree, on-device), workspace
+// auto-discovery, deterministic update, degradable labeling, dated-backup
+// pruning, and a pathspec-scoped commit that never sweeps in a dirty index.
 
-// bin/argo.js is a hand-written launcher that dispatches to dist/cli/*.js
-// (never the sibling .ts source) — requires `bun run build` before this test.
+// bin/argo.js dispatches to the built dist/cli/*.js — requires `bun run
+// build` before this test.
 const ARGO_BIN = fileURLToPath(new URL('../../bin/argo.js', import.meta.url))
 
 let host: string

@@ -1,33 +1,14 @@
 /**
- * `design-rules-check` gate — pack-design's wrap of the existing design-rules
- * rules/audit logic (playbook-engine-phase1.md Slice 9, step 25) behind
- * core's `Gate` interface.
- *
- * Per the design doc, this gate "reads Figma directly, never a
- * working-agent self-report" — the actual Figma read (bundling the design-rules
- * audit script and dispatching it through `use_figma`) is real-MCP-only
- * plumbing not available in this repo/task, so it is accepted as an
- * injected `readFigma` function. Production wiring supplies a real
- * implementation that drives `use_figma`; tests fake it. Either way, the
- * gate — not the working agent — is what calls it, and `GateInput.artifacts`
- * (which a working agent's `produces` can populate) is never consulted for
- * violations.
- *
- * Violation *evaluation* reuses the real, unit-tested predicate from
- * `packages/toolkit/src/recipes/shadcn-tailwind/design-rules.ts`
- * (`nonSemanticBindingViolation` — the shadcn-tailwind recipe's design-rules rule
- * over Figma variable bindings). The gate also calls the real
- * `bundleDesignRulesAuditForRecipe` from `packages/toolkit/src/skill-scripts/
- * bundle-design-rules-audit.ts` to produce the audit bundle + its content-hash
- * receipt — the same receipt the live figma-audit procedure produces — and
- * surfaces that receipt as the verdict's `evidence`, per the test contract
- * ("evidence points at the audit receipt").
+ * `design-rules-check` gate — wraps the existing design-rules audit logic
+ * behind core's `Gate` interface. Reads Figma directly via an injected
+ * `readFigma` (real-MCP-only plumbing, faked in tests); `GateInput.artifacts`
+ * is agent-writable and is never consulted for violations.
  */
 import { nonSemanticBindingViolation, TW_COLLECTION_FAMILY } from '../recipes/shadcn-tailwind/design-rules.js'
 import { bundleDesignRulesAuditForRecipe } from '../skill-scripts/audit/bundle-design-rules-audit.js'
 import type { Finding, Gate, GateInput, GateVerdict } from '../../../core/index.js'
 
-/** Mirrors `design-rules.ts`'s local `Variable` shape — the Figma Plugin API's variable binding, marshaled to a plain object. */
+/** The Figma Plugin API's variable binding, marshaled to a plain object. */
 export interface FigmaVariableBinding {
   remote?: boolean
   key?: string
@@ -51,9 +32,9 @@ export type ReadFigmaFn = (input: GateInput) => Promise<FigmaAuditReading>
 
 export interface DesignRulesCheckOptions {
   readFigma: ReadFigmaFn
-  /** Passed through to `bundleDesignRulesAuditForRecipe` — must resolve `@argohq/toolkit` from its own `node_modules`. Defaults to `process.cwd()`. */
+  /** Must resolve `@argohq/toolkit` from its own `node_modules`. Defaults to `process.cwd()`. */
   cwd?: string
-  /** Recipe key for `bundleDesignRulesAuditForRecipe`'s recipe-specific entry (e.g. `'shadcn-tailwind'`). */
+  /** Recipe-specific entry key (e.g. `'shadcn-tailwind'`). */
   recipe?: string | null
   semanticCollectionName?: string
   additionalAllowedCollectionNames?: string[]

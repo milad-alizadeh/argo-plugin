@@ -1,25 +1,4 @@
 #!/usr/bin/env node
-/**
- * Generates `design/semantic-manifest.md` from the committed
- * `design/tokens.json` dump (figma-sync's full variable dump: collections,
- * modes, values, descriptions) — a compact, prefix-grouped list of the
- * Semantic collection's variables, one line each:
- *
- *   - name — description (or the resolved primitive alias name if no description)
- *
- * Purpose: this ~60-line file is the LLM's entire design-token vocabulary
- * when authoring in Figma — the starter-file model keeps ALL variables local
- * (theme = modes on the file's own Semantic collection), so without this
- * manifest an agent would have to enumerate ~1800 local primitives to learn
- * what it may bind.
- *
- * CLI (same cwd/app-resolution pattern as its siblings
- * prepare-design-rules-audit-options / record-audit-receipt — run from the app
- * root): `argo design generate-token-manifest`
- * Reads <cwd>/design/tokens.json, resolves the Semantic collection name from
- * the app's `design.<app>` block in `.argo/config.json` (default
- * 'Semantic'), writes <cwd>/design/semantic-manifest.md.
- */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'

@@ -1,18 +1,12 @@
 /**
- * `argo playbook list --json` — the host app's catalog derivation surface
- * (argo-v2 PRD `playbooks-and-runs.md` RUNS-R24: "all playbook surfaces
- * render from `argo playbook list --json`; no hand-maintained catalog in the
- * app").
- *
  * Emits every registered playbook's full spec as JSON: name/slug, owning
  * pack, version, stages (each with its exit-gate name), and the input
- * contract (`playbookStart`'s `{ name, target, key? }` shape).
+ * contract.
  *
- * Version provenance: specs deliberately do NOT carry their own version
- * field (they are pure shape data, versioned with the code that registers
- * them), so each entry's `version` is the installed @argohq/toolkit package
- * version, stamped with `versionSource: "toolkit-package"` so the host app
- * never mistakes it for a per-playbook semver.
+ * Specs deliberately do NOT carry their own version field (pure shape data,
+ * versioned with the code that registers them) — each entry's `version` is
+ * the installed toolkit package version, stamped `versionSource:
+ * "toolkit-package"` so callers never mistake it for a per-playbook semver.
  */
 import { readFileSync } from 'node:fs'
 import { getPlaybookPack, listPlaybooks, type PlaybookSpec, type StageSpec } from '../index.js'
@@ -38,10 +32,9 @@ export interface PlaybookCatalogEntry {
   name: string
   slug: string
   /**
-   * Pretty display name for UI surfaces (host PRD RUNS-R12: "pretty names
-   * everywhere in UI; slugs only in CLI text"). An authored `displayName` on
-   * the spec wins when present; otherwise falls back to the slug in
-   * sentence case, hyphens to spaces ("screen-create" → "Screen create").
+   * Pretty display name for UI surfaces. An authored `displayName` on the
+   * spec wins when present; otherwise falls back to the slug in sentence
+   * case, hyphens to spaces ("screen-create" → "Screen create").
    */
   displayName: string
   pack: string
@@ -74,21 +67,14 @@ function toCatalogStage(stage: StageSpec): PlaybookCatalogStage {
   }
 }
 
-/**
- * Pretty name derivation. An authored `displayName` on the spec wins when
- * present; otherwise falls back to a slug-derived sentence-case string:
- * slug → sentence case, hyphens → spaces.
- */
+/** An authored `displayName` on the spec wins when present; otherwise falls back to a slug-derived sentence-case string. */
 export function displayNameFor(spec: PlaybookSpec & { displayName?: string }): string {
   if (typeof spec.displayName === 'string' && spec.displayName.length > 0) return spec.displayName
   const words = spec.name.split('-').join(' ')
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
-/**
- * Pure catalog shaping (unit-tested): specs + pack attribution + version in,
- * catalog entries out.
- */
+/** Pure catalog shaping: specs + pack attribution + version in, catalog entries out. */
 export function buildPlaybookCatalog(
   specs: PlaybookSpec[],
   { version, packOf }: { version: string; packOf: (spec: PlaybookSpec) => string }
@@ -112,17 +98,16 @@ export function buildPlaybookCatalog(
   }))
 }
 
-/** The installed toolkit version — read from this package's own package.json. */
 export function toolkitVersion(): string {
   const pkg = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf8'))
   return pkg.version
 }
 
 /**
- * Pack attribution by name lookup against core's own registry (populated by
- * whichever composition root called `registerPlaybook(spec, packName)` — see
- * `register-installed-packs.ts`). Core never imports the pack-loading hub to
- * get this; the hub tells core the attribution at registration time instead.
+ * Pack attribution by name lookup against core's own registry, populated at
+ * registration time by whichever composition root called `registerPlaybook`.
+ * Core never imports the pack-loading hub to get this — the hub tells core
+ * the attribution when it registers.
  */
 function packOf(spec: PlaybookSpec): string {
   return getPlaybookPack(spec.name)

@@ -1,25 +1,21 @@
 /**
- * P4b completeness-checklist generator (design-process-simplification.md,
- * 2026-07-07): the DETERMINISTIC half of the advisory completeness pass. It
- * parses a feature PRD and emits, for one screen, the list of requirements the
- * design-verifier agent must rule present/absent against the built screenshot.
+ * Parses a feature PRD and emits, for one screen, the list of requirements
+ * the design-verifier agent must rule present/absent against the built
+ * screenshot.
  *
- * Deterministic selection (no LLM, no judgement): a requirement belongs on a
- * screen's checklist iff the PRD's feature→screen matrix disposes it
- * `covered-by` that screen AND its `Visible in build?` is `yes` or `partial`.
- * Generating the checklist mechanically (rather than letting the verifier pick
- * rows out of the raw PRD) is what keeps the check honest and reproducible — the
- * verifier only judges the screenshot, it never decides what's in scope.
+ * Selection is deterministic (no LLM): a requirement belongs on a screen's
+ * checklist iff the PRD's matrix disposes it `covered-by` that screen AND its
+ * `Visible in build?` is `yes` or `partial`. Generating the checklist
+ * mechanically keeps the check honest — the verifier only judges the
+ * screenshot, it never decides what's in scope.
  *
- * PURE: parses markdown text, no fs. The skill reads the PRD file and passes it.
+ * Pure: parses markdown text, no fs.
  */
 
 export type Requirement = { id: string; requirement: string; acceptance: string; visible: string }
 export type ChecklistEntry = { id: string; requirement: string; acceptance: string; visible: string }
 
-/** Split a markdown table row into trimmed cells, dropping the leading/trailing
- * empties from the outer pipes. Returns null for a non-row or a separator row
- * (`| --- | --- |`). */
+/** Returns null for a non-row or a separator row (`| --- | --- |`). */
 function tableCells(line: string): string[] | null {
   const trimmed = line.trim()
   if (!trimmed.startsWith('|')) return null
@@ -103,9 +99,7 @@ export function parseMatrix(md: string): { id: string; disposition: string }[] {
   return out
 }
 
-/** True when a `covered-by: a, b, c` disposition names `screen` (normalized,
- * tolerant of surface-list punctuation). Only `covered-by` counts — `deferred:`
- * / `open:` dispositions are not on any screen's build checklist. */
+/** Only `covered-by` counts — `deferred:`/`open:` dispositions are not on any screen's checklist. */
 function coversScreen(disposition: string, screen: string): boolean {
   const m = /covered-by\s*:?\s*(.+)$/i.exec(disposition.trim())
   if (!m) return false

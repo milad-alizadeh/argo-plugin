@@ -1,14 +1,11 @@
 /**
- * P4a instance-presence check (design-system-reset-overhaul.md Slice 4,
- * design doc decision 9): every INSTANCE in a composed screen's tree must
+ * Instance-presence check: every INSTANCE in a composed screen's tree must
  * resolve to a `design/registry.json` entry — no declared list to author, no
- * fenced list syntax, no cardinality bookkeeping. The old declared-list-vs-
- * built model (formerly `screen-manifest.ts`) is fully retired; nothing
- * manifest-shaped survives here.
+ * fenced list syntax, no cardinality bookkeeping.
  *
  * PURE: no fs/Figma/network. The skill captures the built frame's flat
- * instance inventory via a single `use_figma` read and feeds it here
- * alongside the registry entries read Node-side.
+ * instance inventory via a single live read and feeds it here alongside the
+ * registry entries read Node-side.
  */
 
 import { normalizeComponentName } from './component-names.js'

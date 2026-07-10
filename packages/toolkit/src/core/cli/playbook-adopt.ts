@@ -19,32 +19,24 @@ export interface PlaybookAdoptInput {
 export interface PlaybookAdoptOptions extends StateOptions {
   artifacts?: Record<string, string>
   settings?: Record<string, unknown>
-  /** Threaded into `Gate.check` as its second (`GateContext`) argument, so
-   * AI-judging gates (`fresh-eyes-review`) can reach `ctx.judge(...)` during
-   * re-verification. */
+  /** Threaded into `Gate.check` as its `GateContext` argument, so AI-judging gates can reach `ctx.judge(...)` during re-verification. */
   ctx?: GateContext
-  /** Session affinity for the active-instance pointer this adopt call sets —
-   * mirrors `playbookStart`'s `sessionId` (see `setActiveInstance`'s doc). */
+  /** Session affinity for the active-instance pointer this adopt call sets. */
   sessionId?: string | null
 }
 
 /**
- * `argo playbook adopt` (Slice 5, step 16; audit 2.1): self-heals an instance
- * after a crash or manual work by walking `spec.stages` in order from the
- * start and RE-RUNNING each stage's declared gate against discovered
- * artifacts — never trusting a `produces` artifact's mere presence. Sets the
- * current stage to the highest CONTIGUOUSLY-passing one. A gate that signals
- * `GateVerdict.rerunnable === false` cannot be safely re-checked out-of-band;
- * adopt stops at that stage and records `verified: false` in `history`
- * instead of advancing past it (regardless of that verdict's `passed` value —
- * an unconfirmable pass is not a safe boundary to advance across either). A
- * stage with no `gate` declared has nothing to re-verify and is treated as a
- * contiguous pass.
+ * Self-heals an instance after a crash or manual work by walking stages in
+ * order and RE-RUNNING each stage's gate against discovered artifacts, never
+ * trusting a `produces` artifact's mere presence. Sets the current stage to
+ * the highest CONTIGUOUSLY-passing one. A gate whose verdict signals
+ * `rerunnable === false` cannot be safely re-checked out-of-band; adopt stops
+ * at that stage and records `verified: false` instead of advancing past it,
+ * regardless of that verdict's `passed` value.
  *
- * Rebuilds the instance from scratch: `attempts` resets to `[]` (adopt is a
- * re-derivation of current position, not a resumed retry sequence) and
- * `history` is the fresh trail of gate re-runs performed by this walk, not a
- * merge with any prior instance's history.
+ * Rebuilds the instance from scratch: `attempts` resets to `[]` and
+ * `history` is the fresh trail of this walk's re-runs, not a merge with any
+ * prior instance's history.
  */
 export async function playbookAdopt(input: PlaybookAdoptInput, opts: PlaybookAdoptOptions = {}): Promise<PlaybookInstance> {
   const spec = getPlaybook(input.name)
@@ -60,7 +52,6 @@ export async function playbookAdopt(input: PlaybookAdoptInput, opts: PlaybookAdo
     const next = spec.stages[i + 1]
 
     if (!stageSpec.gate) {
-      // Nothing declared to re-verify at this boundary — contiguous pass.
       stage = next ? next.name : stageSpec.name
       status = next ? 'in-progress' : 'done'
       continue
@@ -106,11 +97,8 @@ export async function playbookAdopt(input: PlaybookAdoptInput, opts: PlaybookAdo
     history
   }
   writeInstance(key, instance, opts)
-  // Adopted instance becomes "the" active playbook for this worktree, same as
-  // `playbookStart` — without this, a crash-recovered instance is invisible
-  // to the permission hook's `getActiveInstance` lookup, defeating the whole
-  // point of adopt as a crash-recovery path (state.ts's own doc for
-  // `setActiveInstance` already assumed both callers set it).
+  // Without this, a crash-recovered instance is invisible to the permission
+  // hook's active-instance lookup, defeating adopt as a recovery path.
   setActiveInstance(key, opts)
   return instance
 }

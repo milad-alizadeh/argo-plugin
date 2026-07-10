@@ -6,16 +6,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runEmitShims } from './emit-shims.js'
 
-/**
- * `argo design emit-shims` — generates the host-side walker shims
- * (test/spec-diff/, test/vrt/ — decision 14) from .argo/config.json's
- * design.<app> blocks. Shims are THIN: glob maps + composeStories handed to
- * the @argohq/toolkit/walkers factories, never walker bodies, so a kit upgrade
- * updates every host's walk logic without re-templating.
- */
-
-// bin/argo.js is a hand-written launcher that dispatches to dist/skill-scripts/*.js
-// (never the sibling .ts source) — requires `bun run build` before this test.
+// Dispatches to the built dist/*.js — run `bun run build` before this test.
 const ARGO_BIN = fileURLToPath(new URL('../../../../../bin/argo.js', import.meta.url))
 
 let host: string

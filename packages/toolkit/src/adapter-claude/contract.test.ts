@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LIFECYCLE_STATUSES, PLAYBOOK_LIFECYCLE_EVENTS, RUN_STATES, TOOL_NAMES } from './contract.js'
 
-/**
- * Contract-freeze test: the host app imports these strings verbatim from
- * `@argohq/toolkit/adapter-claude`; any value change here is a breaking
- * contract change, so every value is asserted literally.
- */
+// Contract-freeze test: the host app imports these strings verbatim, so any value change here is breaking.
 describe('adapter-claude host-app contract', () => {
   it('freezes the engine run-state strings', () => {
     expect(RUN_STATES).toEqual({ IN_PROGRESS: 'in-progress', STUCK: 'stuck', DONE: 'done' })

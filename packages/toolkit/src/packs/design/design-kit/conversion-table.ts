@@ -1,9 +1,6 @@
 const DEFAULT_HUG_TOLERANCE = 2
 
-/**
- * Figma line-height unit -> CSS line-height, per the design doc's
- * per-property conversion table (D20).
- */
+/** Figma line-height unit -> CSS line-height. */
 export function convertLineHeight(figmaValue: number, unit: string): string {
   if (unit === 'PERCENT') return String(figmaValue / 100)
   if (unit === 'PIXELS') return `${figmaValue}px`

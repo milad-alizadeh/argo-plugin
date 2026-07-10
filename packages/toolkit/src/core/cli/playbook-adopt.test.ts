@@ -29,8 +29,8 @@ describe('playbookAdopt', () => {
     const briefGate = `adopt-brief-gate-${Math.random()}`
     const buildGate = `adopt-build-gate-${Math.random()}`
     registerGate(makeGate(briefGate, { passed: true, findings: [], evidence: [] }))
-    // Simulates a fabricated/copied manifest.json at the `produces` path: an
-    // artifact URI is supplied, but the gate re-reads live truth and fails.
+    // Simulates a fabricated or copied artifact: an artifact URI is
+    // supplied, but the gate re-reads live truth and fails.
     registerGate(makeGate(buildGate, { passed: false, findings: [{ message: 'manifest does not match live Figma' }], evidence: [] }))
     const playbookName = `adopt-fabricated-artifact-${Math.random()}`
     registerPlaybook(

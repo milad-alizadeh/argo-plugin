@@ -5,17 +5,9 @@ import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-/**
- * Ports the spirit of the retired hooks/fail-closed-hook.test.mjs +
- * hooks/monitor-guard-coverage.test.mjs against the NEW wiring: hooks/hooks.json
- * (repo root) now runs every route through `npx --no-install --offline
- * @argohq/toolkit argo-hook <route>` (no hand-written .mjs in the plugin
- * checkout, no `${CLAUDE_PLUGIN_ROOT}/hooks/*.mjs`), wrapped in `sh -c` so a
- * missing/unresolvable toolkit (npx exit 1) fails OPEN with a warning, while a
- * genuine gate BLOCK (exit 2) still propagates.
- */
+// hooks.json wraps each route in sh -c so an unresolvable toolkit (npx exit 1) fails OPEN with a warning, while a genuine gate BLOCK (exit 2) still propagates.
 
-// packages/toolkit/src/hooks/ -> repo root is four levels up.
+// four levels up from this file to repo root
 const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url))
 const hooksJson = JSON.parse(readFileSync(join(REPO_ROOT, 'hooks', 'hooks.json'), 'utf8'))
 

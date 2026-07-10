@@ -1,26 +1,13 @@
 /**
- * `component-edit` playbook spec (playbook-engine-phase1.md Slice 11, step
- * 31; design doc "Playbook matrices #3"): `edit` → `review` →
- * `registry-card` → `instance-impact`.
+ * `component-edit` playbook spec: `edit` -> `review` -> `registry-card` ->
+ * `instance-impact`.
  *
- * `review` is the blind fresh-eyes pass every designer output gets (screens
- * had it from day one; components gained it 2026-07-10): a judge that sees
- * ONLY the finished component + the ask it was built against, never the
- * working transcript — the deterministic audit catches hygiene, this
- * catches "reads wrong".
+ * `review` is a judge that sees only the finished component and the ask,
+ * never the working transcript: the deterministic audit catches hygiene,
+ * this catches "reads wrong".
  *
- * `edit` resolves "code-owned? code-first : figma-edit" inside the stage's
- * skill (reads the `@code-owned` annotation), not a spec branch — same
- * mechanism as `component-create`'s `build` stage.
- *
- * `registry-card` unifies with `component-create`'s stage of the same name:
- * both write exactly one registry card (create vs refresh-in-place is the
- * skill's business logic, not distinct spec vocabulary).
- *
- * `instance-impact` is a blind spot-check over screens that consume this
- * component (read-only — it never edits, only surfaces impact). Its stage
- * shape (`allows`, no gate) is the one `code-to-design.ts`'s
- * `instance-impact-check` mirrors rather than duplicates.
+ * `edit` resolves code-owned vs figma-edit inside the stage's skill (reads
+ * the `@code-owned` annotation), not a spec branch.
  */
 import { definePlaybook, registerPlaybook } from '../../../core/index.js'
 

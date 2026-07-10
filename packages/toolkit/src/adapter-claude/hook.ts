@@ -11,29 +11,12 @@ import { classifyAction, extractBashWriteTargets, FIGMA_WRITE, FILE_EDIT, REGIST
 // consult config/registry/state; the CLI verbs stay the only writers.
 const WRITE_SHAPED_KINDS = new Set<string>([FILE_EDIT, REGISTRY_WRITE])
 
-/**
- * The generic PreToolUse permission hook BODY (Slice 7, step 21) — a pure
- * function over a parsed hook-input object, live config, and an injectable
- * "read the active instance" function. This module deliberately does NOT
- * touch stdin/stdout or process.exit — wiring this body into kit's real
- * hook dispatch (reading stdin JSON, writing the exit code / stderr) is
- * Slice 8's job, mirroring `trust-gate.ts`/`red-proof-gate.ts`'s envelope
- * shape (`{ tool_name, tool_input, cwd }` off parsed stdin JSON) but as a
- * pure, directly-testable function rather than a script with side effects.
- *
- * Session-instance caching: `runPermissionHook` takes a `readActiveInstance`
- * callback rather than calling `core`'s `readInstance` itself. Slice 8's
- * wiring may memoize that callback per session (the design doc's "session-
- * cached" note) or simply pass a thunk that reads fresh off disk every call
- * — both are valid `ActiveInstanceReader` implementations from this
- * module's point of view; this slice does not itself cache, so the choice is
- * documented here rather than hidden inside this file.
- */
+// The generic PreToolUse permission hook body: a pure function over a parsed
+// hook-input object, live config, and an injectable "read the active
+// instance" function. Deliberately does not touch stdin/stdout/process.exit,
+// so it stays directly testable rather than a script with side effects.
 
-/** The subset of a Claude Code PreToolUse hook event this module needs,
- * mirroring `trust-gate.ts`'s stdin-JSON envelope shape (`tool_input`, `cwd`)
- * plus `tool_name` (needed by `classifyAction`, which trust-gate/red-proof-
- * gate don't need since each is hardwired to Bash). */
+/** The subset of a Claude Code PreToolUse hook event this module needs. */
 export interface HookInput {
   tool_name: string
   tool_input: unknown
@@ -41,10 +24,9 @@ export interface HookInput {
 }
 
 /** Callback the hook body uses to obtain the currently-active playbook
- * instance for this session/target, or `null` if none is active. Injected
- * rather than called directly against `core`'s state store so Slice 8 can
- * decide the caching/session-scoping strategy without this module changing
- * shape. */
+ * instance for this session/target, or `null` if none is active. Injected so
+ * the caller can decide the caching/session-scoping strategy without this
+ * module changing shape. */
 export type ActiveInstanceReader = () => PlaybookInstance | null
 
 export type HookDecision =
@@ -59,20 +41,15 @@ function deny(reason: string): HookDecision {
   return { decision: 'deny', reason }
 }
 
-/** Kinds treated as "edit-shaped" for `noPlaybook: "coach"`/`"deny-edits"` purposes —
- * anything that writes/mutates a working artifact. `git-commit` and
- * `git-history-mutation` are deliberately excluded here: with no active
- * playbook there is no stage to violate, and blocking commits/history ops
- * outside a playbook is a stricter policy this hook doesn't own (that's the
- * unconditional protected-path/classifier-level denial below, which already
- * covers the dangerous cases regardless of `noPlaybook`). */
+/** Kinds treated as "edit-shaped" for `noPlaybook: "coach"`/`"deny-edits"`.
+ * `git-commit`/`git-history-mutation` are deliberately excluded: with no
+ * active playbook there's no stage to violate, and the dangerous cases are
+ * already covered unconditionally below regardless of `noPlaybook`. */
 const EDIT_SHAPED_KINDS = new Set<string>([FILE_EDIT, FIGMA_WRITE])
 
 /** Best-effort extraction of a file path from a tool call's input, for the
  * protected-path check and for naming "the correct path" in a coaching
- * message. Returns `undefined` when no path-shaped field is present (e.g.
- * Bash calls, which are checked by `isProtectedPath` too when they happen to
- * carry a recognizable path-bearing field, but usually won't). */
+ * message. Returns `undefined` when no path-shaped field is present. */
 function extractPath(toolInput: unknown): string | undefined {
   if (toolInput && typeof toolInput === 'object') {
     const record = toolInput as Record<string, unknown>
@@ -82,12 +59,10 @@ function extractPath(toolInput: unknown): string | undefined {
   return undefined
 }
 
-/** Bash's write-shaped targets (`>`, `>>`, `tee`, `cp`/`mv` destinations,
- * `sed -i`, `dd of=`, `rm`) that fall under a protected path — checked
+/** Bash's write-shaped targets that fall under a protected path. Checked
  * separately from `extractPath` because a Bash tool call carries a command
- * string, not a `file_path`/`path` field (release-gating #1/#3: without
- * this, a Bash write to a protected path never surfaces a path for the
- * unconditional protected-path floor to catch). */
+ * string, not a `file_path`/`path` field, so without this a Bash write to a
+ * protected path would never surface a path for the floor to catch. */
 function extractProtectedBashTarget(toolName: string, toolInput: unknown): string | undefined {
   if (toolName !== 'Bash' || !toolInput || typeof toolInput !== 'object') return undefined
   const command = (toolInput as Record<string, unknown>).command
@@ -96,19 +71,16 @@ function extractProtectedBashTarget(toolName: string, toolInput: unknown): strin
 }
 
 /**
- * The PreToolUse hook body. Order (per the design doc + audit 1.1's fix):
+ * The PreToolUse hook body, in order:
  *
- * 1. Protected-path check — UNCONDITIONAL, before anything else, regardless
- *    of whether a playbook instance is active or what a stage's `allows`
- *    says. This is audit 1.1: a stage whose `allows` includes `file-edit`
- *    must never be able to write a protected path.
- * 2. Read the active instance. No active instance ⇒ `config.noPlaybook`
+ * 1. Protected-path check — UNCONDITIONAL, before anything else: a stage
+ *    whose `allows` includes `file-edit` must never write a protected path.
+ * 2. Read the active instance. No active instance -> `config.noPlaybook`
  *    decides: `"allow"` passes everything through; `"coach"` allows
  *    edit-shaped action kinds but attaches an advisory suggesting a playbook
  *    start; `"deny-edits"` blocks them with the same coaching.
- * 3. An active instance ⇒ resolve its stage's `allows` (fail closed if the
- *    playbook/stage can't be resolved — an instance pointing at an unknown
- *    playbook or stage name is treated as a denial, never a silent allow).
+ * 3. An active instance -> resolve its stage's `allows`, failing closed if
+ *    the playbook/stage can't be resolved (never a silent allow).
  * 4. Classify the tool call, membership-check it against `allows`, deny
  *    with a message naming the stage, the violated rule, and (when
  *    derivable) the correct path.
@@ -161,12 +133,10 @@ export function runPermissionHook(
     return allow()
   }
 
-  // An active instance whose spec/stage cannot be resolved is a TOOLING
-  // defect (stale state file, missing pack registration, renamed stage), not
-  // a policy violation. Denying here once froze an entire session — every
-  // tool call, including the ones needed to repair the gate (live deadlock,
-  // 2026-07-10). The run itself stays unusable until repaired; the session's
-  // tools must not.
+  // An unresolvable spec/stage is a tooling defect, not a policy violation.
+  // Denying here once froze an entire session, including the tools needed to
+  // repair the gate (live deadlock, 2026-07-10): the run stays unusable
+  // until repaired, but the session's tools must not.
   const spec = getPlaybook(instance.playbook)
   if (!spec) {
     return allow(

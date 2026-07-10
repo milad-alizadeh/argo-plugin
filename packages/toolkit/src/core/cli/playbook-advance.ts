@@ -13,31 +13,21 @@ import { GateNotFoundError, InstanceNotFoundError, StageNotFoundError, PlaybookN
 import { PLAYBOOK_LIFECYCLE_EVENTS, type PlaybookLifecycleEventRecord } from '../events.js'
 
 export interface PlaybookAdvanceOptions extends StateOptions {
-  /** Artifact URIs fed to the stage's gate as `GateInput.artifacts`. When
-   * omitted (or `{}`), artifacts are auto-derived from the stage spec's
-   * `produces` entries — see `deriveArtifactsFromProduces` below. */
+  /** Artifact URIs fed to the stage's gate. Omitted (or `{}`) auto-derives from the stage spec's `produces` entries. */
   artifacts?: Record<string, string>
   /** Settings fed to the stage's gate as `GateInput.settings`. */
   settings?: Record<string, unknown>
   /** Recorded on a failing attempt's `whatWasTried` — freeform, defaults to `''`. */
   whatWasTried?: string
-  /** Threaded into `Gate.check` as its second (`GateContext`) argument, so
-   * AI-judging gates (`fresh-eyes-review`) can reach `ctx.judge(...)`. */
+  /** Threaded into `Gate.check` as its `GateContext` argument, so AI-judging gates can reach `ctx.judge(...)`. */
   ctx?: GateContext
 }
 
 /**
- * Auto-derivation convention (item 1's filesystem convention, so `--artifacts`
- * is rarely needed): each `StageSpec.produces` entry is either
- *   - `"<artifactKey>:<pathTemplate>"` — an explicit key, e.g.
- *     `"brief:briefs/<key>.md"`, or
- *   - a bare path template with no `:` — the artifact key defaults to the
- *     template's filename stem (before the first `.`), e.g. `"notes.md"` ->
- *     key `"notes"`.
- * `<key>` inside the template is substituted with the playbook instance key.
- * The resolved path is resolved against `cwd` (settings.cwd, falling back to
- * the advance call's own `cwd`) so gates that `resolve(cwd, artifacts[key])`
- * (e.g. `brief-check`) get the same file regardless of their own cwd default.
+ * Each `produces` entry is either `"<artifactKey>:<pathTemplate>"` with an
+ * explicit key, or a bare path template with no `:` (the key defaults to the
+ * template's filename stem). `<key>` in the template is substituted with the
+ * playbook instance key, then resolved against `cwd`.
  */
 export function deriveArtifactsFromProduces(
   produces: string[] | undefined,
@@ -56,12 +46,9 @@ export function deriveArtifactsFromProduces(
 }
 
 /**
- * Validates caller-supplied `--artifacts` against the stage's `produces`-
- * derived set (finding #3): a caller could otherwise substitute a doctored
- * path for any artifact key and point the gate at an arbitrary file. Every
- * supplied key must be one `deriveArtifactsFromProduces` would itself
- * produce, AND its path must match that derived path exactly — the artifact
- * locations are a filesystem convention, not caller-choosable input.
+ * Rejects a caller-supplied artifact whose key isn't in the stage's
+ * produces-derived set, or whose path doesn't match the derived path
+ * exactly — otherwise a caller could point the gate at an arbitrary file.
  */
 export function validateArtifacts(
   supplied: Record<string, string>,
@@ -84,16 +71,14 @@ export function validateArtifacts(
 export type PlaybookAdvanceResult = PlaybookInstance & { events: PlaybookLifecycleEventRecord[] }
 
 /**
- * `argo playbook advance` (Slice 5, step 15): runs the current stage's gate,
- * records the verdict to `history`, and either advances `stage` (pass),
- * records an `attempts[]` entry and stays for a retry (fail, budget left), or
- * parks `status: "stuck"` (fail, budget exhausted). A stage with no `gate`
- * declared advances immediately (nothing to check at its exit).
+ * Runs the current stage's gate, records the verdict to `history`, and
+ * either advances `stage` (pass), records an `attempts[]` entry and stays
+ * for a retry (fail, budget left), or sets `status: "stuck"` (fail, budget
+ * exhausted). A stage with no `gate` advances immediately.
  *
- * Lifecycle events (`events`, NOT persisted — the state file stays the
- * durable record): a pass emits `stage_finished` plus `stage_started` for the
- * next stage or `playbook_finished` on the terminal stage. A failing verdict
- * emits no lifecycle event — retry/stuck is carried by `status`/`attempts[]`.
+ * Lifecycle events (`events`, not persisted) mirror this: a pass emits
+ * `stage_finished` plus `stage_started` or `playbook_finished`. A failing
+ * verdict emits none — retry/stuck is carried by `status`/`attempts[]`.
  */
 export async function playbookAdvance(key: string, opts: PlaybookAdvanceOptions = {}): Promise<PlaybookAdvanceResult> {
   const instance = readInstance(key, opts)
@@ -145,10 +130,8 @@ export async function playbookAdvance(key: string, opts: PlaybookAdvanceOptions 
   )
 
   const budget = stageSpec.retries ?? 0
-  // Guarded read-modify-write (audit finding — was a bare read+write here,
-  // unlike recordAttempt/recordHistory above): a concurrent advance from two
-  // sessions must not read the same pre-mutation instance and have one
-  // writer's status transition silently overwrite the other's.
+  // Guarded read-modify-write: a concurrent advance from two sessions must
+  // not read the same pre-mutation instance and clobber the other's status.
   const updated = mutateInstance(
     key,
     (current) => ({ ...current, status: round >= budget ? 'stuck' : 'in-progress' }),
@@ -176,9 +159,8 @@ function advanceToNextStage(
     events.push({ event: PLAYBOOK_LIFECYCLE_EVENTS.PLAYBOOK_FINISHED, playbook: spec.name, at })
   }
 
-  // Guarded read-modify-write — same lost-update risk as the fail path above:
-  // a concurrent advance must mutate the freshly-locked-read instance, not a
-  // copy read before the lock was acquired.
+  // Guarded read-modify-write: a concurrent advance must mutate the
+  // freshly-locked-read instance, not a copy read before the lock was acquired.
   mutateInstance(
     key,
     (instance) =>
@@ -188,13 +170,9 @@ function advanceToNextStage(
     opts
   )
 
-  // Measurement (item 4): every stage transition — gated or gateless auto-
-  // advance alike — stamps a `{ stage, at }` history entry for the newly
-  // entered (or terminal) stage, so per-stage wall-clock duration is
-  // derivable purely from consecutive `history[].at` values in the state
-  // file. A gated pass already recorded the FINISHED stage's verdict entry
-  // in `playbookAdvance` above; this adds the entry for the stage now
-  // active (or the terminal stage's completion stamp).
+  // Every stage transition stamps a `{ stage, at }` history entry for the
+  // newly entered (or terminal) stage, so per-stage duration is derivable
+  // purely from consecutive `history[].at` values.
   const stamped = recordHistory(key, { stage: nextStage ? nextStage.name : finishedStage, at }, opts)
   return { ...stamped, events }
 }

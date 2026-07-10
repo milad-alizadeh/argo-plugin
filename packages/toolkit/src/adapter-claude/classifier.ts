@@ -1,15 +1,8 @@
 import { GIT_HISTORY_MUTATION } from '../core/index.js'
 
-/**
- * The `(toolName, toolInput) → actionKind` table (design doc's "adapter-owned
- * classifier" seam; audit 1.2's fail-closed-on-ambiguity requirement).
- *
- * Action kinds returned here are plain strings, membership-checked by
- * `core`'s `isActionAllowed` against a stage's `allows` list — core never
- * enumerates them (audit 3.1). This module is the one place that *is*
- * domain-aware (Bash command strings, the Figma plugin API shape), by
- * design: it's adapter-owned, provider-specific knowledge.
- */
+/** Maps (toolName, toolInput) to a plain-string action kind, membership-checked
+ * against a stage's `allows` list. This module is deliberately the one place
+ * that is domain-aware (Bash command strings, the Figma plugin API shape). */
 
 /** Generic kinds this classifier can produce for non-Bash, non-Figma tools. */
 export const FILE_READ = 'file-read'
@@ -23,21 +16,12 @@ export const REGISTRY_READ = 'registry-read'
 export const REGISTRY_WRITE = 'registry-write'
 export const PLAYBOOK_START = 'playbook-start'
 
-/**
- * Sentinel for "this tool call did not match any enumerated kind." The hook
- * (`hook.ts`, Slice 7) must treat this value as pass-through-to-stage-default
- * rather than a deny — it is NOT itself a general "allowed" bypass of the
- * stage's `allows` list. It is safe to leave unclassified calls unenumerated
- * ONLY because every kind this module considers dangerous
- * (`git-history-mutation`) is matched *before* falling through to this
- * sentinel (audit 1.2's "the enforcer only narrows what it understands, and
- * that is safe only because destructive kinds are explicitly enumerated and
- * denied" invariant). A brand-new destructive-sounding Bash subcommand that
- * is NOT in the enumerated list below (e.g. some future `git purge-history`)
- * would currently fall through to this sentinel too — that is expected and
- * documented here, not a bug: this classifier's safety argument rests on the
- * enumerated list being deny-tagged, not on catching everything.
- */
+/** Sentinel for "did not match any enumerated kind" — treated as
+ * pass-through-to-stage-default, never a general allow bypass. Safe only
+ * because every dangerous kind (`git-history-mutation`) is matched before
+ * falling through here; an unenumerated destructive command falls through
+ * too, by design, since the safety argument rests on the enumerated list
+ * being deny-tagged, not on catching everything. */
 export const UNCLASSIFIED = 'unclassified'
 
 export type ActionKind =
@@ -57,10 +41,8 @@ export type ActionKind =
 const FILE_EDIT_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit', 'MultiEdit'])
 const FILE_READ_TOOLS = new Set(['Read', 'Glob', 'Grep'])
 
-// Subcommands split on shell chaining operators — any one of them matching a
-// destructive pattern fails the WHOLE command closed to git-history-mutation,
-// per audit 1.2 ("git status && git commit --amend" must not slip through on
-// the strength of the benign half).
+// Any one chained subcommand matching a destructive pattern fails the WHOLE
+// command closed, so a benign half can't smuggle a destructive one through.
 const CHAIN_SPLIT = /&&|\|\||;|\|/
 
 // Patterns are matched against each individual subcommand after splitting.
@@ -76,15 +58,9 @@ const GIT_HISTORY_MUTATION_PATTERNS: RegExp[] = [
 const GIT_COMMIT_PATTERN = /\bgit\s+commit\b/
 
 // Write/mutation-shaped Bash constructs whose LAST capture group is the
-// target path — redirection, tee, copy/move destinations, in-place sed, dd's
-// `of=`, and deletion. Deliberately coarse (same heuristic spirit as the git
-// patterns above): a false negative here just falls through to UNCLASSIFIED,
-// which is the classifier's documented safe default; a false positive merely
-// over-classifies a benign command as file-edit, which is a false alarm, not
-// a security hole. This is what closes the "Bash bypasses the protected-path
-// floor" gap (release-gating #1/#3): a bash write is now both (a) checked
-// against `isProtectedPath` and (b) subject to a stage's `allows` list like
-// any other file-edit, instead of sailing through as UNCLASSIFIED.
+// target path. Deliberately coarse: a false negative falls through to the
+// safe UNCLASSIFIED default, a false positive is just an over-classified
+// false alarm, not a security hole.
 const BASH_WRITE_TARGET_PATTERNS: RegExp[] = [
   />>?\s*([^\s;&|<>]+)/,
   /\btee\s+(?:-a\s+)?([^\s;&|]+)/,
@@ -113,9 +89,8 @@ export function extractBashWriteTargets(command: string): string[] {
   return targets
 }
 
-// Deliberately coarse — a heuristic covering the common runners, not an
-// exhaustive registry. False negatives here just fall through to
-// UNCLASSIFIED, which is safe per this module's documented invariant above.
+// Heuristic covering common runners, not an exhaustive registry; a false
+// negative safely falls through to UNCLASSIFIED.
 const TEST_RUN_PATTERNS: RegExp[] = [
   /\b(npm|yarn|pnpm|bun)\s+(run\s+)?test\b/,
   /\bvitest\b/,
@@ -147,33 +122,22 @@ export function classifyBashCommand(command: string): ActionKind {
   if (subcommands.some((sub) => TEST_RUN_PATTERNS.some((p) => p.test(sub)))) {
     return TEST_RUN
   }
-  // Spec-vocabulary kinds the stage allows lists gate on (playbook specs use
-  // `playbook-start` / `registry-write` — without these mappings a stage
-  // would deny its own core action).
+  // Without these mappings a playbook stage would deny its own core action.
   if (subcommands.some((sub) => /\bargo\s+playbook\s+start\b/.test(sub))) {
     return PLAYBOOK_START
   }
   if (subcommands.some((sub) => /\bargo\s+design\s+(pull-registry|refresh-card|register-screen)\b/.test(sub))) {
     return REGISTRY_WRITE
   }
-  // A bash write/mutation must be gated exactly like a FILE_EDIT — both
-  // against the unconditional protected-path floor (checked by the hook
-  // directly off `extractBashWriteTargets`) and against a stage's `allows`
-  // list, rather than falling through to the UNCLASSIFIED pass-through.
+  // A bash write must be gated exactly like FILE_EDIT, not pass through as UNCLASSIFIED.
   if (extractBashWriteTargets(command).length > 0) {
     return FILE_EDIT
   }
   return UNCLASSIFIED
 }
 
-// Script-sniff heuristic for `use_figma` tool calls: the tool's input carries
-// a JS snippet executed against the Figma plugin API. We look for
-// write-shaped call/assignment patterns (node creation, mutation, deletion,
-// property assignment) vs read-only patterns (lookups, traversal, export).
-// Presence of ANY write-shaped pattern wins — a script that both reads and
-// writes is a write for permission purposes (same fail-closed-to-stricter-kind
-// spirit as the git classifier, applied to the one other domain this adapter
-// is aware of).
+// A `use_figma` script that both reads and writes is a write for permission
+// purposes: presence of ANY write-shaped pattern wins.
 const FIGMA_WRITE_PATTERNS: RegExp[] = [
   /\.appendChild\s*\(/,
   /\.createFrame\s*\(/,
@@ -188,20 +152,13 @@ const FIGMA_WRITE_PATTERNS: RegExp[] = [
   /\.appendChild\b/,
   /\bsetPluginData\s*\(/,
   /\bsetRelaunchData\s*\(/,
-  // property assignment on a node/style handle, e.g. `node.fills = [...]`,
-  // `frame.name = "x"`, `text.characters = "..."` — deliberately broad since
-  // any `.<identifier> =` on a figma-ish handle is a mutation.
+  // Deliberately broad: any `.<identifier> =` on a figma-ish handle is a mutation.
   /\b\w+\.(fills|strokes|name|characters|visible|locked|x|y|width|height|opacity|cornerRadius|layoutMode)\s*=/
 ]
 
-// Obfuscation/evasion shapes (Wave A #5): the sniff above only recognizes
-// direct `.method(` / `.prop =` call and assignment shapes. A script that
-// hides its intent behind `eval`/`atob`/`Function`/char-code decoding, an
-// indirect/aliased call, or a computed (bracket-notation) property/method
-// reference is UN-SNIFFABLE by those patterns — and for a stage that
-// forbids figma-write, an un-sniffable script must fail closed to WRITE,
-// not fall through to READ or UNCLASSIFIED (both of which a
-// figma-write-forbidding stage would otherwise let pass).
+// A script that hides intent behind eval/atob/Function/char-code decoding or
+// a computed property reference is un-sniffable by the patterns above; it
+// must fail closed to WRITE rather than fall through to READ/UNCLASSIFIED.
 const FIGMA_OBFUSCATION_PATTERNS: RegExp[] = [
   /\beval\s*\(/,
   /\batob\s*\(/,
@@ -211,11 +168,8 @@ const FIGMA_OBFUSCATION_PATTERNS: RegExp[] = [
   /\bfromCharCode\s*\(/
 ]
 
-// Computed-property mutation (`node["name"] = ...`) and bracket-notation
-// indirect calls to a known write method (`node["remove"]()`,
-// `figma["createFrame"]()`) — same write-shaped intent as the dot-notation
-// patterns above, just accessed through a string key instead of an
-// identifier, which the dot-notation regexes don't match.
+// Same write-shaped intent as the dot-notation patterns above, accessed
+// through a string key (bracket notation) instead of an identifier.
 const FIGMA_WRITE_METHOD_NAMES =
   'appendChild|createFrame|createRectangle|createText|createComponent|createPage|remove|removeAll|clone|resize|setPluginData|setRelaunchData'
 const FIGMA_COMPUTED_WRITE_PATTERNS: RegExp[] = [
@@ -253,16 +207,11 @@ export function classifyFigmaScript(script: string): ActionKind {
   return UNCLASSIFIED
 }
 
-// All non-`use_figma` tools in the Figma MCP server's family (`get_metadata`,
-// `get_design_context`, `get_screenshot`, generators, etc.) — `use_figma` is
-// script-sniffed above, everything else here is classified by tool name.
+// use_figma is script-sniffed above; every other Figma MCP tool is classified by name.
 const FIGMA_MCP_TOOL_PATTERN = /^mcp__plugin_figma_figma__(?!use_figma$)/
 
-// Write-shaped Figma MCP tools by name: file/asset/mapping creation, plus the
-// two generator tools (`generate_figma_design` creates Figma content,
-// `generate_diagram` writes a FigJam file) — no existing precedent for either
-// in this classifier, so both are treated as writes on the same reasoning as
-// the other creation-shaped tools in this list.
+// Write-shaped Figma MCP tools by name: file/asset/mapping creation plus the
+// two generator tools (design and FigJam content creation).
 const FIGMA_MCP_WRITE_TOOLS = new Set([
   'mcp__plugin_figma_figma__create_new_file',
   'mcp__plugin_figma_figma__upload_assets',
@@ -273,15 +222,9 @@ const FIGMA_MCP_WRITE_TOOLS = new Set([
   'mcp__plugin_figma_figma__generate_diagram'
 ])
 
-// Non-figma MCP tool families (`mcp__<plugin>__<tool>`) have no adapter-owned
-// classification of their own, so a write-shaped one (a tool whose NAME
-// names a mutation) must not silently fall through to UNCLASSIFIED — that
-// sentinel is a pass-through in the hook (Wave A #4). Matched against the
-// tool name only (no argument shape to sniff, unlike Bash/`use_figma`):
-// deliberately broad verb coverage, same fail-closed-for-write-shaped spirit
-// as the Bash/Figma classifiers above. A benign-named tool (get/list/search/
-// query/read/…) still falls through to UNCLASSIFIED, preserving the
-// documented pass-through invariant for genuinely read-only tools.
+// Non-figma MCP tools have no adapter-owned classification, so a write-shaped
+// one (by name only, no argument shape to sniff) must not silently pass
+// through as UNCLASSIFIED; a benign-named tool still falls through.
 const MCP_TOOL_PATTERN = /^mcp__/
 const MCP_WRITE_VERB_PATTERN =
   /__(write|create|delete|remove|update|set|upload|send|edit|put|append|insert|patch|mutate|modify|apply|execute|run|generate|save|replace)\w*$/
@@ -298,9 +241,8 @@ function extractFigmaScript(toolInput: unknown): string | undefined {
 }
 
 /** The one `(toolName, toolInput) → actionKind` table this adapter uses to
- * feed the permission hook (`hook.ts`, Slice 7) and the classifier tests
- * below. Unrecognized tool names / malformed inputs fall through to
- * `UNCLASSIFIED` (see its doc comment for why that is safe). */
+ * feed the permission hook. Unrecognized tool names / malformed inputs fall
+ * through to `UNCLASSIFIED` (see its doc comment for why that is safe). */
 export function classifyAction(toolName: string, toolInput: unknown): ActionKind {
   if (toolName === 'Bash') {
     const command = toolInput && typeof toolInput === 'object' ? (toolInput as Record<string, unknown>).command : undefined

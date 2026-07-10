@@ -16,8 +16,7 @@ import {
   DESIGN_RULES_CACHE_NAMESPACE
 } from './bundle-design-rules-audit.js'
 
-// Spawned as a real subprocess — dist, not the sibling .ts source. Requires
-// `bun run build` to have produced a current packages/toolkit/dist/.
+// Spawned as a real subprocess against the built dist — run `bun run build` first.
 const CLI = fileURLToPath(new URL('../../../../../dist/packs/design/skill-scripts/audit/bundle-design-rules-audit.js', import.meta.url))
 
 const PLUGIN_ROOT = join(import.meta.dirname, '..', '..', '..', '..', '..', '..', '..')
@@ -68,9 +67,8 @@ describe('bundleDesignRulesAudit (real bun build, the actual Defect 1 proof)', (
       // (a bare trailing identifier, not a call) reads as dead code to a
       // bundler — the real rule logic must still be present in the output.
       expect(bundled).toContain('unbound-radius')
-      // Anti-recreation gate (design-first-council-ruling.md Gate ruling,
-      // Option B): guards against compositeRegionNamingViolation being
-      // tree-shaken away or never wired into the walker.
+      // Anti-recreation gate: guards against this check being tree-shaken
+      // away or never wired into the walker.
       expect(bundled).toContain('composite-region-traced-not-instance')
       // Recipe checks actually made it into the bundle too.
       expect(bundled).toContain('non-semantic-binding')

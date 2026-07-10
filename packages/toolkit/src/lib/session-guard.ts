@@ -1,21 +1,5 @@
-/**
- * Per-session design-guard state (per-session-design-gate.md).
- *
- * Lets independent design sessions write the same Figma file without
- * deadlocking each other's stop gate. The old model kept ONE shared, mutable
- * `.argo/design-guard.json` (a read-modify-write the record hook raced across
- * sessions → lost updates) and ONE committed `design/audit-receipt.json`
- * (whoever recorded last clobbered the other). Here every session writes ONLY
- * files namespaced to its own `session_id`, so there is no shared mutable
- * state to race or clobber:
- *
- *   .argo/design-guard/<sid>.json    — this session's write count
- *   .argo/audit-receipts/<sid>.json  — this session's audit result, per app
- *
- * Both live under the already-gitignored `.argo/` (local gate evidence, never
- * committed). All helpers are pure over the filesystem and unit-tested in a
- * temp dir.
- */
+/** Every session writes ONLY files namespaced to its own session_id, so
+ * concurrent design sessions never race or clobber shared mutable state. */
 
 import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync, statSync, unlinkSync, realpathSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -90,9 +74,7 @@ type SessionReceipt = {
   apps: Record<string, { componentNames: string[]; violationCount: number }>
 }
 
-/** Record this session's audit of one app into its own receipt file
- * (read-modify-write of a file only this session writes → race-free). Keeps
- * prior apps' entries; refreshes writeCountAtAudit to the session's live count. */
+/** Read-modify-write of a file only this session writes, so it's race-free. */
 export function writeSessionReceiptEntry(
   repoRoot: string,
   sessionId: string,
@@ -117,12 +99,8 @@ export function readSessionReceipt(repoRoot: string, sessionId: string): Session
   return r as SessionReceipt
 }
 
-// --- P4b completeness tracking (design-process-simplification.md) -----------
-// Per-session record of which screens this session COMPOSED and whether each
-// one's advisory completeness check (P4b design-verifier) has been RECORDED.
-// The stop gate blocks on a composed screen whose check never ran (existence
-// only — never on what the check found). Same per-session namespacing as the
-// write count/receipt, so concurrent design sessions never gate each other.
+// The stop gate blocks on a composed screen whose completeness check never
+// ran (existence only, never on what the check found).
 
 export function completenessStatePath(repoRoot: string, sessionId: string): string {
   return join(repoRoot, COMPLETENESS_SUBDIR, `${sessionId}.json`)
@@ -130,11 +108,8 @@ export function completenessStatePath(repoRoot: string, sessionId: string): stri
 
 type CompletenessState = { screens: Record<string, { composedAt: number; recordedAt: number | null; label?: string }> }
 
-/** One screen, two names: composition marks the composed FRAME name
- * ("D02.5 · Session · with children") while record-completeness gets the PRD
- * matrix name ("D02-5-session-with-children"). Both normalize to one key —
- * lowercase, every run of non-alphanumerics collapsed to a single dash — so
- * the stop gate never deadlocks on a naming-convention mismatch. */
+/** Composed FRAME names and PRD matrix names differ; normalize both to one key
+ * so the stop gate never deadlocks on a naming-convention mismatch. */
 export function normalizeScreenKey(name: string): string {
   return name
     .toLowerCase()
@@ -152,9 +127,8 @@ function writeCompletenessState(repoRoot: string, sessionId: string, state: Comp
   writeFileSync(completenessStatePath(repoRoot, sessionId), JSON.stringify(state))
 }
 
-/** Mark a screen as composed → its completeness check is now OWED. Re-composing
- * a screen resets `recordedAt` to null (the prior check is stale against the new
- * build), so the check must run again. */
+/** Marks a screen composed, so its completeness check is OWED. Re-composing
+ * resets `recordedAt` to null since the prior check is now stale. */
 export function markScreenComposed(repoRoot: string, sessionId: string, screen: string, now: number): void {
   const state = readCompletenessState(repoRoot, sessionId)
   const key = normalizeScreenKey(screen)
@@ -162,9 +136,8 @@ export function markScreenComposed(repoRoot: string, sessionId: string, screen: 
   writeCompletenessState(repoRoot, sessionId, state)
 }
 
-/** Record that the completeness check RAN for a screen (existence proof; the
- * result content is not stored here — the gate is content-free). A record for a
- * screen never marked composed still lands (harmless), so ordering is forgiving. */
+/** Records only that the check ran (existence proof, gate is content-free);
+ * a record for a screen never marked composed still lands harmlessly. */
 export function recordScreenCompleteness(repoRoot: string, sessionId: string, screen: string, now: number): void {
   const state = readCompletenessState(repoRoot, sessionId)
   const key = normalizeScreenKey(screen)
@@ -182,21 +155,15 @@ export function pendingCompletenessScreens(repoRoot: string, sessionId: string):
     .map(([key, s]) => s.label ?? key)
 }
 
-// --- Slice 14: "park with acknowledged pending work" affordance -------------
-// A stop-gate escape hatch, not a new playbook: one session-scoped
-// acknowledgment file, checked by the stop gate BEFORE its normal blocking
-// logic. One ack covers every outstanding write-owed debt in the session it's
-// recorded for; a NEW write after the ack re-arms the gate (the stop gate
-// compares `writeCountAtAck` against the session's LIVE write count), so this
-// can't be used to permanently silence the gate.
+// A new write after the ack re-arms the gate, so this can't permanently
+// silence it.
 
 export function pendingAckPath(repoRoot: string, sessionId: string): string {
   return join(repoRoot, PENDING_ACK_SUBDIR, `${sessionId}.json`)
 }
 
-/** Owner-acknowledged deferred work for this session — a real reason string,
- * never a blank rubber stamp (the CLI/stop-gate caller rejects an empty
- * string before this is ever called). */
+/** Requires a real reason string; the caller rejects an empty one before
+ * this is ever called. */
 export function recordPendingAck(repoRoot: string, sessionId: string, reason: string, now: number): void {
   mkdirSync(join(repoRoot, PENDING_ACK_SUBDIR), { recursive: true })
   writeFileSync(

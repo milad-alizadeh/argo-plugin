@@ -1,7 +1,6 @@
 /**
- * `argo plans` — the plan-lifecycle view (`.argo/` consolidation plan,
- * playbook-rename-phase2.md item 5). Merges three sources, split by who can
- * truthfully know each fact:
+ * `argo plans` — the plan-lifecycle view. Merges three sources, split by who
+ * can truthfully know each fact:
  *
  *  - **frontmatter** (`status: draft | queued`) — authored state, committed
  *    with the plan. Intentionally NOT live: a build in progress never edits

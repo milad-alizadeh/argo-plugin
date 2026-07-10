@@ -1,20 +1,11 @@
 /**
- * `argo init` — the deterministic half of /argo:init (the skill owns the
- * wizard; this owns every write that must be exact):
- *
- *  - dep placement: `"@argohq/toolkit": "link:@argohq/toolkit"` (dev-phase link
- *    protocol — release swaps to a caret version) at the workspace root
- *    (monorepo: root package.json has `workspaces`) or the single package.json.
- *  - `.claude/settings.json`: `enabledPlugins` (+ `extraKnownMarketplaces`
- *    when the caller supplies a marketplace source — this file is the SOLE
- *    owner, never settings.local.json).
- *  - `.argo/config.json` skeleton per mode: one design key per workspace app
- *    (monorepo) or a single "." key (single-repo), each INERT ({} — no
- *    componentsPath, so the commit gates cannot arm until /argo:setup-design
- *    fills the block). User-edited fields survive via mergeConfigShape.
- *  - `.gitignore`: the deny-by-default `.argo/` block (`/.argo/*` + explicit
- *    re-includes) — `.argo/` also holds secrets and session-local files, so
- *    the ignore is never narrowed to a subdir.
+ * Writes the dep as `link:@argohq/toolkit` (dev-phase link protocol; release
+ * swaps to a caret version) at the workspace root (monorepo) or the single
+ * package.json. Design keys in `.argo/config.json` are seeded INERT (no
+ * componentsPath) so the commit gates cannot arm until setup-design fills
+ * the block; user-edited fields survive via mergeConfigShape. `.gitignore`
+ * gets the deny-by-default `.argo/` block since that dir also holds secrets
+ * and session-local files, so the ignore is never narrowed to a subdir.
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs'
@@ -63,14 +54,12 @@ export function runInit({ hostRoot, marketplaceSource }: { hostRoot: string; mar
   const isMonorepo = pkg.workspaces != null
   const apps = isMonorepo ? expandWorkspaces(hostRoot, pkg.workspaces) : ['.']
 
-  // 1. dep placement — workspace root or the single package.json, idempotent.
   const depAlreadyPresent = pkg.dependencies?.['@argohq/toolkit'] === KIT_DEP_LINE
   if (!depAlreadyPresent) {
     pkg.dependencies = { ...pkg.dependencies, '@argohq/toolkit': KIT_DEP_LINE }
     writeJson(pkgPath, pkg)
   }
 
-  // 2. .claude/settings.json — merge, never clobber unrelated settings.
   const settingsPath = join(hostRoot, '.claude', 'settings.json')
   const settings = existsSync(settingsPath) ? readJson(settingsPath) : {}
   settings.enabledPlugins = { ...settings.enabledPlugins, 'argo@argo': true }
@@ -82,7 +71,6 @@ export function runInit({ hostRoot, marketplaceSource }: { hostRoot: string; mar
   }
   writeJson(settingsPath, settings)
 
-  // 3. .argo/config.json skeleton — inert design keys, user fields preserved.
   const argoJsonPath = argoConfigPath(hostRoot)
   const shape = {
     landing: 'pr',
@@ -92,10 +80,8 @@ export function runInit({ hostRoot, marketplaceSource }: { hostRoot: string; mar
   const { merged, addedKeys } = mergeConfigShape(shape, existing)
   writeJson(argoJsonPath, merged)
 
-  // 4. .gitignore — deny-by-default .argo/ block, idempotent append of the
-  // missing lines only (never rewrites user content). Order matters within
-  // the block (`/.argo/*` before the re-includes), so missing lines append
-  // in GITIGNORE_BLOCK order.
+  // Order matters within the block (`/.argo/*` before the re-includes), so
+  // missing lines append in GITIGNORE_BLOCK order rather than sorted.
   const gitignorePath = join(hostRoot, '.gitignore')
   const gitignore = existsSync(gitignorePath) ? readFileSync(gitignorePath, 'utf8') : ''
   const presentLines = new Set(gitignore.split('\n').map((l) => l.trim()))

@@ -1,27 +1,7 @@
 #!/usr/bin/env node
-/**
- * block-designer-spawn — PreToolUse Task guard: hard-blocks a `Task` call
- * from a `designer` agent session (R1 backstop).
- *
- * WHY: designer.md's "you are a LEAF" prose already failed once (a real
- * transcript had the designer improvise a sub-fleet) — the flat fan-out
- * obligation belongs to the supervisor (skills/orchestrate/SKILL.md), never
- * to the leaf agent itself. The agent `tools:` frontmatter allowlist is
- * deliberately unavailable here (all-or-nothing; would strip the
- * variable-named Figma MCP tools designer.md documents inheriting), so this
- * hook is the only enforcement point that doesn't fight that constraint.
- *
- * DETECTION: Claude Code's PreToolUse payload carries no direct "which agent
- * is running" field, so this reads the session's own transcript
- * (`hook.transcript_path`) and looks for a marker string unique to
- * designer.md's own system-prompt body. Fail-open on any missing/unreadable
- * transcript or malformed stdin — this is a backstop for a prose rule already
- * stated in designer.md, not the only line of defense.
- */
+// PreToolUse Task guard: blocks a designer agent from spawning a sub-agent. Detected via a marker string in the session transcript since the payload has no "which agent" field. Fail-open on missing/unreadable transcript or malformed stdin.
 import { readFileSync, existsSync } from 'node:fs'
 
-// Unique to designer.md's body (agents/designer.md) — not shared with any
-// other agent's prompt.
 const DESIGNER_MARKER = 'You build and edit designs inside a live Figma file'
 
 export function isDesignerTranscript(content: unknown): boolean {
@@ -58,11 +38,5 @@ function main(): void {
   process.exit(0)
 }
 
-// Guarded (unlike the other hook modules in this dir): this file's pure
-// `isDesignerTranscript` export is imported directly by its unit test (not
-// spawned as a subprocess) — a bare top-level `main()` call would
-// synchronously block on stdin during that import and hang the test runner.
-// Claude Code always invokes this file directly via `argo-hook
-// block-designer-spawn` (spawned, `import.meta.url === argv[1]`), where this
-// check is true, so the real CLI behavior is unchanged.
+// Guarded: an unconditional main() would block on stdin when the unit test imports this module directly, hanging the test runner.
 if (import.meta.url === `file://${process.argv[1]}`) main()

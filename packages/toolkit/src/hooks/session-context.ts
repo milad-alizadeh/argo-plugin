@@ -1,17 +1,6 @@
 #!/usr/bin/env node
-/**
- * session-context — SessionStart hook: inject a compact "argo way of working"
- * card as additionalContext at the start of every session.
- *
- * The card is a POINTER to skills/agents, never a summary of their content —
- * a description that summarizes a workflow becomes a shortcut agents take
- * instead of reading the skill. Hard budget: ≤600 tokens (~2400 chars),
- * enforced by test. Stack-agnostic wording only: project specifics belong to
- * init's installed rules, not this card.
- *
- * Fail-open by design: malformed stdin or a non-SessionStart event exits 0
- * with no output — this runs at every session boot in every host project.
- */
+/** Card is a POINTER to skills/agents, never a summary, or agents take the
+ * summary as a shortcut. Budget <=600 tokens (enforced by test); fails open. */
 
 const CARD = `## Argo way of working
 
@@ -53,14 +42,8 @@ Standing rules live in .claude/rules/.`
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-/**
- * Lifecycle nudge: point an installed-but-not-set-up project at /argo:init.
- * State lives in .argo/config.json (the consolidated config). There is no
- * version-comparison / migration nudge — the plugin's real logic lives in the
- * versioned @argohq/toolkit, so a project's installed rules/templates are static
- * suggestions written once at setup, never reconciled against a plugin version.
- * A legacy argo-config.json is deliberately NOT read (no-legacy ruling).
- */
+/** No version-comparison / migration nudge: installed rules/templates are static
+ * suggestions written once at setup, never reconciled against a plugin version. */
 export function setupNudge(cwd?: string): string {
   if (!cwd) return ''
   const configPath = join(cwd, '.argo', 'config.json')
@@ -81,7 +64,7 @@ function main(): void {
   try {
     hook = JSON.parse(raw)
   } catch {
-    process.exit(0) // malformed stdin — inert
+    process.exit(0)
   }
   if (hook?.hook_event_name !== 'SessionStart') process.exit(0)
 

@@ -1,34 +1,9 @@
 #!/usr/bin/env node
 /**
- * Red-proof gate (PreToolUse on Bash, `git commit` only). Probity enforces ORDER
- * (no implementation before a failing test); this gate enforces the RECEIPT — a slice
- * may only land with machine-checkable proof that its test failed before the
- * implementation existed and passes now. It reads exit codes a real test run wrote,
- * never prose (the one gate that worked in the retired build-slices playbook).
- *
- * SELF-SCOPING: entirely inert unless `.argo/evidence/build-mode.json` exists in the
- * session cwd — the build-plan skill writes that marker per slice and removes it when
- * the build ends. Normal interactive commits, other projects, other sessions: exit 0,
- * always. Inside a gated build it is fail-closed: malformed marker or receipt → BLOCK.
- *
- * Expects `.argo/evidence/red-proof.json` written by the builder after the green run:
- *   { "slice": "<id>", "testFile": "<path>", "redExit": <non-zero>, "greenExit": 0,
- *     "recordedAt": <epoch ms> }
- * The receipt must name the CURRENT slice (from build-mode.json) and be newer than
- * HEAD — so a receipt can never be reused across slices or commits.
- *
- * Exit 0 → allow. Exit 2 → block, reason on stderr.
- *
- * TRUST BOUNDARY: the build-mode marker and the red-proof receipt are
- * SELF-ATTESTED by the gated builder session — nothing here is written by an
- * independent runner. This gate verifies shape, freshness, slice-match, and
- * staged-diff consistency; it catches a sloppy/forgetful agent, not a
- * determined forger. Full provenance would require a runner-written receipt
- * (deliberate non-goal for now).
- *
- * ALIAS SCOPE: commit detection matches the literal `commit` subcommand and the
- * common `ci` alias. Exotic user-defined git aliases are out of scope — builder
- * sessions don't configure aliases; this gate catches sloppiness, not adversaries.
+ * Enforces the RECEIPT, not order: a slice lands only with machine-checkable proof
+ * (exit codes) its test failed then passed. Inert unless armed; fail-closed once armed.
+ * Self-attested by the builder session, not an independent runner — catches sloppiness,
+ * not a determined forger. Alias scope: matches `commit`/`ci` only.
  */
 
 import { readFileSync, existsSync } from 'node:fs'
@@ -43,16 +18,7 @@ function block(reason: string): never {
   process.exit(2)
 }
 
-/**
- * Resolve the EFFECTIVE git repo dir a commit command targets, so gating follows
- * -C / --git-dir redirection rather than trusting the hook's reported cwd
- * verbatim — otherwise a commit could target a gated worktree from an
- * unguarded cwd (bypass) or blame an unrelated gated cwd for a commit that
- * actually lands elsewhere (false-arm).
- *
- * Precedence: --work-tree wins; else --git-dir's parent (strip trailing
- * /.git); else sequential -C resolution; else the hook's own cwd.
- */
+/** Resolve the effective repo dir via -C/--git-dir/--work-tree, not raw cwd, so a redirected commit can't dodge the gate. */
 function effectiveRepoDir(command: string, cwd: string): string {
   const flagValue = (re: RegExp) => {
     const m = re.exec(command)
@@ -75,10 +41,9 @@ function effectiveRepoDir(command: string, cwd: string): string {
     return resolved.endsWith(`${sep}.git`) ? resolved.slice(0, -`${sep}.git`.length) : resolved
   }
 
-  // Ascend to the repo toplevel: the marker lives at the repo root, but the
-  // hook's cwd is wherever the shell happens to sit — a commit run from a
-  // subdirectory of an armed repo must not slip past the gate (checkpoint
-  // finding: builds observed committing ungated from plugin/).
+  // Ascend to the repo toplevel: the marker lives at the root, but the hook's
+  // cwd is wherever the shell sits — a commit from a subdirectory of an armed
+  // repo must not slip past the gate.
   try {
     const top = execFileSync('git', ['-C', dir, 'rev-parse', '--show-toplevel'], {
       encoding: 'utf8',
@@ -164,11 +129,9 @@ try {
 if (proof.recordedAt <= headTime)
   block('receipt predates HEAD — it already landed a commit; re-prove for this slice')
 
-// The red test itself must be part of THIS commit — build-plan lands one commit per
-// slice, and the slice's red test is always staged alongside its implementation.
-// PreToolUse fires BEFORE the command runs, so a compound `git add … && git commit`
-// hasn't staged anything yet at check time — accept the testFile if the command's
-// own text stages it (an explicit path, or a stage-everything form).
+// The red test must be staged in THIS commit. PreToolUse fires before the command
+// runs, so a compound `git add … && git commit` hasn't staged anything yet at check
+// time — accept the testFile if the command's own text stages it.
 let stagedFiles: string[] = []
 try {
   stagedFiles = execFileSync('git', ['-C', repoDir, 'diff', '--cached', '--name-only'], { encoding: 'utf8' })
@@ -177,11 +140,8 @@ try {
 } catch {
   stagedFiles = []
 }
-// Execution-aware acceptance: the add counts only when it is `&&`-chained
-// ahead of the commit within the SAME `;`/newline statement — in an && chain
-// the commit cannot run unless the add succeeded first. A `;`-separated or
-// `||`-joined mention is text, not execution (checkpoint finding:
-// `false && git add t; git commit` must not pass).
+// The add only counts when `&&`-chained ahead of the commit in the same statement —
+// a `;`-separated or `||`-joined mention is text, not execution.
 const stagesInAddSegment = (seg: string) =>
   /\bgit\b[^\n]*\badd\b/.test(seg) &&
   (seg.includes(proof.testFile) || /\badd\b\s+(-A\b|--all\b|\.(\s|$))/.test(seg))

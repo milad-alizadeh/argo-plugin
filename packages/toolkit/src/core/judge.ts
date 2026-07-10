@@ -1,12 +1,11 @@
 import type { GateVerdict } from './gate.js'
 
 /**
- * `core.judge` seam (audit 1.4): the one narrow capability AI-judging gates
- * (`fresh-eyes-review`, `code-matches-design`, `code-review`) use to obtain a
- * judging session, registered by the active adapter at startup so packs never
- * import an adapter directly.
+ * `core.judge` seam: the one narrow capability AI-judging gates use to
+ * obtain a judging session, registered by the active adapter at startup so
+ * packs never import an adapter directly.
  *
- * `JudgeRequest` deliberately has no transcript field — dispatch accepts only
+ * `JudgeRequest` deliberately has no transcript field, dispatch accepts only
  * the spec's artifact URIs, encoding the anti-reward-hack blindness rule at
  * the type level: a caller cannot widen this shape to include a working
  * transcript without editing this module.
@@ -26,7 +25,7 @@ export function registerJudge(fn: JudgeFn): void {
 
 /** Test seam: clears the module-level singleton so the unregistered-call
  * behaviour is testable regardless of which test file ran first (`bun test`
- * shares one module registry across files and has no `vi.resetModules`). */
+ * shares one module registry across files with no reset-modules facility). */
 export function resetJudgeForTests(): void {
   activeJudge = undefined
 }
@@ -42,18 +41,11 @@ export const core = {
 }
 
 /**
- * The "ask" vs. "finished" artifact-key contract (item 3): a judge-backed
- * review gate compares a finished deliverable against the brief/spec it was
- * asked to satisfy. `REVIEW_ARTIFACT_KEYS.ask` names the `JudgeRequest.artifacts`
- * key holding the brief/spec reference (a markdown path); `.finished` names
- * the key holding the finished deliverable reference (a screenshot path or a
- * Figma node id/URI). Kept here (core, not a pack) so a skill-content playbook
- * spec (owned elsewhere, e.g. packs/design/playbooks) can populate
- * `produces`/`--artifacts` under these exact key names without this file's
- * owner touching pack-owned files, and without a downstream agent guessing at
- * naming. `brief-check`'s own default `artifactKey` ('brief') matches
- * `REVIEW_ARTIFACT_KEYS.ask` by convention — keep them in sync if either
- * changes.
+ * The "ask" vs. "finished" artifact-key contract: a judge-backed review gate
+ * compares a finished deliverable against the brief/spec it was asked to
+ * satisfy. Kept in core, not a pack, so pack-owned playbook specs can
+ * populate `produces`/`--artifacts` under these exact key names without a
+ * downstream agent guessing at naming.
  */
 export const REVIEW_ARTIFACT_KEYS = {
   /** The brief/spec artifact the finished deliverable is judged against. */

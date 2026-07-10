@@ -1,7 +1,5 @@
 /**
- * `argo graph refresh` — refresh the graphify knowledge graph, then commit it.
- * Port of the pre-kit templates/graphify/refresh-graph.sh; wired by init as
- * the lefthook post-merge job.
+ * Refresh the graphify knowledge graph, then commit it.
  *
  * SINGLE WRITER: refreshes only on `main`, never inside a linked worktree
  * (worktrees read main's graph, never write it, so parallel builds can't race

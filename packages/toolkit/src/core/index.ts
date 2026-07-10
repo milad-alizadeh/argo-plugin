@@ -1,9 +1,6 @@
 /**
- * @argohq/toolkit/core root barrel. Slice 1: spec/gate/judge — the type surface every
- * later package (adapter-claude, packs) imports. Slice 2 adds the state
- * store. Slice 3 adds permissions (action-kind membership + protected
- * paths). See `.argo/plans/playbook-engine-phase1.md` for the full build
- * order.
+ * @argohq/toolkit/core root barrel: the type surface every later package
+ * imports.
  */
 export * from './spec.js'
 export * from './events.js'

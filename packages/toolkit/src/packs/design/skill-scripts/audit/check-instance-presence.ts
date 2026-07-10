@@ -1,16 +1,7 @@
 #!/usr/bin/env node
-/**
- * P4a instance-presence check (design-screen SKILL.md §4): the Node wrapper the
- * skill runs after composing a screen. The sandbox can't read a committed file,
- * so registry.json is read here Node-side; the built frame's flat instance
- * inventory (`{ nodeId, name, type }` per descendant) is captured live via
- * `use_figma` and passed in as CLI data — no annotation text, no manifest.
- *
- * ADVISORY-LOUD: exits non-zero when the result is not clean (an instance
- * failed to resolve against the registry) so the agent notices and fixes or
- * the human overrides at ship — but NO hook consumes this exit code, so it
- * never hard-blocks a commit or session end (design-rules stays the one hard gate).
- */
+// ADVISORY-LOUD: exits non-zero when an instance fails to resolve against the
+// registry, but no hook consumes this exit code — it never hard-blocks (design-rules
+// stays the one hard gate).
 
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -25,7 +16,6 @@ function readOptionalJson(path: string): any {
   }
 }
 
-/** `design/registry.json`'s `components` map (name → entry with `nodeId`) flattened into lookup entries. */
 function registryLookupEntries(registry: any): RegistryLookupEntry[] {
   const components = registry?.components && typeof registry.components === 'object' ? registry.components : {}
   return Object.entries(components as Record<string, { nodeId?: string }>)

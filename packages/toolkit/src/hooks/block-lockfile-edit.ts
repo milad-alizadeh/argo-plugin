@@ -1,14 +1,5 @@
 #!/usr/bin/env node
-/**
- * block-lockfile-edit — PreToolUse guard on Edit|Write|MultiEdit: lockfiles
- * are machine-written by package managers; a hand edit silently desyncs the
- * dependency graph. Mechanizes the standing rule "never hand-edit a lockfile
- * or version — use the package manager."
- *
- * Always-on safety category (like bash-safety-guards), stack-agnostic
- * lockfile list, inert on anything else. Fail-open on malformed stdin — this
- * runs on every file edit in every host project.
- */
+// PreToolUse guard on Edit|Write|MultiEdit: hand-editing a lockfile silently desyncs the dependency graph. Fail-open on malformed stdin.
 import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 

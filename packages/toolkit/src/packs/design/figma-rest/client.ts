@@ -1,18 +1,11 @@
 /**
- * Shared Figma REST client — token resolution + the one `GET /v1/files/:key`
- * call every pull-registry-adjacent skill-script needs. Extracted out of
- * `skill-scripts/pull-registry.ts` (where `refresh-card.ts` already reused it
- * directly) once a second in-toolkit consumer needed the exact same
- * token()/fetchFile() pair — see templates/rules/file-structure.md's "group
- * by domain" guidance: this is Figma-REST-transport, not registry-pull logic.
+ * Shared Figma REST client: token resolution + the one `GET /v1/files/:key`
+ * call every pull-registry-adjacent skill-script needs.
  *
- * `skills/resolve-comments/scripts/figma-comments.ts` duplicates the same
- * token() convention (FIGMA_TOKEN env, falling back to a gitignored
- * `.argo/figma-token` file, `X-Figma-Token` header) but is deliberately NOT
- * pointed at this client — it is a standalone, kit-independent script (zero
- * @argohq/toolkit import by design, run via `node --experimental-strip-types`
- * against source, not toolkit's built dist) so it can't collide with the
- * kit's own bin/exports/version churn. See that file's own header comment.
+ * The resolve-comments skill's own script deliberately duplicates this
+ * token() convention rather than importing this client — it is a
+ * standalone, kit-independent script (zero @argohq/toolkit import by
+ * design) so it can't collide with the kit's own bin/exports/version churn.
  */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'

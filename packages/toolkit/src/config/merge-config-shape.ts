@@ -1,9 +1,9 @@
 /**
  * Reconcile a host's on-disk `design.<app>` block (in `.argo/config.json`)
- * against the current template shape (category b, §2b): add any key the current shape has that's missing on
- * disk (with the template's placeholder value), **preserve every existing
- * value verbatim** (even if it differs from the placeholder), and **never
- * delete** a key present on disk but absent from the shape (forward-compat for
+ * against the current template shape: add any key the current shape has that's
+ * missing on disk (with the template's placeholder value), preserve every
+ * existing value verbatim (even if it differs from the placeholder), and never
+ * delete a key present on disk but absent from the shape (forward-compat for
  * recipe-specific fields). Nested objects merge per-key, not whole-object
  * replace. Pure — the caller does the fs read/write.
  *

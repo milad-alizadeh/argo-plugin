@@ -21,10 +21,9 @@ export interface PlaybookStartResult {
 }
 
 /**
- * `argo playbook start` (Slice 5, step 13): resolves `input.name` against the
- * spec registry, refuses at start time (never mid-run, audit 2.4) if the
- * spec's terminal stage hands off to a disabled pack, then writes the initial
- * instance at the first stage.
+ * Resolves `input.name` against the spec registry, refuses at start time
+ * (never mid-run) if the spec's terminal stage hands off to a disabled
+ * pack, then writes the initial instance at the first stage.
  */
 export function playbookStart(
   input: PlaybookStartInput,
@@ -64,7 +63,7 @@ export function playbookStart(
   writeInstance(key, instance, opts)
   // Newly-started instance becomes "the" active playbook for this project —
   // the permission hook has no other way to know which instance a generic
-  // tool call should be checked against (see `setActiveInstance`'s doc).
+  // tool call should be checked against.
   setActiveInstance(key, opts)
   return {
     key,

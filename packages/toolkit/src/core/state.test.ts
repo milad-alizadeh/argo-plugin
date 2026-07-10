@@ -19,11 +19,10 @@ import {
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
 
-/** Runs a REAL child process that appends one attempt via `recordAttempt`
- * against `key` — unlike calling `recordAttempt` twice in-process
- * (synchronous fs calls never yield, so two in-process calls can never
- * actually race), two OS processes genuinely contend for the advisory lock
- * and the instance file. Resolves once the process exits. */
+/** Runs a real child process that appends one attempt via `recordAttempt`
+ * against `key`: synchronous fs calls never yield, so two in-process calls
+ * can never actually race, but two OS processes genuinely contend for the
+ * advisory lock and the instance file. */
 function spawnRecordAttemptWorker(key: string, round: number, stateRoot: string, cwd: string): Promise<void> {
   const workerPath = join(currentDir, 'fixtures', 'record-attempt-worker.ts')
   return new Promise((resolvePromise, reject) => {

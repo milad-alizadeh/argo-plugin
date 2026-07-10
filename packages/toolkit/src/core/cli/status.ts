@@ -4,14 +4,12 @@ import { readConfig, type ArgoConfig, type LspTooling } from '../config.js'
 import { LSP_TABLE } from '../lsp-table.js'
 
 /**
- * `argo status` (config-audit hardening, Wave-adjacent): read-only posture
- * report over `.argo/config.json`'s pointers — flags config-vs-reality
- * MISMATCHES as plain text, never fixes anything (no migration machinery,
- * no doctor). `computeStatus` is the pure core: it takes an already-resolved
+ * Read-only posture report over `.argo/config.json`'s pointers — flags
+ * config-vs-reality MISMATCHES as plain text, never fixes anything.
+ * `computeStatus` is the pure core: it takes an already-resolved
  * `StatusSnapshot` (config plus precomputed fs facts) so it's unit-testable
  * without touching disk; `resolveStatusSnapshot`/`runStatus` are the thin
- * impure wrapper that does the actual reads, mirroring `rulesStatus`'s
- * split between `diffProvenance` (pure) and its bin-facing reads.
+ * impure wrapper that does the actual reads.
  */
 
 export interface StatusSnapshot {

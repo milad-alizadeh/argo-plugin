@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { buildPlaybookCatalog, runPlaybookList, toolkitVersion } from './playbook-list.js'
 import type { PlaybookSpec } from '../index.js'
-// `runPlaybookList` only shapes what's already registered — it never
-// registers packs itself (that stays the pack-loading hub's job, per the
-// port pattern this module now follows). Same composition-root call
-// `bin/argo.js`'s `playbook` case makes before it runs `list`.
+// `runPlaybookList` only shapes what's already registered; it never
+// registers packs itself.
 import { registerInstalledPacks } from '../../register-installed-packs.js'
 
 describe('buildPlaybookCatalog', () => {

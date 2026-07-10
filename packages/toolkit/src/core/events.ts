@@ -1,14 +1,11 @@
 /**
- * Playbook lifecycle event vocabulary. Lives in core (not adapter-claude)
- * because the engine's own verbs emit these — `playbookStart` and
- * `playbookAdvance` return an `events` array describing the lifecycle
- * transitions the call caused. `@argohq/toolkit/adapter-claude`'s `contract.ts`
- * re-exports the names as the stable host-app import surface (the host must
- * never import core directly for contract strings).
+ * Playbook lifecycle event vocabulary. Lives in core because the engine's
+ * own verbs emit these; the host app must never import core directly for
+ * contract strings.
  *
  * Events are returned, not persisted: the instance state file remains the
- * durable record (`stage`/`status`/`history`); events are the CLI-call-scoped
- * delta a host app feeds its run feed from.
+ * durable record; events are the CLI-call-scoped delta a host app feeds its
+ * run feed from.
  */
 export const PLAYBOOK_LIFECYCLE_EVENTS = {
   PLAYBOOK_STARTED: 'playbook_started',

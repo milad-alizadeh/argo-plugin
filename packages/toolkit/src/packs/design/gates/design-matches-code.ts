@@ -1,17 +1,8 @@
 /**
- * `design-matches-code` gate — the code-to-design mirror of
- * `design-rules-check` (playbook-engine-phase1.md Slice 9, step 27 / audit
- * 2.2). Diffs a freshly rendered screenshot against Figma's reference
- * colors using `packages/toolkit/src/design-kit/comparator.ts`'s OKLCH logic.
- *
- * Per audit 2.2 ("state that comparison gates capture their own render"):
- * this gate captures its own screenshot at check time via an injected
- * `captureScreenshot` function and NEVER reads `input.artifacts.screenshot`
- * (or any other working-agent-supplied artifact) as the thing under test —
- * a working agent's `produces` output is exactly as trustworthy as its own
- * self-report, which comparison gates must not consume. Only the reference
- * (Figma) side is allowed to come from an external source, here threaded
- * through `input.settings`.
+ * `design-matches-code` gate — diffs a freshly rendered screenshot against
+ * Figma's reference colors (OKLCH). Captures its own screenshot via an
+ * injected `captureScreenshot` and never reads `input.artifacts.screenshot`:
+ * a working agent's own output is not trustworthy evidence for a comparison gate.
  */
 import { compareColor } from '../design-kit/index.js'
 import type { Finding, Gate, GateInput, GateVerdict } from '../../../core/index.js'
@@ -46,13 +37,9 @@ export function createDesignMatchesCodeGate(options: DesignMatchesCodeOptions): 
     name: 'design-matches-code',
 
     async check(input: GateInput): Promise<GateVerdict> {
-      // The gate's OWN capture — deliberately ignores `input.artifacts`
-      // entirely (including any `screenshot` key a working agent's
-      // `produces` step may have populated).
+      // Own capture, deliberately ignores input.artifacts (a working agent's output is not trustworthy evidence here).
       const captured = await captureScreenshot()
 
-      // Figma's reference colors are the one side allowed from an external
-      // source (audit 2.2) — threaded through `settings`, never `artifacts`.
       const figmaColors = (input.settings.figmaColors ?? {}) as Record<string, string>
 
       const findings: Finding[] = []

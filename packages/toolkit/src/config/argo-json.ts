@@ -1,7 +1,6 @@
 /**
- * `.argo/config.json` — the kit's consolidated per-project config (decision 8)
- * — and the dual-mode hook-resolution logic the design commit gates arm from.
- * The path itself is owned by `argo-paths.ts` (the single `.argo/` resolver).
+ * `.argo/config.json`'s consolidated per-project config, and the dual-mode
+ * hook-resolution logic the design commit gates arm from.
  *
  * Shape (design section):
  *   { "design": { "<appKey>": { "root": "<app dir, repo-root-relative>",
@@ -9,9 +8,7 @@
  * Single-repo: one entry keyed "." with root ".". Monorepo: one entry per
  * app, keyed by the app dir (e.g. "apps/web"). A gate arms for an app iff
  * its design block exists AND a staged file falls under that app's resolved
- * componentsPath — matched repo-root-relative, which is the fix for the old
- * `design/config.json`-presence arming that silently no-oped per-app in
- * monorepos.
+ * componentsPath, matched repo-root-relative.
  */
 
 import { existsSync, readFileSync } from 'node:fs'

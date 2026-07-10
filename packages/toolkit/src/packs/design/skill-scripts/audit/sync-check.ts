@@ -1,26 +1,7 @@
 #!/usr/bin/env node
-/**
- * `argo design sync --check --json` — the headless drift check the host app
- * polls on a schedule (argo-v2 PRD `playbooks-and-runs.md` RUNS-R27:
- * "registry-scoped, no LLM"; findings render as a project-home attention row).
- *
- * SCOPE / STATED LIMITATION: a CLI cannot assume live Figma access (no
- * use_figma bridge, no guaranteed PAT), so this check runs against the
- * LAST-SYNCED COMMITTED ARTIFACTS under `<cwd>/design/` (registry.json,
- * specs/*.json, spec-diff-receipt.json — figma-sync's dumps). It therefore
- * catches artifact-level drift (registry entries that lost their committed
- * spec, orphaned specs, schema-invalid registry cards, a failing/absent
- * spec-diff receipt) deterministically — it does NOT see human hand-edits
- * made in Figma since the last sync; those still require a figma-sync run
- * (or the future file-version webhook) to land in the committed artifacts
- * first. `--help` states the same.
- *
- * Registry scoping follows the raw-kit directive (staleness.ts's
- * `stalenessActionability`): only ADOPTED surfaces are swept hard — `custom`
- * entries and `kit` entries with `adopted: true`. Raw un-adopted kit is
- * skipped as advisory; `screen` and `code-owned` entries carry no committed
- * spec by design and are exempt from the missing-spec rule.
- */
+// SCOPE / STATED LIMITATION: a CLI can't assume live Figma access, so this checks
+// only the last-synced committed design/ artifacts — it does NOT see human
+// hand-edits made in Figma since the last sync; that needs a figma-sync run first.
 import { RegistryEntrySchema } from '../../design-kit/schemas.js'
 import { isRawUnadoptedKit } from '../../design-kit/staleness.js'
 
@@ -42,10 +23,6 @@ export const SYNC_CHECK_LIMITATION =
   'Runs against the last-synced committed design/ artifacts only (no live Figma access): ' +
   'human hand-edits made in Figma since the last figma-sync are NOT visible to this check.'
 
-/**
- * Pure sweep (unit-tested): committed registry + the set of committed spec
- * component names + the spec-diff receipt in, deterministic report out.
- */
 export function runSyncCheck({
   registry,
   specComponents,

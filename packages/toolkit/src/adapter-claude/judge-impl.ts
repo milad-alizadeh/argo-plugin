@@ -1,23 +1,14 @@
 import { spawnSync } from 'node:child_process'
 import { type GateVerdict, type JudgeRequest, registerJudge } from '../core/index.js'
 
-/**
- * The adapter's `core.judge` implementation (audit 1.4 / design doc's
- * "session spawn (fresh/warm/retry), `core.judge` implementation" seam).
- *
- * Spawns a FRESH, blind session fed only the spec's artifact URIs — never a
- * working transcript. The spawn mechanism itself (the real Claude Code
- * session API) is injected as a `SessionSpawner` so this module stays
- * testable without a live session, and so `session.ts` (Slice 7's FRESH/WARM/
- * RETRY spawn functions) can later supply the real implementation without
- * this module changing shape.
- */
+// The adapter's `core.judge` implementation. Spawns a FRESH, blind session
+// fed only the spec's artifact URIs, never a working transcript. The spawn
+// mechanism is injected as a `SessionSpawner` so this module stays testable
+// without a live session.
 
-/**
- * What actually gets sent to the spawned session. Deliberately has no
- * transcript-shaped field — mirrors `JudgeRequest`'s own shape at the type
- * level, so a caller cannot widen this without editing this module.
- */
+/** What actually gets sent to the spawned session. Deliberately has no
+ * transcript-shaped field, so a caller cannot widen this without editing
+ * this module. */
 export interface SessionSpawnRequest {
   artifacts: Record<string, string>
 }
@@ -30,29 +21,22 @@ export type SessionSpawner = (request: SessionSpawnRequest) => Promise<GateVerdi
  * judge registry singleton. */
 export function createJudgeImpl(spawnSession: SessionSpawner) {
   return async (request: JudgeRequest): Promise<GateVerdict> => {
-    // Forward ONLY `artifacts` — even if a future caller widens JudgeRequest
-    // and accidentally attaches extra fields, this explicit pick keeps the
-    // spawned session blind.
+    // Forward ONLY `artifacts`, so a future caller widening JudgeRequest can't
+    // accidentally leak extra fields into the spawned session.
     return spawnSession({ artifacts: request.artifacts })
   }
 }
 
-/** Registers the Claude-adapter's `core.judge` implementation at adapter
- * startup, per the design doc's "adapter registers an implementation at
- * startup" seam. */
+/** Registers the Claude-adapter's `core.judge` implementation at adapter startup. */
 export function registerClaudeJudge(spawnSession: SessionSpawner): void {
   registerJudge(createJudgeImpl(spawnSession))
 }
 
-/**
- * Production `SessionSpawner` (item 2): spawns a headless, blind `claude -p`
- * process fed ONLY the request's artifact URIs (never a transcript — same
- * blindness rule `SessionSpawnRequest`'s shape enforces at the type level),
- * instructed to respond with JSON only, and parses that JSON into a
- * `GateVerdict`. The actual subprocess call is injected as `runClaude` so
- * this stays unit-testable without shelling out for real; `bin/argo.js`
- * wires the real `spawnSync` version at startup.
- */
+/** Production `SessionSpawner`: spawns a headless, blind `claude -p` process
+ * fed ONLY the request's artifact URIs, never a transcript, instructed to
+ * respond with JSON only, and parses that JSON into a `GateVerdict`. The
+ * subprocess call is injected as `runClaude` so this stays unit-testable
+ * without shelling out for real. */
 export interface ClaudeProcessResult {
   stdout: string
   status: number | null

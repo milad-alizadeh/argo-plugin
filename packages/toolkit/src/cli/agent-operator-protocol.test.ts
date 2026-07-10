@@ -3,14 +3,8 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { assembleSkillInPlace } from './assemble-skill.js'
 
-// Fix 1 (agent-boilerplate consolidation): 9 of 11 agents/*.md repeat the
-// anti-spiral + turn-discipline operator-protocol boilerplate. Rather than a
-// pointer the agent reads at runtime (unproven — no agent currently resolves
-// CLAUDE_PLUGIN_ROOT, and none is guaranteed Read access to a path outside
-// its own system prompt), this reuses the repo's existing INCLUDE-marker
-// build-time splice (assemble-skill.ts, used for skills/*/SKILL.md) so the
-// committed agent file carries the REAL text (loads verbatim, no packaging
-// step) while staying re-assemblable from one canonical source.
+// Build-time INCLUDE splice, not a runtime pointer: no agent is guaranteed
+// Read access to a path outside its own system prompt.
 const REPO_ROOT = join(import.meta.dirname, '..', '..', '..', '..')
 
 const AGENTS_WITH_OPERATOR_PROTOCOL = [

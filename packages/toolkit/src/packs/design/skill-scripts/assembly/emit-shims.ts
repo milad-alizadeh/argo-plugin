@@ -1,19 +1,5 @@
-/**
- * `argo design emit-shims` — generate the host-side walker shims from
- * .argo/config.json. Shims are the decision-14 glue: THIN glob-map files at
- * `<app>/test/spec-diff/` and `<app>/test/vrt/` that hand already-imported
- * modules to the @argohq/toolkit/walkers factories. The factory owns the walk +
- * assertions, so a kit upgrade updates every host's gate logic without
- * re-templating, and a host-side rename can't fork it.
- *
- * Per-app knobs live in `design.<app>.walkers` (all optional):
- *   storiesGlob            default `../../<componentsPath>/**\/*.stories.{js,jsx,ts,tsx}`
- *   specsGlob              default `../../design/specs/**\/*.json`
- *   baselinesGlob          default `../../design/screenshots/**\/*.png`
- *   storybookTestPackage   default '@storybook/react'; null → storybook-free
- *                          identity composeStories (fixtures, non-storybook hosts)
- * Globs are relative to the shim's own directory (two levels below the app root).
- */
+// Shims stay THIN: they hand already-imported glob maps to the walker factory,
+// which owns the walk logic, so a kit upgrade updates every host without re-templating.
 
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'

@@ -1,14 +1,6 @@
 #!/usr/bin/env node
-/**
- * Blind VLM fidelity rubric assembly: mechanically merges a
- * category template's fixed visual criteria (`templates/design/category-
- * rubrics/<category>.md`, human-authored once per category) with brief-
- * NAMED requirements only — never the build transcript, never the
- * builder's self-report — same isolation contract as design-verifier's
- * PRD-checklist assembly. `briefRequirements` are id/prompt pairs the
- * caller has already extracted Node-side from the screen brief's own
- * "Regions -> component map"; this function does no PRD parsing itself.
- */
+// Merges category-template criteria with brief-named requirements only — never the
+// build transcript or builder self-report, to keep the verifier blind.
 
 export type FidelityCriterion = { id: string; prompt: string; requiresZoomedCrop: boolean }
 export type FidelityRubric = { category: string; criteria: FidelityCriterion[] }
@@ -26,23 +18,13 @@ export function assembleFidelityRubric(
   }
 }
 
-/**
- * Cost lever (task's explicit ask): a category with zero visual criteria
- * never spawns the VLM agent — a plain button stays design-rules-only.
- */
+// Cost lever: a category with zero visual criteria never spawns the VLM agent.
 export function shouldSpawnFidelityVerifier(rubric: FidelityRubric): boolean {
   return rubric.criteria.length > 0
 }
 
-/**
- * CLI wrapper. Takes the category template and brief requirements as JSON
- * flags, already parsed — this repo has no markdown-frontmatter parser
- * anywhere (grepped, none found), so reading `templates/design/category-
- * rubrics/<category>.md`'s YAML frontmatter into `{ category, criteria }`
- * is the CALLER's job (the design-component step-4 spawner), not this script's;
- * inventing a frontmatter parser for one CLI wrapper is exactly the
- * speculative surface the owner mandate forbids.
- */
+// CLI wrapper: takes already-parsed template/requirements JSON, since frontmatter
+// parsing is the caller's job — no parser exists here by design (YAGNI).
 function flagValue(args: string[], name: string): string | undefined {
   const i = args.indexOf(name)
   return i === -1 ? undefined : args[i + 1]

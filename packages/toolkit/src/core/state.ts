@@ -6,19 +6,16 @@ import { dirname, join, resolve } from 'node:path'
 import type { Finding, GateVerdict } from './gate.js'
 
 /**
- * State store: `~/.argo/state/<project-id>/playbooks/<key>.json`, per the
- * design doc's "state store" seam. Sibling to `packages/toolkit/src/lib/
- * repo-root.ts`'s `resolveRepoRoot` but deliberately NOT imported from there
- * (core has no dependency on kit) — this is the generalized form: project-id
- * is derived from `git rev-parse --git-common-dir`, not `--show-toplevel`, so
- * two worktrees of the same repo (which have different toplevels but share
- * one `.git` common dir) resolve to the same store.
+ * State store: `~/.argo/state/<project-id>/playbooks/<key>.json`.
+ * Deliberately not derived via `--show-toplevel` (core has no dependency on
+ * kit): project-id comes from `git rev-parse --git-common-dir` so two
+ * worktrees of the same repo, which share one `.git` common dir but have
+ * different toplevels, resolve to the same store.
  *
- * KNOWN LIMIT (stated, not fixed): project-id is path-identity-bound — the
- * realpath of the git common dir. Moving or renaming the repo on disk orphans
- * any in-flight run records under the old id; the plan they tracked simply
- * reads `queued` again (`argo plans` finds no live run to overlay). Accepted
- * per the `.argo/` consolidation plan.
+ * KNOWN LIMIT (accepted, not fixed): project-id is path-identity-bound (the
+ * realpath of the git common dir). Moving or renaming the repo on disk
+ * orphans any in-flight run records under the old id; the tracking plan
+ * simply reads `queued` again.
  */
 export function resolveProjectId(cwd: string): string {
   const identity = gitCommonDirIdentity(cwd) ?? resolve(cwd)
@@ -32,11 +29,9 @@ function gitCommonDirIdentity(cwd: string): string | null {
     }).trim()
     if (!commonDir) return null
     const resolved = resolve(cwd, commonDir)
-    // Git resolves symlinks inconsistently between the plain-repo case
-    // (relative ".git", resolved against whatever `cwd` we were given) and
-    // the worktree case (an absolute path git itself already realpath'd) —
-    // e.g. macOS's /tmp -> /private/tmp. realpath both so a worktree and its
-    // main repo checkout (same underlying `.git` dir) always match.
+    // Git resolves symlinks inconsistently between the plain-repo case and
+    // the worktree case (e.g. macOS's /tmp -> /private/tmp); realpath both so
+    // a worktree and its main checkout always match.
     try {
       return realpathSync(resolved)
     } catch {
@@ -55,25 +50,20 @@ export interface Attempt {
   whatWasTried: string
 }
 
-/** History record: one gate run's verdict, appended when a stage is exited —
- * OR a bare stage-transition stamp (`gate`/`verdict` omitted) recording only
- * `{ stage, at }` when the stage declared no gate. Every stage transition
- * (gated or not) appends one entry, so per-stage wall-clock duration is
- * derivable purely from consecutive `history[].at` timestamps in the state
- * file — no separate timing store. */
+/** History record: one gate run's verdict, appended when a stage is exited,
+ * or a bare stage-transition stamp (`gate`/`verdict` omitted) when the stage
+ * declared no gate. Every transition appends one entry, so per-stage
+ * wall-clock duration is derivable from consecutive `history[].at`
+ * timestamps alone, no separate timing store. */
 export interface HistoryEntry {
   stage: string
   gate?: string
   at: string
   verdict?: GateVerdict
-  /**
-   * Set to `false` by `argo playbook adopt` (audit 2.1) when the stage's gate
-   * declared itself non-re-runnable (`GateVerdict.rerunnable === false`), so
-   * this entry records "a verdict exists but adopt could not independently
-   * re-confirm it" rather than a normal re-verified boundary. Omitted for
-   * history entries written by `playbook-advance`, which always runs the
-   * gate live.
-   */
+  /** Set to `false` by `argo playbook adopt` when the stage's gate declared
+   * itself non-re-runnable, so this entry records "a verdict exists but
+   * adopt could not independently re-confirm it." Omitted for entries
+   * written by `playbook-advance`, which always runs the gate live. */
   verified?: boolean
 }
 
@@ -85,8 +75,8 @@ export interface PlaybookInstance {
   status: string
   attempts: Attempt[]
   history: HistoryEntry[]
-  /** ISO timestamp set once by `playbookStart` — the run's wall-clock origin
-   * for measurement (audit "measurement" seam); never rewritten after. */
+  /** ISO timestamp set once by `playbookStart`, the run's wall-clock origin;
+   * never rewritten after. */
   startedAt?: string
 }
 
@@ -103,9 +93,8 @@ export function defaultStateRoot(): string {
 }
 
 /** Derives a stable instance key from a playbook name + target, for CLI verbs
- * that start from `{ name, target }` rather than an existing key (`playbook-
- * start`, `playbook-adopt`). Slugified so an arbitrary target string (a
- * screen name, a file path) is always a safe filename component. */
+ * that start from `{ name, target }` rather than an existing key. Slugified
+ * so an arbitrary target string is always a safe filename component. */
 export function deriveInstanceKey(playbook: string, target: string): string {
   const slug = (value: string): string =>
     value
@@ -215,13 +204,11 @@ export function recordHistory(key: string, entry: HistoryEntry, opts: StateOptio
 }
 
 /** Guarded read-modify-write for arbitrary instance fields (stage/status),
- * under the same advisory per-key lock `recordAttempt`/`recordHistory` use.
- * `playbookAdvance`'s stage/status transitions previously read-modified-wrote
- * WITHOUT this lock — a concurrent advance from two sessions could read the
- * same pre-mutation instance and one writer's transition would silently
- * overwrite the other's. `mutate` receives the freshly-read instance (never
- * a stale copy from before the lock was acquired) and returns the instance to
- * persist. Throws if no instance exists yet at `key`. */
+ * under the same advisory per-key lock `recordAttempt`/`recordHistory` use:
+ * without it, a concurrent advance from two sessions could read the same
+ * pre-mutation instance and one writer's transition would silently overwrite
+ * the other's. `mutate` receives the freshly-read instance, never a stale
+ * copy from before the lock was acquired. Throws if no instance exists yet. */
 export function mutateInstance(
   key: string,
   mutate: (instance: PlaybookInstance) => PlaybookInstance,
@@ -238,22 +225,18 @@ export function mutateInstance(
 
 /**
  * "Active instance" pointer — `<stateRoot>/<projectId>/active-playbooks/
- * <worktreeId>.json` containing `{ key, worktree }`. There is no other
- * project-wide way to answer "which instance is active right now" for a hook
- * that only sees a `cwd`, not a `{ playbook, target }` pair:
- * `deriveInstanceKey` is deterministic GIVEN a target, but the target itself
- * (a screen name, a branch) isn't observable from a generic PreToolUse tool
- * call. `playbook-start` (and `adopt`) write this pointer so the
- * last-started/adopted instance is what the permission hook (adapter-claude's
- * `runPermissionHook`, wired in `@argohq/toolkit`) reads as "the" active
- * instance.
+ * <worktreeId>.json`. There is no other project-wide way to answer "which
+ * instance is active right now" for a hook that only sees a `cwd`, not a
+ * `{ playbook, target }` pair, since the target itself isn't observable from
+ * a generic PreToolUse call. `playbook-start`/`adopt` write this pointer so
+ * the permission hook reads it as "the" active instance.
  *
- * WORKTREE AFFINITY: the pointer is a keyed SET, one entry per worktree
+ * WORKTREE AFFINITY: the pointer is a keyed set, one entry per worktree
  * (keyed by the sha1 of the cwd's worktree toplevel). A single per-project
  * pointer let two concurrent gated builds overwrite each other, so worktree
- * A's permission gate read worktree B's run. Instances themselves stay
- * project-scoped (shared store via the git common dir); only "which one is
- * active HERE" is per-worktree.
+ * A's permission gate read worktree B's run. Instances stay project-scoped
+ * (shared store via the git common dir); only "which one is active here" is
+ * per-worktree.
  */
 function worktreeId(cwd: string): string {
   let identity: string
@@ -282,22 +265,18 @@ function activePointerPath(opts: StateOptions = {}): string {
 }
 
 /**
- * Marks `key` as the active playbook instance for THIS worktree (atomic).
- * `sessionId` (when known — CLI callers read `CLAUDE_CODE_SESSION_ID`, hook
- * callers the payload's `session_id`) records the OWNING session: the
- * permission gate is inert for every other session, so a run gates only the
- * session executing it, never the whole project (2026-07-10 lesson — a
- * project-wide pointer gated the supervisor and parallel agents alike).
- * Without a sessionId the pointer stays worktree-wide (legacy behavior).
+ * Marks `key` as the active playbook instance for this worktree (atomic).
+ * `sessionId` (when known) records the owning session: the permission gate
+ * is inert for every other session, so a run gates only the session
+ * executing it, never the whole project. Without a sessionId the pointer
+ * stays worktree-wide (legacy behavior).
  *
- * GUARDED BY DEFAULT: when an existing pointer already records a DIFFERENT
- * owning sessionId, a second session's `start`/`adopt` (both non-`claim`
- * callers) must not silently evict it — the pointer's slot is single, so an
- * unguarded overwrite let session B's start steal session A's still-gated
- * run out from under it. The write is skipped (a no-op, not a throw — the
- * calling instance still exists and runs, it's just not "the" active one for
- * this worktree) unless `opts.claim` is `true`, which is the explicit
- * takeover the `argo playbook claim` verb performs.
+ * GUARDED BY DEFAULT: when an existing pointer already records a different
+ * owning sessionId, a second session's `start`/`adopt` must not silently
+ * evict it, since the pointer's slot is single and an unguarded overwrite
+ * would let session B's start steal session A's still-gated run out from
+ * under it. The write is skipped (a no-op, not a throw) unless `opts.claim`
+ * is `true`, the explicit takeover the `argo playbook claim` verb performs.
  */
 export function setActiveInstance(
   key: string,
@@ -333,13 +312,13 @@ export function getActiveInstanceKey(opts: StateOptions = {}): string | null {
 
 /**
  * Resolves the active pointer and reads that instance — `null` if there is
- * no active pointer OR the pointed-at instance file is missing/malformed.
+ * no active pointer or the pointed-at instance file is missing/malformed.
  *
  * `forSessionId`: session-affinity filter. When the pointer records an owning
- * sessionId AND the caller identifies itself with a different one, the run is
- * not active FOR THAT CALLER — return `null` (the permission gate goes inert
- * for every session except the run's executor). A caller that passes no
- * `forSessionId` (CLI status/advance) sees the instance regardless.
+ * sessionId and the caller identifies itself with a different one, the run
+ * is not active for that caller (the permission gate goes inert for every
+ * session except the run's executor). A caller that passes no `forSessionId`
+ * sees the instance regardless.
  */
 export function getActiveInstance(opts: StateOptions & { forSessionId?: string | null } = {}): PlaybookInstance | null {
   const pointer = getActiveInstancePointer(opts)

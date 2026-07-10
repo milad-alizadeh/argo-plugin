@@ -1,37 +1,10 @@
 #!/usr/bin/env node
 /**
- * Trust gate (§8.2) — decides whether a build slice may land by reading the LAUNCH
- * EVIDENCE RECEIPT a real run wrote, never prose. Registered as a PreToolUse hook on
- * Bash, enforcing only `git commit` commands.
- *
- * SELF-SCOPING (same contract as red-proof-gate): entirely inert unless
- * `.argo/evidence/build-mode.json` exists in the session cwd AND marks the current slice
- * `requiresLaunch: true`. The build-plan skill maintains that marker; outside a
- * gated build — normal commits, non-Argo host projects — this hook always exits 0.
- * The gate is Argo-runtime-specific by design: the receipt is written by the Argo
- * app's own launch evidence recorder; generalizing it is documented out of scope.
- *
- * INSIDE a gated launch-slice it is fail-closed — the deliberate opposite of the
- * pipe-to-shell hook: anything missing, unparseable, incomplete, or stale DENIES.
- * The only path to exit 0 is a receipt proving the app launched AND did something
- * observable (an OSC-777 prompt_submit/stop or an MCP report_status).
- *
- * Receipt search: `<cwd>/.argo/evidence/launch-receipt.json`, then one workspace level
- * down (`<cwd>/apps/<ws>/.argo/evidence/...`) — the launched app writes the receipt relative to
- * ITS OWN cwd, which in a monorepo is the workspace dir, not the repo root.
- *
- * Exit 0 → PASS (land allowed). Exit 2 → BLOCK (RED), reason on stderr.
- *
- * TRUST BOUNDARY: the build-mode marker and the launch-evidence receipt are
- * SELF-ATTESTED by the gated builder session / the Argo app it launched —
- * nothing here is written by an independent runner. This gate verifies shape,
- * freshness, and slice-match; it catches a sloppy/forgetful agent, not a
- * determined forger. Full provenance would require a runner-written receipt
- * (deliberate non-goal for now).
- *
- * ALIAS SCOPE: commit detection matches the literal `commit` subcommand and the
- * common `ci` alias. Exotic user-defined git aliases are out of scope — builder
- * sessions don't configure aliases; this gate catches sloppiness, not adversaries.
+ * Decides whether a build slice may land by reading the launch evidence receipt a
+ * real run wrote, never prose. Inert unless armed with `requiresLaunch: true`;
+ * fail-closed once armed — only a receipt proving the app launched AND did something
+ * observable (OSC-777 or MCP report_status) passes. Self-attested by the builder
+ * session / the app it launched, not an independent runner. Alias scope: `commit`/`ci` only.
  */
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
@@ -69,16 +42,7 @@ if (typeof command !== 'string' || !/\bgit\b[^\n;|&]*\b(commit|ci)\b/.test(comma
 const cwd = hook?.cwd
 if (typeof cwd !== 'string' || cwd.length === 0) process.exit(0)
 
-/**
- * Resolve the EFFECTIVE git repo dir a commit command targets, so gating follows
- * -C / --git-dir redirection rather than trusting the hook's reported cwd
- * verbatim — otherwise a commit could target a gated worktree from an
- * unguarded cwd (bypass) or blame an unrelated gated cwd for a commit that
- * actually lands elsewhere (false-arm).
- *
- * Precedence: --work-tree wins; else --git-dir's parent (strip trailing
- * /.git); else sequential -C resolution; else the hook's own cwd.
- */
+/** Resolve the effective repo dir via -C/--git-dir/--work-tree, not raw cwd, so a redirected commit can't dodge the gate. */
 function effectiveRepoDir(command: string, cwd: string): string {
   const flagValue = (re: RegExp) => {
     const m = re.exec(command)
@@ -101,9 +65,8 @@ function effectiveRepoDir(command: string, cwd: string): string {
     return resolved.endsWith(`${sep}.git`) ? resolved.slice(0, -`${sep}.git`.length) : resolved
   }
 
-  // Ascend to the repo toplevel — the marker lives at the repo root, and a
-  // commit run from a subdirectory of an armed repo must not slip past the
-  // gate (mirrors red-proof-gate; checkpoint finding).
+  // Ascend to the repo toplevel: the marker lives at the root, so a commit run
+  // from a subdirectory of an armed repo must not slip past the gate.
   try {
     const top = execFileSync('git', ['-C', dir, 'rev-parse', '--show-toplevel'], {
       encoding: 'utf8',

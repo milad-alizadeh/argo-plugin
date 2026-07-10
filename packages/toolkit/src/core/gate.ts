@@ -1,15 +1,11 @@
 /**
- * Gate interface + registry, per `.argo/design/playbook-engine.md`'s
- * "Gates (core interface, pack implementations)" section. Gates judge
- * finished artifacts at stage exit only — `GateInput` deliberately has no
- * transcript/self-report field (the anti-reward-hack rule as a type).
+ * Gate interface + registry. Gates judge finished artifacts at stage exit
+ * only: `GateInput` deliberately has no transcript/self-report field, the
+ * anti-reward-hack rule as a type.
  *
- * Seam for audit 1.4 (AI-judging gates obtaining a session via `core.judge`):
- * `judge.ts` defines that capability independently and `GateContext` below
- * threads `ctx.judge(...)` into `Gate.check` as an optional second param —
- * the signature-widening this file's previous revision predicted, wired now
- * that pack-design's AI-judging gates (Slice 9) need it. Existing gates that
- * ignore the second param are unaffected (it's optional).
+ * `GateContext` threads `ctx.judge(...)` into `Gate.check` as an optional
+ * second param for AI-judging gates to obtain a judging session; existing
+ * gates that ignore it are unaffected since it's optional.
  */
 import type { JudgeFn } from './judge.js'
 
@@ -29,23 +25,19 @@ export interface GateVerdict {
   findings: Finding[]
   evidence: string[]
   /**
-   * Whether `argo playbook adopt` (audit 2.1) may safely call this gate again
-   * against discovered artifacts to re-verify a boundary. Omitted/`true` is
-   * the default (most gates read live external state — Figma, the test
-   * suite — and are safe to re-run). Set `false` for a gate that cannot
-   * re-check without side effects or a live session it can't recreate
-   * out-of-band; `adopt` then stops at that stage and records
-   * `verified: false` in history instead of advancing past it.
+   * Whether this gate may safely be called again against discovered
+   * artifacts to re-verify a boundary. Omitted/`true` is the default (most
+   * gates read live external state and are safe to re-run). Set `false` for
+   * a gate that cannot re-check without side effects or a live session it
+   * can't recreate out-of-band.
    */
   rerunnable?: boolean
 }
 
 /**
- * Optional second argument to `Gate.check` (audit 1.4's `ctx.judge(...)`
- * seam). Deterministic gates (`tests-pass`, `design-rules-check`,
- * `plan-check`) ignore it; AI-judging gates (`fresh-eyes-review`,
- * `code-matches-design`) call `ctx.judge(...)` instead of importing
- * `@argohq/claude-adapter-plugin` directly, so packs stay adapter-agnostic.
+ * Optional second argument to `Gate.check`. Deterministic gates ignore it;
+ * AI-judging gates call `ctx.judge(...)` instead of importing an adapter
+ * directly, so packs stay adapter-agnostic.
  */
 export interface GateContext {
   judge: JudgeFn

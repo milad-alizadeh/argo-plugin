@@ -1,9 +1,4 @@
-/**
- * Named error classes shared by the CLI verbs (Slice 5), so callers (kit's
- * `bin/argo.js` switch, later) can `instanceof`-branch on a specific failure
- * mode instead of string-matching messages.
- */
-
+/** Lets callers `instanceof`-branch on a specific failure mode instead of string-matching messages. */
 export class PlaybookNotFoundError extends Error {
   constructor(public readonly playbookName: string) {
     super(`no playbook registered under the name "${playbookName}" — a pack must call registerPlaybook first`)

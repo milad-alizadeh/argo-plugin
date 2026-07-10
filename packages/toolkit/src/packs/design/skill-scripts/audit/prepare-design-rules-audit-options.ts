@@ -1,17 +1,7 @@
 #!/usr/bin/env node
-/**
- * The figma-audit Node wrapper (SKILL.md §"Procedure" step 3): derives the
- * FULL options object the agent passes into the `use_figma` call that runs
- * `runDesignRulesAudit` — every project-specific value the bundled entry needs,
- * as DATA (kit-extraction restructure: killed the {{…}}-slot/splice model —
- * nothing project-specific is ever baked into a committed audit script
- * again; it all flows through this object at call time instead).
- *
- * The sandbox can't read a committed file itself (kit-awareness.md
- * §"Enforcement"'s same constraint), so this has to happen Node-side, before
- * the call, exactly like `record-audit-receipt.js`'s post-hoc reads of the
- * same files.
- */
+// The sandbox can't read a committed file itself, so every project-specific value
+// is derived Node-side and passed into the audit call as DATA, never baked into a
+// committed script.
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
@@ -21,25 +11,16 @@ import { findArgoJson } from '../../../../config/argo-json.js'
 import { TW_COLLECTION_FAMILY } from '../../recipes/shadcn-tailwind/design-rules.js'
 import { isRawUnadoptedKit } from '../../design-kit/staleness.js'
 
-/**
- * Recipe-declared spacing/binding collection allowlist, keyed by the app's
- * `design.<app>.recipe` value (field bug fix, 2026-07-07 live D01 build) —
- * a fixed characteristic of the recipe's starter file, not per-project
- * config. `null`/unknown recipe gets no additional allowlist.
- */
+// Recipe-declared spacing/binding collection allowlist — a fixed characteristic of
+// the recipe's starter file, not per-project config. null/unknown recipe gets none.
 const RECIPE_ADDITIONAL_ALLOWED_COLLECTION_NAMES: Record<string, string[]> = {
   'shadcn-tailwind': TW_COLLECTION_FAMILY
 }
 
-/**
- * Resolves each requested name to its registry `nodeId` (authoritative
- * targeting, field bug fix — a name-based sweep matched every same-named
- * node in the file, e.g. auditing "Card" also swept a container frame
- * literally named "Card"). A name with no registry entry falls through to
- * `unresolvedNames` — the sandbox-side name-lookup fallback in
- * `runDesignRulesAudit`, for a target (a foundation frame/SCREEN) that has no
- * registry entry to resolve against.
- */
+// Resolves by registry nodeId, not name — a name-based sweep matched every
+// same-named node in the file (e.g. auditing "Card" also swept a container frame
+// literally named "Card"). Unresolved names fall through to the sandbox-side
+// name-lookup fallback.
 export function resolveComponentNodeIds(
   componentNames: string[],
   registry: any
@@ -51,20 +32,14 @@ export function resolveComponentNodeIds(
   const rawKitExemptNames: string[] = []
   for (const name of componentNames) {
     const entry = components[name]
-    // A code-owned component is a flat screenshot standing in for a code
-    // implementation — it can't satisfy binding rules and is never audited.
-    // Exempt it BEFORE resolving a nodeId so it never enters the target set.
+    // A code-owned component is a flat screenshot standing in for code — it can't
+    // satisfy binding rules, so exempt it before resolving a nodeId.
     if (entry?.kind === 'code-owned') {
       codeOwnedExemptNames.push(name)
       continue
     }
-    // A raw (un-adopted) kit master is stock library content nothing in the
-    // project instances — the vendored mirror, not an authored surface.
-    // Adoption (directive 3 refined, 2026-07-08) is the SCOPE filter: only
-    // kit that a project surface actually instances (`adopted: true`, derived
-    // by figma-sync's reconcile walk) is hard-gated; drift on the other ~110
-    // stock masters must never pull them into the gate. Adopted kit and custom
-    // still resolve as targets (directive 3's "audit what you use" preserved).
+    // A raw (un-adopted) kit master is the vendored mirror, not an authored
+    // surface — only kit a project surface actually instances is hard-gated.
     if (isRawUnadoptedKit(entry)) {
       rawKitExemptNames.push(name)
       continue
@@ -88,13 +63,9 @@ function readOptionalJson(path: string): any {
   }
 }
 
-/**
- * The app's `design.<app>` block in `.argo/config.json` for the app rooted
- * at `cwd` — matched by resolved `root`, falling back to the sole entry when
- * there's exactly one (single-repo project, `design["."]`). Returns null
- * when no argo.json/design block is found (unconfigured project) — every
- * caller below treats that as "use the mechanism's own defaults".
- */
+// Matches the app's design block by resolved root, falling back to the sole entry
+// when there's exactly one. Returns null when unconfigured — callers treat that as
+// "use the mechanism's own defaults".
 export function findDesignBlock(cwd: string): Record<string, any> | null {
   const found = findArgoJson(cwd)
   const entries = Object.entries(found?.config?.design ?? {})
@@ -106,43 +77,17 @@ export function findDesignBlock(cwd: string): Record<string, any> | null {
   return entries.length === 1 ? (entries[0][1] as Record<string, any>) : null
 }
 
-/**
- * Kit components are AUDITED, not exempt (directive 3, 2026-07-07): the kit is
- * an editable part of the project's own design system, not a read-only
- * vendored mirror. A component named in an audit is a component someone is
- * authoring/adopting, so its hygiene must pass. The earlier blanket
- * `kind:"kit"` exemption is removed. What keeps this affordable is SCOPE, not
- * exemption: the hard gate targets only the components a session changed
- * (per-session write tracking) or that drifted (pull-registry's
- * detectChangedKitComponents), never the whole 117-component kit every turn.
- * The insideInstance exemptions in design-rules.ts still spare kit internals a
- * designer only instances.
- */
-/**
- * A file-wide sweep (`componentNames` input empty) is now SCOPED, not
- * literal-whole-file (D26, 2026-07-08): every registry-listed component
- * (`sweepNodeIds`, kit or custom — directive 3 above still applies, no
- * blanket kit exemption) plus the project's composed-screen pages. The
- * actual project convention for a composed screen's page is `D<NN> <group>`
- * (file-structure.md, `isDesignPageName` in design-rules.ts) — ONE page per
- * screen, never a single page literally named "Screens" — so
- * `runDesignRulesAudit` matches those pages directly via `isDesignPageName`
- * regardless of `sweepPageNames`. `sweepPageNames` (from
- * `design.<app>.sweepPageNames`, defaulting to `['Screens']`) is ADDITIVE
- * on top of that — for a project with a genuine literal catch-all page (or
- * any other non-`D<NN>` naming choice) it wants included too — never the
- * sole mechanism (council-review finding, 2026-07-08: gating the whole
- * scoped-sweep page match on a literal `sweepPageNames` equality check meant
- * the "screens" half of the sweep matched zero pages on every project using
- * the real `D<NN>` convention). Auditing every top-level frame on every one
- * of a starter file's 50+ pages (kit primitives, demo/example pages, icon
- * libraries) was both noisy (near-entirely stock shadcn content nobody in
- * the project touched) and, on a file this size, a `use_figma` transport
- * risk (one script walking the whole tree can exceed the size/time budget
- * and drop mid-execution with no partial result). A NAMED audit's targets
- * (`componentNodeIds`/`unresolvedNames` above) are unaffected — this only
- * widens what a bare sweep (empty `componentNames` input) implies.
- */
+// Kit components are AUDITED, not exempt: the kit is an editable part of the
+// project's own design system. What keeps this affordable is SCOPE — the hard gate
+// targets only components a session changed or that drifted, never the whole kit.
+//
+// A file-wide sweep is SCOPED, not literal-whole-file: every registry-listed
+// component plus the project's composed-screen pages (matched via
+// isDesignPageName's D<NN> convention, regardless of sweepPageNames).
+// sweepPageNames is ADDITIVE on top of that, for a genuine literal catch-all page.
+// Auditing every top-level frame on a 50+ page starter file was both noisy (stock
+// content nobody touched) and a use_figma transport risk (can exceed the
+// size/time budget and drop mid-execution with no partial result).
 export function deriveDesignRulesAuditOptions({
   cwd,
   componentNames = []
@@ -162,27 +107,21 @@ export function deriveDesignRulesAuditOptions({
   const registryComponents = registry?.components && typeof registry.components === 'object' ? registry.components : {}
   const sweepNodeIds = isSweep
     ? Object.values(registryComponents)
-        // code-owned components (flat screenshots) are audit-exempt, and
-        // un-adopted (raw) kit masters are the vendored mirror nothing
-        // instances (directive 3 refined) — keep both out of the scoped
-        // file-wide sweep, not just named audits. Adopted kit and custom stay.
+        // code-owned components and un-adopted (raw) kit masters stay out of the
+        // scoped file-wide sweep too, not just named audits.
         .filter((c: any) => c?.kind !== 'code-owned' && c?.kind !== 'screen' && !isRawUnadoptedKit(c))
         .map((c: any) => c?.nodeId)
         .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
     : []
   const sweepPageNames = isSweep ? (designBlock?.sweepPageNames ?? ['Screens']) : []
 
-  // Registered screens (kind:"screen") — the audit sets isScreenFrame from
-  // membership in this set (registry-driven identity, replacing the old
-  // page-name heuristic). Always derived (named audit AND sweep), so a screen
-  // audited by nodeId still gets its screen-frame exemptions.
-  // W4 (untraced-copy rule #13): flatten every wave copy deck under design/
-  // (design/copy-deck.json + design/<wave>/copy-deck.json, one level) via
-  // copyDeckStrings, then append every registry entry's documented
-  // defaultStrings. No deck anywhere → null, and the rule stays INERT — a
-  // project that never adopted copy decks sees zero behavior change. A deck
-  // that EXISTS but is malformed throws loudly (copyDeckStrings/zod): a broken
-  // deck silently disarming the copy gate would be a false pass.
+  // Registry-driven screen-frame identity, always derived so a screen audited by
+  // nodeId still gets its screen-frame exemptions.
+  //
+  // Flattens every wave copy deck under design/ via copyDeckStrings, plus each
+  // registry entry's defaultStrings. No deck anywhere stays INERT (zero behavior
+  // change); a deck that EXISTS but is malformed throws loudly — a broken deck
+  // silently disarming the copy gate would be a false pass.
   const designDir = join(cwd, 'design')
   const deckPaths: string[] = []
   if (existsSync(join(designDir, 'copy-deck.json'))) deckPaths.push(join(designDir, 'copy-deck.json'))
@@ -278,10 +217,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log(USAGE)
   } else {
     const resolvedCwd = cwd ?? process.cwd()
-    // A missing design block here means every downstream default (recipe
-    // null, semanticCollectionName 'Semantic', no sweep scoping) is silently
-    // wrong for THIS project — fail loud instead of emitting a hollow options
-    // object that lets a named or swept audit pass vacuously.
+    // A missing design block means every downstream default is silently wrong for
+    // this project — fail loud instead of a hollow options object.
     if (findDesignBlock(resolvedCwd) === null) {
       console.error(
         `prepare-design-rules-audit-options: no design block found for cwd ${resolvedCwd} — run from the app workspace (e.g. apps/desktop)`

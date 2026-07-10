@@ -1,13 +1,6 @@
 /**
- * Wave-scoped copy deck (design-phase-quality-plan.md W3): the single
- * upstream source for every authored string in a wave —
- * `region → field-key → canonical string`, plus a `sharedTerms` block
- * authored ONCE and referenced by key so the same entity is named
- * identically across screens. Machine artifact at
- * `design/<wave>/copy-deck.json` (the human-readable source is the PRD's
- * copy-deck section; the designer emits this artifact from it alongside the
- * binding manifest). The design-rules `untraced-copy` rule (W4) consumes the
- * flattened string list via `prepare-design-rules-audit-options`.
+ * Wave-scoped copy deck: the single upstream source for every authored
+ * string in a wave, so the same entity is named identically across screens.
  */
 import { z } from 'zod'
 

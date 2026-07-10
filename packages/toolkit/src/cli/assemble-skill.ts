@@ -1,26 +1,7 @@
 /**
- * `argo design assemble-skill` — the "wrapper includes craft file at build
- * time" mechanism (playbook-engine-phase1.md Slice 12, step 37).
- *
- * Deliberately NOT a templating engine: a `skills/<name>/SKILL.md` file
- * checked into the repo IS the wrapper — frontmatter plus a single
- * `<!-- INCLUDE: <repo-relative-path> -->` marker line. This module's only
- * job is a literal string include: read the wrapper, find the marker, read
- * the named file, splice its content in place of the marker line, return the
- * assembled markdown. No conditionals, no variables, no nested includes.
- *
- * Confirmed absent before adding this: no existing script in the repo reads
- * `skills/*\/SKILL.md` to assemble it from another source (grep for
- * "assemble"/"INCLUDE" over `packages/toolkit/src` and the repo root turned up
- * nothing touching SKILL.md).
- *
- * This does not rewrite the checked-in wrapper in place — the wrapper stays
- * the marker form as the source of truth in git; running this script is the
- * documented build/prepare step a consumer (a published-plugin packaging
- * step, a docs site, a future runtime loader) uses to get the fully
- * assembled skill text. Phase 1 scope stops at "the mechanism exists and is
- * tested" per the plan's own risk note — wiring it into the live plugin skill
- * load path is explicitly left to whoever reviews this slice.
+ * Deliberately not a templating engine: splices one included file's literal
+ * content in place of a single `<!-- INCLUDE: path -->` marker line. No
+ * conditionals, no variables, no nested includes.
  */
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join } from 'node:path'
@@ -58,16 +39,9 @@ const INCLUDE_BLOCK_RE = /^<!--\s*INCLUDE:\s*(.+?)\s*-->\n[\s\S]*?^<!--\s*\/INCL
 
 /**
  * Idempotent in-place assembly: the wrapper keeps a begin/end marker pair
- *
- *   <!-- INCLUDE: path -->
- *   ...spliced craft content...
- *   <!-- /INCLUDE -->
- *
- * so the committed SKILL.md carries the REAL content (the installed plugin
- * loads SKILL.md verbatim — there is no packaging step to assemble at) while
- * staying re-assemblable after the craft doc changes. A bare single-line
- * marker (the pre-expansion form) is upgraded to the block form on first run.
- * Returns the assembled text; `changed` says whether it differs from disk.
+ * wrapping the spliced content so it stays re-assemblable after the source
+ * changes. A bare single-line marker is upgraded to the block form on first
+ * run. Returns the assembled text; `changed` says whether it differs from disk.
  */
 export function assembleSkillInPlace({ skillPath, cwd = process.cwd() }: AssembleSkillOptions): {
   assembled: string
@@ -116,9 +90,6 @@ export function assembleAllSkills({ repoRoot, write }: { repoRoot: string; write
   return changed
 }
 
-// CLI:
-//   assemble-skill <skillPath> [--cwd <repoRoot>]   — print one assembled skill
-//   assemble-skill --all [--check] [--cwd <root>]   — rewrite (or drift-check) every wrapper in place
 if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2)
   const cwdFlagIndex = args.indexOf('--cwd')

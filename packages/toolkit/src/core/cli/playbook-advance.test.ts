@@ -11,11 +11,9 @@ import { playbookAdvance } from './playbook-advance.js'
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
 
-/** Runs a REAL child process that calls `playbookAdvance` against a shared,
- * always-failing gate — two OS processes racing the same instance's
- * stage/status read-modify-write is the only way to actually exercise the
- * lost-update window (synchronous fs calls in one process never yield, so
- * two in-process calls can never race each other). Resolves on exit 0. */
+/** Runs a real child process racing `playbookAdvance` against a shared instance:
+ * synchronous fs calls never yield in-process, so only two OS processes can
+ * exercise the lost-update window. Resolves on exit 0. */
 function spawnAdvanceWorker(key: string, playbookName: string, gateName: string, stateRoot: string, cwd: string): Promise<void> {
   const workerPath = join(currentDir, '..', 'fixtures', 'playbook-advance-worker.mjs')
   return new Promise((resolvePromise, reject) => {
@@ -75,7 +73,7 @@ describe('playbookAdvance', () => {
     expect(result.stage).toBe('build')
     expect(result.status).toBe('in-progress')
     // One entry for the finished stage's verdict, one transition stamp for
-    // the newly-entered stage (measurement seam — item 4).
+    // the newly-entered stage.
     expect(result.history).toHaveLength(2)
     expect(result.history[0]).toMatchObject({ stage: 'brief', gate: gateName, verdict: { passed: true } })
     expect(result.history[1]).toMatchObject({ stage: 'build' })
@@ -164,7 +162,7 @@ describe('playbookAdvance', () => {
 
     expect(result.stage).toBe('build')
     // Gateless stages record no verdict, but the transition itself is still
-    // stamped (measurement seam — item 4).
+    // stamped.
     expect(result.history).toHaveLength(1)
     expect(result.history[0]).toMatchObject({ stage: 'build' })
     expect(result.history[0].gate).toBeUndefined()
@@ -250,9 +248,9 @@ describe('playbookAdvance', () => {
     ])
 
     const result = readInstance(key, { cwd, stateRoot })
-    // Bare read+write here (pre-fix) let one process's status transition
-    // silently clobber the other's — both concurrent failures must land as
-    // two distinct attempts, and status must reflect the guarded outcome.
+    // A bare read+write would let one process's status transition silently
+    // clobber the other's — both concurrent failures must land as two
+    // distinct attempts, with status reflecting the guarded outcome.
     expect(result?.attempts).toHaveLength(2)
     expect(result?.status).toBe('in-progress')
   })

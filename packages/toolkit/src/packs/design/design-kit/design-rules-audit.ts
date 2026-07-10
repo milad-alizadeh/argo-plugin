@@ -1,47 +1,32 @@
 /**
- * Canonical design-rules Figma hygiene audit (figma-to-code-pipeline.md §5 tier 0).
+ * Canonical design-rules Figma hygiene audit — the one copy of this logic;
+ * every caller shares it. A thin Plugin-API walker: marshals live `figma.*`
+ * node/variable objects into plain-object shapes and delegates the actual
+ * rule logic to this package's unit-tested pure functions.
  *
- * Owned by /argo:figma-audit (X3) — /argo:figma-sync and /argo:design-component
- * call this SAME function; there is exactly one copy of this logic. This is
- * a thin Plugin-API walker: it marshals live `figma.*` node/variable objects
- * into plain-object shapes and delegates the actual rule logic to this
- * package's unit-tested pure functions (./design-rules.js).
- *
- * Config-as-data (kit-extraction restructure): every project-specific value
- * this mechanism needs — the Semantic collection name, and the recipe
- * extension point below — arrives through `options`, never through a
- * splice/placeholder step baked into a committed copy. `bundle-design-rules-audit`
- * (skill-scripts) generates a small entry module that imports this function
- * plus whichever recipe's check functions and bakes them into the bundle
- * `use_figma` runs; DATA (the Semantic collection name) still flows through
- * `options` at call time — see prepare-design-rules-audit-options.js.
+ * Every project-specific value (Semantic collection name, the recipe
+ * extension point below) arrives through `options` at call time, never
+ * through a splice/placeholder step baked into a committed copy.
  *
  * `options.runRecipeDesignRulesChecks(node, { hard })` — recipe-owned per-node
- *   checks (e.g. non-semantic-binding). Omit for a recipe with no checks —
- *   the guarded call below no-ops.
+ * checks. Omit for a recipe with no checks; the guarded call below no-ops.
  *
- * Universal per-node a11y/overflow checks (hug-overflow, touch-target on
- * nodes with prototype reactions, WCAG text contrast via the `wcag-contrast`
- * package) run on EVERY audited node — no role tags, no category config;
- * the contrast check resolves a text node's background deterministically
- * (nearest fully-opaque solid ancestor fill, threaded down the walk) and
- * SKIPS when it can't, never guesses.
+ * Universal per-node a11y/overflow checks (hug-overflow, touch-target, WCAG
+ * text contrast) run on every audited node, no role tags or category config.
+ * The contrast check resolves a text node's background deterministically
+ * (nearest fully-opaque solid ancestor fill) and skips when it can't, never
+ * guesses.
  *
  * Reports violations as { severity: 'hard' | 'advisory', rule, nodeId, nodeName, detail }.
- * `hard` fails the calling skill loud (D8); `advisory` is a file-wide sweep
- * finding surfaced but not blocking (e.g. un-synced frames).
+ * `hard` fails the calling skill loud; `advisory` surfaces on a file-wide
+ * sweep but doesn't block.
  *
- * Cannot be unit-tested outside Figma's Plugin API sandbox (design-pack plan
- * §6, risk 1; documented accepted gap) — the `options`-passing plumbing
- * around it (semanticCollectionName threading, recipe-hook wiring) is
- * exercised by prepare-design-rules-audit-options.test.js and
- * bundle-design-rules-audit.test.js instead of a synthetic Figma harness here.
+ * Cannot be unit-tested outside Figma's Plugin API sandbox; the
+ * options-passing plumbing around it is tested separately.
  *
- * This file runs exclusively inside Figma's `use_figma` Plugin API sandbox,
- * where a global `figma` object is injected at runtime — no `@figma/plugin-typings`
- * dependency is pulled in for this migration; the global is declared `any`
- * locally, matching the pragmatic (not fully domain-modeled) typing used
- * throughout this package's Figma node/variable shapes.
+ * Runs exclusively inside Figma's `use_figma` Plugin API sandbox, where
+ * `figma` is a runtime global — declared `any` locally, matching the
+ * pragmatic typing used throughout this package's Figma node/variable shapes.
  */
 declare const figma: any
 
@@ -111,21 +96,16 @@ async function auditNode(
 ) {
   const violations: any[] = []
 
-  // Fetched early (rather than inside the INSTANCE-only block below) so the
-  // R8 false-positive tag can see it before any violation is reported.
+  // Fetched early so the false-positive tag below can see it before any violation is reported.
   const main = node.type === 'INSTANCE' ? await node.getMainComponentAsync() : null
-  // `overrides` exists only on INSTANCE nodes — reading it on any other type
-  // throws in the use_figma sandbox (confirmed live 2026-07-05: crashed every
-  // named audit of a COMPONENT_SET).
+  // `overrides` exists only on INSTANCE nodes — reading it on any other type throws in the sandbox.
   const overriddenFields =
     node.type === 'INSTANCE' ? (node.overrides ?? []).flatMap((o: any) => o.overriddenFields ?? []) : []
 
-  // R8: a node that resolves to a kit main component (a remote instance, or
-  // a node inside one) whose only overrides are size/fill/stroke is
-  // presumptively a GATE BUG, not a real hygiene defect — tag every
-  // violation reported for it `possible-gate-false-positive` so the
-  // designer/reviewer never has to self-grade that judgment (agents/
-  // designer.md's ICONS section states this never licenses detaching).
+  // A node resolving to a kit main component whose only overrides are
+  // size/fill/stroke is presumptively a gate bug, not a real hygiene defect —
+  // tag every violation reported for it so the reviewer never has to
+  // self-grade that judgment. Never licenses detaching.
   const falsePositiveTag = possibleGateFalsePositiveTag({
     isRemoteInstance: Boolean(main?.remote),
     insideInstance,
@@ -143,18 +123,13 @@ async function auditNode(
   }
 
   // Rule functions that read `node.insideInstance` (the kit-internals
-  // exemption, 2026-07-05) need it MARSHALED onto the node they're called
-  // with — `insideInstance` is an opts-only value the real Plugin-API node
-  // never carries as a property. `nodeCtx` prototype-delegates to the real
-  // node (so every existing property/getter access on it still works) and
-  // adds `insideInstance` on top. Fix (live D01 build): unbound-fill/stroke/
-  // radius/type and missing-auto-layout were previously called with the bare
-  // node, so this exemption silently never fired for them, and a pristine
-  // kit instance (e.g. Switch) hard-failed on its own internal frames.
-  // A get-only Proxy, NOT Object.create/assign — the sandbox node is itself
-  // a Proxy whose set trap rejects unknown properties even via a derived
-  // object (confirmed live 2026-07-05, threw on COMPONENT_SET). Rule
-  // functions only ever READ nodeCtx.
+  // exemption) need it marshaled onto the node — it's an opts-only value the
+  // real Plugin-API node never carries as a property. `nodeCtx` delegates to
+  // the real node so every existing property/getter still works, and adds
+  // `insideInstance` on top.
+  // A get-only Proxy, not Object.create/assign — the sandbox node is itself a
+  // Proxy whose set trap rejects unknown properties even via a derived
+  // object. Rule functions only ever read nodeCtx.
   const nodeCtx = new Proxy(node, {
     get: (target: any, prop: string) =>
       prop === 'insideInstance'
@@ -174,28 +149,22 @@ async function auditNode(
   if (radius) report(radius.rule, radius.detail)
   const type = textStyleRequiredViolation(nodeCtx)
   if (type) report(type.rule, type.detail)
-  // Universal per-node a11y/overflow checks (no tags, no config — folded in
-  // from the retired geometry layer; only the genuinely component-agnostic
-  // subset survived).
+  // Universal per-node a11y/overflow checks: no tags, no config.
   for (const v of hugOverflowViolations(nodeCtx)) report(v.rule, v.detail)
   const touchTarget = touchTargetViolation(nodeCtx)
   if (touchTarget) report(touchTarget.rule, touchTarget.detail)
   const contrast = textContrastViolation(nodeCtx)
   if (contrast) report(contrast.rule, contrast.detail)
-  // Rule #13 (untraced-copy, W4): hard on named audits via report(); inert
-  // when no copy deck is in play (copyAllowedStrings null — see
-  // prepare-design-rules-audit-options). Called with nodeCtx so the rule can read
-  // insideInstance if its exemption policy ever changes; today it deliberately
-  // audits instance internals too (documented on the rule).
+  // Hard on named audits via report(); inert when no copy deck is in play
+  // (copyAllowedStrings null). Called with nodeCtx so the rule can read
+  // insideInstance if its exemption policy changes; today it deliberately
+  // audits instance internals too.
   const untracedCopy = untracedCopyViolation(nodeCtx, { copyAllowedStrings })
   if (untracedCopy) report(untracedCopy.rule, untracedCopy.detail)
-  // Advisory, never hard (live calibration 2026-07-07): `textTruncation:
-  // ENDING` is Figma's INTENTIONAL ellipsis setting — tree labels, long
-  // session names, and similar deliberately truncate; a live audit found ~65
-  // hits, almost all intentional (48 on TreeNode alone). The rule can't tell
-  // intentional truncation from an accidental clip, so it flags for review but
-  // must not block. The accidental-clip defect it was aimed at (a container
-  // clipping its child's text) is a different mechanism, left to the blind
+  // Advisory, never hard: `textTruncation: ENDING` is Figma's intentional
+  // ellipsis setting, and the rule can't tell intentional truncation from an
+  // accidental clip, so it flags for review but must not block. The
+  // accidental-clip defect is a different mechanism, left to the blind
   // fidelity-verifier.
   const truncation = textTruncationViolation(nodeCtx)
   if (truncation)
@@ -238,12 +207,10 @@ async function auditNode(
     })
     if (kitOverride) report(kitOverride.rule, kitOverride.detail)
 
-    // Any resolvable main, remote OR local — the earlier `main?.remote` gate
-    // meant the check never ran in a duplicated-starter file (all icon mains
-    // are local there), which let 85 non-proportional icon strokes accumulate
-    // undetected. Hard on named audits (via report). Top-level only: nested
-    // kit-icon instances re-flag the same glyph at every nesting level with
-    // unreliable native-size readings.
+    // Any resolvable main, remote or local — gating on remote-only would miss
+    // a duplicated-starter file, where all icon mains are local. Hard on
+    // named audits. Top-level only: nested kit-icon instances re-flag the
+    // same glyph at every nesting level with unreliable native-size readings.
     if (main && !insideInstance) {
       const strokeScaleShape = marshalIconStrokeScale(node, main)
       if (strokeScaleShape) {
@@ -256,14 +223,10 @@ async function auditNode(
   const nonSemanticName = nonSemanticNameViolation(nodeCtx)
   if (nonSemanticName) report(nonSemanticName.rule, nonSemanticName.detail)
 
-  // Composite-naming check. Supersedes the earlier "ALWAYS advisory" Option-B
-  // ruling (design-first-council-ruling.md): the mechanism now RESPECTS a hard
-  // flag so it can protect the components-first guarantee (design-process-
-  // simplification.md). It stays advisory by DEFAULT (`compositeNamingHard`
-  // false) until one NEW-composite wave calibrates the wrapper-frame exemption;
-  // flip the default (or wire `prepare-design-rules-audit-options` to pass true) after
-  // that. Only a NAMED (hard) audit can escalate it — a file-wide sweep is
-  // always advisory.
+  // Composite-naming check respects a hard flag so it can protect the
+  // components-first guarantee. Stays advisory by default until the
+  // wrapper-frame exemption is calibrated; only a named audit can escalate
+  // it, a file-wide sweep is always advisory.
   const compositeNaming = compositeRegionNamingViolation(node, compositeNames)
   if (compositeNaming) {
     violations.push({
@@ -281,8 +244,8 @@ async function auditNode(
   // design-component upsert, never a structural defect that should fail a
   // named audit.
   // nodeCtx, not node — the rule reads the walker-marshaled
-  // insideCategoryShelf, and the sandbox node proxy THROWS on unknown
-  // property reads (live crash, 2026-07-10 first playbook run).
+  // insideCategoryShelf, and the sandbox node proxy throws on unknown
+  // property reads.
   const unsectioned = unsectionedComponentViolation(nodeCtx)
   if (unsectioned) {
     violations.push({ severity: 'advisory', rule: unsectioned.rule, nodeId: node.id, nodeName: node.name, detail: unsectioned.detail })
@@ -305,12 +268,9 @@ async function auditNode(
     violations.push({ severity: 'advisory', rule: emDash.rule, nodeId: node.id, nodeName: node.name, detail: emDash.detail })
   }
 
-  // node (not nodeCtx) — needs the real children array with each child's own
-  // absoluteBoundingBox/layoutPositioning, which the Proxy already passes
-  // through unchanged, so node and nodeCtx are equivalent here; using node
-  // directly avoids implying the check depends on insideInstance, which it
-  // doesn't. Always advisory regardless of `hard` (same pattern as
-  // emDashViolation/compositeNaming).
+  // node, not nodeCtx — using node directly avoids implying the check
+  // depends on insideInstance, which it doesn't. Always advisory regardless
+  // of `hard`.
   for (const overflow of unclippedOverflowViolations(node)) {
     violations.push({ severity: 'advisory', rule: overflow.rule, nodeId: node.id, nodeName: node.name, detail: overflow.detail })
   }
@@ -343,12 +303,11 @@ async function auditNode(
 }
 
 /**
- * Marshals the plain shape `strokeScaleViolation` (NEW-3) checks over, for an
- * icon-like remote instance: a component whose main is a single-VECTOR
- * component (a lucide icon — a frame wrapping exactly one VECTOR child,
- * `layoutMode: 'NONE'`, observed live). Returns null for any remote instance
- * that doesn't match that shape (a non-icon kit component) — the caller only
- * runs the rule when this returns a shape.
+ * Marshals the plain shape `strokeScaleViolation` checks over, for an
+ * icon-like instance: a component whose main is a single-VECTOR component
+ * (a frame wrapping exactly one VECTOR child, `layoutMode: 'NONE'`). Returns
+ * null for any instance that doesn't match that shape (a non-icon component);
+ * the caller only runs the rule when this returns a shape.
  */
 function marshalIconStrokeScale(node: any, main: any) {
   const vectorChildren = (main.children ?? []).filter((c: any) => c.type === 'VECTOR')
@@ -368,11 +327,11 @@ function marshalIconStrokeScale(node: any, main: any) {
 
 
 /**
- * Marshals a single Auto Layout gap/padding field (D24). boundVariables for a
- * number property is a single { id } object, not an array (unlike fills/
- * strokes) — resolved and marshaled explicitly, field by field, same
- * convention as the recipe design-rules walker (remote/key/variableCollectionId are
- * prototype getters, not own properties, so never spread a live Variable).
+ * Marshals a single Auto Layout gap/padding field. boundVariables for a
+ * number property is a single { id } object, not an array (unlike
+ * fills/strokes) — resolved and marshaled explicitly, field by field, since
+ * remote/key/variableCollectionId are prototype getters, not own properties,
+ * so a live Variable must never be spread.
  */
 async function marshalGapPaddingField(node: any, field: string) {
   const value = node[field]
@@ -424,25 +383,17 @@ async function walk(node: any, opts: any, out: any[]) {
 }
 
 /**
- * `options`: `componentNodeIds`/`componentNames` get a hard audit (D8, fails
+ * `options`: `componentNodeIds`/`componentNames` get a hard audit (fails
  * loud) when set; omitted -> advisory file-wide sweep of un-synced frames.
- * `componentNodeIds` is the authoritative target list — real Figma nodeIds
- * resolved Node-side (by `prepare-design-rules-audit-options.js`) against
- * `design/registry.json`, never matched by name here. `componentNames` is
- * ONLY a fallback for a target with no registry entry (e.g. an unregistered
- * foundation frame/SCREEN) — resolved to a nodeId by an unambiguous
- * single-match name lookup; an ambiguous name (more than one same-named
- * node, or zero) reports `ambiguous-audit-target-name` instead of silently
- * sweeping every match (the exact field bug this fixed: auditing "Card" used
- * to also sweep a container frame literally named "Card").
- * `compositeNames` — the project's registered composite names
- * (`design/registry.json`'s keys), derived Node-side by
- * `prepare-design-rules-audit-options.js` before this call — feeds
- * `compositeRegionNamingViolation` (Option B, always advisory).
- * `semanticCollectionName` defaults to `'Semantic'`. `runRecipeDesignRulesChecks`
- * is the recipe's extension point, baked into the bundle by
- * `bundle-design-rules-audit`'s generated entry — omit it for a recipe with no
- * checks.
+ * `componentNodeIds` is the authoritative target list, resolved against
+ * `design/registry.json` upstream, never matched by name here.
+ * `componentNames` is only a fallback for a target with no registry entry,
+ * resolved to a nodeId by an unambiguous single-match name lookup; an
+ * ambiguous name reports `ambiguous-audit-target-name` instead of silently
+ * sweeping every match.
+ * `compositeNames` feeds `compositeRegionNamingViolation` (always advisory).
+ * `runRecipeDesignRulesChecks` is the recipe's extension point; omit it for a
+ * recipe with no checks.
  */
 export async function runDesignRulesAudit(
   options: {
@@ -481,19 +432,14 @@ export async function runDesignRulesAudit(
     componentCategories = []
   } = options
   const violations: any[] = []
-  // Screen identity is registry-driven (design/registry.json entries with
-  // kind:"screen", resolved Node-side by prepare-design-rules-audit-options): a
-  // top-level artboard is a screen frame iff its nodeId is registered as one.
-  // Replaces the old isDesignPageName(pageName) heuristic, which never armed on
-  // a project whose screens live on a page NOT named `D<NN> ...` (e.g. a
-  // "Screens" catch-all page).
+  // Screen identity is registry-driven: a top-level artboard is a screen
+  // frame iff its nodeId is registered as one, regardless of page name.
   const screenNodeIdSet = new Set(screenNodeIds)
-  // A top-level frame is a screen either by registry membership (Node-side
-  // derived, fast) OR by carrying a live `@screen` Dev Mode annotation on the
-  // canvas — the latter is the human/AI-facing marker (frames have no
+  // A top-level frame is a screen either by registry membership or by
+  // carrying a live `@screen` Dev Mode annotation — frames have no
   // `description`, unlike code-owned components, so the annotation layer is
-  // where the marker lives) and makes a hand-annotated screen audit correctly
-  // BEFORE any registry sync. Mirrors the code-owned marker→registry model.
+  // where the marker lives, and this makes a hand-annotated screen audit
+  // correct before any registry sync.
   const hasScreenAnnotation = (n: any) =>
     Array.isArray(n?.annotations) &&
     n.annotations.some((a: any) => /@screen\b/.test(a?.label ?? '') || /@screen\b/.test(a?.labelMarkdown ?? ''))
@@ -512,13 +458,10 @@ export async function runDesignRulesAudit(
     }
     const walkOpts = { hard: true, semanticCollectionName, primitivesCollectionName, additionalAllowedCollectionNames, compositeNames, compositeNamingHard, runRecipeDesignRulesChecks, viewport, copyAllowedStrings, componentCategories }
 
-    // Authoritative path (field bug fix, 2026-07-07 live D01 build): target
-    // by the registry's real nodeId, resolved by the caller Node-side before
-    // this call ever runs — `getNodeByIdAsync` is unambiguous, unlike a
-    // name-based sweep, which matched every same-named node in the file
-    // (auditing "Card" also swept a container frame literally named "Card" —
-    // ~49 foreign violations from kit page furniture that shares the
-    // component's name but isn't it).
+    // Authoritative path: target by the registry's real nodeId, resolved by
+    // the caller before this call ever runs — `getNodeByIdAsync` is
+    // unambiguous, unlike a name-based sweep, which matches every
+    // same-named node in the file.
     for (const nodeId of componentNodeIds) {
       const match = await figma.getNodeByIdAsync(nodeId)
       if (!match) {

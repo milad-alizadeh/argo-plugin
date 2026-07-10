@@ -1,16 +1,13 @@
 /**
- * R7 (unanimous): "pristine kit instance must pass design-rules" CI fixture, built
- * from real marshaled kit shapes (seeded from live-observed facts — see the
- * corpus header — not hand-authored synthetic shapes like `{remote: true,
- * key: 'kit-file-key:1:2'}`, which passed green while encoding the exact
- * wrong `key.startsWith(fileKey)` assumption this fixture exists to prevent
- * recurring). The live-capture CLI was removed with the kit-subscription
- * model (starter-file restructure, 2026-07-07) — the committed fixture still
- * certifies the MECHANISM rules (detached-instance, kit-instance-override,
- * stroke-scale, …) against real marshaled node shapes.
+ * R7: "pristine kit instance must pass design-rules" CI fixture, built from
+ * real marshaled kit shapes (seeded from live-observed facts, not
+ * hand-authored synthetic shapes like `{remote: true, key:
+ * 'kit-file-key:1:2'}`, which passed green while encoding the exact wrong
+ * `key.startsWith(fileKey)` assumption this fixture exists to prevent
+ * recurring).
  *
- * Guardrail (YAGNI, R7): one pristine instance per rule category — this is
- * NOT a general snapshot framework.
+ * Guardrail: one pristine instance per rule category — this is NOT a
+ * general snapshot framework.
  */
 import { describe, it, expect } from 'vitest'
 import { runPureDesignRulesAudit } from '../../../../../../test/helpers/runPureDesignRulesAudit.mjs'

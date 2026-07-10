@@ -14,9 +14,8 @@ export interface PlaybookStatusFound {
    * already `"stuck"`. */
   stuck: boolean
   /** Attempts recorded against the CURRENT stage's gate — `attempts[]` is a
-   * whole-instance append-only log, so this filters by `gate` (stages
-   * usually have distinct gate names) rather than reading `.length` raw,
-   * which would double-count budget across earlier, already-passed stages. */
+   * whole-instance append-only log, so counting raw `.length` would
+   * double-count budget across earlier, already-passed stages. */
   attemptsInStage: number
   lastVerdict: GateVerdict | null
   /** ISO timestamp the instance was started at (`playbookStart`'s `startedAt`),
@@ -33,10 +32,8 @@ export interface PlaybookStatusNotFound {
 export type PlaybookStatusReport = PlaybookStatusFound | PlaybookStatusNotFound
 
 /**
- * `argo playbook status` (Slice 5, step 14): reads and formats an instance
- * for display. Never throws for a missing instance — `found: false` is the
- * documented "no active playbook" case (matches `readInstance`'s null
- * sentinel and the design doc's CLI verification wording).
+ * Reads and formats an instance for display. Never throws for a missing
+ * instance — `found: false` is the documented "no active playbook" case.
  */
 export function playbookStatus(key: string, opts: StateOptions = {}): PlaybookStatusReport {
   const instance = readInstance(key, opts)
@@ -58,8 +55,8 @@ export function playbookStatus(key: string, opts: StateOptions = {}): PlaybookSt
     stuck,
     attemptsInStage,
     // Most recent history entry that actually carries a verdict — a
-    // gateless-stage transition stamp (`{ stage, at }` only, item 4) has no
-    // `verdict` and must not shadow the last real one.
+    // gateless-stage transition stamp has no `verdict` and must not shadow
+    // the last real one.
     lastVerdict: [...instance.history].reverse().find((h) => h.verdict !== undefined)?.verdict ?? null,
     startedAt: instance.startedAt
   }

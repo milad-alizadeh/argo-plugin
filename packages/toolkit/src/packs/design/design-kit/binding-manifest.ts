@@ -1,29 +1,20 @@
 /**
- * Binding manifest (design-phase-quality-plan.md W1/W2/W6/W7): the pre-build
- * DECISION artifact a designer emits BEFORE any `use_figma` composition —
- * one row per screen requirement, `requirement → registry component →
- * variant/states → purpose-in-one-clause`. Machine artifact, written to the
- * app's `design/<wave>/binding-manifest.json`; the `validate-manifest`
- * skill-script verb is the independent check ON the decision (W2) that runs
- * before pixels — relocating the component-choice decision upstream is only
- * a win if something checks it there.
+ * Binding manifest: the pre-build decision artifact a designer emits before
+ * any composition — one row per screen requirement, mapping requirement to
+ * registry component, variant/states, and purpose.
  *
- * Three-tier guardrail (W7), decided mechanically per row:
- *  - `always`   — the row names an existing registry component that carries
- *                 `whenToUse` guidance. Proceed.
- *  - `ask-first` — the component exists but has NO `whenToUse` to match
- *                 against: not decidable by lookup, so the row BLOCKS with a
- *                 stop-and-ask until the human confirms (`humanApproved`).
- *  - `never`    — the row names a component absent from `design/registry.json`
- *                 (an invented name). Always blocks; only a human adds
- *                 components to the roster.
+ * Three-tier guardrail, decided mechanically per row:
+ *  - `always`    — names an existing registry component with `whenToUse`
+ *                  guidance. Proceed.
+ *  - `ask-first` — the component exists but has no `whenToUse` to match
+ *                  against, so the row BLOCKS until a human confirms
+ *                  (`humanApproved`).
+ *  - `never`     — names a component absent from the registry (an invented
+ *                  name). Always blocks; only a human adds components.
  *
- * Confusable pairs (W6): `design/confusable-pairs.json` is a committed,
- * hand-authored table mined from REAL blind-verify rejections (never guessed)
- * — per observed confused pair, one contrastive use-X-not-Y rule. Any manifest
- * row whose component sits in a pair must carry an explicit `justification`
- * naming why this side of the pair is right, or the row blocks with the
- * pair's rule text.
+ * Confusable pairs: a committed, hand-authored table of components that get
+ * confused for one another. A row whose component sits in a pair must carry
+ * an explicit `justification`, or it blocks with the pair's rule text.
  */
 import { z } from 'zod'
 
@@ -38,11 +29,7 @@ export const BindingManifestRowSchema = z.object({
   states: z.array(z.string()).optional(),
   /** Purpose in ONE clause — why this component realizes this requirement. */
   purpose: z.string().min(1),
-  /**
-   * Explicit choice justification. REQUIRED when the component sits in a
-   * confusable pair (W6); also where the highest-risk row records its top-2
-   * candidate comparison (W1's folded #3 core).
-   */
+  /** Explicit choice justification. Required when the component sits in a confusable pair. */
   justification: z.string().optional(),
   /** Alternate candidates considered for the highest-risk row (optional). */
   alternatesConsidered: z.array(z.string()).optional(),
@@ -61,7 +48,7 @@ export const ConfusablePairSchema = z.object({
   rule: z.string().min(1)
 })
 
-/** `design/confusable-pairs.json` — committed like registry.json. */
+/** Committed table of components that get confused for one another. */
 export const ConfusablePairsSchema = z.object({
   pairs: z.array(ConfusablePairSchema)
 })
@@ -82,14 +69,7 @@ export interface ManifestValidationResult {
   blocked: boolean
   schemaErrors: string[]
   rows: ValidatedManifestRow[]
-  /**
-   * Requirements-coverage lint: PRD requirement ids (matrix `covered-by` this
-   * screen, Visible-in-build yes/partial) that NO manifest row references.
-   * Non-empty blocks — a brief-required composite simply absent from the
-   * manifest is the measured seam validate-manifest previously couldn't see
-   * (it only checked listed rows). Empty when the check is inert (no
-   * `requiredRequirements` passed).
-   */
+  /** Requirement ids that no manifest row references. Non-empty blocks; empty when `requiredRequirements` was omitted. */
   uncoveredRequirements: string[]
 }
 
@@ -98,9 +78,9 @@ function normalizeRequirementRef(s: string): string {
 }
 
 /**
- * The W2 lint, pure and unit-testable: schema → existence (registry) →
- * confusable-pair justification → W7 tier. Registry/pairs arrive as parsed
- * JSON (the CLI wrapper owns the file reads, mirroring registry-lookup).
+ * Validates a binding manifest: schema, then component existence, then
+ * confusable-pair justification, then tier. Registry/pairs arrive as parsed
+ * JSON — callers own the file reads.
  */
 export function validateBindingManifest(
   manifest: unknown,
@@ -111,13 +91,7 @@ export function validateBindingManifest(
   }: {
     registry: any
     confusablePairs?: unknown
-    /**
-     * Requirements-coverage input (the manifest coverage lint): the PRD
-     * requirements this screen must realize (matrix `covered-by` this screen,
-     * Visible-in-build yes/partial — `selectChecklistForScreen`'s output).
-     * Every entry must be referenced by at least one manifest row; an
-     * uncovered requirement blocks. Omitted → the check is inert.
-     */
+    /** Requirements this screen must realize; each must be referenced by a manifest row or it blocks. Omitted disables the check. */
     requiredRequirements?: { id: string }[]
   }
 ): ManifestValidationResult {

@@ -1,24 +1,10 @@
-/**
- * Shared writer for design-guard's deterministic receipts (extracted from
- * record-audit-receipt.js, which already exercises this exact write shape
- * under test): writes a JSON file under the host project's `design/`
- * directory, creating it if needed. Both `recordAuditReceipt` and
- * `recordSpecDiffReceipt` persist their receipts through this one function
- * so there is a single place that owns the `design/<file>` write contract.
- * Internal library — no CLI entry of its own (design-doc decision, resolved
- * open question 2).
- */
+// One place owns the design/<file> write contract; every receipt writer shares it.
 
 import { writeFileSync, mkdirSync, renameSync, readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-/**
- * Atomic write (design-memory-placement.md A4/step 3): write to a temp file
- * in the same directory, then `renameSync` over the final path — POSIX
- * rename is atomic, so a crash mid-write leaves the prior file intact
- * (never a truncated/partial registry.json, audit-receipt.json, or
- * spec-diff-receipt.json — every caller shares this one writer).
- */
+// Writes to a temp file then renames over the final path — POSIX rename is atomic,
+// so a crash mid-write never leaves a truncated/partial file.
 export function writeDesignJson(cwd: string, filename: string, data: unknown): void {
   const dir = join(cwd, 'design')
   mkdirSync(dir, { recursive: true })

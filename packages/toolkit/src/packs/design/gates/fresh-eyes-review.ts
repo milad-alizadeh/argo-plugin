@@ -1,12 +1,7 @@
 /**
- * `fresh-eyes-review` gate — compares the finished artifact against the
- * brief via a blind AI judge (playbook-engine-phase1.md Slice 9, step 26 /
- * audit 1.4). Calls `ctx.judge(...)` — the `core.judge` seam
- * (`packages/core/src/judge.ts`) — and never imports `@argohq/claude-adapter-plugin`
- * directly, so this pack stays adapter-agnostic.
- *
- * `maxRounds`/`retries` handling stays in core's `playbook-advance`; this
- * gate only returns pass/fail + findings for one round.
+ * `fresh-eyes-review` gate — compares the finished artifact against the brief
+ * via a blind AI judge, through core's `judge` seam only (never imports the
+ * adapter package directly, so this pack stays adapter-agnostic).
  */
 import type { Gate, GateContext, GateInput, GateVerdict } from '../../../core/index.js'
 
@@ -19,11 +14,7 @@ export function createFreshEyesReviewGate(): Gate {
         throw new Error('fresh-eyes-review: no judge available on GateContext')
       }
 
-      // Forward ONLY the artifact URIs the judge needs (brief + finished
-      // artifact) — never a transcript field. `JudgeRequest`'s own type has
-      // no transcript field, so this is also enforced at the type level one
-      // layer up; picking explicitly here keeps this call site honest even
-      // if `input` is ever widened.
+      // Forward only artifact URIs, never a transcript, even if input is widened later.
       const verdict = await ctx.judge({ artifacts: input.artifacts })
 
       return {

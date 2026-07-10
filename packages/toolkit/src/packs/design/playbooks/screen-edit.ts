@@ -1,20 +1,13 @@
 /**
- * `screen-edit` playbook spec (playbook-engine-phase1.md Slice 11, step 32;
- * design doc "Playbook matrices #4"): `update-brief` → `component-impact` →
- * `targeted-edits` → `review`.
+ * `screen-edit` playbook spec: `update-brief` -> `component-impact` ->
+ * `targeted-edits` -> `review`.
  *
- * The brief is updated FIRST ("it's the verify contract") so `review`'s
- * `fresh-eyes-review` judges the finished screen against the UPDATED brief,
- * not the stale one `screen-create` produced.
+ * The brief is updated first, since it is `review`'s verify contract: the
+ * judge checks the finished screen against the updated brief, not a stale one.
  *
- * `component-impact` mirrors `screen-create`'s `missing-components`: the run
- * itself diffs the updated brief against the registry/kit and spawns
- * `component-edit` / `component-create` runs for any component the PRD
- * changed — the screen run never mutates a component master inline.
- *
- * `targeted-edits` is warm across sections (`repeat: 'section'`), absorbing
- * `design-rules-check` fix rounds in-session (`maxRounds`) before a fresh
- * retry (`retries`) — same escalation shape as `screen-create`'s `build`.
+ * `component-impact` diffs the updated brief against the registry/kit and
+ * spawns component runs for any changed component; the screen run never
+ * mutates a component master inline.
  */
 import { definePlaybook, registerPlaybook } from '../../../core/index.js'
 

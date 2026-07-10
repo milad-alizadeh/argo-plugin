@@ -1,18 +1,9 @@
 #!/usr/bin/env node
-/**
- * Design commit gate (PreToolUse on Bash, `git commit` only). Applies the
- * red-proof/trust gates' RECEIPT principle to figma-to-code's D22 acceptance
- * gates: a commit touching generated component code may only land with a
- * fresh, passing spec-diff receipt — never an LLM's narration that "the
- * walker passed".
- *
- * SELF-SCOPING, DIFFERENT FROM red-proof/trust: arms per-app from
- * `.argo/config.json`'s `design.<app>` blocks (decision 8's dual-mode
- * resolution — the old `design/config.json`-presence arming silently
- * no-oped per-app in monorepos), NOT scoped to `.argo/evidence/build-mode.json`.
- * figma-to-code can legitimately run outside a gated build, and this
- * deterministic gate must still be mandatory there.
- */
+// A commit touching generated component code may only land with a fresh,
+// passing spec-diff receipt — never an LLM's narration that it passed.
+//
+// Arms per-app from each app's own config block, not from a single repo-wide
+// flag, so arming can't silently no-op for one app in a monorepo.
 
 import { existsSync, readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -62,11 +53,8 @@ if (armed.length === 0) process.exit(0)
 const block = makeBlock('Design commit gate')
 
 for (const app of armed) {
-  // Code-owned component files (a Three.js scene, a live terminal — Figma holds
-  // only a screenshot) have no spec to diff against, so they never owe a
-  // spec-diff receipt, mirroring the design-rules and figma-to-code exemptions. A
-  // commit touching ONLY code-owned component files under this app's
-  // componentsPath is not gated.
+  // Code-owned component files have no spec to diff against, so they never
+  // owe a spec-diff receipt.
   let registry: unknown
   try {
     registry = JSON.parse(readFileSync(join(app.designDir, 'registry.json'), 'utf8'))
@@ -86,11 +74,9 @@ for (const app of armed) {
   const age = Date.now() - receipt.recordedAt
   if (age > 10 * 60 * 1000) block(`spec-diff receipt timestamp out of range (${Math.round(age / 1000)}s) — re-run required`)
 
-  // Freshness-by-timestamp alone lets a stale-but-timely receipt be reused
-  // after further edits (record the receipt, edit more, commit within the
-  // 10-minute window). Binding to the repo's total drift-from-HEAD digest
-  // (computed identically by record-spec-diff-receipt) catches any content
-  // change since the walker actually ran, staged or not.
+  // Timestamp freshness alone lets a stale receipt be reused after further
+  // edits made within the window, so also bind to a drift digest that
+  // changes with any content change since the walker ran.
   const currentDigest = workingTreeDriftDigest(dirname(app.designDir))
   if (receipt.stagedDigest !== currentDigest)
     block('staged diff has changed since the spec-diff receipt was recorded — re-run the walker (argo design record-spec-diff-receipt)')

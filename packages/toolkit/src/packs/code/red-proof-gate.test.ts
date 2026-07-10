@@ -5,8 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-// Spawned as a real subprocess — dist, not the sibling .ts source. Requires
-// `bun run build` to have produced a current packages/kit/dist/.
+// Spawned as a real subprocess against the built output — requires a current build.
 const GATE = fileURLToPath(new URL('../../../dist/packs/code/red-proof-gate.js', import.meta.url))
 
 function runGate(stdin: string) {

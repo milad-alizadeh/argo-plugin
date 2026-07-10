@@ -1,18 +1,16 @@
 import type { Attempt, GateVerdict } from '../core/index.js'
 
 /**
- * FRESH/WARM/RETRY session spawn functions (Slice 7, step 22), against an
- * abstract "Claude Code session API" — the real API doesn't exist in this
- * repo yet, so callers inject a `SessionApi` implementation (a fake in
- * tests, the real Claude Code session API once this adapter is wired into a
- * live host).
+ * FRESH/WARM/RETRY session spawn functions against an abstract "Claude Code
+ * session API" (the real API doesn't exist yet, so callers inject a
+ * `SessionApi`: a fake in tests, the real one once wired into a live host).
  *
- * The three modes, per the design doc:
+ * The three modes:
  *  - FRESH: a brand-new session fed ONLY the stage's `requires` artifacts,
  *    the skill text, and a one-line frame. No other context.
  *  - WARM: the SAME session handle reused across repeat units (`repeat` in
- *    the stage spec) — callers hold onto the returned handle and pass it
- *    back in as `warmHandle` for the next unit.
+ *    the stage spec); callers hold onto the returned handle and pass it back
+ *    in as `warmHandle` for the next unit.
  *  - RETRY: a FRESH session (never the prior transcript) fed the gate
  *    verdict that failed plus `attempts[]` so far.
  */

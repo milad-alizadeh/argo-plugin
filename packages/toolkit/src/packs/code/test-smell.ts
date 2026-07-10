@@ -1,18 +1,6 @@
 #!/usr/bin/env node
-/**
- * Test-smell warner (PostToolUse on Edit|Write). WARNS, never blocks — hooks enforce
- * order and receipts deterministically; test QUALITY is a judgement call, so the most
- * a hook should do is put the smell in front of the model while the file is still
- * fresh. Exit 2 on a PostToolUse hook feeds stderr back to the agent without undoing
- * the write; exit 0 stays silent.
- *
- * Smells flagged (in test files only):
- *  - e2e specs asserting on an internal bridge (`window.api.*` / `window.electron*`)
- *    instead of the rendered DOM — a unit test wearing an e2e costume.
- *  - vacuous assertions: expect(true), expect(1).toBe(1) shapes.
- *  - vi.mock / jest.mock of the module the test file is named after — mocking the
- *    unit under test proves nothing.
- */
+/** Warns, never blocks: test quality is a judgement call. Exit 2 on PostToolUse
+ * surfaces the smell via stderr without undoing the write. */
 import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 
@@ -55,7 +43,6 @@ if (/expect\s*\(\s*true\s*\)\s*\.\s*toBe(Truthy)?\s*\(/.test(src) || /expect\s*\
   warnings.push('contains a vacuous assertion (expect(true)/expect(n).toBe(n)) — it can never fail, so it proves nothing')
 }
 
-// vi.mock/jest.mock of the module this very file is testing (same base name).
 const base = basename(filePath).replace(/\.(test|spec|ct\.spec|e2e)\.[cm]?[jt]sx?$/, '')
 const mockRe = /(?:vi|jest)\.mock\s*\(\s*['"]([^'"]+)['"]/g
 for (let m: RegExpExecArray | null; (m = mockRe.exec(src)); ) {

@@ -70,9 +70,8 @@ describe('recordAuditReceipt', () => {
     }
   })
 
-  // Kit-name-collision counting was removed with the kit-subscription model
-  // (starter-file restructure, 2026-07-07): violationCount is hard audit
-  // violations ONLY — a stale kit-inventory.json on disk contributes nothing.
+  // violationCount is hard audit violations ONLY — a stale kit-inventory.json on
+  // disk contributes nothing.
   it('ignores a leftover design/kit-inventory.json entirely (violationCount = hard violations only)', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'design-rules-audit-receipt-'))
     try {
@@ -88,14 +87,9 @@ describe('recordAuditReceipt', () => {
     }
   })
 
-  // A monorepo runs this from the app root (a nested app dir, per
-  // figma-audit/SKILL.md's documented cwd), but `.argo/design-guard.json`
-  // is repo-global
-  // and lives at the git toplevel, one or more levels above `cwd`. Reading
-  // the guard state relative to the SAME `cwd` used for `design/` silently
-  // missed the file, defaulting `writeCounterAtAudit` to 0 — which then
-  // could never match the real (non-zero) repo-global write count, leaving
-  // design-guard-stop.js permanently blocked. The fix is repo-root-aware.
+  // A monorepo runs this from a nested app root, but design-guard.json is
+  // repo-global at the git toplevel — reading it relative to the same cwd used
+  // for design/ silently missed the file, leaving the stop gate permanently blocked.
   it('reads .argo/design-guard.json from the git repo root, not the app-scoped cwd', () => {
     const repoRoot = mkdtempSync(join(tmpdir(), 'design-rules-audit-receipt-monorepo-'))
     try {
@@ -115,11 +109,9 @@ describe('recordAuditReceipt', () => {
     }
   })
 
-  // Per-session-design-gate.md: with a session id, the receipt is per-session
-  // and local (`.argo/audit-receipts/<sid>.json`), keyed per app and stamped
-  // with THIS session's live write count — never the committed per-app file,
-  // and never touching another session's state, so concurrent sessions can't
-  // clobber each other.
+  // With a session id, the receipt is per-session and local, keyed per app and
+  // stamped with this session's live write count — never the committed per-app
+  // file, so concurrent sessions can't clobber each other.
   it('with a session id, writes a per-session receipt (apps + live write count), not the committed one', () => {
     const repoRoot = mkdtempSync(join(tmpdir(), 'design-rules-audit-receipt-persession-'))
     try {

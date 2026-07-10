@@ -1,9 +1,3 @@
-/**
- * Shared waiver shape for both comment checkers (Wave E, council-hardening.md
- * "comment discipline"), reusing the boundary-lint ignorelist convention
- * (file-structure.md "per-project waivers"): one rule + one path glob + one
- * reason, empty by default. No new shape invented.
- */
 export interface CommentCheckWaiver {
   rule: string
   glob: string

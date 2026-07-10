@@ -208,18 +208,13 @@ describe('kitInstanceOverrideViolation', () => {
     expect(kitInstanceOverrideViolation(node)).toBeNull()
   })
 
-  // Denylist, not whitelist (R10 reframe, 2026-07-05): the false-positive
-  // economics of a hard gate demand a denylist of the specific illegal edits
-  // (geometry/corner-radius/effects), not an allowlist that needs emergency
-  // same-day growth every time a legitimate override is discovered.
-  //
-  // CARVE-OUT (live-file correction, 2026-07-05): strokeWeight is
-  // deliberately NOT in this denylist. Figma records a proportional icon
-  // rescale (the sanctioned fix for the R6/NEW-3 stroke-distortion gotcha)
-  // as a strokeWeight override on the instance — a live library
-  // carries strokeWeight overrides on every correctly-rescaled icon.
-  // strokeWeight legality is owned solely by the NEW-3
-  // `strokeScaleViolation` proportionality rule, not this override check.
+  // Denylist, not whitelist: the false-positive economics of a hard gate
+  // demand a denylist of specific illegal edits (geometry/corner-radius/
+  // effects), not an allowlist that needs emergency growth every time a
+  // legitimate override is discovered. strokeWeight is deliberately NOT in
+  // this denylist — Figma records a proportional icon rescale as a
+  // strokeWeight override on the instance, and that legality is owned
+  // solely by the `strokeScaleViolation` proportionality rule.
   it('passes a strokeWeight override — legality is owned by NEW-3, not this rule', () => {
     const node = { type: 'INSTANCE', isRemoteInstance: true, overriddenFields: ['fills', 'strokeWeight'] }
     expect(kitInstanceOverrideViolation(node)).toBeNull()
@@ -305,16 +300,11 @@ describe('nonSemanticNameViolation', () => {
   })
 
   it('exempts the screen frame\'s OWN name from code-friendly-name — the D<NN> · Group · Title convention is mandated and never consumed as a code identifier', () => {
-    // A top-level screen frame (isScreenFrame) carries the project's mandated
-    // "D02 · Session · builder" naming; it is addressed by a CLI slug, never a
-    // code identifier, so the spaces/generic predicate must not fire on it.
     expect(nonSemanticNameViolation({ type: 'FRAME', name: 'D02 · Session · builder', isScreenFrame: true })).toBeNull()
     expect(nonSemanticNameViolation({ type: 'FRAME', name: 'D05 · Cold open', isScreenFrame: true })).toBeNull()
   })
 
   it('still flags genuinely auto-generated screen-frame names even when isScreenFrame', () => {
-    // Exemption is only for the human-authored convention, not for an unnamed
-    // "Frame 12" left on the canvas.
     expect(nonSemanticNameViolation({ type: 'FRAME', name: 'Frame 12', isScreenFrame: true })).toMatchObject({
       rule: 'non-semantic-name'
     })
@@ -721,10 +711,8 @@ describe('gapPaddingSpacingViolations (D24, revised 2026-07-05: bind required)',
     expect(gapPaddingSpacingViolations(node)).toEqual([])
   })
 
-  // Field bug regression (2026-07-07, live D01 build: a stock kit duplicate
-  // named its Semantic collection "mode" and never renamed it — the check
-  // used to hardcode "Semantic"/"Primitives" literally and hard-failed every
-  // one of the kit's own untouched components).
+  // The semantic collection name must be configurable — a stock kit
+  // duplicate named its collection "mode" instead of "Semantic".
   it('passes a value bound to a non-"Semantic" configured semantic collection name', () => {
     const node = {
       layoutMode: 'HORIZONTAL',
@@ -807,8 +795,6 @@ describe('hugOverflowViolations (universal per-node, no tags/config)', () => {
   })
 
   it('judges child bounds against the node dimensions, never node.x/node.y (different coordinate space)', () => {
-    // node.x = 100 must not inflate the bound: child at 90..190 inside a
-    // 120-wide HUG parent overflows regardless of where the parent sits
     const node = {
       name: 'Row', x: 100, y: 0, width: 120, height: 32,
       layoutSizingHorizontal: 'HUG',

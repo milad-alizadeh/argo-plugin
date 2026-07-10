@@ -1,19 +1,5 @@
 #!/usr/bin/env node
-/**
- * bash-safety-guards — PreToolUse guard on Bash|Monitor: the always-on safety
- * floor that runs before anything else (dangerous git, pipe-to-shell,
- * shell-written source files). Ported 1:1 from the plugin's standalone
- * hooks/block-dangerous-git.sh + hooks/check-pipe-to-shell.mjs +
- * hooks/block-bash-source-write.mjs — merged into one module (one stdin read,
- * one process) rather than three, since Claude Code's hook wiring now
- * dispatches a single `argo argo-hook bash-safety-guards` per Bash/Monitor
- * call instead of three separate `node hooks/*.mjs` processes.
- *
- * Order matters for the block-first-reason UX: dangerous-git, then
- * pipe-to-shell, then bash-source-write — the first violation wins.
- * Fail-open on malformed stdin/no command — this runs on every Bash call in
- * every host project.
- */
+// PreToolUse guard on Bash|Monitor: dangerous-git, then pipe-to-shell, then bash-source-write, first violation wins. Fail-open on malformed stdin/no command.
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 

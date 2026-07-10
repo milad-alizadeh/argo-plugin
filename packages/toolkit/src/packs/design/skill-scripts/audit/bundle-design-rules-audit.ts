@@ -1,24 +1,5 @@
-/**
- * Bundles the canonical design-rules audit (figma-audit/SKILL.md) into a
- * sandbox-runnable artifact for `use_figma` — bundle-on-demand, never
- * assembled/committed into a host project (kit-extraction restructure:
- * killed the splice-into-`design/design-rules-audit.js` model, the exact drift bug
- * that motivated this rewrite).
- *
- * `generateDesignRulesAuditEntry(recipe)` — pure string generation, no I/O: builds
- * a tiny ES-module ENTRY that imports `runDesignRulesAudit` from
- * `@argohq/toolkit/design-kit/design-rules-audit` plus (for a recipe with design-rules checks)
- * that recipe's `runRecipeDesignRulesChecks` from `@argohq/toolkit`, and wraps it so
- * project DATA passed in `options` at call time (semanticCollectionName)
- * reaches the recipe function too — functions can't cross the `use_figma`
- * data boundary, so they're baked into the bundle via imports; only DATA
- * flows through the options object the caller passes.
- *
- * `bundleDesignRulesAudit` — shells out to `bun build --bundle` to produce a
- * self-contained, import-free script (the ONLY thing `use_figma` can run —
- * there is no module resolution in that sandbox), resolving `@argohq/toolkit`
- * from the host project's own `node_modules` (hence the required `cwd`).
- */
+// Bundled on demand for use_figma, never assembled/committed into a host project —
+// avoids the splice-into-design-rules-audit.js drift bug this rewrite replaced.
 import { spawnSync } from 'node:child_process'
 import { writeFileSync, readFileSync, rmSync, existsSync, readdirSync, realpathSync } from 'node:fs'
 import { createHash } from 'node:crypto'
@@ -33,12 +14,8 @@ const RECIPE_ENTRIES: Record<string, { importPath: string }> = {
   }
 }
 
-/**
- * Pure string generation (no I/O, no bun build) — the entry source
- * `bundleDesignRulesAudit` bundles. `recipe` is the app's `design.<app>.recipe`
- * value (e.g. `'shadcn-tailwind'`); `null`/unknown ⇒ mechanism-only entry, no
- * recipe checks.
- */
+// Pure string generation (no I/O): `recipe` is the app's design.<app>.recipe value;
+// null/unknown produces a mechanism-only entry with no recipe checks.
 export function generateDesignRulesAuditEntry(recipe: string | null): string {
   const recipeEntry = recipe ? RECIPE_ENTRIES[recipe] : null
 
@@ -71,17 +48,10 @@ export function generateDesignRulesAuditEntry(recipe: string | null): string {
 const BARE_IDENTIFIER = /^[A-Za-z_$][\w$]*$/
 const DEFAULT_EXPORT_STATEMENT = /\n?export\s*\{\s*([\w$]+)\s+as\s+default\s*\};?\s*$/
 
-/**
- * The entry's own convention (last line) is a BARE trailing identifier — the
- * script's Figma-sandbox eval completion value, not an ES export. A
- * tree-shaking bundler sees that bare reference as a side-effect-free,
- * unused expression and discards the entire audit body as dead code
- * (observed: a real bundle collapsed to ~180 bytes). Forcing an explicit
- * `export default` keeps the whole module alive through bundling;
- * `restoreCompletionExpression` below converts the bundler's resulting
- * `export { X as default }` back into a bare completion expression, since
- * `export` is exactly as unusable in the importless sandbox as `import`.
- */
+// The entry ends in a bare identifier (the sandbox's eval completion value), which a
+// tree-shaking bundler treats as dead code and drops (observed: bundle collapsed to
+// ~180 bytes) — force `export default` to keep it alive; restoreCompletionExpression
+// converts it back since `export` is unusable in the importless sandbox.
 function makeExportForBundling(source: string): string {
   const trimmed = source.replace(/\s+$/, '')
   const lines = trimmed.split('\n')
@@ -103,16 +73,9 @@ function restoreCompletionExpression(bundled: string): string {
   return `${bundled.slice(0, match.index)}\n${match[1]};\n`
 }
 
-/**
- * Bundles an entry module (from `generateDesignRulesAuditEntry`) into a single
- * self-contained, import/export-free script runnable in Figma's `use_figma`
- * Plugin API sandbox. Writes the entry to a temp file INSIDE `cwd` so
- * `@argohq/toolkit` resolves exactly as it does from the host project's real
- * `node_modules`, bundles with `bun build --bundle --format=esm`, restores
- * the bare-completion-value convention (see `makeExportForBundling`), then
- * verifies the result is actually sandbox-runnable: zero `import`/`export`
- * statements, under `maxChars` (use_figma's 50,000-char cap).
- */
+// Bundles an entry into a single import/export-free script runnable in the use_figma
+// sandbox. Writes the entry inside `cwd` so the kit resolves from the host's real
+// node_modules, then verifies zero import/export statements and the 50,000-char cap.
 export function bundleDesignRulesAudit(entrySource: string, { cwd, maxChars = 50000 }: { cwd: string; maxChars?: number }): string {
   if (!cwd) throw new Error('bundleDesignRulesAudit: cwd is required (@argohq/toolkit resolves from its node_modules)')
 
@@ -142,20 +105,9 @@ export function bundleDesignRulesAudit(entrySource: string, { cwd, maxChars = 50
   }
 }
 
-/**
- * Content hash of the actually-imported `@argohq/toolkit` dist that a bundle bakes
- * in — the kit-version half of the cache key. The old key hashed only the
- * generated entry *template* (a static string per recipe), so a kit rebuild
- * that changed the audit logic left the tmp cache — and the in-Figma
- * `sharedPluginData` cache below — serving a stale bundle until a human
- * deleted the tmp file by hand (memory: "Bundle cache stale after kit
- * rebuild"). A `link:`-installed kit in dev never bumps its package version
- * per rebuild, so version alone is insufficient; we hash the dist bytes.
- * Resolves kit from `cwd` exactly as the bundle's imports do, follows the
- * symlink, and folds every `dist/` file's path+bytes (plus the package
- * version) into one digest. Falls back to a sentinel if kit or its dist can't
- * be resolved — the entry-source half still keys the cache in that case.
- */
+// Hashes the actual imported dist bytes (not just package version, since a
+// `link:`-installed dev kit never bumps version per rebuild) so a kit rebuild that
+// changes audit logic invalidates the stale cached bundle instead of silently serving it.
 export function kitDistHash(cwd: string): string {
   try {
     const kitRoot = realpathSync(join(cwd, 'node_modules', '@argohq', 'toolkit'))
@@ -190,12 +142,8 @@ export function kitDistHash(cwd: string): string {
 
 const TRAILING_IDENTIFIER = /([A-Za-z_$][\w$]*)\s*;?\s*$/
 
-/**
- * The bundle's completion value is a bare trailing identifier (see
- * `makeExportForBundling`) — the name bun's bundler assigned to the audit
- * function. The `sharedPluginData` replay reconstructs the function with
- * `new Function(src + 'return <id>')`, so it needs that identifier.
- */
+// Extracts the bare trailing identifier the bundler assigned to the audit function;
+// the replay script needs it to reconstruct the function via `new Function`.
 export function designRulesCompletionIdentifier(bundled: string): string {
   const match = bundled.replace(/\s+$/, '').match(TRAILING_IDENTIFIER)
   if (!match) {
@@ -206,32 +154,15 @@ export function designRulesCompletionIdentifier(bundled: string): string {
   return match[1]
 }
 
-/**
- * Namespace + keys for the in-Figma bundle cache, stored on `figma.root` via
- * `setSharedPluginData` (the only cross-call persistence `use_figma` exposes;
- * `getPluginData`/`setPluginData` are unsupported there). Probed live: `eval`
- * and `new Function` both run in the `use_figma` sandbox, a `new Function`
- * body sees the `figma` global, and a 28 KB entry round-trips (100 KB/entry
- * limit). That makes a true MCP-side cache reachable: embed the ~28 KB bundle
- * ONCE into the file (prime), then every audit/re-audit sends only a tiny
- * replay script instead of re-pasting the bundle (waste-map lever #1).
- */
+// Stored on figma.root via setSharedPluginData — the only cross-call persistence
+// use_figma exposes (getPluginData/setPluginData are unsupported there).
 export const DESIGN_RULES_CACHE_NAMESPACE = 'argoDesignRulesAudit'
 const DESIGN_RULES_CACHE_KEY_SRC = 'bundleSrc'
 const DESIGN_RULES_CACHE_KEY_HASH = 'bundleHash'
 
-/**
- * Per-writer cache keys. Concurrent designers fanned out over one Figma file
- * share a single `figma.root`, so a global key means one designer's prime
- * overwrites another's, and a replay reads a sibling's value (or a half-written
- * one) → spurious hash-mismatch → fallback to a full ~31KB inline re-embed,
- * defeating the optimization exactly under the parallelism it should help
- * (observed live: 2/3 clean, the 3rd cache-missed twice). Scoping the
- * shared-plugin-data keys by `CLAUDE_CODE_SESSION_ID` (mirrors the per-session
- * `.argo/` design-guard state) gives each writer its own cache slot: N
- * concurrent designers → N independent slots, zero cross-talk. No session id →
- * the base keys, so a single-designer / test run is still 1-prime/N-replay.
- */
+// Scoped by session id because concurrent designers share one figma.root: a global
+// key means one writer's prime overwrites another's, causing spurious cache misses
+// (observed live: 2/3 clean, 3rd cache-missed twice). No session id falls back to base keys.
 export function designRulesCacheKeys(sessionId?: string | null): { srcKey: string; hashKey: string } {
   const suffix = sessionId ? `:${sessionId}` : ''
   return {
@@ -240,15 +171,8 @@ export function designRulesCacheKeys(sessionId?: string | null): { srcKey: strin
   }
 }
 
-/**
- * Prime script (paste ONCE per file session): embeds the bundle source a
- * single time as a JSON string literal, stores it + the version hash on
- * `figma.root` under the caller's per-session keys, and returns without running
- * the audit. Store-only keeps this well under the 50,000-char `use_figma` cap
- * even for large recipe bundles (embedding the source AND an executable copy in
- * one call would risk the cap). Re-audits then run via
- * `generateDesignRulesReplayScript` with the same `sessionId`.
- */
+// Paste ONCE per file session: stores the bundle source + version hash, store-only
+// (no execution) to stay under use_figma's 50,000-char cap for large recipe bundles.
 export function generateDesignRulesPrimeScript(bundled: string, hash: string, sessionId?: string | null): string {
   const ns = JSON.stringify(DESIGN_RULES_CACHE_NAMESPACE)
   const { srcKey, hashKey } = designRulesCacheKeys(sessionId)
@@ -260,17 +184,9 @@ export function generateDesignRulesPrimeScript(bundled: string, hash: string, se
   ].join('\n')
 }
 
-/**
- * Replay script (paste for EVERY audit and re-audit): reads the primed bundle
- * back from `figma.root` under the caller's per-session keys, guards on the
- * version hash (a kit rebuild changes `hash`, forcing a re-prime rather than
- * silently auditing with stale logic), reconstructs the audit function via
- * `new Function`, and calls it with the per-call options object. Returns
- * `{ __designRulesCacheMiss: true }` if this session's cache is absent or stale — the
- * caller re-runs the prime script (under the same `sessionId`), then this, so
- * every subsequent replay in the session hits. `optionsLiteral` is the JSON
- * options object from `prepare-design-rules-audit-options`.
- */
+// Paste for EVERY audit/re-audit: guards on version hash so a kit rebuild forces a
+// re-prime rather than silently auditing with stale logic; returns a cache-miss
+// marker when absent or stale so the caller re-primes.
 export function generateDesignRulesReplayScript(
   completionId: string,
   hash: string,
@@ -291,16 +207,9 @@ export function generateDesignRulesReplayScript(
   ].join('\n')
 }
 
-/**
- * The skill-facing entry point: generates the recipe-appropriate entry,
- * bundles it, and caches the result at `outPath` (default a per-recipe file
- * under the OS tmpdir — never the host project's `design/` dir; nothing
- * audit-related is committed to the project). The cache key folds the
- * generated entry source AND a content hash of the imported `@argohq/toolkit`
- * dist (`kitDistHash`), so a kit rebuild automatically invalidates the stale
- * bundle. The returned `hash` doubles as the in-Figma `sharedPluginData`
- * cache version key (prime/replay), so one rebuild invalidates both caches.
- */
+// Generates the recipe entry, bundles it, and caches at outPath (default OS tmpdir,
+// never the project's design/ dir). The cache key folds entry source + kit dist hash,
+// so a kit rebuild invalidates both this cache and the in-Figma one (same hash).
 export function bundleDesignRulesAuditForRecipe({
   cwd,
   recipe = null,
@@ -336,17 +245,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const outPath = flag('--out')
   const emit = flag('--emit') // 'prime' | 'replay' | undefined
   const optionsLiteral = flag('--options') // JSON string, required for --emit replay
-  // Per-writer cache scope so concurrent designers in one Figma file don't
-  // collide on figma.root's shared plugin data. `--session` overrides the env
-  // (test hook); prod reads CLAUDE_CODE_SESSION_ID like the other design gates.
+  // --session overrides for tests; prod reads CLAUDE_CODE_SESSION_ID.
   const sessionId = flag('--session') ?? process.env.CLAUDE_CODE_SESSION_ID ?? null
 
   try {
     const { bundled, bundlePath, cached, hash, completionId } = bundleDesignRulesAuditForRecipe({ cwd, recipe, outPath })
 
-    // One-time receipt binding: record-audit-receipt refuses a receipt whose
-    // nonce a bundle emission didn't mint (lib/audit-nonce.ts). Names come
-    // from --componentNames (named audit) or the replay options JSON.
+    // record-audit-receipt refuses a receipt whose nonce a bundle emission didn't mint.
     let nonceNames: string[] = []
     const namesFlag = flag('--componentNames')
     if (namesFlag) {

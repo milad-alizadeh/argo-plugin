@@ -1,18 +1,8 @@
 /**
- * Headless gate registrations for the bare `argo playbook advance` CLI path.
- *
- * The MCP-live gate factories (createDesignRulesCheckGate needs a readFigma
- * callback, createDesignMatchesCodeGate a screenshot capture) cannot run in
- * a bare CLI process — there is no Figma session to read. The headless
- * verdict model mirrors design-commit-gate: the working session runs the
- * deterministic audit bundle in Figma and records `design/audit-receipt.json`
- * via `argo design record-audit-receipt`; the gate here judges that RECEIPT
- * (existence, target coverage, zero hard violations, staleness vs the
- * session's Figma write counter) — never a free-text self-report.
- *
- * Found live on the first real playbook run (2026-07-10): nothing ever
- * registered `design-rules-check`, so every audit-gated design playbook threw
- * GateNotFoundError at its first advance.
+ * Headless gate registrations for the bare CLI path. The MCP-live gate
+ * factories need a live Figma session (readFigma / screenshot capture) that
+ * doesn't exist here, so headless verdicts judge a recorded audit RECEIPT
+ * (existence, target coverage, zero hard violations) instead of a self-report.
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -25,12 +15,7 @@ function fail(message: string): GateVerdict {
   return { passed: false, findings: [{ message }], evidence: [] }
 }
 
-/**
- * Every receipt that could prove the target's audit: the app-shared
- * `design/audit-receipt.json` plus every per-session receipt under the repo
- * root's `.argo/audit-receipts/` (record-audit-receipt writes the session
- * file when a sessionId is attributed — the shared file may be older).
- */
+/** Every receipt that could prove the target's audit: the shared receipt plus every per-session receipt (the shared one may be older). */
 function candidateReceipts(cwd: string): { path: string; componentNames: string[]; violationCount: number }[] {
   const out: { path: string; componentNames: string[]; violationCount: number }[] = []
   const push = (path: string, receipt: any) => {

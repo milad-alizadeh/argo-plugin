@@ -1,19 +1,10 @@
 #!/usr/bin/env node
-/**
- * `argo design validate-manifest` — the W2 independent check ON the binding
- * manifest (design-phase-quality-plan.md), run BEFORE any `use_figma`
- * composition. Reads the manifest file plus `design/registry.json` and the
- * committed `design/confusable-pairs.json` Node-side, delegates the lint to
- * the pure `validateBindingManifest` (design-kit), prints the JSON report,
- * and exits non-zero when any row blocks — so the calling skill's
- * stop-and-ask fires before pixels, not after the full build:
- *
- *   exit 0 — manifest clean, build may proceed
- *   exit 1 — blocked rows (Never-tier invented name, un-justified confusable
- *            pair, Ask-first row awaiting the human) or an uncovered PRD
- *            requirement (--prd coverage check) — STOP AND ASK
- *   exit 2 — usage / missing files (fail closed: no manifest is not a pass)
- */
+// Independent check on the binding manifest, run BEFORE any use_figma composition,
+// so stop-and-ask fires before pixels, not after the full build.
+//
+//   exit 0 — manifest clean, build may proceed
+//   exit 1 — blocked rows or an uncovered PRD requirement — STOP AND ASK
+//   exit 2 — usage / missing files (fail closed: no manifest is not a pass)
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { validateBindingManifest } from '../../design-kit/binding-manifest.js'

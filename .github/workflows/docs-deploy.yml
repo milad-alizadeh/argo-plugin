@@ -28,6 +28,9 @@ jobs:
           bun-version: latest
       - name: Install
         run: bun install --frozen-lockfile
+      - name: Install Playwright Chromium (rehype-mermaid build-time SVG rendering)
+        working-directory: apps/docs
+        run: bunx playwright install --with-deps chromium
       - name: Lint docs style
         working-directory: apps/docs
         run: bun run lint:docs-style

@@ -21,14 +21,14 @@
  * an already-loaded registry object), exactly as `register-screen.ts`'s own
  * CLI entrypoint composes the pure upsert with the file read/write around it.
  */
-import { upsertScreenEntry } from '../skill-scripts/register-screen.js'
+import { upsertScreenEntry } from '../skill-scripts/registry/register-screen.js'
 import {
   fetchFile,
   marshalRestDocument,
   marshalScreenFrames,
   buildPullRegistryResult,
   token as resolveFigmaToken
-} from '../skill-scripts/pull-registry.js'
+} from '../skill-scripts/registry/pull-registry.js'
 import { RegistryEntrySchema } from '../design-kit/schemas.js'
 import type { z } from 'zod'
 

@@ -16,8 +16,8 @@
  */
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { validateBindingManifest } from '../design-kit/binding-manifest.js'
-import { selectChecklistForScreen } from '../design-kit/completeness-checklist.js'
+import { validateBindingManifest } from '../../design-kit/binding-manifest.js'
+import { selectChecklistForScreen } from '../../design-kit/completeness-checklist.js'
 
 function readOptionalJson(path: string): any {
   if (!existsSync(path)) return undefined

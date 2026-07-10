@@ -11,7 +11,7 @@
  */
 
 import { readFileSync, existsSync } from 'node:fs'
-import { selectChecklistForScreen } from '../design-kit/completeness-checklist.js'
+import { selectChecklistForScreen } from '../../design-kit/completeness-checklist.js'
 
 function flagValue(args: string[], name: string): string | undefined {
   const i = args.indexOf(name)

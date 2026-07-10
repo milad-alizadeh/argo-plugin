@@ -20,10 +20,10 @@
  */
 
 import { fetchFile, marshalRestDocument, type MarshaledComponent } from './pull-registry.js'
-import { token } from '../figma-rest/client.js'
-import { findDesignBlock } from './prepare-design-rules-audit-options.js'
-import { extractVariantMatrix, resolveWhenToUse } from '../design-kit/registry-reconcile.js'
-import { readDesignJsonOrRebuild, writeDesignJson } from './lib/write-design-json.js'
+import { token } from '../../figma-rest/client.js'
+import { findDesignBlock } from '../audit/prepare-design-rules-audit-options.js'
+import { extractVariantMatrix, resolveWhenToUse } from '../../design-kit/registry-reconcile.js'
+import { readDesignJsonOrRebuild, writeDesignJson } from '../lib/write-design-json.js'
 
 /** Finds a live COMPONENT/COMPONENT_SET by exact name across every marshaled component (marshalRestDocument already filters to those two node types). */
 export function findLiveComponent(liveComponents: MarshaledComponent[], name: string): MarshaledComponent | undefined {

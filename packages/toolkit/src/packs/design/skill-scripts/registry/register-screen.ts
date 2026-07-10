@@ -18,7 +18,7 @@
  * repeated run is idempotent. Writes only; no hook consumes its exit code.
  */
 
-import { readDesignJsonOrRebuild, writeDesignJson } from './lib/write-design-json.js'
+import { readDesignJsonOrRebuild, writeDesignJson } from '../lib/write-design-json.js'
 
 export type ScreenEntry = {
   nodeId: string

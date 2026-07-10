@@ -23,7 +23,7 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
-import { findDesignBlock } from './prepare-design-rules-audit-options.js'
+import { findDesignBlock } from '../audit/prepare-design-rules-audit-options.js'
 
 type TokenVariable = {
   id?: string

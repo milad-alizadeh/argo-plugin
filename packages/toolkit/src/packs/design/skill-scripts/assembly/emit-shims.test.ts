@@ -16,7 +16,7 @@ import { runEmitShims } from './emit-shims.js'
 
 // bin/argo.js is a hand-written launcher that dispatches to dist/skill-scripts/*.js
 // (never the sibling .ts source) — requires `bun run build` before this test.
-const ARGO_BIN = fileURLToPath(new URL('../../../../bin/argo.js', import.meta.url))
+const ARGO_BIN = fileURLToPath(new URL('../../../../../bin/argo.js', import.meta.url))
 
 let host: string
 

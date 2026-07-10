@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildPlaybookCatalog, runPlaybookList, toolkitVersion } from './playbook-list.js'
-import type { PlaybookSpec } from '../core/index.js'
+import type { PlaybookSpec } from '../index.js'
 
 describe('buildPlaybookCatalog', () => {
   const spec: PlaybookSpec = {

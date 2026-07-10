@@ -12,8 +12,8 @@
  * `argo design ack-pending-work --reason "<non-empty text>"`.
  */
 
-import { recordPendingAck } from '../../../lib/session-guard.js'
-import { resolveRepoRoot } from '../../../lib/repo-root.js'
+import { recordPendingAck } from '../../../../lib/session-guard.js'
+import { resolveRepoRoot } from '../../../../lib/repo-root.js'
 
 export function ackPendingWork(
   { reason }: { reason?: string },

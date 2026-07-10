@@ -14,7 +14,7 @@
 
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { resolveInstancePresence, summarizeInstancePresence, type BuiltInstance, type RegistryLookupEntry } from '../design-kit/instance-presence.js'
+import { resolveInstancePresence, summarizeInstancePresence, type BuiltInstance, type RegistryLookupEntry } from '../../design-kit/instance-presence.js'
 
 function readOptionalJson(path: string): any {
   if (!existsSync(path)) return undefined

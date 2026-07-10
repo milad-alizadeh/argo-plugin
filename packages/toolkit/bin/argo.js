@@ -75,28 +75,28 @@ async function runHookChain(event) {
 // block reads process.argv; re-exec the module with the verb's own argv so the
 // scripts keep their `import.meta.url === file://argv[1]` guard semantics.
 const DESIGN_VERBS = {
-  'record-spec-diff-receipt': '../dist/packs/design/skill-scripts/record-spec-diff-receipt.js',
-  'bundle-design-rules-audit': '../dist/packs/design/skill-scripts/bundle-design-rules-audit.js',
-  'prepare-design-rules-audit-options': '../dist/packs/design/skill-scripts/prepare-design-rules-audit-options.js',
-  'record-audit-receipt': '../dist/packs/design/skill-scripts/record-audit-receipt.js',
-  'check-instance-presence': '../dist/packs/design/skill-scripts/check-instance-presence.js',
-  'registry-lookup': '../dist/packs/design/skill-scripts/registry-lookup.js',
-  'register-screen': '../dist/packs/design/skill-scripts/register-screen.js',
-  'completeness-checklist': '../dist/packs/design/skill-scripts/completeness-checklist.js',
-  'mark-screen-composed': '../dist/packs/design/skill-scripts/mark-screen-composed.js',
-  'record-completeness': '../dist/packs/design/skill-scripts/record-completeness.js',
-  'generate-token-manifest': '../dist/packs/design/skill-scripts/generate-token-manifest.js',
-  'emit-shims': '../dist/packs/design/skill-scripts/emit-shims.js',
-  'pull-registry': '../dist/packs/design/skill-scripts/pull-registry.js',
-  'refresh-card': '../dist/packs/design/skill-scripts/refresh-card.js',
-  'assemble-fidelity-rubric': '../dist/packs/design/skill-scripts/assemble-fidelity-rubric.js',
-  'validate-manifest': '../dist/packs/design/skill-scripts/validate-manifest.js',
-  'ack-pending-work': '../dist/packs/design/skill-scripts/ack-pending-work.js',
+  'record-spec-diff-receipt': '../dist/packs/design/skill-scripts/session-guard/record-spec-diff-receipt.js',
+  'bundle-design-rules-audit': '../dist/packs/design/skill-scripts/audit/bundle-design-rules-audit.js',
+  'prepare-design-rules-audit-options': '../dist/packs/design/skill-scripts/audit/prepare-design-rules-audit-options.js',
+  'record-audit-receipt': '../dist/packs/design/skill-scripts/audit/record-audit-receipt.js',
+  'check-instance-presence': '../dist/packs/design/skill-scripts/audit/check-instance-presence.js',
+  'registry-lookup': '../dist/packs/design/skill-scripts/registry/registry-lookup.js',
+  'register-screen': '../dist/packs/design/skill-scripts/registry/register-screen.js',
+  'completeness-checklist': '../dist/packs/design/skill-scripts/registry/completeness-checklist.js',
+  'mark-screen-composed': '../dist/packs/design/skill-scripts/session-guard/mark-screen-composed.js',
+  'record-completeness': '../dist/packs/design/skill-scripts/registry/record-completeness.js',
+  'generate-token-manifest': '../dist/packs/design/skill-scripts/assembly/generate-token-manifest.js',
+  'emit-shims': '../dist/packs/design/skill-scripts/assembly/emit-shims.js',
+  'pull-registry': '../dist/packs/design/skill-scripts/registry/pull-registry.js',
+  'refresh-card': '../dist/packs/design/skill-scripts/registry/refresh-card.js',
+  'assemble-fidelity-rubric': '../dist/packs/design/skill-scripts/audit/assemble-fidelity-rubric.js',
+  'validate-manifest': '../dist/packs/design/skill-scripts/audit/validate-manifest.js',
+  'ack-pending-work': '../dist/packs/design/skill-scripts/session-guard/ack-pending-work.js',
   'assemble-skill': '../dist/cli/assemble-skill.js',
   // `argo design sync --check [--json]` — headless drift check over the
   // last-synced committed design/ artifacts (RUNS-R27); the module itself
   // enforces --check and documents the no-live-Figma limitation in --help.
-  sync: '../dist/packs/design/skill-scripts/sync-check.js',
+  sync: '../dist/packs/design/skill-scripts/audit/sync-check.js',
 }
 
 function runDesignVerb(verb, args) {
@@ -175,7 +175,7 @@ switch (cmd) {
       case 'list': {
         // Catalog derivation surface (argo-v2 PRD RUNS-R24). --json is the
         // only format and is accepted for explicitness.
-        const { runPlaybookList } = await import('../dist/cli/playbook-list.js')
+        const { runPlaybookList } = await import('../dist/core/cli/playbook-list.js')
         console.log(JSON.stringify(runPlaybookList(), null, 2))
         break
       }

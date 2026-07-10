@@ -15,11 +15,11 @@
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { registryComponentNames } from '../design-kit/component-names.js'
-import { copyDeckStrings } from '../design-kit/copy-deck.js'
-import { findArgoJson } from '../../../config/argo-json.js'
-import { TW_COLLECTION_FAMILY } from '../recipes/shadcn-tailwind/design-rules.js'
-import { isRawUnadoptedKit } from '../design-kit/staleness.js'
+import { registryComponentNames } from '../../design-kit/component-names.js'
+import { copyDeckStrings } from '../../design-kit/copy-deck.js'
+import { findArgoJson } from '../../../../config/argo-json.js'
+import { TW_COLLECTION_FAMILY } from '../../recipes/shadcn-tailwind/design-rules.js'
+import { isRawUnadoptedKit } from '../../design-kit/staleness.js'
 
 /**
  * Recipe-declared spacing/binding collection allowlist, keyed by the app's

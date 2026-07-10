@@ -18,9 +18,9 @@ import {
 
 // Spawned as a real subprocess — dist, not the sibling .ts source. Requires
 // `bun run build` to have produced a current packages/toolkit/dist/.
-const CLI = fileURLToPath(new URL('../../../../dist/packs/design/skill-scripts/bundle-design-rules-audit.js', import.meta.url))
+const CLI = fileURLToPath(new URL('../../../../../dist/packs/design/skill-scripts/audit/bundle-design-rules-audit.js', import.meta.url))
 
-const PLUGIN_ROOT = join(import.meta.dirname, '..', '..', '..', '..', '..', '..')
+const PLUGIN_ROOT = join(import.meta.dirname, '..', '..', '..', '..', '..', '..', '..')
 
 function projectDirWithKit() {
   const cwd = mkdtempSync(join(tmpdir(), 'design-rules-audit-bundle-'))

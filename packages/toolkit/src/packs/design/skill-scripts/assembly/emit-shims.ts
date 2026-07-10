@@ -17,8 +17,8 @@
 
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { findArgoJson } from '../../../config/argo-json.js'
-import { argoConfigPath, ARGO_CONFIG_RELPATH } from '../../../config/argo-paths.js'
+import { findArgoJson } from '../../../../config/argo-json.js'
+import { argoConfigPath, ARGO_CONFIG_RELPATH } from '../../../../config/argo-paths.js'
 
 const SHIM_FILES: Record<string, string> = {
   specDiff: 'test/spec-diff/spec-diff.walker.spec-diff.js',

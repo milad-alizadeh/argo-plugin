@@ -24,7 +24,7 @@
  * ("evidence points at the audit receipt").
  */
 import { nonSemanticBindingViolation, TW_COLLECTION_FAMILY } from '../recipes/shadcn-tailwind/design-rules.js'
-import { bundleDesignRulesAuditForRecipe } from '../skill-scripts/bundle-design-rules-audit.js'
+import { bundleDesignRulesAuditForRecipe } from '../skill-scripts/audit/bundle-design-rules-audit.js'
 import type { Finding, Gate, GateInput, GateVerdict } from '../../../core/index.js'
 
 /** Mirrors `design-rules.ts`'s local `Variable` shape — the Figma Plugin API's variable binding, marshaled to a plain object. */

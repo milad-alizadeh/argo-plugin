@@ -24,8 +24,8 @@ import { writeFileSync, readFileSync, rmSync, existsSync, readdirSync, realpathS
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { issueAuditNonce } from './lib/audit-nonce.js'
-import { resolveRepoRoot } from '../../../lib/repo-root.js'
+import { issueAuditNonce } from '../session-guard/lib/audit-nonce.js'
+import { resolveRepoRoot } from '../../../../lib/repo-root.js'
 
 const RECIPE_ENTRIES: Record<string, { importPath: string }> = {
   'shadcn-tailwind': {

@@ -14,11 +14,11 @@
  * working unchanged.
  */
 
-import { findDesignBlock } from './prepare-design-rules-audit-options.js'
-import { registryComponentNames } from '../design-kit/component-names.js'
-import { kitPageIndices, buildKitRegistryEntries, detectChangedKitComponents, buildCodeOwnedEntries, buildScreenEntries, hasScreenAnnotation, resolveCodeOwnedPath, parseCodeOwnedPath, parseCodeOwnedFromAnnotations } from '../design-kit/registry-reconcile.js'
-import { readDesignJsonOrRebuild, writeDesignJson } from './lib/write-design-json.js'
-import { token, fetchFile as fetchFileRaw } from '../figma-rest/client.js'
+import { findDesignBlock } from '../audit/prepare-design-rules-audit-options.js'
+import { registryComponentNames } from '../../design-kit/component-names.js'
+import { kitPageIndices, buildKitRegistryEntries, detectChangedKitComponents, buildCodeOwnedEntries, buildScreenEntries, hasScreenAnnotation, resolveCodeOwnedPath, parseCodeOwnedPath, parseCodeOwnedFromAnnotations } from '../../design-kit/registry-reconcile.js'
+import { readDesignJsonOrRebuild, writeDesignJson } from '../lib/write-design-json.js'
+import { token, fetchFile as fetchFileRaw } from '../../figma-rest/client.js'
 
 export { token }
 

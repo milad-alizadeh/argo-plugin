@@ -18,8 +18,8 @@ import { readFileSync } from 'node:fs'
 // Side-effectful import via the single composition-root loader (never reaches
 // into `packs/design` directly): registers every pack playbook spec, and its
 // `packOfSpec` is the pack-attribution source of truth this module reuses.
-import { packOfSpec } from '../register-installed-packs.js'
-import { listPlaybooks, type PlaybookSpec, type StageSpec } from '../core/index.js'
+import { packOfSpec } from '../../register-installed-packs.js'
+import { listPlaybooks, type PlaybookSpec, type StageSpec } from '../index.js'
 
 export interface PlaybookCatalogStage {
   name: string
@@ -118,7 +118,7 @@ export function buildPlaybookCatalog(
 
 /** The installed toolkit version — read from this package's own package.json. */
 export function toolkitVersion(): string {
-  const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'))
+  const pkg = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf8'))
   return pkg.version
 }
 

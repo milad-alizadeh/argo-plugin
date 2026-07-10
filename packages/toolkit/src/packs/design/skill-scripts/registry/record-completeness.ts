@@ -10,8 +10,8 @@
  * Per-session, keyed by `CLAUDE_CODE_SESSION_ID`. No session id → no-op.
  */
 
-import { recordScreenCompleteness } from '../../../lib/session-guard.js'
-import { resolveRepoRoot } from '../../../lib/repo-root.js'
+import { recordScreenCompleteness } from '../../../../lib/session-guard.js'
+import { resolveRepoRoot } from '../../../../lib/repo-root.js'
 
 function flagValue(args: string[], name: string): string | undefined {
   const i = args.indexOf(name)

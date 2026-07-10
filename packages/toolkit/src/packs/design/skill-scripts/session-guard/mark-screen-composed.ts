@@ -10,8 +10,8 @@
  * per-session; nothing to attribute).
  */
 
-import { markScreenComposed } from '../../../lib/session-guard.js'
-import { resolveRepoRoot } from '../../../lib/repo-root.js'
+import { markScreenComposed } from '../../../../lib/session-guard.js'
+import { resolveRepoRoot } from '../../../../lib/repo-root.js'
 
 function flagValue(args: string[], name: string): string | undefined {
   const i = args.indexOf(name)

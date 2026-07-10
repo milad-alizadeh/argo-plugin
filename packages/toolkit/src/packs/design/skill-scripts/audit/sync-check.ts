@@ -21,8 +21,8 @@
  * skipped as advisory; `screen` and `code-owned` entries carry no committed
  * spec by design and are exempt from the missing-spec rule.
  */
-import { RegistryEntrySchema } from '../design-kit/schemas.js'
-import { isRawUnadoptedKit } from '../design-kit/staleness.js'
+import { RegistryEntrySchema } from '../../design-kit/schemas.js'
+import { isRawUnadoptedKit } from '../../design-kit/staleness.js'
 
 export interface SyncCheckFinding {
   rule: 'invalid-registry-entry' | 'missing-spec' | 'orphan-spec' | 'spec-diff-receipt'

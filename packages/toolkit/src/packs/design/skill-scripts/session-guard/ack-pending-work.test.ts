@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ackPendingWork } from './ack-pending-work.js'
-import { readPendingAck } from '../../../lib/session-guard.js'
+import { readPendingAck } from '../../../../lib/session-guard.js'
 
 describe('ackPendingWork', () => {
   let repo: string

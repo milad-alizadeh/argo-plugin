@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { marshalRestDocument, marshalScreenFrames, buildPullRegistryResult, token } from './pull-registry.js'
-import fixture from '../../../../../../test/fixtures/figma-file-response.json' with { type: 'json' }
+import fixture from '../../../../../../../test/fixtures/figma-file-response.json' with { type: 'json' }
 
 describe('marshalRestDocument', () => {
   it('flattens every COMPONENT/COMPONENT_SET across pages, including ones nested inside a SECTION', () => {

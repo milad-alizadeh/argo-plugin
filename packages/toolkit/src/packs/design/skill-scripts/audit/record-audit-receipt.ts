@@ -14,10 +14,10 @@
 
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { writeDesignJson } from './lib/write-design-json.js'
-import { consumeAuditNonce } from './lib/audit-nonce.js'
-import { resolveRepoRoot } from '../../../lib/repo-root.js'
-import { appKeyForCwd, readSessionWriteCount, writeSessionReceiptEntry } from '../../../lib/session-guard.js'
+import { writeDesignJson } from '../lib/write-design-json.js'
+import { consumeAuditNonce } from '../session-guard/lib/audit-nonce.js'
+import { resolveRepoRoot } from '../../../../lib/repo-root.js'
+import { appKeyForCwd, readSessionWriteCount, writeSessionReceiptEntry } from '../../../../lib/session-guard.js'
 
 /**
  * `writeCounterAtAudit` is read from `.argo/design-guard.json`'s current

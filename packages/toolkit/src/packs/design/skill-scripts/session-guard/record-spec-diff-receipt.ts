@@ -13,7 +13,7 @@ export function recordSpecDiffReceipt(exitCode: number, { now = Date.now() }: { 
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const { spawnSync } = await import('node:child_process')
-  const { writeDesignJson } = await import('./lib/write-design-json.js')
+  const { writeDesignJson } = await import('../lib/write-design-json.js')
 
   const args = process.argv.slice(2)
   const sepIndex = args.indexOf('--')

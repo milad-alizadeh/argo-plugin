@@ -8,7 +8,7 @@ import { deriveDesignRulesAuditOptions, parseCliArgs, resolveComponentNodeIds } 
 
 // Spawned as a real subprocess — dist, not the sibling .ts source. Requires
 // `bun run build` to have produced a current packages/toolkit/dist/.
-const CLI = fileURLToPath(new URL('../../../../dist/packs/design/skill-scripts/prepare-design-rules-audit-options.js', import.meta.url))
+const CLI = fileURLToPath(new URL('../../../../../dist/packs/design/skill-scripts/audit/prepare-design-rules-audit-options.js', import.meta.url))
 
 describe('deriveDesignRulesAuditOptions (figma-audit Node wrapper — anti-recreation gate wiring)', () => {
   it('reads design/registry.json, resolves a requested name to its nodeId, and passes all entries as compositeNames', () => {

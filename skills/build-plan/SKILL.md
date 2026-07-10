@@ -48,6 +48,15 @@ single-slice TDD, use `/argo:test-first`.
   still how the build's own tooling (CLAUDE_PROJECT_DIR-relative paths, gate
   markers under `.argo/`) resolves to the right checkout.
 
+- **A static site deploying to a non-root hosted path** (e.g. GitHub Pages
+  project sites — `<user>.github.io/<repo>/`, not a root `<user>.github.io`
+  site) needs its framework's base-path config (Astro's `site`/`base`,
+  Vite's `base`, etc.) set to match the real deploy target BEFORE build —
+  `build` succeeding is not evidence this is right, since a missing base path
+  fails silently (assets/links resolve against `/` instead of the real
+  subpath, breaking only once actually served from that subpath). Confirm
+  the config against the real target path, don't assume root hosting.
+
 No clean-tree check is needed: the build runs in a separate worktree, so the user's main
 checkout (dirty or not) is untouched.
 
@@ -138,6 +147,14 @@ For each slice:
    is no pre-push hook — the checkpoint and final review ARE the coverage, in both
    landing modes. These are floors, not ceilings —
    when in doubt about blast radius, run the suite.
+
+   **When a `testable: false` slice's own plan text says "visually confirm" or
+   "preview" — actually drive a browser.** `grep`/`curl -I`/any text check of
+   build output is NOT a visual check and must never be reported as one (a
+   docs-site build once shipped with CSS 404ing on the deployed path because
+   "visual grep confirms" stood in for a real screenshot — the string was
+   present in the HTML; the page was unreadable). If browser tooling genuinely
+   isn't available, say so plainly instead of downgrading silently.
 6. **Commit** (conventional message, one slice = one commit). The gates check the
    receipts deterministically; if blocked, fix the real problem — never delete the
    marker to sneak a commit through.
@@ -204,6 +221,15 @@ structure or computed style at the fix's owner (one place), never boundingBox pi
 math re-asserted per consumer layer.
 
 ## 7. Land or surface — always close out the worktree
+- **A feature that ships a live deploy target (a CI deploy workflow, a hosted
+  URL) is not verified until the LIVE artifact has been checked**, not just a
+  local build/preview — a local preview can pass while the deployed page is
+  broken (base path, CDN rewrites, env config all differ from same-machine
+  builds). Once the deploy has actually run (may require the integrator's own
+  push first), load the real URL and confirm it renders — before reporting
+  the feature done. Note this explicitly in the progress doc; if the deploy
+  workflow hasn't run yet at build time, say so and name it as follow-up
+  rather than silently treating local build success as equivalent.
 - **All slices done + final review clean** → delete `.argo/evidence/build-mode.json`, hand the
   branch to **`argo:integrator`**. How it lands depends on the project's landing mode
   (`.argo/config.json`'s `landing` field, set by `/argo:init`): in **pr** mode (the default) it

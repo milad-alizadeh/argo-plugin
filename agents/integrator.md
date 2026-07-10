@@ -134,10 +134,22 @@ this yourself; the config is the only authority.
    finish-branch flow.
 4. **Release notes / changelog.** If the project keeps a changelog or release notes,
    draft the entry for this change in its existing format — do not invent a new one.
+5. **Post-deploy smoke check — when this change ships a CI deploy workflow to a
+   live URL** (a docs site, a hosted app, anything with a `deploy`/`pages`
+   step): landing the branch/merging the PR is not the end of the job. If the
+   deploy workflow runs on merge/push (as opposed to needing a manual trigger),
+   wait for it and load the actual deployed URL — confirm it renders, not just
+   that the workflow's job status is green (a green build can still ship a
+   broken page: wrong asset base path, a 404 loop, unstyled content). If the
+   deploy hasn't run yet or can't be observed from here, say so explicitly in
+   OUTPUT rather than silently treating "the PR merged" as "the site works."
 
 **GROUNDING.** State only what you verified with a tool (the actual branch, the real
-commit list, the push result, the PR URL). Cite the commands you ran. Never claim a
-push or PR succeeded without the command output proving it.
+commit list, the push result, the PR URL, the live deploy). Cite the commands you ran.
+Never claim a push, PR, or live deploy succeeded without the command/fetch output
+proving it.
 
-**OUTPUT.** Report the pushed branch, the PR URL, and the changelog entry (if any) —
-plus an explicit note of anything you could NOT confirm was verified before landing.
+**OUTPUT.** Report the pushed branch, the PR URL, the changelog entry (if any), and —
+when a live deploy target exists — whether you loaded the actual deployed URL and what
+you saw, plus an explicit note of anything you could NOT confirm was verified before
+landing.

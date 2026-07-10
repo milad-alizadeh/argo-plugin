@@ -39,8 +39,23 @@ with no logic change. For these:
 - Do NOT write unit/component tests asserting pixel geometry (bounding boxes,
   computed px gaps, exact widths). They codify today's styles, break on the
   next legitimate restyle, and prove nothing a human glance doesn't.
-- Verification IS looking at it: run the app (or a screenshot) and confirm
-  existing suites stay green. That's the whole requirement.
+- **Verification IS looking at it — and "looking at it" means an actual
+  rendered artifact, not a proxy.** Run the app (or take a screenshot via a
+  real browser/preview) and confirm existing suites stay green. A `grep`,
+  `curl -I`, or any check of raw HTML/build-output *text* for the presence of
+  a string is NOT looking at it — it cannot tell you whether CSS loaded,
+  whether the page is readable, or whether the plan's own "visually confirm"
+  instruction was honored, and reporting it as a visual check is misreporting
+  verification that didn't happen. When a plan step says "visually confirm"
+  or "preview," drive a real browser (or state plainly that you could not,
+  per the no-UI-testing-claims rule everywhere else in this project) — never
+  quietly downgrade to a text check and describe it as visual.
+- **A cosmetic/visual change deployed to a real target must be checked against
+  that target, not a same-machine stand-in.** A local dev server or preview
+  build can differ from the deployed artifact in ways that matter (base path,
+  CDN rewrites, environment config) — for any change that ships to a live
+  URL, verification includes loading the actual deployed page post-deploy,
+  not just a local build/preview.
 - These edits are refactor-class under Probity: allowed on green, no new
   failing test required.
 - The exemption ends where behavior begins: enabled/disabled, shown/hidden

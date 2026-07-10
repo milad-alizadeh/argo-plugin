@@ -109,13 +109,13 @@ describe('computeStatus', () => {
     expect(report.mismatches).toEqual([])
   })
 
-  it('flags a "wired" language whose lspServers entry could not be confirmed', () => {
+  it('flags a "wired" language whose LSP plugin could not be confirmed enabled', () => {
     const config = baseConfig({ tooling: { lsp: { typescript: 'wired' } } })
     const report = computeStatus(baseSnapshot({ config, lspServerConfigured: { typescript: false } }))
 
     expect(report.lsp.unconfirmed).toEqual(['typescript'])
     expect(report.mismatches).toEqual([
-      'tooling.lsp records "typescript" as wired, but no matching server was found in .claude/settings.json\'s lspServers'
+      'tooling.lsp records "typescript" as wired, but its LSP plugin (typescript-lsp@claude-plugins-official) is not enabled in .claude/settings.json'
     ])
   })
 })
@@ -149,7 +149,7 @@ describe('resolveStatusSnapshot / runStatus', () => {
     expect(report.mismatches).toEqual([])
   })
 
-  it('resolves lspServerConfigured against a real .claude/settings.json lspServers block', () => {
+  it('resolves lspServerConfigured against a real .claude/settings.json enabledPlugins entry', () => {
     mkdirSync(join(cwd, '.argo'), { recursive: true })
     writeFileSync(
       join(cwd, '.argo', 'config.json'),
@@ -158,7 +158,7 @@ describe('resolveStatusSnapshot / runStatus', () => {
     mkdirSync(join(cwd, '.claude'), { recursive: true })
     writeFileSync(
       join(cwd, '.claude', 'settings.json'),
-      JSON.stringify({ lspServers: { 'typescript-lsp': {} } })
+      JSON.stringify({ enabledPlugins: { 'typescript-lsp@claude-plugins-official': true } })
     )
 
     const snapshot = resolveStatusSnapshot(cwd)

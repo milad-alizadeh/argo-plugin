@@ -26,10 +26,11 @@ export interface StatusSnapshot {
   probityPluginEnabled: boolean
   /** Path -> exists, one entry per key in `config.provenance`. */
   provenanceFileExists: Record<string, boolean>
-  /** Language -> whether `.claude/settings.json`'s `lspServers` surface names
-   * that language's server, one entry per language recorded `"wired"` in
-   * `config.tooling.lsp`. Not checked for `"recommended-not-installed"`
-   * languages (nothing should be wired for those yet). */
+  /** Language -> whether `.claude/settings.json`'s `enabledPlugins` names
+   * that language's LSP plugin (`<id>@claude-plugins-official`), one entry
+   * per language recorded `"wired"` in `config.tooling.lsp`. Not checked for
+   * `"recommended-not-installed"` languages (nothing should be wired for
+   * those yet). */
   lspServerConfigured: Record<string, boolean>
 }
 
@@ -40,8 +41,8 @@ export interface StatusReport {
     | { enforcedBy: string; configPath: string; configPathExists: boolean; pluginEnabled: boolean }
   boundaryLint: null | { enforcedBy: string; configPath: string; configPathExists: boolean }
   provenance: { recordedCount: number; missingOnDisk: string[] }
-  /** `config.tooling.lsp` verbatim, alongside `wired` entries whose Claude
-   * Code `lspServers` config could not be confirmed on disk. */
+  /** `config.tooling.lsp` verbatim, alongside `wired` entries whose LSP
+   * plugin could not be confirmed enabled on disk. */
   lsp: { posture: LspTooling; unconfirmed: string[] }
   /** Plain-text config-vs-reality mismatches, in the order they were found.
    * Descriptive only — `argo status` never fixes any of these. */
@@ -98,7 +99,7 @@ export function computeStatus(snapshot: StatusSnapshot): StatusReport {
   const unconfirmed = wiredLanguages.filter((language) => snapshot.lspServerConfigured[language] === false)
   for (const language of unconfirmed) {
     mismatches.push(
-      `tooling.lsp records "${language}" as wired, but no matching server was found in .claude/settings.json's lspServers`
+      `tooling.lsp records "${language}" as wired, but its LSP plugin (${LSP_TABLE[language] ?? language}@claude-plugins-official) is not enabled in .claude/settings.json`
     )
   }
 
@@ -128,17 +129,21 @@ function probityPluginEnabled(cwd: string): boolean {
   }
 }
 
-/** True iff `.claude/settings.json` (repo-relative to `cwd`) names `server`
- * as a key under its `lspServers` block. Missing/malformed file resolves to
- * `false`, never a throw — mirrors `probityPluginEnabled`. */
-function lspServerConfigured(cwd: string, server: string): boolean {
+/** True iff `.claude/settings.json` (repo-relative to `cwd`) enables the LSP
+ * plugin `<pluginId>@claude-plugins-official` under `enabledPlugins`.
+ * `lspServers` is never a settings.json field — it lives inside a plugin's
+ * own manifest, so plugin enablement is the only on-disk signal we can check.
+ * Missing/malformed file resolves to `false`, never a throw — mirrors
+ * `probityPluginEnabled`. */
+function lspServerConfigured(cwd: string, pluginId: string): boolean {
   const path = join(cwd, '.claude', 'settings.json')
   if (!existsSync(path)) return false
   try {
     const settings = JSON.parse(readFileSync(path, 'utf8'))
-    const lspServers = settings?.lspServers
-    if (!lspServers || typeof lspServers !== 'object') return false
-    return server in lspServers
+    const enabledPlugins = settings?.enabledPlugins
+    if (!enabledPlugins || typeof enabledPlugins !== 'object') return false
+    const key = `${pluginId}@claude-plugins-official`
+    return Boolean(enabledPlugins[key])
   } catch {
     return false
   }

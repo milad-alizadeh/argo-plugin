@@ -38,4 +38,4 @@ export {
   gapPaddingSpacingViolations,
   untracedCopyViolation,
   isNamedAuditTarget
-} from './design-rules.js'
+} from './design-rules/index.js'

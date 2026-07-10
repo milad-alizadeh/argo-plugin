@@ -1,0 +1,5 @@
+# Sourced by lefthook before running hook jobs (rc: .lefthookrc in lefthook.yml).
+# GUI git clients (VS Code, desktop apps) spawn hooks with launchd's minimal
+# PATH — no bun/node/package-manager — so hook jobs fail there while working
+# fine from a terminal. Extend PATH to the standard install locations.
+export PATH="$HOME/.bun/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"

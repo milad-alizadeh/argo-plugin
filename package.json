@@ -11,12 +11,14 @@
   "scripts": {
     "test": "vitest run",
     "eval": "evalite run eval/card-routing.eval.ts",
-    "eval:prompts": "evalite run evals/*.eval.ts"
+    "eval:prompts": "evalite run evals/*.eval.ts",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
+    "@argohq/toolkit": "workspace:*",
     "@nizos/probity": "^1.10.0",
     "evalite": "^0.16.0",
-    "vitest": "^3.2.4",
-    "@argohq/toolkit": "workspace:*"
+    "lefthook": "^2.1.10",
+    "vitest": "^3.2.4"
   }
 }

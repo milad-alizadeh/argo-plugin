@@ -75,9 +75,11 @@ Ensure `.argo/` is gitignored (deny-by-default: `/.argo/*` with explicit re-incl
 for `config.json`, `plans/`, `design/` only — never a narrower ignore, `.argo/` also
 holds secrets), then `mkdir -p .argo/evidence` and write the build-mode marker in the
 worktree root.
-While this file exists, the plugin's commit gates (`red-proof-gate.mjs`,
-`trust-gate.mjs` — PreToolUse on `git commit`) are ARMED and fail-closed; without it
-they are inert. Update it **at the start of every slice**:
+While this file exists, the plugin's commit gates (`red-proof-gate.js`,
+`trust-gate.js`, in `@argohq/toolkit`'s `packs/code/` — dispatched via the
+`bash-pretooluse` route, a PreToolUse hook on every Bash call, not just `git
+commit`) are ARMED and fail-closed; without it they are inert. Update it **at
+the start of every slice**:
 
 ```json
 {

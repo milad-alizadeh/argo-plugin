@@ -120,6 +120,12 @@ export function createHeadlessClaudeSpawner(runClaude: RunClaudeFn = defaultRunC
   return async (request: SessionSpawnRequest): Promise<GateVerdict> => {
     const prompt = buildJudgePrompt(request)
     const result = runClaude(['-p', prompt])
+    // A judge process that exited non-zero could not actually judge — surface
+    // that as a hard failure rather than trusting whatever landed on stdout,
+    // so a crashed/killed judge never silently reads as a passing verdict.
+    if (result.status !== 0) {
+      throw new Error(`judge-impl: headless claude process exited with status ${result.status}`)
+    }
     return parseJudgeVerdict(result.stdout)
   }
 }

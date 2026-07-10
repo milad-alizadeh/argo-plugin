@@ -119,6 +119,18 @@ describe('createHeadlessClaudeSpawner', () => {
   })
 })
 
+describe('createHeadlessClaudeSpawner exit status', () => {
+  it('throws rather than silently passing when the spawned process exits non-zero, even with parseable stdout', async () => {
+    const fakeRunClaude = (): ClaudeProcessResult => ({
+      stdout: '{"passed": true, "findings": [], "evidence": []}',
+      status: 1
+    })
+    const spawner = createHeadlessClaudeSpawner(fakeRunClaude)
+
+    await expect(spawner({ artifacts: { brief: 'file:///tmp/brief.md' } })).rejects.toThrow(/exited with status 1/)
+  })
+})
+
 describe('registerClaudeJudge wired to the headless spawner', () => {
   it("reaches core.judge through registerClaudeJudge(createHeadlessClaudeSpawner(...)) end-to-end, mocking the subprocess", async () => {
     const fakeRunClaude = (): ClaudeProcessResult => ({

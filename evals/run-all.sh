@@ -67,7 +67,10 @@ esac
 
 rc=0
 total=${#files[@]}
-echo "Running $total eval file(s) serially (each spawns claude; expect ~30-90s per file)."
+echo "Running $total eval file(s) serially. Each file makes SEVERAL claude spawns"
+echo "(scenarios x trials), ~10-85s EACH — a file can legitimately take 5-11 min."
+echo "Do NOT run this while other agents/builders are active: they share the one"
+echo "subscription seat, so every call crawls to its 85s timeout and scores a false 0."
 i=0
 for f in "${files[@]}"; do
   i=$((i + 1))

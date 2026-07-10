@@ -401,7 +401,8 @@ After the rules land, one short recommendation pass from the §2 stack evidence:
 ## 8c. Stack-detected LSP wiring — detect, offer, wire (never wrap)
 Go-to-definition, find-references, and live diagnostics beat grep-and-guess for
 every agent. Argo detects the project's languages and offers to wire the
-matching LSP servers into Claude Code's OWN native `lspServers` config surface —
+matching LSP servers into Claude Code's OWN native LSP config surface (the
+`lspServers` key on builds that expose it — version-gated, see the wire step) —
 argo never wraps or re-encodes that surface, it only records which languages are
 wired as an index row in `.argo/config.json` (see `.argo/plans/stack-detected-lsp.md`).
 
@@ -419,15 +420,25 @@ wired as an index row in `.argo/config.json` (see `.argo/plans/stack-detected-ls
      **ask explicit consent before any global-binary install** (no-auto-install-globals)
      and print the one-line global install command (e.g. `npm i -g
      typescript-language-server typescript`) rather than running it silently.
-   - Write the matching entry into Claude Code's native `lspServers` config
-     surface (`.claude/settings.json`) — this is the ONLY place the actual LSP
-     server config lives; argo never duplicates it.
+   - **Confirm the running Claude Code build actually supports the LSP config
+     key BEFORE writing it** — this surface is version-gated and older/other
+     builds don't have it (observed: 2.1.206 has no `lspServers` key, so writing
+     it is a no-op at best and a schema error at worst). Probe the live build
+     (`claude config` capabilities / the settings schema) for the key. If it is
+     absent, DO NOT write it: fall through to the same lane as decline/defer
+     below and note in the report which key was missing (name it explicitly, so
+     a future run on a newer build can re-check). Never let an unsupported
+     settings key error the whole init.
+   - If the key IS supported: write the matching entry into Claude Code's native
+     LSP config surface (`.claude/settings.json`) — this is the ONLY place the
+     actual LSP server config lives; argo never duplicates it.
    - Record `tooling.lsp.<language>: "wired"` in `.argo/config.json` (an index
      pointer, same convention as `testDiscipline`/`boundaryLint` —
      `packages/toolkit/src/core/config.ts`).
-   - On decline/defer: record `tooling.lsp.<language>: "recommended-not-installed"`
-     instead, so `argo status` still surfaces the recommendation later without
-     re-asking every run.
+   - On decline/defer, OR when the build has no LSP config key: record
+     `tooling.lsp.<language>: "recommended-not-installed"` instead, so
+     `argo status` still surfaces the recommendation later without re-asking
+     every run.
 3. **For a detected language NOT in the curated table**: `WebSearch` for its
    community-standard LSP server and SUGGEST it in the report, explicitly
    flagged `"unverified — argo has not validated this"`. Never wire an

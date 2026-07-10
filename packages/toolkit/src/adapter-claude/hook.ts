@@ -141,14 +141,24 @@ export function runPermissionHook(
     return allow()
   }
 
+  // An active instance whose spec/stage cannot be resolved is a TOOLING
+  // defect (stale state file, missing pack registration, renamed stage), not
+  // a policy violation. Denying here once froze an entire session — every
+  // tool call, including the ones needed to repair the gate (live deadlock,
+  // 2026-07-10). The run itself stays unusable until repaired; the session's
+  // tools must not.
   const spec = getPlaybook(instance.playbook)
   if (!spec) {
-    return deny(`active playbook "${instance.playbook}" has no registered spec — denying (fail closed)`)
+    return allow(
+      `Playbook gate advisory: active run "${instance.playbook}" has no registered spec — the gate is NOT enforcing. ` +
+        `Repair or abandon the run (state: argo playbook status / delete the active-instance pointer).`
+    )
   }
   const stage = spec.stages.find((s) => s.name === instance.stage)
   if (!stage) {
-    return deny(
-      `active playbook "${instance.playbook}" is at unknown stage "${instance.stage}" — denying (fail closed)`
+    return allow(
+      `Playbook gate advisory: active run "${instance.playbook}" is at unknown stage "${instance.stage}" — the gate is NOT enforcing. ` +
+        `Repair or abandon the run.`
     )
   }
 

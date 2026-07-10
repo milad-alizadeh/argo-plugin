@@ -140,6 +140,10 @@ switch (cmd) {
     const { playbookStart, playbookStatus, playbookAdvance, playbookAdopt, playbookDiagram } = await import(
       '../dist/core/index.js'
     )
+    // Side-effectful: pack playbook modules call registerPlaybook at import
+    // time — without this, start/status/advance can't resolve any pack
+    // playbook by name (only `list` imported it, via playbook-list.js).
+    await import('../dist/packs/design/playbooks/index.js')
     switch (verb) {
       case 'list': {
         // Catalog derivation surface (argo-v2 PRD RUNS-R24). --json is the

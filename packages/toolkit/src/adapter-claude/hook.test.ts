@@ -218,7 +218,7 @@ describe('runPermissionHook', () => {
     expect(decision.decision).toBe('allow')
   })
 
-  it('fails closed when the active instance points at an unregistered playbook', () => {
+  it('an unregistered active playbook allows with a loud advisory — never a session-wide deny (2026-07-10 deadlock)', () => {
     const instance: PlaybookInstance = {
       playbook: 'no-such-playbook-' + Math.random(),
       target: 'x',
@@ -230,6 +230,29 @@ describe('runPermissionHook', () => {
 
     const decision = runPermissionHook({ tool_name: 'Read', tool_input: { file_path: 'src/foo.ts' } }, baseConfig(), () => instance)
 
-    expect(decision.decision).toBe('deny')
+    expect(decision.decision).toBe('allow')
+    if (decision.decision === 'allow') {
+      expect(decision.advisory).toMatch(/NOT enforcing/)
+    }
+  })
+
+  it('an unknown stage on a registered playbook also allows with advisory', () => {
+    const playbookName = uniqueName('stale-stage')
+    registerPlaybook({ name: playbookName, stages: [{ name: 'build', allows: ['file-edit'] }] })
+    const instance: PlaybookInstance = {
+      playbook: playbookName,
+      target: 'x',
+      stage: 'renamed-away',
+      status: 'in-progress',
+      attempts: [],
+      history: []
+    }
+
+    const decision = runPermissionHook({ tool_name: 'Bash', tool_input: { command: 'ls' } }, baseConfig(), () => instance)
+
+    expect(decision.decision).toBe('allow')
+    if (decision.decision === 'allow') {
+      expect(decision.advisory).toMatch(/NOT enforcing/)
+    }
   })
 })

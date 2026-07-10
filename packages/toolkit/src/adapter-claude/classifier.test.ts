@@ -139,6 +139,30 @@ describe('classifyAction', () => {
     expect(classifyAction('Bash', { command: 'argo design pull-registry' })).toBe('registry-write')
   })
 
+  it('classifies argo design refresh-card / register-screen Bash calls as registry-write', () => {
+    expect(classifyAction('Bash', { command: 'argo design refresh-card --name Card' })).toBe('registry-write')
+    expect(classifyAction('Bash', { command: 'argo design register-screen --key foo' })).toBe('registry-write')
+  })
+
+  it('classifies non-use_figma mcp__plugin_figma_figma__ tools by name, defaulting to figma-read', () => {
+    expect(classifyAction('mcp__plugin_figma_figma__get_metadata', {})).toBe(FIGMA_READ)
+    expect(classifyAction('mcp__plugin_figma_figma__get_screenshot', {})).toBe(FIGMA_READ)
+    expect(classifyAction('mcp__plugin_figma_figma__whoami', {})).toBe(FIGMA_READ)
+  })
+
+  it('classifies the write-shaped Figma MCP tools as figma-write', () => {
+    expect(classifyAction('mcp__plugin_figma_figma__create_new_file', {})).toBe(FIGMA_WRITE)
+    expect(classifyAction('mcp__plugin_figma_figma__upload_assets', {})).toBe(FIGMA_WRITE)
+    expect(classifyAction('mcp__plugin_figma_figma__send_code_connect_mappings', {})).toBe(FIGMA_WRITE)
+    expect(classifyAction('mcp__plugin_figma_figma__add_code_connect_map', {})).toBe(FIGMA_WRITE)
+    expect(classifyAction('mcp__plugin_figma_figma__export_video', {})).toBe(FIGMA_WRITE)
+  })
+
+  it('classifies generate_figma_design and generate_diagram as figma-write (both create Figma/FigJam content)', () => {
+    expect(classifyAction('mcp__plugin_figma_figma__generate_figma_design', {})).toBe(FIGMA_WRITE)
+    expect(classifyAction('mcp__plugin_figma_figma__generate_diagram', {})).toBe(FIGMA_WRITE)
+  })
+
   it('classifies an unrecognized tool name as unclassified', () => {
     expect(classifyAction('SomeFutureTool', { anything: true })).toBe(UNCLASSIFIED)
   })

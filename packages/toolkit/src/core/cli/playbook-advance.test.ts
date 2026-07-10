@@ -56,8 +56,12 @@ describe('playbookAdvance', () => {
 
     expect(result.stage).toBe('build')
     expect(result.status).toBe('in-progress')
-    expect(result.history).toHaveLength(1)
+    // One entry for the finished stage's verdict, one transition stamp for
+    // the newly-entered stage (measurement seam — item 4).
+    expect(result.history).toHaveLength(2)
     expect(result.history[0]).toMatchObject({ stage: 'brief', gate: gateName, verdict: { passed: true } })
+    expect(result.history[1]).toMatchObject({ stage: 'build' })
+    expect(result.history[1].gate).toBeUndefined()
   })
 
   it('marks the instance done when the last stage passes', async () => {
@@ -71,6 +75,8 @@ describe('playbookAdvance', () => {
 
     expect(result.stage).toBe('build')
     expect(result.status).toBe('done')
+    expect(result.history).toHaveLength(2)
+    expect(result.history[1]).toMatchObject({ stage: 'build' })
   })
 
   it('increments attempts and stays in-progress on a failure within budget', async () => {
@@ -139,6 +145,54 @@ describe('playbookAdvance', () => {
     const result = await playbookAdvance('advance-no-gate', { cwd, stateRoot })
 
     expect(result.stage).toBe('build')
-    expect(result.history).toHaveLength(0)
+    // Gateless stages record no verdict, but the transition itself is still
+    // stamped (measurement seam — item 4).
+    expect(result.history).toHaveLength(1)
+    expect(result.history[0]).toMatchObject({ stage: 'build' })
+    expect(result.history[0].gate).toBeUndefined()
+    expect(result.history[0].verdict).toBeUndefined()
+  })
+
+  it("auto-derives artifacts from the stage spec's `produces` entries when none are passed", async () => {
+    const { createBriefCheckGate } = await import('../../packs/design/gates/brief-check.js')
+    const { writeFileSync } = await import('node:fs')
+
+    const briefContent = '# Purpose\n\nx\n\n# Sections\n\nx\n\n# Acceptance Criteria\n\nx\n'
+    writeFileSync(join(cwd, 'brief.md'), briefContent)
+
+    registerGate(createBriefCheckGate({ cwd, artifactKey: 'brief' }))
+    const playbookName = `advance-auto-artifacts-playbook-${Math.random()}`
+    registerPlaybook(
+      definePlaybook({
+        name: playbookName,
+        stages: [{ name: 'brief', allows: ['file-edit'], gate: 'brief-check', produces: ['brief:brief.md'] }]
+      })
+    )
+    writeInstance('advance-auto-artifacts', makeInstance({ playbook: playbookName, stage: 'brief' }), { cwd, stateRoot })
+
+    const result = await playbookAdvance('advance-auto-artifacts', { cwd, stateRoot, settings: { cwd } })
+
+    expect(result.status).toBe('done')
+    expect(result.history[0]).toMatchObject({ stage: 'brief', gate: 'brief-check', verdict: { passed: true } })
+  })
+
+  it("threads GateContext.judge through to the stage's gate", async () => {
+    const gateName = `advance-ctx-judge-gate-${Math.random()}`
+    let receivedCtx: unknown
+    registerGate({
+      name: gateName,
+      async check(_input, ctx) {
+        receivedCtx = ctx
+        return { passed: true, findings: [], evidence: [] }
+      }
+    })
+    const playbookName = `advance-ctx-judge-playbook-${Math.random()}`
+    registerPlaybook(definePlaybook({ name: playbookName, stages: [{ name: 'build', allows: ['file-edit'], gate: gateName }] }))
+    writeInstance('advance-ctx-judge', makeInstance({ playbook: playbookName, stage: 'build' }), { cwd, stateRoot })
+
+    const judge = async () => ({ passed: true, findings: [], evidence: [] })
+    await playbookAdvance('advance-ctx-judge', { cwd, stateRoot, ctx: { judge } })
+
+    expect(receivedCtx).toEqual({ judge })
   })
 })

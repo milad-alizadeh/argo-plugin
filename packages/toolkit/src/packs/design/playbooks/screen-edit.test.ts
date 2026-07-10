@@ -30,4 +30,9 @@ describe('screenEditSpec', () => {
     expect(impact?.allows).not.toContain('figma-write')
     expect(screenEditSpec.stages.find((s) => s.name === 'targeted-edits')?.requires).toContain('component-impact')
   })
+
+  it('component-impact allows registry-read (its documented job is diffing the updated brief against the registry/kit)', () => {
+    const impact = screenEditSpec.stages.find((s) => s.name === 'component-impact')
+    expect(impact?.allows).toContain('registry-read')
+  })
 })

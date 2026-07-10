@@ -47,7 +47,8 @@ describe('playbookStart', () => {
       stage: 'brief',
       status: 'in-progress',
       attempts: [],
-      history: []
+      history: [],
+      startedAt: expect.any(String)
     })
     expect(readInstance(key, { cwd, stateRoot })).toEqual(instance)
   })

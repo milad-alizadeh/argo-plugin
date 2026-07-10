@@ -60,6 +60,34 @@ all.
   nobody in the project touched; auditing them is pure noise. Findings here
   inform, they don't block anything on their own.
 
+## Procedure (the verbs a session needs, in order)
+
+These verbs are otherwise only discoverable by hitting a failure message
+mid-run. Run them in this order:
+
+1. **Derive the target set.**
+   `argo design prepare-design-rules-audit-options --componentNames
+   '["Name", ...]'` (omit `--componentNames` for a file-wide advisory sweep).
+   Resolves each name to its registry `nodeId`, exempts code-owned and raw
+   un-adopted kit, and returns the full options object the sandboxed audit
+   needs (semantic collection name, recipe, sweep scope).
+2. **Bundle the audit for `use_figma`.**
+   `argo design bundle-design-rules-audit --componentNames '["Name", ...]'`
+   (pass `--recipe <recipe>` when the project has one). This is the call
+   that mints the one-time `nonce` — capture it from the JSON output, it's
+   required later and is refused if it doesn't match. Cached by kit-dist
+   hash, so a rebuild of `@argohq/toolkit` auto-invalidates a stale bundle.
+3. **Execute via `use_figma`.** Paste the bundled script (or the
+   prime/replay pair for repeat audits in one file session) and call it with
+   the options object from step 1. It returns an array of `{ severity, rule,
+   nodeId, nodeName, detail }`.
+4. **Record the receipt with the nonce from step 2.**
+   `argo design record-audit-receipt --record '{"componentNames":[...],
+   "violations":[...],"nonce":"<nonce>"}'`. A receipt missing the nonce, or
+   carrying one that doesn't match a real bundle emission for these names, is
+   refused — this is what stops a session from hand-writing a clean receipt
+   without a real audit having run.
+
 ## Read discipline
 
 Never metadata-dump a whole page or heavy frame to run or triage this — that

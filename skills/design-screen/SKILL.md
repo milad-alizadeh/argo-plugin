@@ -13,6 +13,34 @@ straight to hi-fi from the PRD — like `build-plan`'s code analog: a wave's
 components are built in dependency order, then composed. A fresh context per
 component would re-read the inventory every time, which is the expensive way.
 
+## Authoring the brief
+
+`screen-create`'s `brief` stage and `screen-edit`'s `update-brief` stage both
+produce `design/briefs/<key>.md`, gated by `brief-check`. Copy
+`templates/design/screen-brief.md`'s sections verbatim: Reference image,
+Purpose, Regions → component map, Flow / IA, Component sub-parts, Stage
+arrangement. Derive the content, don't invent it — the PRD's feature→screen
+matrix says what this screen must do, the PRD's ASCII wireframe + flow says
+roughly where things sit; the brief turns both into the region list and the
+composite/layout tagging the build stage reads.
+
+`brief-check` is structural lint only, never a quality judge: it requires
+three headings present verbatim (`Purpose`, `Sections`, `Acceptance
+Criteria`, matched case-insensitively) and every backtick-quoted file path in
+the brief to actually exist in the repo. The template's richer heading set
+(`Regions → component map`, `Flow / IA`, etc.) is the real content — make
+sure a literal `Purpose` heading, a `Sections` heading, and an `Acceptance
+Criteria` heading are also present so the gate passes; don't rely on the
+richer headings alone to satisfy it.
+
+`update-brief` (screen-edit) is a DIFF, not a rewrite: read the existing
+brief, diff the PRD's current feature→screen matrix + wireframe against it,
+and record what changed (region added/removed/retagged, flow changed, stage
+arrangement changed) before editing. `targeted-edits` later reads exactly
+that diff to scope its work — an update-brief pass that silently rewrites the
+whole file with no record of what changed leaves the edit stage no way to
+stay scoped.
+
 ## What the PRD owns vs the design layer
 
 - **The PRD is the spec and the completeness oracle.** Its feature→screen
@@ -76,6 +104,43 @@ right type, fits the brief) before writing it into the manifest. Absent or
 failed → fall back to your own lookup pass per the tiers above. The PRD
 section is a hint layer; the manifest flow is standalone and works without
 it.
+
+## Missing components / component impact
+
+`screen-create`'s `missing-components` stage and `screen-edit`'s
+`component-impact` stage both do the same cross-playbook dependency
+resolution: check every brief-referenced component against the design
+registry, then spawn a run per gap. Don't build a missing composite inline in
+the screen run — that's exactly the reskin-the-wireframe failure the
+component-first path exists to kill.
+
+1. Look up each brief-named composite against the registry:
+   `argo design registry-lookup --names '["CompositeName", ...]'`. A result
+   with `missing: true` is a gap.
+2. For `screen-create`: every gap spawns a `component-create` run —
+   `argo playbook start --name component-create --target <Name>`.
+3. For `screen-edit`: a component the PRD diff changed (not just missing)
+   spawns `component-edit` instead — `argo playbook start --name
+   component-edit --target <Name>`. A component that's genuinely new to this
+   edit still goes through `component-create`.
+4. Wait for every spawned run to reach `done` before advancing to
+   `build`/`targeted-edits` — that stage composes from instances, and an
+   instance can't be placed until its component exists.
+
+## Registry sync
+
+`screen-create`'s `registry-sync` stage runs after `review` passes: register
+the built screen frame so it's addressable and audit-exempt as a screen.
+
+```
+argo design register-screen --node <screenFrameNodeId> --name <key>
+```
+
+This mirrors the screen's `@screen` Dev Mode annotation into
+`design/registry.json` as a `kind:"screen"` entry — the same entry
+`registry-lookup --kind screen` lists and the audit reads to exempt a
+registered screen's own artboard from the three rules every top-level frame
+structurally trips.
 
 ## Building component-first, then composing
 
@@ -141,6 +206,17 @@ No frozen contract; completeness is judged in layers, cheapest first:
   ship call.
 - **The ship call is always a human's**, informed by every layer above —
   never skip the visual self-review round to save time.
+
+## Screen-edit specifics
+
+`screen-edit`'s `targeted-edits` stage is never a rebuild. It runs against the
+UPDATED brief from `update-brief` (so `review`'s fresh-eyes pass judges the
+finished screen against the current brief, not the one `screen-create`
+originally produced), and it touches only the regions the brief diff named as
+changed. A region the diff didn't flag stays untouched — don't re-derive or
+re-lay-out a region just because you're already in the file. If a diff turns
+out to have missed a region that visibly needs to change too, stop and update
+the brief again rather than editing past what it documents.
 
 ## Two-phase orchestration — the efficient shape for a wave
 

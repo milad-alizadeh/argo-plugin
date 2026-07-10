@@ -107,6 +107,24 @@ against it. No profile file → skip; never invent one.
   FILL-stretched ancestor at the set boundary) also describes many
   correctly-sized components.
 
+## Code-owned branch
+
+Before building or editing a component, read its `@code-owned` annotation /
+registry `kind:"code-owned"` metadata (`registry-lookup --names
+'["Name"]'`). This decides which direction the work runs, for both
+`component-create`'s `build` stage and `component-edit`'s `edit` stage:
+
+- **Code-owned** (a flat screenshot standing in for a real code
+  implementation — a Three.js scene, a canvas viz, anything Figma can't
+  faithfully hold): change the code first, then mirror the result back into
+  the placeholder screenshot. Never edit the Figma placeholder directly and
+  call it done — the code is the real artifact.
+- **Not code-owned**: edit Figma-first, as this doc's authoring rules
+  describe. Code generation reads the Figma component afterward.
+
+A component with no `@code-owned` marker and no `kind:"code-owned"` registry
+entry is Figma-first by default.
+
 ## Check before you build (mandatory, not a suggestion)
 
 Before assembling any composite/tree-like region:
@@ -318,4 +336,45 @@ review covers only composition, mood, and intent-level judgment.
   and geometry are clean, note the visual review's findings (or that it
   wasn't spawned because there was nothing to check), and attach the final
   montage screenshot.
+
+## Recording the audit
+
+The named audit procedure (see `figma-audit`'s craft doc for the full
+prepare → bundle → run sequence) ends with a receipt, not just a clean
+in-session result. After `use_figma` returns the violations array:
+
+```
+argo design record-audit-receipt --record '{"componentNames":["Name", ...],"violations":[...],"nonce":"<nonce>"}'
+```
+
+The `nonce` is one-time and minted by the same `bundle-design-rules-audit`
+call that produced the bundle the audit ran — it comes back in that call's
+own JSON output. A receipt submitted without the matching nonce is refused:
+this is what stops a session from hand-writing a "clean" receipt without a
+real bundled audit having run against exactly the components it claims.
+
+## Card refresh
+
+`component-edit`'s `card-refresh` stage keeps an existing custom component's
+registry card current after an edit:
+
+```
+argo design refresh-card --component <Name>
+```
+
+This re-fetches the live Figma component, re-derives `variantMatrix` and
+`whenToUse`, re-stamps `lastSyncedAt`, and writes back the one named entry.
+It refuses to create a new entry — a brand-new component's card is written
+once by `component-create`'s `registry-card` stage (the create flow), never
+by `refresh-card`.
+
+## Instance impact scan
+
+`component-edit`'s `instance-impact-scan` stage is read-only: after the card
+refresh, enumerate every INSTANCE of the edited component across the file
+(`query('INSTANCE[mainComponent=<id>]')`, or `findAll` filtered to
+`type === 'INSTANCE'` and matching `mainComponent.id`) and report which
+screens/pages they sit on. This never edits anything — it's a blind
+spot-check so the human ship call knows the edit's blast radius before
+signing off, not a trigger for further changes in this run.
 <!-- /INCLUDE -->

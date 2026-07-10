@@ -36,7 +36,7 @@ export const componentCreateSpec = definePlaybook({
     {
       name: 'annotate',
       requires: ['build'],
-      allows: ['file-edit'],
+      allows: ['file-edit', 'figma-write', 'figma-read'],
       gate: 'design-rules-check',
       retries: 2
     },

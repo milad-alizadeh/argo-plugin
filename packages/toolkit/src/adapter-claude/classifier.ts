@@ -115,7 +115,7 @@ export function classifyBashCommand(command: string): ActionKind {
   if (subcommands.some((sub) => /\bargo\s+playbook\s+start\b/.test(sub))) {
     return PLAYBOOK_START
   }
-  if (subcommands.some((sub) => /\bargo\s+design\s+pull-registry\b/.test(sub))) {
+  if (subcommands.some((sub) => /\bargo\s+design\s+(pull-registry|refresh-card|register-screen)\b/.test(sub))) {
     return REGISTRY_WRITE
   }
   return UNCLASSIFIED
@@ -173,6 +173,26 @@ export function classifyFigmaScript(script: string): ActionKind {
   return UNCLASSIFIED
 }
 
+// All non-`use_figma` tools in the Figma MCP server's family (`get_metadata`,
+// `get_design_context`, `get_screenshot`, generators, etc.) — `use_figma` is
+// script-sniffed above, everything else here is classified by tool name.
+const FIGMA_MCP_TOOL_PATTERN = /^mcp__plugin_figma_figma__(?!use_figma$)/
+
+// Write-shaped Figma MCP tools by name: file/asset/mapping creation, plus the
+// two generator tools (`generate_figma_design` creates Figma content,
+// `generate_diagram` writes a FigJam file) — no existing precedent for either
+// in this classifier, so both are treated as writes on the same reasoning as
+// the other creation-shaped tools in this list.
+const FIGMA_MCP_WRITE_TOOLS = new Set([
+  'mcp__plugin_figma_figma__create_new_file',
+  'mcp__plugin_figma_figma__upload_assets',
+  'mcp__plugin_figma_figma__send_code_connect_mappings',
+  'mcp__plugin_figma_figma__add_code_connect_map',
+  'mcp__plugin_figma_figma__export_video',
+  'mcp__plugin_figma_figma__generate_figma_design',
+  'mcp__plugin_figma_figma__generate_diagram'
+])
+
 function extractFigmaScript(toolInput: unknown): string | undefined {
   if (toolInput && typeof toolInput === 'object') {
     const candidate =
@@ -198,6 +218,9 @@ export function classifyAction(toolName: string, toolInput: unknown): ActionKind
     const script = extractFigmaScript(toolInput)
     if (script !== undefined) return classifyFigmaScript(script)
     return UNCLASSIFIED
+  }
+  if (FIGMA_MCP_TOOL_PATTERN.test(toolName)) {
+    return FIGMA_MCP_WRITE_TOOLS.has(toolName) ? FIGMA_WRITE : FIGMA_READ
   }
   if (toolName === 'WebFetch' || toolName === 'WebSearch') {
     return WEB_FETCH

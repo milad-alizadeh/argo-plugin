@@ -14,6 +14,16 @@ describe('screenCreateSpec', () => {
     }
   })
 
+  it('build stage allows file-edit (it writes the binding manifest file)', () => {
+    const build = screenCreateSpec.stages.find((s) => s.name === 'build')
+    expect(build?.allows).toContain('file-edit')
+  })
+
+  it('brief stage allows file-edit (it writes the brief file)', () => {
+    const brief = screenCreateSpec.stages.find((s) => s.name === 'brief')
+    expect(brief?.allows).toContain('file-edit')
+  })
+
   it('renders retry/fix-round loops and NO human-gate (decision diamond) nodes', () => {
     const diagram = renderPlaybookDiagram(screenCreateSpec)
 

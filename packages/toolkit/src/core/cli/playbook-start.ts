@@ -51,20 +51,21 @@ export function playbookStart(
   }
 
   const key = input.key ?? deriveInstanceKey(input.name, input.target)
+  const at = new Date().toISOString()
   const instance: PlaybookInstance = {
     playbook: input.name,
     target: input.target,
     stage: spec.stages[0].name,
     status: 'in-progress',
     attempts: [],
-    history: []
+    history: [],
+    startedAt: at
   }
   writeInstance(key, instance, opts)
   // Newly-started instance becomes "the" active playbook for this project —
   // the permission hook has no other way to know which instance a generic
   // tool call should be checked against (see `setActiveInstance`'s doc).
   setActiveInstance(key, opts)
-  const at = new Date().toISOString()
   return {
     key,
     instance,

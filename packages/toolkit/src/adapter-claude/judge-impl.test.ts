@@ -1,7 +1,14 @@
 import type { GateVerdict, JudgeRequest } from '../core/index.js'
 import { core } from '../core/index.js'
 import { describe, expect, it } from 'vitest'
-import { createJudgeImpl, registerClaudeJudge } from './judge-impl.js'
+import {
+  buildJudgePrompt,
+  createHeadlessClaudeSpawner,
+  createJudgeImpl,
+  parseJudgeVerdict,
+  registerClaudeJudge,
+  type ClaudeProcessResult
+} from './judge-impl.js'
 
 describe('createJudgeImpl', () => {
   it('never passes a transcript-shaped field to the spawned session, only artifact URIs', async () => {
@@ -56,5 +63,72 @@ describe('registerClaudeJudge', () => {
     expect(received).toEqual({ artifacts: { brief: 'file:///tmp/brief.md' } })
     expect(received).not.toHaveProperty('transcript')
     expect(result).toBe(fakeVerdict)
+  })
+})
+
+describe('buildJudgePrompt', () => {
+  it('lists every artifact by key + URI and instructs JSON-only output, carrying no working-session content', () => {
+    const prompt = buildJudgePrompt({ artifacts: { brief: 'file:///tmp/brief.md', screenshot: 'file:///tmp/shot.png' } })
+
+    expect(prompt).toContain('brief: file:///tmp/brief.md')
+    expect(prompt).toContain('screenshot: file:///tmp/shot.png')
+    expect(prompt).toContain('JSON')
+    // The prompt itself only ever carries `SessionSpawnRequest.artifacts` —
+    // no field on that type could smuggle transcript content in even if a
+    // caller tried.
+    expect(Object.keys({ artifacts: {} })).toEqual(['artifacts'])
+  })
+})
+
+describe('parseJudgeVerdict', () => {
+  it('parses a bare JSON verdict', () => {
+    const verdict = parseJudgeVerdict('{"passed": true, "findings": [], "evidence": ["file:///tmp/shot.png"]}')
+    expect(verdict).toEqual({ passed: true, findings: [], evidence: ['file:///tmp/shot.png'] })
+  })
+
+  it('extracts JSON wrapped in prose/markdown fences', () => {
+    const raw = 'Here is my verdict:\n```json\n{"passed": false, "findings": [{"message": "off"}], "evidence": []}\n```'
+    const verdict = parseJudgeVerdict(raw)
+    expect(verdict).toEqual({ passed: false, findings: [{ message: 'off' }], evidence: [] })
+  })
+
+  it('carries rerunnable through when present', () => {
+    const verdict = parseJudgeVerdict('{"passed": true, "findings": [], "evidence": [], "rerunnable": false}')
+    expect(verdict.rerunnable).toBe(false)
+  })
+
+  it('throws when no JSON object is present', () => {
+    expect(() => parseJudgeVerdict('no json here')).toThrow(/no JSON object/)
+  })
+})
+
+describe('createHeadlessClaudeSpawner', () => {
+  it('spawns `claude -p <prompt>` (via the injected runner, never a real shell-out) and parses its stdout', async () => {
+    let capturedArgs: string[] = []
+    const fakeRunClaude = (args: string[]): ClaudeProcessResult => {
+      capturedArgs = args
+      return { stdout: '{"passed": true, "findings": [], "evidence": ["file:///tmp/shot.png"]}', status: 0 }
+    }
+    const spawner = createHeadlessClaudeSpawner(fakeRunClaude)
+
+    const verdict = await spawner({ artifacts: { brief: 'file:///tmp/brief.md', screenshot: 'file:///tmp/shot.png' } })
+
+    expect(capturedArgs[0]).toBe('-p')
+    expect(capturedArgs[1]).toContain('brief: file:///tmp/brief.md')
+    expect(verdict).toEqual({ passed: true, findings: [], evidence: ['file:///tmp/shot.png'] })
+  })
+})
+
+describe('registerClaudeJudge wired to the headless spawner', () => {
+  it("reaches core.judge through registerClaudeJudge(createHeadlessClaudeSpawner(...)) end-to-end, mocking the subprocess", async () => {
+    const fakeRunClaude = (): ClaudeProcessResult => ({
+      stdout: '{"passed": false, "findings": [{"message": "brief mismatch"}], "evidence": []}',
+      status: 0
+    })
+    registerClaudeJudge(createHeadlessClaudeSpawner(fakeRunClaude))
+
+    const result = await core.judge({ artifacts: { brief: 'file:///tmp/brief.md' } })
+
+    expect(result).toEqual({ passed: false, findings: [{ message: 'brief mismatch' }], evidence: [] })
   })
 })

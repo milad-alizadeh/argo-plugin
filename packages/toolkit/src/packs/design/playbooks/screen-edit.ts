@@ -32,7 +32,7 @@ export const screenEditSpec = definePlaybook({
     {
       name: 'component-impact',
       requires: ['update-brief'],
-      allows: ['file-read', 'figma-read', 'playbook-start'],
+      allows: ['file-read', 'figma-read', 'registry-read', 'playbook-start'],
       skill: 'design-screen',
       session: 'fresh'
     },

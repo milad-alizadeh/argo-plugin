@@ -115,6 +115,22 @@ function flagValue(args, name) {
   return i === -1 ? undefined : args[i + 1]
 }
 
+/** Parses `--artifacts '<json>'` (item 1) into the `Record<string, string>`
+ * `playbookAdvance`/`playbookAdopt` expect on `opts.artifacts` — a JSON object
+ * mapping artifactKey -> path/uri. Returns `undefined` when the flag is
+ * absent, so callers fall back to auto-derivation from the stage's
+ * `produces` entries. Fails closed (throws, not a silent `{}`) on malformed
+ * JSON so a typo'd flag never silently degrades to "no artifacts". */
+function parseArtifactsFlag(args) {
+  const raw = flagValue(args, '--artifacts')
+  if (raw === undefined) return undefined
+  const parsed = JSON.parse(raw)
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error('--artifacts must be a JSON object mapping artifactKey -> path/uri')
+  }
+  return parsed
+}
+
 const [cmd, ...rest] = process.argv.slice(2)
 
 switch (cmd) {
@@ -149,6 +165,14 @@ switch (cmd) {
     // this, advance threw GateNotFoundError on every audit-gated stage.
     const { registerCliGates } = await import('../dist/packs/design/gates/register-cli-gates.js')
     registerCliGates()
+    // Production judge (item 2): without this, fresh-eyes-review (and any
+    // other ctx.judge(...)-calling gate) throws "no judge available on
+    // GateContext" on every advance — nothing ever registered a judge here
+    // before. Spawns a real headless `claude -p` process; tests never hit
+    // this path (they inject a fake SessionSpawner directly).
+    const { registerClaudeJudge, createHeadlessClaudeSpawner } = await import('../dist/adapter-claude/judge-impl.js')
+    registerClaudeJudge(createHeadlessClaudeSpawner())
+    const { core } = await import('../dist/core/index.js')
     switch (verb) {
       case 'list': {
         // Catalog derivation surface (argo-v2 PRD RUNS-R24). --json is the
@@ -191,14 +215,22 @@ switch (cmd) {
       case 'advance': {
         // settings.cwd feeds receipt-backed gates (design/audit-receipt.json
         // lives under the APP workspace — run advance from apps/<app>).
-        const result = await playbookAdvance(flagValue(args, '--key'), { cwd: hostRoot, settings: { cwd: hostRoot } })
+        // --artifacts '<json>' maps artifactKey -> path/uri (brief-check,
+        // fresh-eyes-review); when omitted, playbookAdvance auto-derives from
+        // the stage spec's `produces` entries.
+        const result = await playbookAdvance(flagValue(args, '--key'), {
+          cwd: hostRoot,
+          settings: { cwd: hostRoot },
+          artifacts: parseArtifactsFlag(args),
+          ctx: { judge: core.judge }
+        })
         console.log(JSON.stringify(result))
         break
       }
       case 'adopt': {
         const result = await playbookAdopt(
           { name: flagValue(args, '--name'), target: flagValue(args, '--target'), key: flagValue(args, '--key') },
-          { cwd: hostRoot }
+          { cwd: hostRoot, artifacts: parseArtifactsFlag(args), ctx: { judge: core.judge } }
         )
         console.log(JSON.stringify(result))
         break

@@ -1,4 +1,4 @@
-import { getGate } from '../gate.js'
+import { getGate, type GateContext } from '../gate.js'
 import { getPlaybook } from '../spec.js'
 import { deriveInstanceKey, writeInstance, type HistoryEntry, type StateOptions, type PlaybookInstance } from '../state.js'
 import { GateNotFoundError, PlaybookNotFoundError } from './errors.js'
@@ -12,6 +12,10 @@ export interface PlaybookAdoptInput {
 export interface PlaybookAdoptOptions extends StateOptions {
   artifacts?: Record<string, string>
   settings?: Record<string, unknown>
+  /** Threaded into `Gate.check` as its second (`GateContext`) argument, so
+   * AI-judging gates (`fresh-eyes-review`) can reach `ctx.judge(...)` during
+   * re-verification. */
+  ctx?: GateContext
 }
 
 /**
@@ -55,11 +59,14 @@ export async function playbookAdopt(input: PlaybookAdoptInput, opts: PlaybookAdo
     const gate = getGate(stageSpec.gate)
     if (!gate) throw new GateNotFoundError(stageSpec.gate)
 
-    const verdict = await gate.check({
-      target: input.target,
-      artifacts: opts.artifacts ?? {},
-      settings: opts.settings ?? {}
-    })
+    const verdict = await gate.check(
+      {
+        target: input.target,
+        artifacts: opts.artifacts ?? {},
+        settings: opts.settings ?? {}
+      },
+      opts.ctx
+    )
 
     if (verdict.rerunnable === false) {
       history.push({ stage: stageSpec.name, gate: stageSpec.gate, at: new Date().toISOString(), verdict, verified: false })

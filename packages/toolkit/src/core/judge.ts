@@ -40,3 +40,24 @@ export const core = {
     return activeJudge(request)
   }
 }
+
+/**
+ * The "ask" vs. "finished" artifact-key contract (item 3): a judge-backed
+ * review gate compares a finished deliverable against the brief/spec it was
+ * asked to satisfy. `REVIEW_ARTIFACT_KEYS.ask` names the `JudgeRequest.artifacts`
+ * key holding the brief/spec reference (a markdown path); `.finished` names
+ * the key holding the finished deliverable reference (a screenshot path or a
+ * Figma node id/URI). Kept here (core, not a pack) so a skill-content playbook
+ * spec (owned elsewhere, e.g. packs/design/playbooks) can populate
+ * `produces`/`--artifacts` under these exact key names without this file's
+ * owner touching pack-owned files, and without a downstream agent guessing at
+ * naming. `brief-check`'s own default `artifactKey` ('brief') matches
+ * `REVIEW_ARTIFACT_KEYS.ask` by convention — keep them in sync if either
+ * changes.
+ */
+export const REVIEW_ARTIFACT_KEYS = {
+  /** The brief/spec artifact the finished deliverable is judged against. */
+  ask: 'brief',
+  /** The finished deliverable being judged — a screenshot path or Figma node id/URI. */
+  finished: 'screenshot'
+} as const

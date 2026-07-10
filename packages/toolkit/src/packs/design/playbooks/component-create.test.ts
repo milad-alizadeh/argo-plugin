@@ -13,4 +13,15 @@ describe('componentCreateSpec', () => {
       expect(stage).not.toHaveProperty('branch')
     }
   })
+
+  it('exists-check allows registry-read (it reads the registry to look up an existing card)', () => {
+    const existsCheck = componentCreateSpec.stages.find((s) => s.name === 'exists-check')
+    expect(existsCheck?.allows).toContain('registry-read')
+  })
+
+  it('annotate allows figma-write and figma-read (it writes the set-root description in Figma)', () => {
+    const annotate = componentCreateSpec.stages.find((s) => s.name === 'annotate')
+    expect(annotate?.allows).toContain('figma-write')
+    expect(annotate?.allows).toContain('figma-read')
+  })
 })

@@ -55,12 +55,17 @@ export interface Attempt {
   whatWasTried: string
 }
 
-/** History record: one gate run's verdict, appended when a stage is exited. */
+/** History record: one gate run's verdict, appended when a stage is exited —
+ * OR a bare stage-transition stamp (`gate`/`verdict` omitted) recording only
+ * `{ stage, at }` when the stage declared no gate. Every stage transition
+ * (gated or not) appends one entry, so per-stage wall-clock duration is
+ * derivable purely from consecutive `history[].at` timestamps in the state
+ * file — no separate timing store. */
 export interface HistoryEntry {
   stage: string
-  gate: string
+  gate?: string
   at: string
-  verdict: GateVerdict
+  verdict?: GateVerdict
   /**
    * Set to `false` by `argo playbook adopt` (audit 2.1) when the stage's gate
    * declared itself non-re-runnable (`GateVerdict.rerunnable === false`), so
@@ -80,6 +85,9 @@ export interface PlaybookInstance {
   status: string
   attempts: Attempt[]
   history: HistoryEntry[]
+  /** ISO timestamp set once by `playbookStart` — the run's wall-clock origin
+   * for measurement (audit "measurement" seam); never rewritten after. */
+  startedAt?: string
 }
 
 export interface StateOptions {

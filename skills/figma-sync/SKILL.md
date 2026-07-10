@@ -64,6 +64,20 @@ gate time, including someone else's in-progress edit. Freezing the sync into
 committed artifacts is what lets a headless rebuild (no live MCP access at
 all) reproduce the exact same comparison a human would get interactively.
 
+## Role in code-to-design's drift-detect stage
+
+`code-to-design`'s `drift-detect` stage assigns this skill and runs the
+deterministic `design-matches-code` comparator gate: given an adopted
+surface (a custom/code-owned component or composed screen a project
+actually instances — never raw, un-adopted kit, per the scope rule above),
+it detects drift between the live code and the committed Figma-sourced
+artifacts BEFORE any mirroring happens in `patch-mirror`. This is the same
+one-way, artifact-mediated comparison this doc describes elsewhere, run in
+the code→Figma direction instead of the usual Figma→code sync — the
+figma-sync mechanics (source-of-truth split, adoption scoping, fail-loud on
+a dirty component) apply unchanged; only the direction of the discovered
+drift differs.
+
 ## Verification
 
 No Figma file or host project lives in this repo to exercise this against —

@@ -19,6 +19,10 @@ export interface PlaybookStatusFound {
    * which would double-count budget across earlier, already-passed stages. */
   attemptsInStage: number
   lastVerdict: GateVerdict | null
+  /** ISO timestamp the instance was started at (`playbookStart`'s `startedAt`),
+   * so `argo playbook status` can surface per-run wall-clock age. Omitted for
+   * instances written before this field existed. */
+  startedAt?: string
 }
 
 export interface PlaybookStatusNotFound {
@@ -53,6 +57,10 @@ export function playbookStatus(key: string, opts: StateOptions = {}): PlaybookSt
     status: instance.status,
     stuck,
     attemptsInStage,
-    lastVerdict: instance.history.length > 0 ? instance.history[instance.history.length - 1].verdict : null
+    // Most recent history entry that actually carries a verdict — a
+    // gateless-stage transition stamp (`{ stage, at }` only, item 4) has no
+    // `verdict` and must not shadow the last real one.
+    lastVerdict: [...instance.history].reverse().find((h) => h.verdict !== undefined)?.verdict ?? null,
+    startedAt: instance.startedAt
   }
 }

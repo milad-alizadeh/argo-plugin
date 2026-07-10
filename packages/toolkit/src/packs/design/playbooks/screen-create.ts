@@ -46,7 +46,7 @@ export const screenCreateSpec = definePlaybook({
     {
       name: 'build',
       requires: ['brief', 'missing-components'],
-      allows: ['figma-write', 'figma-read'],
+      allows: ['figma-write', 'figma-read', 'file-edit'],
       produces: ['figma:<key>', 'manifests/<key>.json'],
       gate: 'design-rules-check',
       skill: 'design-screen',

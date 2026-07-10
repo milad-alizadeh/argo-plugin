@@ -422,17 +422,8 @@ After the rules land, one short recommendation pass from the §2 stack evidence:
   a docs-lookup MCP; browser-driven e2e → a browser MCP; a tracked issue
   system in the repo → its MCP). Name the server and the one-line reason;
   installing is the user's call.
-- **TypeScript/JavaScript stack → language-server code intelligence.** Argo
-  builds apps and apps are usually TS (web, Electron, React Native):
-  recommend the official `typescript-lsp` plugin (`/plugin install
-  typescript-lsp@claude-plugins-official`) — go-to-definition,
-  find-references and live diagnostics replace grep-and-guess for every
-  agent. Precheck: `typescript-language-server` on PATH; if absent, print
-  the one-line global install (`npm i -g typescript-language-server
-  typescript`) — never auto-install globals. (Bundling an `lspServers`
-  block into argo's own manifest is deliberately deferred until the
-  server's eager-vs-lazy startup behavior is verified — an eager server
-  in every non-TS host would violate ship-inert.)
+- **Language-server code intelligence** — see §8c below; this is its own
+  detect-and-offer step, not a one-liner in this list.
 - **1-2 project-specific skills worth scaffolding** (a migration creator where
   a migrations dir exists, a component generator where a component library
   exists, release-notes where releases are tagged). OFFER to author each via
@@ -442,6 +433,46 @@ After the rules land, one short recommendation pass from the §2 stack evidence:
   (e.g. write-hygiene hooks are JS/TS-leaning; the bash source-write guard's
   default extension list may need `.claude/argo-source-extensions.json` for
   this stack) — so the adopter sees exactly what is active vs dormant here.
+
+## 8c. Stack-detected LSP wiring — detect, offer, wire (never wrap)
+Go-to-definition, find-references, and live diagnostics beat grep-and-guess for
+every agent. Argo detects the project's languages and offers to wire the
+matching LSP servers into Claude Code's OWN native `lspServers` config surface —
+argo never wraps or re-encodes that surface, it only records which languages are
+wired as an index row in `.argo/config.json` (see `.argo/plans/stack-detected-lsp.md`).
+
+1. **Detect languages** from §2's evidence: manifests (`package.json`
+   `"typescript"` dep → `typescript`/`tsx`, `go.mod` → `go`, `pyproject.toml`/
+   `requirements.txt` → `python`, `Cargo.toml` → `rust`) plus a file-extension
+   sweep (`.ts`/`.tsx`, `.go`, `.py`, `.rs`) for repos without a matching
+   manifest.
+2. **For each detected language found in the curated table**
+   (`@argohq/toolkit`'s `lsp-table.ts`: `typescript`/`tsx` → `typescript-lsp`,
+   `go` → `gopls`, `python` → `pyright`, `rust` → `rust-analyzer`) — offer to
+   wire it via AskUserQuestion, per-language, batched with §0's other
+   questions where it fits. On accept:
+   - Precheck whether the server binary is already on PATH/installed; if not,
+     **ask explicit consent before any global-binary install** (no-auto-install-globals)
+     and print the one-line global install command (e.g. `npm i -g
+     typescript-language-server typescript`) rather than running it silently.
+   - Write the matching entry into Claude Code's native `lspServers` config
+     surface (`.claude/settings.json`) — this is the ONLY place the actual LSP
+     server config lives; argo never duplicates it.
+   - Record `tooling.lsp.<language>: "wired"` in `.argo/config.json` (an index
+     pointer, same convention as `testDiscipline`/`boundaryLint` —
+     `packages/toolkit/src/core/config.ts`).
+   - On decline/defer: record `tooling.lsp.<language>: "recommended-not-installed"`
+     instead, so `argo status` still surfaces the recommendation later without
+     re-asking every run.
+3. **For a detected language NOT in the curated table**: `WebSearch` for its
+   community-standard LSP server and SUGGEST it in the report, explicitly
+   flagged `"unverified — argo has not validated this"`. Never wire an
+   online-discovered server automatically, and don't build any persistent
+   discovery machinery for this — a one-off search per unknown language at
+   init time is enough (YAGNI; see the plan's ship gate).
+4. `argo status` (`cli/status.ts`) reports the `tooling.lsp` posture read-only,
+   alongside testDiscipline/boundaryLint/packs — it flags a `"wired"` language
+   whose `lspServers` entry can't be confirmed on disk, but never fixes it.
 
 ## 9. Finalize `.argo/config.json`, report + one-step revert
 `argo init` (§6d) seeded the skeleton; before reporting, complete it (these fields

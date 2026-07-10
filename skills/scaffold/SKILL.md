@@ -32,8 +32,10 @@ Relay the scaffolder's one-line result (generator + commit SHA).
 ## 4. Chain into project setup
 After a successful scaffold, **hand off to the `init` skill** (`/argo:init`) to wire the new
 project's `.claude/` — rules adapted to the just-scaffolded stack, the `@argohq/toolkit`
-dependency, graphify, and a
-`CLAUDE.md` with the canonical loop. `init` reads `package.json` to detect the
+dependency, graphify, a
+`CLAUDE.md` with the canonical loop, and the stack-detected LSP wiring offer (`init`
+§8c) — the freshly-scaffolded stack's language is known deterministically here, so
+this is the natural first moment to offer wiring its LSP server. `init` reads `package.json` to detect the
 stack, so it runs immediately after scaffolding (deps install / build / dev server are
 separate follow-ups). For a **monorepo**, scaffold each app first, then run
 `/argo:init` once at the root — it discovers all workspaces and is idempotent, so

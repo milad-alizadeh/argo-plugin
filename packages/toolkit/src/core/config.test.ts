@@ -22,7 +22,8 @@ describe('readConfig', () => {
       testDiscipline: undefined,
       boundaryLint: undefined,
       landing: undefined,
-      provenance: {}
+      provenance: {},
+      tooling: { lsp: {} }
     })
   })
 
@@ -60,7 +61,8 @@ describe('readConfig', () => {
       testDiscipline: { enforcedBy: 'probity', configPath: 'probity.config.ts' },
       boundaryLint: { enforcedBy: 'dependency-cruiser', configPath: '.dependency-cruiser.cjs', waivers: [] },
       landing: 'pr',
-      provenance: {}
+      provenance: {},
+      tooling: { lsp: {} }
     })
   })
 
@@ -75,7 +77,8 @@ describe('readConfig', () => {
       testDiscipline: undefined,
       boundaryLint: undefined,
       landing: undefined,
-      provenance: {}
+      provenance: {},
+      tooling: { lsp: {} }
     })
   })
 
@@ -91,7 +94,8 @@ describe('readConfig', () => {
       testDiscipline: undefined,
       boundaryLint: undefined,
       landing: undefined,
-      provenance: {}
+      provenance: {},
+      tooling: { lsp: {} }
     })
   })
 
@@ -104,6 +108,32 @@ describe('readConfig', () => {
 
     writeFileSync(path, JSON.stringify({ noPlaybook: 'bogus-mode' }))
     expect(readConfig(cwd).noPlaybook).toBe('allow')
+  })
+
+  it('reads tooling.lsp verbatim from a present file', () => {
+    const argoDir = join(cwd, '.argo')
+    mkdirSync(argoDir, { recursive: true })
+    writeFileSync(
+      join(argoDir, 'config.json'),
+      JSON.stringify({ tooling: { lsp: { typescript: 'wired', go: 'recommended-not-installed' } } })
+    )
+
+    expect(readConfig(cwd).tooling).toEqual({ lsp: { typescript: 'wired', go: 'recommended-not-installed' } })
+  })
+
+  it('defaults tooling.lsp to {} when tooling is absent or malformed', () => {
+    const argoDir = join(cwd, '.argo')
+    mkdirSync(argoDir, { recursive: true })
+    const path = join(argoDir, 'config.json')
+
+    writeFileSync(path, JSON.stringify({ noPlaybook: 'allow' }))
+    expect(readConfig(cwd).tooling).toEqual({ lsp: {} })
+
+    writeFileSync(path, JSON.stringify({ tooling: 'not-an-object' }))
+    expect(readConfig(cwd).tooling).toEqual({ lsp: {} })
+
+    writeFileSync(path, JSON.stringify({ tooling: { lsp: 'not-an-object' } }))
+    expect(readConfig(cwd).tooling).toEqual({ lsp: {} })
   })
 
   it('reads live per call — a later edit is picked up without caching', () => {
@@ -120,7 +150,15 @@ describe('readConfig', () => {
 
 describe('assertPackAvailable', () => {
   function makeConfig(packs: Record<string, boolean>): ArgoConfig {
-    return { packs, noPlaybook: 'allow', testDiscipline: undefined, boundaryLint: undefined, landing: undefined, provenance: {} }
+    return {
+      packs,
+      noPlaybook: 'allow',
+      testDiscipline: undefined,
+      boundaryLint: undefined,
+      landing: undefined,
+      provenance: {},
+      tooling: { lsp: {} }
+    }
   }
 
   it('throws PackUnavailableError naming the disabled pack (design-to-code -> pack-code)', () => {

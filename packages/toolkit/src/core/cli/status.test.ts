@@ -13,6 +13,7 @@ function baseConfig(overrides: Partial<ArgoConfig> = {}): ArgoConfig {
     boundaryLint: undefined,
     landing: undefined,
     provenance: {},
+    tooling: { lsp: {} },
     ...overrides
   }
 }
@@ -24,6 +25,7 @@ function baseSnapshot(overrides: Partial<StatusSnapshot> = {}): StatusSnapshot {
     boundaryLintConfigExists: null,
     probityPluginEnabled: false,
     provenanceFileExists: {},
+    lspServerConfigured: {},
     ...overrides
   }
 }
@@ -95,6 +97,27 @@ describe('computeStatus', () => {
     expect(report.provenance).toEqual({ recordedCount: 1, missingOnDisk: ['.claude/rules/testing.md'] })
     expect(report.mismatches).toEqual(['provenance: recorded file ".claude/rules/testing.md" no longer exists on disk'])
   })
+
+  it('reports tooling.lsp posture verbatim with no mismatch when the wired server is confirmed', () => {
+    const config = baseConfig({ tooling: { lsp: { typescript: 'wired', go: 'recommended-not-installed' } } })
+    const report = computeStatus(baseSnapshot({ config, lspServerConfigured: { typescript: true } }))
+
+    expect(report.lsp).toEqual({
+      posture: { typescript: 'wired', go: 'recommended-not-installed' },
+      unconfirmed: []
+    })
+    expect(report.mismatches).toEqual([])
+  })
+
+  it('flags a "wired" language whose lspServers entry could not be confirmed', () => {
+    const config = baseConfig({ tooling: { lsp: { typescript: 'wired' } } })
+    const report = computeStatus(baseSnapshot({ config, lspServerConfigured: { typescript: false } }))
+
+    expect(report.lsp.unconfirmed).toEqual(['typescript'])
+    expect(report.mismatches).toEqual([
+      'tooling.lsp records "typescript" as wired, but no matching server was found in .claude/settings.json\'s lspServers'
+    ])
+  })
 })
 
 describe('resolveStatusSnapshot / runStatus', () => {
@@ -121,6 +144,25 @@ describe('resolveStatusSnapshot / runStatus', () => {
     const snapshot = resolveStatusSnapshot(cwd)
     expect(snapshot.testDisciplineConfigExists).toBe(true)
     expect(snapshot.probityPluginEnabled).toBe(true)
+
+    const report = runStatus(cwd)
+    expect(report.mismatches).toEqual([])
+  })
+
+  it('resolves lspServerConfigured against a real .claude/settings.json lspServers block', () => {
+    mkdirSync(join(cwd, '.argo'), { recursive: true })
+    writeFileSync(
+      join(cwd, '.argo', 'config.json'),
+      JSON.stringify({ tooling: { lsp: { typescript: 'wired' } } })
+    )
+    mkdirSync(join(cwd, '.claude'), { recursive: true })
+    writeFileSync(
+      join(cwd, '.claude', 'settings.json'),
+      JSON.stringify({ lspServers: { 'typescript-lsp': {} } })
+    )
+
+    const snapshot = resolveStatusSnapshot(cwd)
+    expect(snapshot.lspServerConfigured).toEqual({ typescript: true })
 
     const report = runStatus(cwd)
     expect(report.mismatches).toEqual([])

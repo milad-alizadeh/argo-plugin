@@ -53,6 +53,21 @@ export interface BoundaryLintPosture {
   waivers: string[]
 }
 
+/** Per-language LSP wiring posture: `"wired"` means the Claude Code native
+ * `lspServers` surface names this language's server (this map only records
+ * THAT it's wired — the server config itself lives in Claude Code's own
+ * surface, never duplicated here); `"recommended-not-installed"` means a
+ * curated-table language (`lsp-table.ts`) was detected but the user declined
+ * or deferred wiring it. A language absent from this map was never offered.
+ * Default: `{}`. */
+export type LspTooling = Record<string, 'wired' | 'recommended-not-installed'>
+
+/** Tool-posture index rows keyed by tool family — today only `lsp`, following
+ * the same pointer-not-wrapper convention as `testDiscipline`/`boundaryLint`. */
+export interface ToolingPosture {
+  lsp: LspTooling
+}
+
 export interface ArgoConfig {
   /** Which packs are installed/enabled. Default: `{}`. */
   packs: PackAvailability
@@ -87,6 +102,10 @@ export interface ArgoConfig {
    * gate. A file absent from this map (hand-installed, or predates
    * provenance tracking) is never flagged. Default: `{}`. */
   provenance: Record<string, string>
+  /** Which LSP servers argo has wired or recommended, keyed by tool family
+   * (`lsp`) then language — written by `argo init`/`argo scaffold`'s
+   * detect-and-offer step (skills/init/SKILL.md). Default: `{ lsp: {} }`. */
+  tooling: ToolingPosture
 }
 
 const DEFAULT_CONFIG: ArgoConfig = {
@@ -95,7 +114,8 @@ const DEFAULT_CONFIG: ArgoConfig = {
   testDiscipline: undefined,
   boundaryLint: undefined,
   landing: undefined,
-  provenance: {}
+  provenance: {},
+  tooling: { lsp: {} }
 }
 
 /** Walk up from `cwd` to the nearest `.argo/config.json`, returning its
@@ -135,11 +155,22 @@ export function readConfig(cwd: string = process.cwd()): ArgoConfig {
       provenance:
         typeof parsed.provenance === 'object' && parsed.provenance !== null
           ? parsed.provenance
-          : DEFAULT_CONFIG.provenance
+          : DEFAULT_CONFIG.provenance,
+      tooling: readToolingPosture(parsed.tooling)
     }
   } catch {
     return { ...DEFAULT_CONFIG } // malformed config — inert, never a crash inside a hook
   }
+}
+
+/** Validates and defaults a parsed `tooling` block — an absent/malformed
+ * `tooling` or `tooling.lsp` both resolve to `{ lsp: {} }`; a present `lsp`
+ * map is read verbatim (per-key value validity is not enforced here, mirroring
+ * `packs`/`provenance`'s read-verbatim posture). */
+function readToolingPosture(parsedTooling: unknown): ToolingPosture {
+  if (!parsedTooling || typeof parsedTooling !== 'object') return { lsp: {} }
+  const lsp = (parsedTooling as { lsp?: unknown }).lsp
+  return { lsp: typeof lsp === 'object' && lsp !== null ? (lsp as LspTooling) : {} }
 }
 
 /** Thrown by `assertPackAvailable` when a playbook's terminal stage hands off

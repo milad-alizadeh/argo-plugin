@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { readConfig, type ArgoConfig } from '../config.js'
+import { readConfig, type ArgoConfig, type LspTooling } from '../config.js'
+import { LSP_TABLE } from '../lsp-table.js'
 
 /**
  * `argo status` (config-audit hardening, Wave-adjacent): read-only posture
@@ -27,6 +28,11 @@ export interface StatusSnapshot {
   probityPluginEnabled: boolean
   /** Path -> exists, one entry per key in `config.provenance`. */
   provenanceFileExists: Record<string, boolean>
+  /** Language -> whether `.claude/settings.json`'s `lspServers` surface names
+   * that language's server, one entry per language recorded `"wired"` in
+   * `config.tooling.lsp`. Not checked for `"recommended-not-installed"`
+   * languages (nothing should be wired for those yet). */
+  lspServerConfigured: Record<string, boolean>
 }
 
 export interface StatusReport {
@@ -36,6 +42,9 @@ export interface StatusReport {
     | { enforcedBy: string; configPath: string; configPathExists: boolean; pluginEnabled: boolean }
   boundaryLint: null | { enforcedBy: string; configPath: string; configPathExists: boolean }
   provenance: { recordedCount: number; missingOnDisk: string[] }
+  /** `config.tooling.lsp` verbatim, alongside `wired` entries whose Claude
+   * Code `lspServers` config could not be confirmed on disk. */
+  lsp: { posture: LspTooling; unconfirmed: string[] }
   /** Plain-text config-vs-reality mismatches, in the order they were found.
    * Descriptive only — `argo status` never fixes any of these. */
   mismatches: string[]
@@ -85,11 +94,22 @@ export function computeStatus(snapshot: StatusSnapshot): StatusReport {
     mismatches.push(`provenance: recorded file "${p}" no longer exists on disk`)
   }
 
+  const wiredLanguages = Object.entries(config.tooling.lsp)
+    .filter(([, posture]) => posture === 'wired')
+    .map(([language]) => language)
+  const unconfirmed = wiredLanguages.filter((language) => snapshot.lspServerConfigured[language] === false)
+  for (const language of unconfirmed) {
+    mismatches.push(
+      `tooling.lsp records "${language}" as wired, but no matching server was found in .claude/settings.json's lspServers`
+    )
+  }
+
   return {
     packs,
     testDiscipline,
     boundaryLint,
     provenance: { recordedCount: recordedPaths.length, missingOnDisk },
+    lsp: { posture: config.tooling.lsp, unconfirmed },
     mismatches
   }
 }
@@ -110,6 +130,22 @@ function probityPluginEnabled(cwd: string): boolean {
   }
 }
 
+/** True iff `.claude/settings.json` (repo-relative to `cwd`) names `server`
+ * as a key under its `lspServers` block. Missing/malformed file resolves to
+ * `false`, never a throw — mirrors `probityPluginEnabled`. */
+function lspServerConfigured(cwd: string, server: string): boolean {
+  const path = join(cwd, '.claude', 'settings.json')
+  if (!existsSync(path)) return false
+  try {
+    const settings = JSON.parse(readFileSync(path, 'utf8'))
+    const lspServers = settings?.lspServers
+    if (!lspServers || typeof lspServers !== 'object') return false
+    return server in lspServers
+  } catch {
+    return false
+  }
+}
+
 /** Impure: reads `.argo/config.json` (via `readConfig`) plus the on-disk
  * facts `computeStatus` needs, resolving every path relative to `cwd`. */
 export function resolveStatusSnapshot(cwd: string = process.cwd()): StatusSnapshot {
@@ -120,6 +156,10 @@ export function resolveStatusSnapshot(cwd: string = process.cwd()): StatusSnapsh
     Object.keys(config.provenance).map((p) => [p, existsSync(join(root, p))])
   )
 
+  const lspServerConfiguredEntries = Object.entries(config.tooling.lsp)
+    .filter(([, posture]) => posture === 'wired')
+    .map(([language]) => [language, lspServerConfigured(root, LSP_TABLE[language] ?? language)] as const)
+
   return {
     config,
     testDisciplineConfigExists: config.testDiscipline
@@ -127,7 +167,8 @@ export function resolveStatusSnapshot(cwd: string = process.cwd()): StatusSnapsh
       : null,
     boundaryLintConfigExists: config.boundaryLint ? existsSync(join(root, config.boundaryLint.configPath)) : null,
     probityPluginEnabled: probityPluginEnabled(root),
-    provenanceFileExists
+    provenanceFileExists,
+    lspServerConfigured: Object.fromEntries(lspServerConfiguredEntries)
   }
 }
 
